@@ -1,0 +1,20 @@
+Libraries:
+
+Javaslang core is a functional library for Java 8+. It helps to reduce the amount of code and to increase the robustness. A first step towards functional programming is to start thinking in immutable values. Javaslang provides immutable collections and the necessary functions and control structures to operate on these values. The results are beautiful and just work.
+
+http://www.javaslang.io/
+
+Apache Flink is an open source platform for distributed stream and batch data processing. Flink’s core is a streaming dataflow engine that provides data distribution, communication and fault tolerance for distributed computations over data streams. Flink also builds batch processing on top of the streaming engine, overlaying native iteration support, managed memory, and program optimization.
+
+https://ci.apache.org/projects/flink/flink-docs-master/
+
+Immutable Java 8 data frames with typed columns.
+
+A data frame is composed of 0..n named columns, which all contain the same number of row values. Each column has a fixed data type, which allows for type-safe value access.
+
+https://github.com/netzwerg/paleo
+
+Syntax tree:
+http://eli.thegreenplace.net/2009/02/16/abstract-vs-concrete-syntax-trees/
+https://en.wikipedia.org/wiki/Abstract_syntax_tree
+http://stackoverflow.com/questions/29971097/how-to-create-ast-with-antlr4
