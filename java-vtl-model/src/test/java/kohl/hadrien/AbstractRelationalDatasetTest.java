@@ -10,9 +10,6 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Created by hadrien on 15/09/16.
- */
 public class AbstractRelationalDatasetTest {
     @Test
     public void testMerge() throws Exception {
