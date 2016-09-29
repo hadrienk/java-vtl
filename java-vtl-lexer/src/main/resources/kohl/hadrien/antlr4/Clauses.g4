@@ -1,4 +1,4 @@
-grammar clauses;
+grammar Clauses;
 
 clause      : ( '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' )+ ;
 
@@ -8,10 +8,11 @@ clause      : ( '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']'
 //          component as string role = ATTRIBUTE
 // ]
 
-rename      : 'rename' renameParam ;
-renameParam : renameParam ( ',' renameParam )+
-            | component 'as' string role?
+rename      : 'rename' renameParam (',' renameParam )* ;
+renameParam : component 'as' string role?
             ;
+
+role : 'role' '=' ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
 filter      : 'filter' booleanExpression ;
 
@@ -23,7 +24,6 @@ attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
 
-role : 'role' '=' ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
 
 booleanExpression : 'booleanExpression' ;
