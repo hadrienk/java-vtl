@@ -1,14 +1,15 @@
 package kohl.hadrien;
 
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.collect.ImmutableList;
-import org.testng.annotations.Test;
+
+import org.junit.Test;
 
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class AbstractRelationalDatasetTest {
     @Test
