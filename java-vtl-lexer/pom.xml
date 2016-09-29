@@ -20,12 +20,29 @@
             <artifactId>antlr4-runtime</artifactId>
             <version>4.5.3</version>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.antlr/antlr-runtime -->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr-runtime</artifactId>
             <version>3.5.2</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <version>4.5.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Test framework -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>
