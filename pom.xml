@@ -13,7 +13,7 @@
 
     <modules>
         <module>java-vtl-model</module>
-        <module>java-vtl-lexer</module>
+        <module>java-vtl-parser</module>
         <module>java-vtl-stream</module>
         <module>java-vtl-script</module>
     </modules>
