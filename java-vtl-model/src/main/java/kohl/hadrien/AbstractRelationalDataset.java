@@ -23,7 +23,7 @@ public abstract class AbstractRelationalDataset extends ForwardingStream<Dataset
         return new AbstractRelationalDataset() {
             @Override
             Stream<Tuple> delegate() {
-                return StreamUtils.join(AbstractRelationalDataset.this, dataset, Tuple::combine);
+                return StreamUtils.join(Tuple::combine, AbstractRelationalDataset.this, dataset);
             }
         };
     }
