@@ -11,14 +11,15 @@ start : statement+ EOF;
 /* Assignment */
 statement : variableRef ':=' expression;
 
+exprMember : expression ('#' componentID)? ;
+
 /* Expressions */
-expression : getExpression
+expression : <assoc=right>expression clause
+           | getExpression
            | putExpression
-           | exprMember
+           | exprAtom
            ;
 
-/* Membership */
-exprMember : exprAtom (clause)?('#' componentID)? ;
 componentID : IDENTIFIER;
 
 getExpression : 'get(todo)';

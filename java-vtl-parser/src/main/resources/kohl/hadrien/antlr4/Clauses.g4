@@ -1,6 +1,6 @@
 grammar Clauses;
 
-clause      : ( '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' )+ ;
+clause      : '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' ;
 
 // [ rename component as string,
 //          component as string role = IDENTIFIER,
