@@ -13,9 +13,10 @@ import kohl.hadrien.Dataset;
 
 public class VTLScriptEngineTest {
 
+  ScriptEngine engine = new VTLScriptEngine();
+
   @Test
   public void testAssignment() throws Exception {
-    ScriptEngine engine = new VTLScriptEngine();
 
     Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
     Dataset dataset = mock(Dataset.class);
@@ -27,5 +28,20 @@ public class VTLScriptEngineTest {
 
   }
 
+  @Test
+  public void testRename() throws Exception {
 
+    Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+    Dataset dataset = mock(Dataset.class);
+
+    bindings.put("ds2", dataset);
+    engine.eval("ds1 := ds2[rename id1 as renamedId1, id2 as renamed");
+
+    Object ds1 = bindings.get("ds1");
+
+    Dataset dataset1 = (Dataset) assertThat(ds1).isInstanceOf(Dataset.class);
+
+
+
+  }
 }

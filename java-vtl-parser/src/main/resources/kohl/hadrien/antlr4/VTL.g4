@@ -4,50 +4,24 @@ options{
     language = Java;
 }
 
-import Conditional;
+import Conditional, Clauses, Atoms;
 
 start : statement+ EOF;
 
 /* Assignment */
 statement : variableRef ':=' expression;
 
-/* Atom */
-exprAtom : variableRef;
-
-
+/* Expressions */
 expression : getExpression
            | putExpression
-           | exprAtom
+           | exprMember
            ;
+
+/* Membership */
+exprMember : exprAtom (clause)?('#' componentID)? ;
+componentID : IDENTIFIER;
 
 getExpression : 'get(todo)';
 putExpression : 'put(todo)';
-
-variableRef : varID
-            | constant
-            ;
-
-constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
-
-varID : IDENTIFIER;
-
-IDENTIFIER:LETTER(LETTER|'_'|'0'..'9')*;
-
-
-INTEGER_CONSTANT:'0'..'9'+;
-FLOAT_CONSTANT : ('0'..'9')+ '.' ('0'..'9')* FLOATEXP?
-               | ('0'..'9')+ FLOATEXP
-               ;
-STRING_CONSTANT :'"' (~'"')* '"';
-NULL_CONSTANT:'null';
-
-fragment
-FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
-
-PLUS : '+';
-MINUS : '-';
-
-fragment
-LETTER : 'A'..'Z' | 'a'..'z';
 
 WS : [ \r\t\u000C] -> skip ;

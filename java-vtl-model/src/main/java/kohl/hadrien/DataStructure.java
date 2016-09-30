@@ -1,9 +1,9 @@
 package kohl.hadrien;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Created by hadrien on 07/09/16.

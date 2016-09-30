@@ -5,29 +5,14 @@ ML_COMMENT : '/*' (.)*? '*/' -> skip;
 EOL : ( '\r' | '\n' ) -> skip;
 WS : (' '|'\r'|'\t'|'\u000C') -> skip;
 
-fragment
-LETTER : 'A'..'Z' | 'a'..'z';
-
-INTEGER_CONSTANT
-:
-'0'..'9'+;
-
-FLOAT_CONSTANT
-  :
-  ('0'..'9')+ '.' ('0'..'9')* FLOATEXP?
-  | ('0'..'9')+ FLOATEXP
-  ;
-
-fragment
-FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
 
 TIME_CLAUSE :('T'|'t');
 
 BOOLEAN_CONSTANT : 'true'|'false';
-NULL_CONSTANT:'null';
 
-STRING_CONSTANT :'"' (~'"')* '"';
-IDENTIFIER:LETTER(LETTER|'_'|'0'..'9')*;
+
+
+
 
 ABS : 'abs';
 AGGREGATE : 'aggregate';
@@ -124,7 +109,7 @@ MEDIAN : 'median';
 MERGE : 'merge';
 MERGE_ON : 'merge on';
 MIN : 'min';
-MINUS : '-';
+
 MINUS2FUN : 'minus2';
 MINUSFUN : 'minus';
 MINUSMINUS : '--';
@@ -151,7 +136,7 @@ OVERLAP : 'overlap';
 PCSFILTER : 'pcsfilter';
 PERCENT : '%';
 PERCENTILE : 'percentile';
-PLUS : '+';
+
 PLUS2FUN : 'plus2';
 PLUSFUN : 'plus';
 PLUSPLUS : '++';
