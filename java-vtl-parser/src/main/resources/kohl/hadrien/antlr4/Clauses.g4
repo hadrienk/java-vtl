@@ -7,9 +7,8 @@ clause      : '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' ;
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-
 rename      : 'rename' renameParam (',' renameParam )* ;
-renameParam : component 'as' string role?
+renameParam : from=varID 'as' to=varID role?
             ;
 
 role : 'role' '=' ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
@@ -25,9 +24,8 @@ attrcalc    : 'attrcalc' ;
 aggregate   : 'aggregate' ;
 
 
+varID       : 'varId';
 
 booleanExpression : 'booleanExpression' ;
-string      : 'string' ;
-component   : 'componentName' ;
 
 WS          : [ \t\n\t] -> skip ;
