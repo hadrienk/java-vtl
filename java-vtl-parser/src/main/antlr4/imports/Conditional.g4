@@ -1,7 +1,5 @@
 grammar Conditional;
 
-expression : booleanExpression EOF ;
-//
 booleanExpression
     : booleanExpression AND booleanExpression
     | booleanExpression ( OR booleanExpression | XOR booleanExpression )
@@ -27,7 +25,5 @@ GE : '>=' ;
 AND : 'and' ;
 OR  : 'or' ;
 XOR : 'xor' ;
-
-BOOLEAN_CONSTANT : 'true' | 'false' ;
 
 WS : [ \r\t\u000C] -> skip ;

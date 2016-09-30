@@ -4,12 +4,12 @@ options{
     language = Java;
 }
 
-import Conditional, Clauses, Atoms;
+import Atoms, Clauses;
 
 start : statement+ EOF;
 
 /* Assignment */
-statement : variableRef ':=' expression;
+statement : variableRef ':=' exprMember;
 
 exprMember : expression ('#' componentID)? ;
 

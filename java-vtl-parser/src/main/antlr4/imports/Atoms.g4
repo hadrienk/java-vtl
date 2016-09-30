@@ -1,7 +1,5 @@
 grammar Atoms;
 
-import Conditional;
-
 /* Atom */
 exprAtom : variableRef;
 
@@ -15,12 +13,13 @@ constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTAN
 
 IDENTIFIER:LETTER(LETTER|'_'|'0'..'9')*;
 
-INTEGER_CONSTANT:'0'..'9'+;
-FLOAT_CONSTANT : ('0'..'9')+ '.' ('0'..'9')* FLOATEXP?
-               | ('0'..'9')+ FLOATEXP
-               ;
-STRING_CONSTANT :'"' (~'"')* '"';
-NULL_CONSTANT:'null';
+INTEGER_CONSTANT  :'0'..'9'+;
+BOOLEAN_CONSTANT  : 'true' | 'false' ;
+STRING_CONSTANT   :'"' (~'"')* '"';
+FLOAT_CONSTANT    : ('0'..'9')+ '.' ('0'..'9')* FLOATEXP?
+                  | ('0'..'9')+ FLOATEXP
+                  ;
+NULL_CONSTANT     :'null';
 
 fragment
 FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;

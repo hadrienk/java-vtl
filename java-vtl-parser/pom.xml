@@ -13,8 +13,26 @@
     <groupId>kohl.hadrien</groupId>
     <artifactId>java-vtl-parser</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>4.3</version>
+                <executions>
+                    <execution>
+                        <id>antlr</id>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
+
         <dependency><!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>

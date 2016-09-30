@@ -1,5 +1,6 @@
 package kohl.hadrien.antlr4;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.Resources.getResource;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,7 +30,7 @@ public class ClausesParserTest {
     protected void before() throws Throwable {
       URL grammarURL = getResource(this.getClass(), "Clauses.g4");
       String grammarString = Resources.toString(grammarURL, Charset.defaultCharset());
-      grammar = new Grammar(grammarString);
+      grammar = new Grammar(checkNotNull(grammarString));
     }
   };
 

@@ -1,5 +1,7 @@
 grammar Clauses;
 
+import Atoms;
+
 clause      : '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' ;
 
 // [ rename component as string,
@@ -22,9 +24,6 @@ calc        : 'calc' ;
 attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
-
-
-varID       : 'varId';
 
 booleanExpression : 'booleanExpression' ;
 
