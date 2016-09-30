@@ -2,7 +2,10 @@ package kohl.hadrien.vtl.script;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.Test;
 
@@ -10,16 +13,17 @@ import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import kohl.hadrien.Dataset;
+import kohl.hadrien.vtl.script.connector.Connector;
 
 public class VTLScriptEngineTest {
 
-  ScriptEngine engine = new VTLScriptEngine();
+  private Dataset dataset = mock(Dataset.class);
+  private Connector connector = mock(Connector.class);
+  private ScriptEngine engine = new VTLScriptEngine(connector);
+  private Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
   @Test
   public void testAssignment() throws Exception {
-
-    Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-    Dataset dataset = mock(Dataset.class);
 
     bindings.put("ds2", dataset);
     engine.eval("ds1 := ds2");
@@ -29,19 +33,30 @@ public class VTLScriptEngineTest {
   }
 
   @Test
-  public void testRename() throws Exception {
+  public void testGet() throws Exception {
 
+    when(connector.canHandle(anyString())).thenReturn(true);
+    when(connector.getDataset(anyString())).thenReturn(dataset);
+
+    engine = new VTLScriptEngine(connector);
     Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-    Dataset dataset = mock(Dataset.class);
 
     bindings.put("ds2", dataset);
-    engine.eval("ds1 := ds2[rename id1 as renamedId1, id2 as renamed");
+    engine.eval("ds1 := get(todo)");
 
-    Object ds1 = bindings.get("ds1");
-
-    Dataset dataset1 = (Dataset) assertThat(ds1).isInstanceOf(Dataset.class);
-
-
+    assertThat(bindings).contains(entry("ds1", dataset));
 
   }
+
+  @Test
+  public void testPut() throws Exception {
+
+    when(connector.canHandle(anyString())).thenReturn(true);
+    when(connector.putDataset(anyString(), any())).thenReturn(dataset);
+    engine.eval("ds1 := put(todo)");
+
+    assertThat(bindings).contains(entry("ds1", dataset));
+
+  }
+
 }

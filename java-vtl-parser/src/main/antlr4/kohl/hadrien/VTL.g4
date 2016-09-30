@@ -9,15 +9,15 @@ import Atoms, Clauses;
 start : statement+ EOF;
 
 /* Assignment */
-statement : variableRef ':=' exprMember;
+statement : variableRef ':=' datasetExpression;
 
-exprMember : expression ('#' componentID)? ;
+exprMember : datasetExpression ('#' componentID)? ;
 
 /* Expressions */
-expression : <assoc=right>expression clause
-           | getExpression
-           | putExpression
-           | exprAtom
+datasetExpression : <assoc=right>datasetExpression clause #withClause
+           | getExpression                                #withGet
+           | putExpression                                #withPut
+           | exprAtom                                     #withAtom
            ;
 
 componentID : IDENTIFIER;
