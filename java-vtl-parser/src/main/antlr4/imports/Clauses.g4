@@ -1,8 +1,14 @@
 grammar Clauses;
 
-import Atoms;
+clauseExpression      : '[' clause ']' ;
 
-clause      : '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' ;
+clause       : rename     #renameClause
+             | filter     #filterClause
+             | keep       #keepClause
+             | calc       #calcClause
+             | attrcalc   #attrcalcClause
+             | aggregate  #aggregateClause
+             ;
 
 // [ rename component as string,
 //          component as string role = IDENTIFIER,
@@ -10,10 +16,10 @@ clause      : '[' ( rename | filter | keep | calc | attrcalc | aggregate ) ']' ;
 //          component as string role = ATTRIBUTE
 // ]
 rename      : 'rename' renameParam (',' renameParam )* ;
-renameParam : from=varID 'as' to=varID role?
+renameParam : from=varID 'as' to=varID ( 'role' '=' role )?
             ;
 
-role : 'role' '=' ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
+role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
 filter      : 'filter' booleanExpression ;
 

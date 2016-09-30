@@ -25,10 +25,10 @@ public class VTLScriptEngineTest {
   @Test
   public void testAssignment() throws Exception {
 
-    bindings.put("ds2", dataset);
-    engine.eval("ds1 := ds2");
+    bindings.put("ds1", dataset);
+    engine.eval("ds2 := ds1");
 
-    assertThat(bindings).contains(entry("ds1", dataset));
+    assertThat(bindings).contains(entry("ds2", dataset));
 
   }
 
@@ -38,13 +38,10 @@ public class VTLScriptEngineTest {
     when(connector.canHandle(anyString())).thenReturn(true);
     when(connector.getDataset(anyString())).thenReturn(dataset);
 
-    engine = new VTLScriptEngine(connector);
-    Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+    bindings.put("ds1", dataset);
+    engine.eval("ds2 := get(todo)");
 
-    bindings.put("ds2", dataset);
-    engine.eval("ds1 := get(todo)");
-
-    assertThat(bindings).contains(entry("ds1", dataset));
+    assertThat(bindings).contains(entry("ds2", dataset));
 
   }
 
@@ -59,4 +56,13 @@ public class VTLScriptEngineTest {
 
   }
 
+  @Test
+  public void testRename() throws Exception {
+
+    bindings.put("ds1", dataset);
+    engine.eval("ds2 := ds1[rename var1 as var2]");
+
+    assertThat(bindings).contains(entry("ds2", dataset));
+
+  }
 }

@@ -1,10 +1,6 @@
 grammar VTL;
 
-options{
-    language = Java;
-}
-
-import Atoms, Clauses;
+import Atoms, Clauses, Conditional;
 
 start : statement+ EOF;
 
@@ -14,7 +10,7 @@ statement : variableRef ':=' datasetExpression;
 exprMember : datasetExpression ('#' componentID)? ;
 
 /* Expressions */
-datasetExpression : <assoc=right>datasetExpression clause #withClause
+datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | getExpression                                #withGet
            | putExpression                                #withPut
            | exprAtom                                     #withAtom
