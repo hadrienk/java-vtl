@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.connector;
+package kohl.hadrien.vtl.script;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -10,7 +10,6 @@ import java.util.function.Function;
 import kohl.hadrien.Dataset;
 import kohl.hadrien.VTLBaseVisitor;
 import kohl.hadrien.VTLParser;
-import kohl.hadrien.vtl.script.AssignmentVisitor;
 
 /**
  * Handles the clauses.

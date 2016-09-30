@@ -10,7 +10,6 @@ import javax.script.ScriptContext;
 import kohl.hadrien.Dataset;
 import kohl.hadrien.VTLBaseVisitor;
 import kohl.hadrien.VTLParser;
-import kohl.hadrien.vtl.script.connector.ClausesVisitor;
 import kohl.hadrien.vtl.script.connector.Connector;
 
 /**

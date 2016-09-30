@@ -60,7 +60,11 @@ public class VTLScriptEngineTest {
   public void testRename() throws Exception {
 
     bindings.put("ds1", dataset);
-    engine.eval("ds2 := ds1[rename var1 as var2]");
+    engine.eval("ds2 := ds1[rename var1 as var2]"
+        + "                [rename var2 as var1]"
+        + "                [rename var1 as var2 role = IDENTIFIER,"
+        + "                        var1 as var2 role = MEASURE,"
+        + "                        var1 as var2 role = ATTRIBUTE]");
 
     assertThat(bindings).contains(entry("ds2", dataset));
 
