@@ -6,7 +6,7 @@ package kohl.hadrien;
 public abstract class Identifier<T extends Comparable> extends Component<T> {
 
     public Identifier(T clazz) {
-        super(clazz);
+        super(clazz, null);
     }
 
     @Override

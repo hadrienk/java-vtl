@@ -33,4 +33,6 @@ aggregate   : 'aggregate' ;
 
 booleanExpression : 'booleanExpression' ;
 
+varID       : 'varId';
+
 WS          : [ \t\n\t] -> skip ;

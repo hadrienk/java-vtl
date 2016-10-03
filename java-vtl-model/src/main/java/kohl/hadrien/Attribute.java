@@ -6,7 +6,7 @@ package kohl.hadrien;
 public abstract class Attribute<T> extends Component<T> {
 
     public Attribute(T clazz) {
-        super(clazz);
+        super(clazz, null);
     }
 
     @Override

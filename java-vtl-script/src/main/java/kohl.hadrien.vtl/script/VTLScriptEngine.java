@@ -19,6 +19,7 @@ import javax.script.SimpleBindings;
 import kohl.hadrien.VTLLexer;
 import kohl.hadrien.VTLParser;
 import kohl.hadrien.vtl.script.connector.Connector;
+import kohl.hadrien.vtl.script.visitors.AssignmentVisitor;
 
 /**
  * A VTL {@link ScriptEngine} implementation.

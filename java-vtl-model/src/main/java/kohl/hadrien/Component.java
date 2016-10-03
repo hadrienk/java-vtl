@@ -12,10 +12,14 @@ import java.util.function.Supplier;
 public abstract class Component<T> implements Supplier<T> {
 
     private final T clazz;
+    private final DataStructure structure;
 
-    public Component(T clazz) {
+    public Component(T clazz, DataStructure structure) {
         this.clazz = checkNotNull(clazz);
+        this.structure = checkNotNull(structure);
     }
+
+    protected abstract String name();
 
     @Override
     public int hashCode() {

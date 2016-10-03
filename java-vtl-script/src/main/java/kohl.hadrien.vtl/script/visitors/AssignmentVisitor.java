@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script;
+package kohl.hadrien.vtl.script.visitors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,12 +19,12 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
 
   private final ScriptContext context;
   private final ConnectorVisitor connectorVisitor;
-  private final ClausesVisitor clausesVisitor;
+  private final ClauseVisitor clausesVisitor;
 
   public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
     this.context = checkNotNull(context, "the context was null");
     connectorVisitor = new ConnectorVisitor(connectors);
-    clausesVisitor = new ClausesVisitor(this);
+    clausesVisitor = new ClauseVisitor();
   }
 
   @Override

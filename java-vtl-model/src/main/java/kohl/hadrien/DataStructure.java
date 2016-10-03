@@ -1,21 +1,32 @@
 package kohl.hadrien;
 
 import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Map;
 
 /**
  * Created by hadrien on 07/09/16.
  */
-public class DataStructure extends ForwardingMap<String, Component> {
+public class DataStructure extends ForwardingMap<String, Class<? extends Component>> {
 
+  ImmutableSet<String> names;
+  Map<String, Class<? extends Component>> roles;
+  Map<String, Class<? extends Object>> types;
 
+  public DataStructure(Map<String, Class<? extends Component>> components) {
+    this.names = ImmutableSet.copyOf(components.keySet());
+    this.roles = components;
+    this.types = convertToTypes(this.roles);
+  }
 
-    public DataStructure(Iterable<Identifier> identifiers, Iterable<Component> measures) {
-    }
+  private Map<String, Class<? extends Object>> convertToTypes(
+      Map<String, Class<? extends Component>> roles) {
+    return null;
+  }
 
-    @Override
-    protected Map<String, Component> delegate() {
-        return null;
-    }
+  @Override
+  protected Map<String, Class<? extends Component>> delegate() {
+    return roles;
+  }
 }

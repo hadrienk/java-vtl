@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script;
+package kohl.hadrien.vtl.script.visitors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
