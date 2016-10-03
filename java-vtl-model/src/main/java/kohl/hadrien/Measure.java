@@ -5,6 +5,10 @@ package kohl.hadrien;
  */
 public abstract class Measure<T> extends Component<T> {
 
+    public Measure(T clazz) {
+        super(clazz);
+    }
+
     @Override
     public int hashCode() {
         return super.hashCode();

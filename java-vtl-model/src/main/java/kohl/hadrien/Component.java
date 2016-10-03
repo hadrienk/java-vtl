@@ -1,13 +1,21 @@
 package kohl.hadrien;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.MoreObjects;
 
 import java.util.function.Supplier;
 
 /**
- * Created by hadrien on 07/09/16.
+ * Component represent values of a dataset.
  */
 public abstract class Component<T> implements Supplier<T> {
+
+    private final T clazz;
+
+    public Component(T clazz) {
+        this.clazz = checkNotNull(clazz);
+    }
 
     @Override
     public int hashCode() {

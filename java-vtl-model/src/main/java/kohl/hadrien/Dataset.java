@@ -1,21 +1,23 @@
 package kohl.hadrien;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingList;
 
-import java.util.*;
-import java.util.stream.Stream;
+import com.codepoetics.protonpack.Streamable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.AbstractList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.RandomAccess;
+import java.util.Set;
 
 /**
  * A data structure that allows relational operations.
  */
-public interface Dataset extends Stream<Dataset.Tuple> {
-
-    default Stream<List<Component>> asStream() {
-        return this.map(components -> (List<Component>) components);
-    }
+public interface Dataset extends Streamable<Dataset.Tuple> {
 
     Set<List<Identifier>> cartesian();
 
@@ -24,31 +26,6 @@ public interface Dataset extends Stream<Dataset.Tuple> {
      * Returns the data structure of the DataSet.
      */
     DataStructure getDataStructure();
-
-    /**
-     * Carries out the join.
-     */
-    Dataset merge(Dataset dataset);
-
-    /**
-     * Makes the set union.
-     */
-    Dataset union(Dataset dataset);
-
-    /**
-     * Makes the set intersection.
-     */
-    Dataset intersect(Dataset dataset);
-
-    /**
-     * Makes the set symmetric difference.
-     */
-    Dataset symdiff(Dataset dataset);
-
-    /**
-     * Makes the set difference.
-     */
-    Dataset setdiff(Dataset dataset);
 
     interface Tuple extends List<Component>, Comparable<Tuple> {
 
