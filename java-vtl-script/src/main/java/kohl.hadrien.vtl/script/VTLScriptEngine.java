@@ -55,9 +55,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
     ParseTree start = parser.start();
     // Run loop.
     AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
-    assignmentVisitor.visit(start);
-
-    return null;
+    return assignmentVisitor.visit(start);
   }
 
   @Override

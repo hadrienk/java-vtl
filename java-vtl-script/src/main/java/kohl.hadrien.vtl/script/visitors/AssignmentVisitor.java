@@ -28,11 +28,16 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
   }
 
   @Override
+  protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
+    return nextResult != null ? nextResult : aggregate;
+  }
+
+  @Override
   public Dataset visitStatement(@NotNull VTLParser.StatementContext ctx) {
     String name = ctx.variableRef().getText();
     Dataset dataset = visit(ctx.datasetExpression());
     context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
-    return (Dataset) context.getAttribute(name);
+    return (Dataset) context.getAttribute(name, ScriptContext.ENGINE_SCOPE);
   }
 
   @Override

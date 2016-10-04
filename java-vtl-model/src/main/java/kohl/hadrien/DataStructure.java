@@ -10,6 +10,7 @@ import java.util.Map;
  */
 public class DataStructure extends ForwardingMap<String, Class<? extends Component>> {
 
+
   ImmutableSet<String> names;
   Map<String, Class<? extends Component>> roles;
   Map<String, Class<? extends Object>> types;
@@ -22,6 +23,10 @@ public class DataStructure extends ForwardingMap<String, Class<? extends Compone
 
   private Map<String, Class<? extends Object>> convertToTypes(
       Map<String, Class<? extends Component>> roles) {
+    return null;
+  }
+
+  public Object wrap(String key, Object value) {
     return null;
   }
 

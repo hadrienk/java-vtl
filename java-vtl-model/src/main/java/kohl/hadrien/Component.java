@@ -11,12 +11,10 @@ import java.util.function.Supplier;
  */
 public abstract class Component<T> implements Supplier<T> {
 
-    private final T clazz;
-    private final DataStructure structure;
+    private final Class<T> clazz;
 
-    public Component(T clazz, DataStructure structure) {
+    public Component(Class<T> clazz) {
         this.clazz = checkNotNull(clazz);
-        this.structure = checkNotNull(structure);
     }
 
     protected abstract String name();

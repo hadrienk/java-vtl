@@ -5,8 +5,8 @@ package kohl.hadrien;
  */
 public abstract class MeasureIdentifier<T> extends Component<T> {
 
-    public MeasureIdentifier(T clazz) {
-        super(clazz, null);
+    public MeasureIdentifier(Class<T> clazz) {
+        super(clazz);
     }
 
     @Override
