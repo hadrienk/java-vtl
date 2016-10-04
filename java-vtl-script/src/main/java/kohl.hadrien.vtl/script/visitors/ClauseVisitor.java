@@ -23,7 +23,6 @@ package kohl.hadrien.vtl.script.visitors;
 import com.google.common.collect.ImmutableMap;
 import kohl.hadrien.*;
 import kohl.hadrien.vtl.script.RenameOperation;
-import org.antlr.v4.runtime.misc.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +47,7 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
     }
 
     @Override
-    public Function<Dataset, Dataset> visitRename(@NotNull VTLParser.RenameContext ctx) {
+    public Function<Dataset, Dataset> visitRenameClause(VTLParser.RenameClauseContext ctx) {
         List<VTLParser.RenameParamContext> parameters = ctx.renameParam();
 
         ImmutableMap.Builder<String, String> names = ImmutableMap.builder();

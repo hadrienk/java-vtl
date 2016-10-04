@@ -1,4 +1,4 @@
-package kohl.hadrien.antlr4;
+package imports;
 
 /*-
  * #%L
@@ -61,38 +61,35 @@ public class ClausesParserTest {
         String expectedTree;
         String actualTree;
 
-        String renameAsIdentifier = "[rename componentName as string role = IDENTIFIER]";
+        String renameAsIdentifier = "[rename varId as varId role = IDENTIFIER]";
         softly.assertThat(filterWhiteSpaces(parse(renameAsIdentifier)))
-                .isEqualTo(filterWhiteSpaces(""
-                        + "("
-                        + "  clause:1 ["
-                        + "             ("
-                        + "               rename:1 rename (renameParam:1(component:1componentName)as(string:1string)(role:1role=IDENTIFIER))"
-                        + "             )"
-                        + "           ]"
-                        + ")"));
+                .isEqualTo(filterWhiteSpaces("" +
+                        "(  " +
+                        "   clauseExpression:1 [ (" +
+                        "       clause:1 rename (" +
+                        "           renameParam:1(varID:1varId)as(varID:1varId)role=(role:1IDENTIFIER))" +
+                        "                       ) ]" +
+                        ")"));
 
-        String renameAsMeasure = "[rename componentName as string role = MEASURE]";
+        String renameAsMeasure = "[rename varId as varId role = MEASURE]";
         softly.assertThat(filterWhiteSpaces(parse(renameAsMeasure)))
-                .isEqualTo(filterWhiteSpaces(""
-                        + "("
-                        + "  clause:1 ["
-                        + "             ("
-                        + "               rename:1 rename (renameParam:1(component:1componentName)as(string:1string)(role:1role=MEASURE))"
-                        + "             )"
-                        + "           ]"
-                        + ")"));
+                .isEqualTo(filterWhiteSpaces("" +
+                        "(  " +
+                        "   clauseExpression:1 [ (" +
+                        "       clause:1 rename (" +
+                        "           renameParam:1(varID:1varId)as(varID:1varId)role=(role:1 MEASURE))" +
+                        "                       ) ]" +
+                        ")"));
 
-        String renameAsAttribute = "[rename componentName as string role = ATTRIBUTE]";
+        String renameAsAttribute = "[rename varId as varId role = ATTRIBUTE]";
         softly.assertThat(filterWhiteSpaces(parse(renameAsAttribute)))
-                .isEqualTo(filterWhiteSpaces(""
-                        + "("
-                        + "  clause:1 ["
-                        + "             ("
-                        + "               rename:1 rename (renameParam:1(component:1componentName)as(string:1string)(role:1role=ATTRIBUTE))"
-                        + "             )"
-                        + "           ]"
-                        + ")"));
+                .isEqualTo(filterWhiteSpaces("" +
+                        "(  " +
+                        "   clauseExpression:1 [ (" +
+                        "       clause:1 rename (" +
+                        "           renameParam:1(varID:1varId)as(varID:1varId)role=(role:1 ATTRIBUTE))" +
+                        "                       ) ]" +
+                        ")"));
 
         softly.assertAll();
     }
@@ -100,22 +97,20 @@ public class ClausesParserTest {
     @Test
     public void testMultipleRenames() throws Exception {
         String expression = "[rename "
-                + "componentName as string, "
-                + "componentName as string, "
-                + "componentName as string"
+                + "varId as varId, "
+                + "varId as varId, "
+                + "varId as varId"
                 + "]";
 
         String actualTree = parse(expression);
-        String expectedTree = ""
-                + "("
-                + "  clause:1 ["
-                + "             ("
-                + "               rename:1 rename (renameParam:1 (component:1 componentName) as (string:1 string)),"
-                + "                               (renameParam:1 (component:1 componentName) as (string:1 string)),"
-                + "                               (renameParam:1 (component:1 componentName) as (string:1 string))"
-                + "             )"
-                + "           ]"
-                + ")";
+        String expectedTree = "" +
+                "  (" +
+                "    clauseExpression:1[(" +
+                "      clause:1rename (renameParam:1(varID:1varId)as(varID:1varId))," +
+                "                     (renameParam:1(varID:1varId)as(varID:1varId))," +
+                "                     (renameParam:1(varID:1varId)as(varID:1varId))" +
+                "    )]" +
+                "  )";
         assertThat(filterWhiteSpaces(actualTree)).isEqualTo(
                 filterWhiteSpaces(expectedTree));
     }
@@ -124,25 +119,23 @@ public class ClausesParserTest {
     public void testMultipleRenamesWithRoles() throws Exception {
 
         String expression = "[rename "
-                + "componentName as string role = IDENTIFIER, "
-                + "componentName as string role = MEASURE, "
-                + "componentName as string role = ATTRIBUTE"
+                + "varId as varId role = IDENTIFIER, "
+                + "varId as varId role = MEASURE, "
+                + "varId as varId role = ATTRIBUTE"
                 + "]";
         assertThat(filterWhiteSpaces(parse(expression)))
-                .isEqualTo(filterWhiteSpaces(""
-                        + "("
-                        + "  clause:1 ["
-                        + "             ("
-                        + "               rename:1 rename (renameParam:1 (component:1 componentName) as (string:1 string) (role:1 role = IDENTIFIER)),"
-                        + "                               (renameParam:1 (component:1 componentName) as (string:1 string) (role:1 role = MEASURE)),"
-                        + "                               (renameParam:1 (component:1 componentName) as (string:1 string) (role:1 role = ATTRIBUTE))"
-                        + "             )"
-                        + "           ]"
-                        + ")"));
+                .isEqualTo(filterWhiteSpaces("" +
+                        "   (" +
+                        "       clauseExpression:1 [(" +
+                        "           clause:1 rename (renameParam:1(varID:1varId)as(varID:1varId)role=(role:1IDENTIFIER))," +
+                        "                           (renameParam:1(varID:1varId)as(varID:1varId)role=(role:1MEASURE))," +
+                        "                           (renameParam:1(varID:1varId)as(varID:1varId)role=(role:1ATTRIBUTE))" +
+                        "                           )]" +
+                        "   )"));
     }
 
     // TODO: Build a more robust way to test.
-    public String parse(String expression) {
+    private String parse(String expression) {
         LexerInterpreter lexerInterpreter = grammar.createLexerInterpreter(
                 new ANTLRInputStream(expression)
         );
@@ -150,7 +143,7 @@ public class ClausesParserTest {
                 new CommonTokenStream(lexerInterpreter)
         );
 
-        Rule clause = grammar.getRule("clause");
+        Rule clause = grammar.getRule("clauseExpression");
         parserInterpreter.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
         ParserRuleContext parse = parserInterpreter.parse(clause.index);
         return parse.toStringTree(parserInterpreter);

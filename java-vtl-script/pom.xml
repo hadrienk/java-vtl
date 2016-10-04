@@ -17,6 +17,7 @@
             <artifactId>java-vtl-model</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
         <dependency>
             <groupId>kohl.hadrien</groupId>
             <artifactId>java-vtl-parser</artifactId>

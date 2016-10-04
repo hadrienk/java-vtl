@@ -21,7 +21,7 @@ grammar Clauses;
 
 clauseExpression      : '[' clause ']' ;
 
-clause       : rename     #renameClause
+clause       : 'rename' renameParam (',' renameParam)*     #renameClause
              | filter     #filterClause
              | keep       #keepClause
              | calc       #calcClause
@@ -34,9 +34,7 @@ clause       : rename     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-rename      : 'rename' renameParam (',' renameParam )* ;
-renameParam : from=varID 'as' to=varID ( 'role' '=' role )?
-            ;
+renameParam : from=varID 'as' to=varID ( 'role' '=' role )? ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
