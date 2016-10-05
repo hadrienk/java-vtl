@@ -22,7 +22,6 @@ package kohl.hadrien.vtl.script;
 
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import kohl.hadrien.Component;
 import kohl.hadrien.DataStructure;
@@ -57,24 +56,20 @@ public class RenameOperation implements Function<Dataset, Dataset> {
     public Dataset apply(final Dataset dataset) {
 
         // Copy.
-        Map<String, Class<? extends Component>> oldDataStructure, newDataStructure;
-        oldDataStructure = Maps.newHashMap(dataset.getDataStructure());
-        newDataStructure = Maps.newHashMapWithExpectedSize(oldDataStructure.size());
+        Map<String, Class<? extends Component>> oldDataStructure = dataset.getDataStructure();
+        ImmutableMap.Builder<String, Class<? extends Component>> newDataStructure = ImmutableMap.builder();
 
         checkArgument(oldDataStructure.keySet().containsAll(names.keySet()),
                 "the dataset %s did not contain components with names %s", dataset,
                 Sets.difference(names.keySet(), oldDataStructure.keySet())
         );
 
-        for (String key : names.keySet()) {
-            String newName = names.get(key);
+        for (String oldName : dataset.getDataStructure().keySet()) {
+            String newName = names.getOrDefault(oldName, oldName);
             Class<? extends Component> newComponent;
-            newComponent = roles.getOrDefault(key, oldDataStructure.remove(key));
-
+            newComponent = roles.getOrDefault(newName, oldDataStructure.get(oldName));
             newDataStructure.put(newName, newComponent);
         }
-
-        newDataStructure.putAll(oldDataStructure);
 
         return new Dataset() {
             @Override
@@ -84,12 +79,12 @@ public class RenameOperation implements Function<Dataset, Dataset> {
 
             @Override
             public DataStructure getDataStructure() {
-                return new DataStructure(newDataStructure);
+                return new DataStructure(newDataStructure.build());
             }
 
             @Override
             public Stream<Tuple> get() {
-                return null;
+                return dataset.get();
             }
         };
     }
