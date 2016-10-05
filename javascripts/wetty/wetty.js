@@ -1,5 +1,5 @@
 var term;
-var socket = io("https://104.199.45.32", {path: '/wetty/socket.io'})
+var socket = io("https://vtl-console.ddns.net", {path: '/wetty/socket.io'})
 var buf = '';
 
 function Wetty(argv) {
