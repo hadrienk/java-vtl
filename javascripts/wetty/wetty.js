@@ -8,6 +8,27 @@ function Wetty(argv) {
     this.pid_ = -1;
 }
 
+var buffer = '';
+var gaDebounce = debounce(function() {
+  ga('send', 'event', 'console', 'send', buffer);
+  buffer = '';
+}, 250);
+
+function debounce(func, wait, immediate) {
+	var timeout;
+	return function() {
+		var context = this, args = arguments;
+		var later = function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		};
+		var callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) func.apply(context, args);
+	};
+};
+
 Wetty.prototype.run = function() {
     this.io = this.argv_.io.push();
 
@@ -18,6 +39,17 @@ Wetty.prototype.run = function() {
 
 Wetty.prototype.sendString_ = function(str) {
     socket.emit('input', str);
+    var code = str.charCodeAt(0);
+    if (code >= 32 && code < 127) {
+      buffer = buffer + str
+    } else {
+      if (code == 127) {
+        buffer = buffer.slice(0, -1);
+      }
+      if (code == 13) {
+        gaDebounce();
+      }
+    }
 };
 
 Wetty.prototype.onTerminalResize = function(col, row) {
