@@ -20,11 +20,11 @@ package kohl.hadrien;
  * #L%
  */
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.base.MoreObjects;
 
 import java.util.function.Supplier;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Component represent values of a dataset.
@@ -38,6 +38,10 @@ public abstract class Component<T> implements Supplier<T> {
     }
 
     protected abstract String name();
+
+    public Class<? extends T> componentType() {
+        return clazz;
+    }
 
     @Override
     public int hashCode() {

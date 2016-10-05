@@ -21,76 +21,109 @@ package kohl.hadrien.vtl.script;
  */
 
 import com.google.common.collect.ImmutableMap;
+import jline.TerminalFactory;
+import jline.console.ConsoleReader;
 import kohl.hadrien.*;
 import kohl.hadrien.vtl.script.connector.Connector;
 import kohl.hadrien.vtl.script.connector.ConnectorException;
+import org.antlr.v4.runtime.*;
 
-import javax.script.ScriptException;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+/**
+ * A VTL interpreter.
+ */
 public class Interpreter {
+
+    static VTLLexer lexer;
+    static VTLParser parser;
+    private static SyntaxErrorReporter reporter;
 
     public static void main(String... args) throws IOException {
 
         VTLScriptEngine vtlScriptEngine = new VTLScriptEngine(getFakeConnector());
 
+        String read;
+        ConsoleReader console = new ConsoleReader(
+                "Java VTL",
+                new FileInputStream(FileDescriptor.in),
+                new FileOutputStream(FileDescriptor.out),
+                TerminalFactory.create()
+        );
+        console.setPrompt("vtl> ");
+        console.setPaginationEnabled(true);
+        console.setBellEnabled(true);
 
-        try (
-                PrintStream output = System.out;
-                PrintStream error = System.err;
-                BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        ) {
+        PrintWriter output = new PrintWriter(console.getOutput());
+        PrintStream error = System.err;
 
-            output.print(">");
+        while ((read = console.readLine()) != null) {
 
-            String read;
-            while ((read = input.readLine()) != null) {
-                try {
-                    Object result = vtlScriptEngine.eval(read);
-                    if (result instanceof Dataset) {
-                        Dataset dataset = (Dataset) result;
-                        printDataset(output, dataset);
-                    }
-                    output.println(result);
-                    output.flush();
-                } catch (ScriptException e) {
-                    e.printStackTrace(error);
-                } finally {
-                    output.print(">");
+            if ("".equals(read))
+                continue;
+
+            if (!isStatementValid(read, output))
+                continue;
+
+            try {
+                Object result = vtlScriptEngine.eval(read);
+
+                if (result instanceof Dataset) {
+                    Dataset dataset = (Dataset) result;
+                    console.println(dataset.getDataStructure().entrySet().stream()
+                            .map(entry -> {
+                                String key = entry.getKey();
+                                String role = entry.getValue().getSimpleName();
+                                return String.format("%s[%s,%s]", key, role, "TODO");
+                            })
+                            .collect(Collectors.joining(","))
+                    );
+                    console.printColumns(dataset.stream().map(tuple ->
+                            tuple.stream()
+                                    .map(Supplier::get)
+                                    .map(Object::toString)
+                                    .collect(Collectors.joining(","))
+                    ).collect(Collectors.toList()));
                 }
-            }
 
-        } catch (Throwable t) {
-            t.printStackTrace();
+                output.println(result);
+                output.flush();
+            } catch (Throwable t) {
+                error.println(t.getMessage());
+            }
         }
 
     }
 
-    private static void printDataset(PrintStream output, Dataset dataset) {
-        // Quickly print stream for now.
-        for (Map.Entry<String, Class<? extends Component>> component : dataset
-                .getDataStructure().entrySet()) {
-            output.print(component.getKey());
-            output.print(component.getValue());
-            output.print(",");
+    private static boolean isStatementValid(String statement, PrintWriter output) {
+
+        lexer = new VTLLexer(new ANTLRInputStream(""));
+        parser = new VTLParser(new CommonTokenStream(lexer));
+        parser.removeErrorListeners();
+        reporter = new SyntaxErrorReporter(System.err);
+
+        parser.addErrorListener(reporter);
+
+        try {
+            parser.setInputStream(new ANTLRInputStream(statement));
+            parser.reset();
+            parser.statement();
+        } catch (Throwable t) {
+            // Ignore.
+        } finally {
+            lexer.reset();
+            parser.reset();
         }
-        output.println();
-        for (Dataset.Tuple tuple : (Iterable<Dataset.Tuple>) dataset.stream()::iterator) {
-            for (Component component : tuple) {
-                output.print(component.get());
-                output.print(",");
-            }
-            output.println();
-        }
+        return !reporter.hasFailed();
     }
 
     static Connector getFakeConnector() {
@@ -187,6 +220,30 @@ public class Interpreter {
                 return dataset;
             }
         };
+    }
+
+    static class SyntaxErrorReporter extends BaseErrorListener {
+
+        private final PrintStream error;
+        volatile boolean failed = false;
+
+        SyntaxErrorReporter(PrintStream error) {
+            this.error = checkNotNull(error);
+        }
+
+        @Override
+        public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+            failed = true;
+            error.printf("syntax error:(%d,%d) %s.\n", line, charPositionInLine, msg);
+        }
+
+        public boolean hasFailed() {
+            if (failed) {
+                failed = false;
+                return true;
+            }
+            return false;
+        }
     }
 
 }
