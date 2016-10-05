@@ -67,7 +67,7 @@ public class RenameOperation implements Function<Dataset, Dataset> {
         for (String oldName : dataset.getDataStructure().keySet()) {
             String newName = names.getOrDefault(oldName, oldName);
             Class<? extends Component> newComponent;
-            newComponent = roles.getOrDefault(newName, oldDataStructure.get(oldName));
+            newComponent = roles.getOrDefault(oldName, oldDataStructure.get(oldName));
             newDataStructure.put(newName, newComponent);
         }
 
