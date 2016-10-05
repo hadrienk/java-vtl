@@ -26,7 +26,7 @@ import jline.console.ConsoleReader;
 import kohl.hadrien.*;
 import kohl.hadrien.vtl.script.connector.Connector;
 import kohl.hadrien.vtl.script.connector.ConnectorException;
-import org.antlr.v4.runtime.*;
+import kohl.hadrien.vtl.script.interpreter.VTLValidator;
 
 import java.io.*;
 import java.util.Arrays;
@@ -37,96 +37,42 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * A VTL interpreter.
  */
-public class Interpreter {
+public class Interpreter implements Runnable {
 
-    static VTLLexer lexer;
-    static VTLParser parser;
-    private static SyntaxErrorReporter reporter;
+    private static final String MOTD = "" +
+            "Java VTL interpreter version " + Interpreter.class.getPackage().getImplementationVersion() + ".\n" +
+            "Type .help for command list.";
+
+    private final VTLValidator validator;
+    private final ConsoleReader console;
+    private final VTLScriptEngine vtlScriptEngine;
+
+    public Interpreter(String... args) throws IOException {
+
+        console = setupConsole();
+        vtlScriptEngine = setupEngine();
+        validator = new VTLValidator();
+
+    }
 
     public static void main(String... args) throws IOException {
 
-        VTLScriptEngine vtlScriptEngine = new VTLScriptEngine(getFakeConnector());
-
-        String read;
-        ConsoleReader console = new ConsoleReader(
-                "Java VTL",
-                new FileInputStream(FileDescriptor.in),
-                new FileOutputStream(FileDescriptor.out),
-                TerminalFactory.create()
-        );
-        console.setPrompt("vtl> ");
-        console.setPaginationEnabled(true);
-        console.setBellEnabled(true);
-
-        PrintWriter output = new PrintWriter(console.getOutput());
-        PrintStream error = System.err;
-
-        while ((read = console.readLine()) != null) {
-
-            if ("".equals(read))
-                continue;
-
-            if (!isStatementValid(read, output))
-                continue;
-
-            try {
-                Object result = vtlScriptEngine.eval(read);
-
-                if (result instanceof Dataset) {
-                    Dataset dataset = (Dataset) result;
-                    console.println(dataset.getDataStructure().entrySet().stream()
-                            .map(entry -> {
-                                String key = entry.getKey();
-                                String role = entry.getValue().getSimpleName();
-                                return String.format("%s[%s,%s]", key, role, "TODO");
-                            })
-                            .collect(Collectors.joining(","))
-                    );
-                    console.printColumns(dataset.stream().map(tuple ->
-                            tuple.stream()
-                                    .map(Supplier::get)
-                                    .map(Object::toString)
-                                    .collect(Collectors.joining(","))
-                    ).collect(Collectors.toList()));
-                }
-
-                output.println(result);
-                output.flush();
-            } catch (Throwable t) {
-                error.println(t.getMessage());
-            }
-        }
-
-    }
-
-    private static boolean isStatementValid(String statement, PrintWriter output) {
-
-        lexer = new VTLLexer(new ANTLRInputStream(""));
-        parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.removeErrorListeners();
-        reporter = new SyntaxErrorReporter(System.err);
-
-        parser.addErrorListener(reporter);
+        Interpreter interpreter = new Interpreter();
+        Thread thread = new Thread(interpreter);
 
         try {
-            parser.setInputStream(new ANTLRInputStream(statement));
-            parser.reset();
-            parser.statement();
+            thread.start();
+            thread.join();
         } catch (Throwable t) {
-            // Ignore.
-        } finally {
-            lexer.reset();
-            parser.reset();
+            thread.interrupt();
         }
-        return !reporter.hasFailed();
+
     }
 
-    static Connector getFakeConnector() {
+    private static Connector getFakeConnector() {
 
         DataStructure dataStructure = new DataStructure(ImmutableMap.of(
                 "id", Identifier.class,
@@ -222,28 +168,112 @@ public class Interpreter {
         };
     }
 
-    static class SyntaxErrorReporter extends BaseErrorListener {
+    private VTLScriptEngine setupEngine() {
+        return new VTLScriptEngine(getFakeConnector());
+    }
 
-        private final PrintStream error;
-        volatile boolean failed = false;
+    private ConsoleReader setupConsole() throws IOException {
+        ConsoleReader console;
+        console = new ConsoleReader(
+                "Java VTL",
+                new FileInputStream(FileDescriptor.in),
+                new FileOutputStream(FileDescriptor.out),
+                TerminalFactory.create()
+        );
 
-        SyntaxErrorReporter(PrintStream error) {
-            this.error = checkNotNull(error);
-        }
+        console.setPrompt("vtl> ");
+        return console;
+    }
 
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-            failed = true;
-            error.printf("syntax error:(%d,%d) %s.\n", line, charPositionInLine, msg);
-        }
+    @Override
+    public void run() {
+        try {
+            console.println(MOTD);
 
-        public boolean hasFailed() {
-            if (failed) {
-                failed = false;
-                return true;
+            repl();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                console.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            return false;
         }
+    }
+
+    private void repl() throws IOException {
+
+        PrintWriter output = new PrintWriter(console.getOutput());
+        PrintStream error = System.err;
+        String read;
+        while ((read = console.readLine()) != null) {
+
+            if ("".equals(read))
+                continue;
+
+            // Commands.
+            if (read.trim().startsWith(".")) {
+                if (!executeCommand(read.trim()))
+                    break;
+                continue;
+            }
+
+
+            if (!validator.isValidStatement(read)) {
+                validator.getErrors().forEach(error::println);
+                continue;
+            }
+
+            try {
+                Object result = vtlScriptEngine.eval(read);
+
+                if (result instanceof Dataset)
+                    printDataset((Dataset) result);
+
+                output.println(result);
+                output.flush();
+            } catch (Throwable t) {
+                error.println(t.getMessage());
+            }
+        }
+        console.flush();
+    }
+
+    private boolean executeCommand(String command) throws IOException {
+        if (command.startsWith(".help"))
+            return printHelp();
+
+        if (command.startsWith(".exit") || command.startsWith(".quit"))
+            return false;
+
+        console.println("Unknown command" + command);
+        return true;
+
+    }
+
+    private boolean printHelp() throws IOException {
+        console.println(".quit");
+        console.println(".exit");
+        console.println(".show datasetExpression");
+        return true;
+    }
+
+    private void printDataset(Dataset dataset) throws IOException {
+        console.println(dataset.getDataStructure().entrySet().stream()
+                .map(entry -> {
+                    String key = entry.getKey();
+                    String role = entry.getValue().getSimpleName();
+                    return String.format("%s[%s,%s]", key, role, "TODO");
+                })
+                .collect(Collectors.joining(","))
+        );
+        console.printColumns(dataset.stream().map(tuple ->
+                tuple.stream()
+                        .map(Supplier::get)
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","))
+        ).collect(Collectors.toList()));
     }
 
 }
