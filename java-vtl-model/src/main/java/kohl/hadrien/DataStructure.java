@@ -46,7 +46,7 @@ public class DataStructure extends ForwardingMap<String, Class<? extends Compone
     return null;
   }
 
-  public Object wrap(String key, Object value) {
+  public Component wrap(String key, Object value) {
     return null;
   }
 

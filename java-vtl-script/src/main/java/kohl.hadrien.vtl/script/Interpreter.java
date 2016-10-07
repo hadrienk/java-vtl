@@ -117,10 +117,20 @@ public class Interpreter {
 
                         return IntStream.rangeClosed(1, 100).boxed()
                                 .map(integer -> {
-                                    Identifier<Integer> identifier = new Identifier<Integer>(Integer.class) {
+                                    Identifier<Integer> identifier = new Identifier<Integer>() {
                                         @Override
-                                        protected String name() {
+                                        public String name() {
                                             return "id";
+                                        }
+
+                                        @Override
+                                        public Class<?> type() {
+                                            return Integer.class;
+                                        }
+
+                                        @Override
+                                        public Class<? extends Component<Integer>> role() {
+                                            return this.getClass();
                                         }
 
                                         @Override
@@ -129,10 +139,20 @@ public class Interpreter {
                                         }
                                     };
 
-                                    Measure<String> measure = new Measure<String>(String.class) {
+                                    Measure<String> measure = new Measure<String>() {
                                         @Override
-                                        protected String name() {
+                                        public String name() {
                                             return "measure";
+                                        }
+
+                                        @Override
+                                        public Class<?> type() {
+                                            return String.class;
+                                        }
+
+                                        @Override
+                                        public Class<? extends Component<String>> role() {
+                                            return this.getClass();
                                         }
 
                                         @Override
@@ -141,10 +161,20 @@ public class Interpreter {
                                         }
                                     };
 
-                                    Attribute<String> attribute = new Attribute<String>(String.class) {
+                                    Attribute<String> attribute = new Attribute<String>() {
                                         @Override
-                                        protected String name() {
+                                        public String name() {
                                             return "attribute";
+                                        }
+
+                                        @Override
+                                        public Class<?> type() {
+                                            return String.class;
+                                        }
+
+                                        @Override
+                                        public Class<? extends Component<String>> role() {
+                                            return this.getClass();
                                         }
 
                                         @Override
