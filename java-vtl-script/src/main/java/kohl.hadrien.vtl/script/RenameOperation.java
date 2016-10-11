@@ -20,17 +20,17 @@ package kohl.hadrien.vtl.script;
  * #L%
  */
 
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import kohl.hadrien.Component;
 import kohl.hadrien.DataStructure;
 import kohl.hadrien.Dataset;
 import kohl.hadrien.Identifier;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -55,21 +55,52 @@ public class RenameOperation implements Function<Dataset, Dataset> {
     @Override
     public Dataset apply(final Dataset dataset) {
 
-        // Copy.
-        Map<String, Class<? extends Component>> oldDataStructure = dataset.getDataStructure();
-        ImmutableMap.Builder<String, Class<? extends Component>> newDataStructure = ImmutableMap.builder();
-
-        checkArgument(oldDataStructure.keySet().containsAll(names.keySet()),
-                "the dataset %s did not contain components with names %s", dataset,
-                Sets.difference(names.keySet(), oldDataStructure.keySet())
+        Set<String> oldNames = dataset.getDataStructure().names();
+        checkArgument(oldNames.containsAll(names.keySet()),
+                "the data set %s did not contain components with names %s", dataset,
+                Sets.difference(names.keySet(), oldNames)
         );
 
-        for (String oldName : dataset.getDataStructure().keySet()) {
+        // Copy.
+        final Map<String, Class<? extends Component>> oldRoles, newRoles;
+        oldRoles = dataset.getDataStructure().roles();
+        newRoles = Maps.newHashMap();
+
+        final Map<String, Class<?>> oldTypes, newTypes;
+        oldTypes = dataset.getDataStructure().types();
+        newTypes = Maps.newHashMap();
+
+        final Map<String, String> mapping = HashBiMap.create();
+
+        for (String oldName : oldNames) {
             String newName = names.getOrDefault(oldName, oldName);
-            Class<? extends Component> newComponent;
-            newComponent = roles.getOrDefault(oldName, oldDataStructure.get(oldName));
-            newDataStructure.put(newName, newComponent);
+            newTypes.put(newName, oldTypes.get(oldName));
+            newRoles.put(newName, roles.getOrDefault(oldName, oldRoles.get(oldName)));
+            mapping.put(oldName, newName);
         }
+
+        final DataStructure renamedStructure = new DataStructure() {
+
+            @Override
+            public BiFunction<String, Object, Component> converter() {
+                return dataset.getDataStructure().converter();
+            }
+
+            @Override
+            public Map<String, Class<? extends Component>> roles() {
+                return Collections.unmodifiableMap(newRoles);
+            }
+
+            @Override
+            public Map<String, Class<?>> types() {
+                return Collections.unmodifiableMap(newTypes);
+            }
+
+            @Override
+            public Set<String> names() {
+                return Collections.unmodifiableSet(Sets.newHashSet(types().keySet()));
+            }
+        };
 
         return new Dataset() {
             @Override
@@ -79,12 +110,42 @@ public class RenameOperation implements Function<Dataset, Dataset> {
 
             @Override
             public DataStructure getDataStructure() {
-                return new DataStructure(newDataStructure.build());
+                return renamedStructure;
             }
 
             @Override
             public Stream<Tuple> get() {
-                return dataset.get();
+                return dataset.get().map(components -> {
+
+                    components.replaceAll(component -> new Component() {
+
+                        @Override
+                        public Object get() {
+                            return component.get();
+                        }
+
+                        @Override
+                        public String name() {
+                            return mapping.get(component.name());
+                        }
+
+                        @Override
+                        public Class<?> type() {
+                            return newTypes.get(name());
+                        }
+
+                        @Override
+                        public Class<? extends Component> role() {
+                            return newRoles.get(name());
+                        }
+
+                        @Override
+                        public String toString() {
+                            return get().toString();
+                        }
+                    });
+                    return components;
+                });
             }
         };
     }

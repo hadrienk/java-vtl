@@ -21,6 +21,7 @@ package kohl.hadrien.vtl.script;
  */
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import kohl.hadrien.*;
 import kohl.hadrien.vtl.script.connector.Connector;
 import kohl.hadrien.vtl.script.connector.ConnectorException;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -77,11 +79,13 @@ public class Interpreter {
 
     private static void printDataset(PrintStream output, Dataset dataset) {
         // Quickly print stream for now.
-        for (Map.Entry<String, Class<? extends Component>> component : dataset
-                .getDataStructure().entrySet()) {
-            output.print(component.getKey());
-            output.print(component.getValue());
+        for (String name : dataset.getDataStructure().names()) {
+            output.print(name);
+            output.print("[");
+            output.print(dataset.getDataStructure().roles().get(name));
             output.print(",");
+            output.print(dataset.getDataStructure().types().get(name));
+            output.print("]");
         }
         output.println();
         for (Dataset.Tuple tuple : (Iterable<Dataset.Tuple>) dataset.stream()::iterator) {
@@ -95,11 +99,36 @@ public class Interpreter {
 
     static Connector getFakeConnector() {
 
-        DataStructure dataStructure = new DataStructure(ImmutableMap.of(
-                "id", Identifier.class,
-                "measure", Measure.class,
-                "attribute", Attribute.class
-        ));
+        DataStructure dataStructure = new DataStructure() {
+
+            @Override
+            public BiFunction<String, Object, Component> converter() {
+                return null;
+            }
+
+            @Override
+            public Map<String, Class<? extends Component>> roles() {
+                return ImmutableMap.of(
+                        "id", Identifier.class,
+                        "measure", Measure.class,
+                        "attribute", Attribute.class
+                );
+            }
+
+            @Override
+            public Map<String, Class<?>> types() {
+                return ImmutableMap.of(
+                        "id", String.class,
+                        "measure", String.class,
+                        "attribute", String.class
+                );
+            }
+
+            @Override
+            public Set<String> names() {
+                return ImmutableSet.of("id", "measure", "attribute");
+            }
+        };
 
         return new Connector() {
 
@@ -183,19 +212,10 @@ public class Interpreter {
                                         }
                                     };
 
-                                    return new AbstractTuple() {
+                                    return Tuple.create(Arrays.asList(
+                                            identifier, measure, attribute
+                                    ));
 
-
-                                        @Override
-                                        public List<Identifier> ids() {
-                                            return Arrays.asList(identifier);
-                                        }
-
-                                        @Override
-                                        public List<Component> values() {
-                                            return Arrays.asList(measure, attribute);
-                                        }
-                                    };
                                 });
                     }
 

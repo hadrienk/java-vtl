@@ -20,19 +20,14 @@ package kohl.hadrien;
  * #L%
  */
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.codepoetics.protonpack.Streamable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingList;
 
-import com.codepoetics.protonpack.Streamable;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import java.util.AbstractList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.RandomAccess;
-import java.util.Set;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A data structure that allows relational operations.
@@ -49,6 +44,15 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
     interface Tuple extends List<Component>, Comparable<Tuple> {
 
+        static Tuple create(List<Component> components) {
+            return new AbstractTuple() {
+                @Override
+                protected List<Component> delegate() {
+                    return components;
+                }
+            };
+        }
+
         List<Identifier> ids();
 
         List<Component> values();
@@ -60,8 +64,107 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
     abstract class AbstractTuple extends ForwardingList<Component> implements Tuple {
 
         @Override
-        protected List<Component> delegate() {
-            return new CombinedList<>(ids(), values());
+        public List<Identifier> ids() {
+            return stream()
+                    .filter(component -> component.role().isAssignableFrom(Identifier.class))
+                    .map(component -> new Identifier() {
+                        @Override
+                        public String name() {
+                            return component.name();
+                        }
+
+                        @Override
+                        public Class<?> type() {
+                            return component.type();
+                        }
+
+                        @Override
+                        public Class<? extends Component> role() {
+                            return component.role();
+                        }
+
+                        @Override
+                        public Object get() {
+                            return component.get();
+                        }
+
+                        @Override
+                        public String toString() {
+                            return MoreObjects.toStringHelper(role())
+                                    .add("name", name())
+                                    .addValue(get()).toString();
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Component> values() {
+            return stream()
+                    .filter(component -> !component.role().isAssignableFrom(Identifier.class))
+                    .map(component -> {
+                        // TODO
+                        if (component.role().isAssignableFrom(Measure.class)) {
+                            return new Measure() {
+                                @Override
+                                public String name() {
+                                    return component.name();
+                                }
+
+                                @Override
+                                public Class<?> type() {
+                                    return component.type();
+                                }
+
+                                @Override
+                                public Class<? extends Component> role() {
+                                    return component.role();
+                                }
+
+                                @Override
+                                public Object get() {
+                                    return component.get();
+                                }
+
+                                @Override
+                                public String toString() {
+                                    return MoreObjects.toStringHelper(role())
+                                            .add("name", name())
+                                            .addValue(get()).toString();
+                                }
+                            };
+                        } else {
+                            return new Attribute() {
+                                @Override
+                                public String name() {
+                                    return component.name();
+                                }
+
+                                @Override
+                                public Class<?> type() {
+                                    return component.type();
+                                }
+
+                                @Override
+                                public Class<? extends Component> role() {
+                                    return component.role();
+                                }
+
+                                @Override
+                                public Object get() {
+                                    return component.get();
+                                }
+
+                                @Override
+                                public String toString() {
+                                    return MoreObjects.toStringHelper(role())
+                                            .add("name", name())
+                                            .addValue(get()).toString();
+                                }
+                            };
+                        }
+                    })
+                    .collect(Collectors.toList());
         }
 
         @Override
@@ -80,7 +183,7 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(AbstractTuple.class)
+            return MoreObjects.toStringHelper(Tuple.class)
                     .add("id", ids())
                     .add("values", values())
                     .toString();
@@ -103,25 +206,22 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
         @Override
         public Tuple combine(Tuple tuple) {
             return new AbstractTuple() {
-                @Override
-                public List<Identifier> ids() {
-                    return AbstractTuple.this.ids();
-                }
 
                 @Override
-                public List<Component> values() {
-                    return new CombinedList<>(AbstractTuple.this.values(), tuple.values());
+                protected List<Component> delegate() {
+                    return new CombinedList<>(this, tuple.values());
                 }
+
             };
         }
     }
 
-    class CombinedList<T> extends AbstractList<T> implements RandomAccess {
+    class CombinedList<T, A extends T, B extends T> extends AbstractList<T> implements RandomAccess {
 
-        final List<? extends T> a;
-        final List<? extends T> b;
+        final List<A> a;
+        final List<B> b;
 
-        public CombinedList(List<? extends T> a, List<? extends T> b) {
+        public CombinedList(List<A> a, List<B> b) {
             this.a = checkNotNull(a);
             this.b = checkNotNull(b);
         }
@@ -136,6 +236,13 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
             if (index < a.size())
                 return a.get(index);
             return b.get(index - a.size());
+        }
+
+        @Override
+        public T set(int index, T element) {
+            if (index < a.size())
+                return a.set(index, (A) element);
+            return b.set(index - a.size(), (B) element);
         }
     }
 
