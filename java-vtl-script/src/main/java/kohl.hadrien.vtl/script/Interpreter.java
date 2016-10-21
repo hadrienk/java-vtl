@@ -27,7 +27,9 @@ import kohl.hadrien.*;
 import kohl.hadrien.vtl.script.connector.Connector;
 import kohl.hadrien.vtl.script.connector.ConnectorException;
 import kohl.hadrien.vtl.script.interpreter.VTLValidator;
+import org.fusesource.jansi.AnsiConsole;
 
+import javax.script.ScriptException;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
@@ -182,6 +184,7 @@ public class Interpreter implements Runnable {
         );
 
         console.setPrompt("vtl> ");
+
         return console;
     }
 
@@ -221,7 +224,9 @@ public class Interpreter implements Runnable {
 
 
             if (!validator.isValidStatement(read)) {
-                validator.getErrors().forEach(error::println);
+                AnsiConsole.systemInstall();
+                console.getOutput().write(validator.getError());
+                AnsiConsole.systemUninstall();
                 continue;
             }
 
@@ -233,8 +238,8 @@ public class Interpreter implements Runnable {
 
                 output.println(result);
                 output.flush();
-            } catch (Throwable t) {
-                error.println(t.getMessage());
+            } catch (ScriptException se) {
+                error.println(se.getMessage());
             }
         }
         console.flush();
