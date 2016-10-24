@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.operators;
+package kohl.hadrien.vtl.script.operations;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -15,17 +15,17 @@ import static java.util.Arrays.asList;
 /**
  * Union operator
  */
-public class UnionOperator implements Supplier<Dataset> {
+public class UnionOperation implements Supplier<Dataset> {
 
     private final DataStructure dataStructure;
     private final List<Dataset> datasets;
     private Set<Map.Entry<String, Class<? extends Component>>> requiredRoles;
 
-    public UnionOperator(Dataset... dataset) {
+    public UnionOperation(Dataset... dataset) {
         this(asList(dataset));
     }
 
-    public UnionOperator(List<Dataset> datasets) {
+    public UnionOperation(List<Dataset> datasets) {
         checkArgument(
                 !checkNotNull(datasets, "the dataset list was null").isEmpty(),
                 "the dataset list was empty"

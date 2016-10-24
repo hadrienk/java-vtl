@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script;
+package kohl.hadrien.vtl.script.operations;
 
 /*-
  * #%L

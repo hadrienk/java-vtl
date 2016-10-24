@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.operators;
+package kohl.hadrien.vtl.script.operations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kohl.hadrien.*;
@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class UnionOperatorTest {
+public class UnionOperationTest {
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -23,7 +23,7 @@ public class UnionOperatorTest {
         Dataset dataset = mock(Dataset.class);
         when(dataset.get()).thenReturn(Stream.empty());
 
-        UnionOperator operator = new UnionOperator(dataset);
+        UnionOperation operator = new UnionOperation(dataset);
 
         assertThat(operator.get().get())
                 .as("Check that result of union operation", null)
@@ -52,8 +52,8 @@ public class UnionOperatorTest {
             when(dataset2.getDataStructure()).thenReturn(dataStructure);
             when(dataset3.getDataStructure()).thenReturn(dataStructure);
 
-            UnionOperator unionOperator = new UnionOperator(dataset1, dataset2, dataset3);
-            softly.assertThat(unionOperator).isNotNull();
+            UnionOperation unionOperation = new UnionOperation(dataset1, dataset2, dataset3);
+            softly.assertThat(unionOperation).isNotNull();
 
             DataStructure wrongStructure = DataStructure.of(mapper::convertValue,
                     "TIME2", Identifier.class, String.class,
@@ -65,7 +65,7 @@ public class UnionOperatorTest {
             when(wrongDataset.getDataStructure()).thenReturn(wrongStructure);
             Throwable expextedEx = null;
             try {
-                new UnionOperator(dataset1, wrongDataset, dataset2, dataset3);
+                new UnionOperation(dataset1, wrongDataset, dataset2, dataset3);
             } catch (Throwable t) {
                 expextedEx = t;
             }
@@ -140,9 +140,9 @@ public class UnionOperatorTest {
                 )
         ));
 
-        UnionOperator unionOperator = new UnionOperator(totalPopulation1, totalPopulation2);
+        UnionOperation unionOperation = new UnionOperation(totalPopulation1, totalPopulation2);
 
-        Dataset resultDataset = unionOperator.get();
+        Dataset resultDataset = unionOperation.get();
         assertThat(resultDataset).isNotNull();
 
         Stream<Dataset.Tuple> stream = resultDataset.stream();
@@ -262,9 +262,9 @@ public class UnionOperatorTest {
                 )
         ));
 
-        UnionOperator unionOperator = new UnionOperator(totalPopulation1, totalPopulation2);
+        UnionOperation unionOperation = new UnionOperation(totalPopulation1, totalPopulation2);
 
-        Dataset resultDataset = unionOperator.get();
+        Dataset resultDataset = unionOperation.get();
         assertThat(resultDataset).isNotNull();
 
         Stream<Dataset.Tuple> stream = resultDataset.stream();
