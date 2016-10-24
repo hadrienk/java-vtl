@@ -82,7 +82,7 @@ public class RenameOperation implements Function<Dataset, Dataset> {
         final DataStructure renamedStructure = new DataStructure() {
 
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return dataset.getDataStructure().converter();
             }
 

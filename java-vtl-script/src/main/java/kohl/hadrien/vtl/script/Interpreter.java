@@ -102,7 +102,7 @@ public class Interpreter {
         DataStructure dataStructure = new DataStructure() {
 
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return null;
             }
 

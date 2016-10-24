@@ -134,7 +134,7 @@ public class RenameOperationTest {
 
         when(dataset.getDataStructure()).thenReturn(new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return null;
             }
 

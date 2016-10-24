@@ -40,11 +40,11 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -68,12 +68,12 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1,
                                    String name2, Class<? extends Component> role2, Class<?> type2) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -97,13 +97,13 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1,
                                    String name2, Class<? extends Component> role2, Class<?> type2,
                                    String name3, Class<? extends Component> role3, Class<?> type3) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -127,14 +127,14 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1,
                                    String name2, Class<? extends Component> role2, Class<?> type2,
                                    String name3, Class<? extends Component> role3, Class<?> type3,
                                    String name4, Class<? extends Component> role4, Class<?> type4) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -155,15 +155,38 @@ public abstract class DataStructure {
         };
     }
 
-    public abstract BiFunction<String, Object, Component> converter();
+
+    public abstract BiFunction<Object, Class<?>, ?> converter();
+
+    public Component wrap(String name, Object value) {
+        return new Component() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public Class<?> type() {
+                return types().get(name);
+            }
+
+            @Override
+            public Class<? extends Component> role() {
+                return roles().get(name);
+            }
+
+            @Override
+            public Object get() {
+                return converter().apply(value, type());
+            }
+        };
+    }
 
     public Dataset.Tuple wrap(Map<String, Object> objects) {
 
         List<Component> components = Lists.newArrayList();
-        for (Map.Entry<String, Object> entry : objects.entrySet()) {
-            Component component = converter().apply(entry.getKey(), entry.getValue());
-            components.add(component);
-        }
+        for (Map.Entry<String, Object> entry : objects.entrySet())
+            components.add(wrap(entry.getKey(), entry.getValue()));
 
         return Dataset.Tuple.create(components);
 
@@ -186,7 +209,7 @@ public abstract class DataStructure {
         protected abstract DataStructure delegate();
 
         @Override
-        public BiFunction<String, Object, Component> converter() {
+        public BiFunction<Object, Class<?>, ?> converter() {
             return delegate().converter();
         }
 
