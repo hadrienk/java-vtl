@@ -159,7 +159,7 @@ public abstract class DataStructure {
     public abstract BiFunction<Object, Class<?>, ?> converter();
 
     public Component wrap(String name, Object value) {
-        return new Component() {
+        return new AbstractComponent() {
             @Override
             public String name() {
                 return name;
