@@ -20,24 +20,5 @@ package kohl.hadrien;
  * #L%
  */
 
-public abstract class Attribute<T> extends Component<T> {
-
-    public Attribute(Class<T> clazz) {
-        super(clazz);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return super.equals(other);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
-    }
+public interface Attribute<T> extends Component<T> {
 }

@@ -21,6 +21,8 @@ package kohl.hadrien.vtl.script;
  */
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import kohl.hadrien.*;
@@ -29,13 +31,13 @@ import kohl.hadrien.vtl.script.connector.ConnectorException;
 import kohl.hadrien.vtl.script.interpreter.VTLValidator;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static java.lang.String.format;
 
 /**
  * A VTL interpreter.
@@ -72,13 +74,58 @@ public class Interpreter implements Runnable {
 
     }
 
-    private static Connector getFakeConnector() {
+    private static void printDataset(PrintStream output, Dataset dataset) {
+        // Quickly print stream for now.
+        for (String name : dataset.getDataStructure().names()) {
+            output.print(name);
+            output.print("[");
+            output.print(dataset.getDataStructure().roles().get(name));
+            output.print(",");
+            output.print(dataset.getDataStructure().types().get(name));
+            output.print("]");
+        }
+        output.println();
+        for (Dataset.Tuple tuple : (Iterable<Dataset.Tuple>) dataset.stream()::iterator) {
+            for (Component component : tuple) {
+                output.print(component.get());
+                output.print(",");
+            }
+            output.println();
+        }
+    }
 
-        DataStructure dataStructure = new DataStructure(ImmutableMap.of(
-                "id", Identifier.class,
-                "measure", Measure.class,
-                "attribute", Attribute.class
-        ));
+    static Connector getFakeConnector() {
+
+        DataStructure dataStructure = new DataStructure() {
+
+            @Override
+            public BiFunction<String, Object, Component> converter() {
+                return null;
+            }
+
+            @Override
+            public Map<String, Class<? extends Component>> roles() {
+                return ImmutableMap.of(
+                        "id", Identifier.class,
+                        "measure", Measure.class,
+                        "attribute", Attribute.class
+                );
+            }
+
+            @Override
+            public Map<String, Class<?>> types() {
+                return ImmutableMap.of(
+                        "id", String.class,
+                        "measure", String.class,
+                        "attribute", String.class
+                );
+            }
+
+            @Override
+            public Set<String> names() {
+                return ImmutableSet.of("id", "measure", "attribute");
+            }
+        };
 
         return new Connector() {
 
@@ -96,10 +143,20 @@ public class Interpreter implements Runnable {
 
                         return IntStream.rangeClosed(1, 100).boxed()
                                 .map(integer -> {
-                                    Identifier<Integer> identifier = new Identifier<Integer>(Integer.class) {
+                                    Identifier<Integer> identifier = new Identifier<Integer>() {
                                         @Override
-                                        protected String name() {
+                                        public String name() {
                                             return "id";
+                                        }
+
+                                        @Override
+                                        public Class<?> type() {
+                                            return Integer.class;
+                                        }
+
+                                        @Override
+                                        public Class<? extends Component<Integer>> role() {
+                                            return this.getClass();
                                         }
 
                                         @Override
@@ -108,10 +165,20 @@ public class Interpreter implements Runnable {
                                         }
                                     };
 
-                                    Measure<String> measure = new Measure<String>(String.class) {
+                                    Measure<String> measure = new Measure<String>() {
                                         @Override
-                                        protected String name() {
+                                        public String name() {
                                             return "measure";
+                                        }
+
+                                        @Override
+                                        public Class<?> type() {
+                                            return String.class;
+                                        }
+
+                                        @Override
+                                        public Class<? extends Component<String>> role() {
+                                            return this.getClass();
                                         }
 
                                         @Override
@@ -120,10 +187,20 @@ public class Interpreter implements Runnable {
                                         }
                                     };
 
-                                    Attribute<String> attribute = new Attribute<String>(String.class) {
+                                    Attribute<String> attribute = new Attribute<String>() {
                                         @Override
-                                        protected String name() {
+                                        public String name() {
                                             return "attribute";
+                                        }
+
+                                        @Override
+                                        public Class<?> type() {
+                                            return String.class;
+                                        }
+
+                                        @Override
+                                        public Class<? extends Component<String>> role() {
+                                            return this.getClass();
                                         }
 
                                         @Override
@@ -132,19 +209,10 @@ public class Interpreter implements Runnable {
                                         }
                                     };
 
-                                    return new AbstractTuple() {
+                                    return Tuple.create(Arrays.asList(
+                                            identifier, measure, attribute
+                                    ));
 
-
-                                        @Override
-                                        public List<Identifier> ids() {
-                                            return Arrays.asList(identifier);
-                                        }
-
-                                        @Override
-                                        public List<Component> values() {
-                                            return Arrays.asList(measure, attribute);
-                                        }
-                                    };
                                 });
                     }
 
@@ -260,20 +328,28 @@ public class Interpreter implements Runnable {
     }
 
     private void printDataset(Dataset dataset) throws IOException {
-        console.println(dataset.getDataStructure().entrySet().stream()
-                .map(entry -> {
-                    String key = entry.getKey();
-                    String role = entry.getValue().getSimpleName();
-                    return String.format("%s[%s,%s]", key, role, "TODO");
-                })
-                .collect(Collectors.joining(","))
-        );
-        console.printColumns(dataset.stream().map(tuple ->
-                tuple.stream()
-                        .map(Supplier::get)
-                        .map(Object::toString)
-                        .collect(Collectors.joining(","))
-        ).collect(Collectors.toList()));
+        Map<String, Class<? extends Component>> roles = dataset.getDataStructure().roles();
+        Map<String, Class<?>> types = dataset.getDataStructure().types();
+
+        // Header
+        List<String> columns = Lists.newArrayList();
+        for (String name : dataset.getDataStructure().names())
+            columns.add(format("%s[%s,%s]", name, roles.get(name).getSimpleName(), types.get(name).getSimpleName()));
+        console.println(columns.stream().collect(Collectors.joining(",")));
+
+        // Rows
+        Iterator<Dataset.Tuple> iterator = dataset.stream().iterator();
+        while (iterator.hasNext()) {
+            columns.clear();
+            Dataset.Tuple row = iterator.next();
+            Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
+                    Component::name, Component::get
+            ));
+            for (String name : dataset.getDataStructure().names())
+                columns.add(asMap.get(name).toString());
+
+            console.println(columns.stream().collect(Collectors.joining(",")));
+        }
     }
 
 }

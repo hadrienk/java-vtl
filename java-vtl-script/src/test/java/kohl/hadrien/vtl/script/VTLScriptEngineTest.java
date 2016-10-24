@@ -20,7 +20,6 @@ package kohl.hadrien.vtl.script;
  * #L%
  */
 
-import com.google.common.collect.ImmutableMap;
 import kohl.hadrien.*;
 import kohl.hadrien.vtl.script.connector.Connector;
 import org.junit.Test;
@@ -81,11 +80,11 @@ public class VTLScriptEngineTest {
     public void testRename() throws Exception {
 
         when(dataset.getDataStructure()).thenReturn(
-                new DataStructure(ImmutableMap.<String, Class<? extends Component>>builder()
-                        .put("id1", Identifier.class)
-                        .put("me1", Measure.class)
-                        .put("at1", Attribute.class)
-                        .build())
+                DataStructure.of((s, o) -> null,
+                        "id1", Identifier.class, String.class,
+                        "me1", Measure.class, String.class,
+                        "at1", Attribute.class, String.class
+                )
         );
 
         bindings.put("ds1", dataset);
@@ -98,7 +97,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("ds2");
         Dataset result = (Dataset) bindings.get("ds2");
 
-        assertThat(result.getDataStructure()).contains(
+        assertThat(result.getDataStructure().roles()).contains(
                 entry("id1m", Measure.class),
                 entry("me1a", Attribute.class),
                 entry("at1i", Identifier.class)

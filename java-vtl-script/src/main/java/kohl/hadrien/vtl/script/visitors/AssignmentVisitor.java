@@ -53,6 +53,14 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
+    public Dataset visitStart(VTLParser.StartContext ctx) {
+        for (VTLParser.StatementContext statement : ctx.statement()) {
+
+        }
+        return super.visitStart(ctx);
+    }
+
+    @Override
     public Dataset visitStatement(@NotNull VTLParser.StatementContext ctx) {
         String name = ctx.variableRef().getText();
         Dataset dataset = visit(ctx.datasetExpression());

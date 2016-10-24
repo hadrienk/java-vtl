@@ -22,17 +22,18 @@ package kohl.hadrien.vtl.script;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import kohl.hadrien.Dataset;
 import kohl.hadrien.VTLLexer;
 import kohl.hadrien.VTLParser;
 import kohl.hadrien.vtl.script.connector.Connector;
 import kohl.hadrien.vtl.script.visitors.AssignmentVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import javax.script.*;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 
 /**
  * A VTL {@link ScriptEngine} implementation.
@@ -64,20 +65,23 @@ public class VTLScriptEngine extends AbstractScriptEngine {
 
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException {
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(script));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-
-        ParseTree start = parser.start();
-        // Run loop.
-        AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
-        return assignmentVisitor.visit(start);
+        return eval(new StringReader(script), context);
     }
 
     @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
         try {
             VTLLexer lexer = new VTLLexer(new ANTLRInputStream(reader));
-            return null;
+            VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
+
+            VTLParser.StartContext start = parser.start();
+            // Run loop.
+            AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
+            Dataset last = null;
+            for (VTLParser.StatementContext statementContext : start.statement()) {
+                last = assignmentVisitor.visit(statementContext);
+            }
+            return last;
         } catch (IOException ioe) {
             throw new ScriptException(ioe);
         }
