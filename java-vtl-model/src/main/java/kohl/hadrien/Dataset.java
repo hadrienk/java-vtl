@@ -91,8 +91,8 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                         @Override
                         public String toString() {
                             return MoreObjects.toStringHelper(role())
-                                    .add("name", name())
-                                    .addValue(get()).toString();
+                                    .add(name(), get().toString())
+                                    .toString();
                         }
                     })
                     .collect(Collectors.toList());
@@ -194,14 +194,6 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
             return ids().hashCode();
         }
 
-        @Override
-        public boolean equals(Object other) {
-            if (this == other)
-                return true;
-            if (other == null || getClass() != other.getClass())
-                return false;
-            return this.ids().equals(((Tuple) other).ids());
-        }
 
         @Override
         public Tuple combine(Tuple tuple) {
