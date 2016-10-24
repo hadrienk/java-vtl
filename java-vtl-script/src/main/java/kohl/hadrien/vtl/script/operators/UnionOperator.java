@@ -4,11 +4,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import kohl.hadrien.*;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -103,10 +99,11 @@ public class UnionOperator implements Supplier<Dataset> {
             @Override
             public Stream<Tuple> get() {
                 // TODO: Attribute propagation.
-                ConcurrentHashMap.KeySetView<Tuple, Boolean> seen = ConcurrentHashMap.newKeySet();
+                Set<Tuple> bucket = Sets.newTreeSet(Dataset.comparatorFor(Identifier.class, Measure.class));
+                Set<Tuple> seen = Collections.synchronizedSet(bucket);
                 return datasets.stream().flatMap(Supplier::get)
-                        .filter(seen::contains);
-
+                        .filter((o) -> !seen.contains(o))
+                        .peek(bucket::add);
             }
         };
     }

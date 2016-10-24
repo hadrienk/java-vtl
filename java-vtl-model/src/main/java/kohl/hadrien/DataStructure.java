@@ -29,9 +29,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Datastructure of a {@link Dataset}.
- *
+ * <p>
  * In addition to defining the type and roles of variable in the data sets, the data structure decouples
  * the creation of the {@link kohl.hadrien.Dataset.Tuple}.
  */
@@ -159,6 +161,9 @@ public abstract class DataStructure {
     public abstract BiFunction<Object, Class<?>, ?> converter();
 
     public Component wrap(String name, Object value) {
+        checkArgument(types().containsKey(name) && roles().containsKey(name),
+                "could not find %s in data structure %s", name, this);
+
         return new AbstractComponent() {
             @Override
             public String name() {

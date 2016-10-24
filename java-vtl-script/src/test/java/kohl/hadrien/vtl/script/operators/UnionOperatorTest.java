@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,55 +94,98 @@ public class UnionOperatorTest {
                 tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
-                        dataStructure.wrap("TIME", 5)
+                        dataStructure.wrap("POP", 5)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("TIME", 2)
+                        dataStructure.wrap("POP", 2)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
-                        dataStructure.wrap("TIME", 3)
+                        dataStructure.wrap("POP", 3)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
-                        dataStructure.wrap("TIME", 7)
+                        dataStructure.wrap("POP", 7)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Finland"),
-                        dataStructure.wrap("TIME", 9)
+                        dataStructure.wrap("POP", 9)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Switzerland"),
-                        dataStructure.wrap("TIME", 12)
+                        dataStructure.wrap("POP", 12)
                 )
         ));
 
-        when(totalPopulation1.get()).thenReturn(Stream.of(
+        when(totalPopulation2.get()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Netherlands"),
-                        dataStructure.wrap("TIME", 23)
+                        dataStructure.wrap("POP", 23)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("TIME", 2)
+                        dataStructure.wrap("POP", 2)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Spain"),
-                        dataStructure.wrap("TIME", 5)
+                        dataStructure.wrap("POP", 5)
                 ), tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Iceland"),
-                        dataStructure.wrap("TIME", 1)
+                        dataStructure.wrap("POP", 1)
                 )
         ));
 
         UnionOperator unionOperator = new UnionOperator(totalPopulation1, totalPopulation2);
 
-        assertThat(unionOperator.get()).isNotNull();
-        assertThat(unionOperator.get().stream()).isNotNull();
+        Dataset resultDataset = unionOperator.get();
+        assertThat(resultDataset).isNotNull();
 
+        Stream<Dataset.Tuple> stream = resultDataset.stream();
+        assertThat(stream).isNotNull();
+
+        assertThat(stream)
+                .contains(
+                        tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Belgium"),
+                                dataStructure.wrap("POP", 5)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Greece"),
+                                dataStructure.wrap("POP", 2)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "France"),
+                                dataStructure.wrap("POP", 3)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Malta"),
+                                dataStructure.wrap("POP", 7)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Finland"),
+                                dataStructure.wrap("POP", 9)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Switzerland"),
+                                dataStructure.wrap("POP", 12)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Netherlands"),
+                                dataStructure.wrap("POP", 23)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Spain"),
+                                dataStructure.wrap("POP", 5)
+                        ), tuple(
+                                dataStructure.wrap("TIME", "2012"),
+                                dataStructure.wrap("GEO", "Iceland"),
+                                dataStructure.wrap("POP", 1)
+                        )
+                );
     }
 
 
