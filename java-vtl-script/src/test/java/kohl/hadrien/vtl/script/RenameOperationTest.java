@@ -21,19 +21,20 @@ package kohl.hadrien.vtl.script;
  */
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import kohl.hadrien.*;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Created by hadrien on 03/10/2016.
- */
 public class RenameOperationTest {
 
     @Test(expected = IllegalArgumentException.class)
@@ -66,11 +67,9 @@ public class RenameOperationTest {
         rename = new RenameOperation(ImmutableMap.of("1a", "1b"), Collections.emptyMap());
 
         Dataset dataset = mock(Dataset.class);
-        when(dataset.getDataStructure()).thenReturn(new DataStructure(
-                ImmutableMap.of(
-                        "notfound", Identifier.class
-                )
-        ));
+        when(dataset.getDataStructure()).thenReturn(
+                DataStructure.of((s, o) -> null, "notfound", Identifier.class, String.class)
+        );
         try {
             rename.apply(dataset);
         } catch (Throwable t) {
@@ -93,16 +92,16 @@ public class RenameOperationTest {
 
         Dataset dataset = mock(Dataset.class);
 
-        when(dataset.getDataStructure()).thenReturn(new DataStructure(
-                ImmutableMap.of(
-                        "Ia", Identifier.class,
-                        "Ma", Measure.class,
-                        "Aa", Attribute.class
+        when(dataset.getDataStructure()).thenReturn(
+                DataStructure.of((s, o) -> null,
+                        "Ia", Identifier.class, String.class,
+                        "Ma", Measure.class, String.class,
+                        "Aa", Attribute.class, String.class
                 )
-        ));
+        );
         Dataset renamedDataset = rename.apply(dataset);
 
-        assertThat(renamedDataset.getDataStructure()).contains(
+        assertThat(renamedDataset.getDataStructure().roles()).contains(
                 entry("Ib", Identifier.class),
                 entry("Mb", Measure.class),
                 entry("Ab", Attribute.class)
@@ -133,19 +132,46 @@ public class RenameOperationTest {
 
         Dataset dataset = mock(Dataset.class);
 
-        when(dataset.getDataStructure()).thenReturn(new DataStructure(
-                        new ImmutableMap.Builder<String, Class<? extends Component>>()
-                                .put("Identifier1", Identifier.class)
-                                .put("Identifier2", Identifier.class)
-                                .put("Measure1", Measure.class)
-                                .put("Measure2", Measure.class)
-                                .put("Attribute1", Attribute.class)
-                                .put("Attribute2", Attribute.class).build()
-                )
-        );
+        when(dataset.getDataStructure()).thenReturn(new DataStructure() {
+            @Override
+            public BiFunction<String, Object, Component> converter() {
+                return null;
+            }
+
+            @Override
+            public Map<String, Class<? extends Component>> roles() {
+                return new ImmutableMap.Builder<String, Class<? extends Component>>()
+                        .put("Identifier1", Identifier.class)
+                        .put("Identifier2", Identifier.class)
+                        .put("Measure1", Measure.class)
+                        .put("Measure2", Measure.class)
+                        .put("Attribute1", Attribute.class)
+                        .put("Attribute2", Attribute.class).build();
+            }
+
+            @Override
+            public Map<String, Class<?>> types() {
+                return new ImmutableMap.Builder<String, Class<?>>()
+                        .put("Identifier1", String.class)
+                        .put("Identifier2", String.class)
+                        .put("Measure1", String.class)
+                        .put("Measure2", String.class)
+                        .put("Attribute1", String.class)
+                        .put("Attribute2", String.class).build();
+            }
+
+            @Override
+            public Set<String> names() {
+                return ImmutableSet.of(
+                        "Identifier1", "Identifier2",
+                        "Measure1", "Measure2",
+                        "Attribute1", "Attribute2"
+                );
+            }
+        });
         Dataset renamedDataset = rename.apply(dataset);
 
-        assertThat(renamedDataset.getDataStructure()).contains(
+        assertThat(renamedDataset.getDataStructure().roles()).contains(
                 entry("Identifier1Measure", Measure.class),
                 entry("Identifier2Attribute", Attribute.class),
                 entry("Measure1Identifier", Identifier.class),
