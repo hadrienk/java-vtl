@@ -82,7 +82,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                 last = assignmentVisitor.visit(statementContext);
             }
             return last;
-        } catch (IOException ioe) {
+        } catch (IOException | RuntimeException ioe) {
             throw new ScriptException(ioe);
         }
     }

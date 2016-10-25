@@ -71,7 +71,7 @@ public class Interpreter {
             }
 
         } catch (Throwable t) {
-            t.printStackTrace();
+            t.printStackTrace(System.err);
         }
 
     }
@@ -81,9 +81,9 @@ public class Interpreter {
         for (String name : dataset.getDataStructure().names()) {
             output.print(name);
             output.print("[");
-            output.print(dataset.getDataStructure().roles().get(name));
+            output.print(dataset.getDataStructure().roles().get(name).getSimpleName());
             output.print(",");
-            output.print(dataset.getDataStructure().types().get(name));
+            output.print(dataset.getDataStructure().types().get(name).getSimpleName());
             output.print("]");
         }
         output.println();
