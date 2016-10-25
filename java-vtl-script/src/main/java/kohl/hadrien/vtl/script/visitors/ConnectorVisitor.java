@@ -47,14 +47,15 @@ public class ConnectorVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitGetExpression(@NotNull VTLParser.GetExpressionContext ctx) {
-        // TODO: Get the identifier.
-        String identifier = "identifier";
+        // TODO: Better way to get the content?
+        String identifier = ctx.datasetId().getText();
+        identifier = identifier.substring(1, identifier.length() - 1);
         try {
             for (Connector connector : connectors) {
                 if (!connector.canHandle(identifier)) {
                     continue;
                 }
-                return connector.getDataset(ctx.getText());
+                return connector.getDataset(identifier);
             }
         } catch (ConnectorException ce) {
             Throwables.propagate(ce);
