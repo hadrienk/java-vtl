@@ -41,11 +41,12 @@ public class UnionOperation implements Supplier<Dataset> {
     private void checkDataStructures(Dataset dataset) {
         // Identifiers and attribute should be equals in name, role and type.
         Set<String> requiredNames = nonAttributeNames(this.dataStructure);
-        Set<String> providedNames = dataset.getDataStructure().names();
+        Set<String> providedNames = nonAttributeNames(dataset.getDataStructure());
 
         checkArgument(
                 requiredNames.equals(providedNames),
                 "dataset %s was incompatible with the required data structure, missing: %s, unexpected %s",
+                dataset,
                 Sets.difference(requiredNames, providedNames),
                 Sets.difference(providedNames, requiredNames)
         );
@@ -58,6 +59,7 @@ public class UnionOperation implements Supplier<Dataset> {
         checkArgument(
                 requiredNames.equals(providedNames),
                 "dataset %s was incompatible with the required data structure, missing: %s, unexpected %s",
+                dataset,
                 Sets.difference(requiredRoles.entrySet(), providedRoles.entrySet()),
                 Sets.difference(providedRoles.entrySet(), requiredRoles.entrySet())
         );
@@ -70,6 +72,7 @@ public class UnionOperation implements Supplier<Dataset> {
         checkArgument(
                 requiredNames.equals(providedNames),
                 "dataset %s was incompatible with the required data structure, missing: %s, unexpected %s",
+                dataset,
                 Sets.difference(requiredTypes.entrySet(), providedTypes.entrySet()),
                 Sets.difference(providedTypes.entrySet(), requiredTypes.entrySet())
         );
