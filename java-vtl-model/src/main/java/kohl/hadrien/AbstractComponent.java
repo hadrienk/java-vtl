@@ -5,7 +5,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
 /**
- * Created by hadrien on 24/10/2016.
+ * Abstract component implementation.
  */
 public abstract class AbstractComponent<T> implements Component<T> {
 

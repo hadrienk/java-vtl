@@ -86,10 +86,6 @@ public class UnionOperation implements Supplier<Dataset> {
             return datasets.get(0);
 
         return new Dataset() {
-            @Override
-            public Set<List<Identifier>> cartesian() {
-                return null;
-            }
 
             @Override
             public DataStructure getDataStructure() {

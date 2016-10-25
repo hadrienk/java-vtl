@@ -32,10 +32,10 @@ import java.util.function.BiFunction;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Datastructure of a {@link Dataset}.
+ * Data structure of a {@link Dataset}.
  * <p>
- * In addition to defining the type and roles of variable in the data sets, the data structure decouples
- * the creation of the {@link kohl.hadrien.Dataset.Tuple}.
+ * The data structure defines the role and type of the columns of a data set and
+ * serves as a {@link Component}'s factory.
  */
 public abstract class DataStructure {
 
@@ -160,6 +160,13 @@ public abstract class DataStructure {
 
     public abstract BiFunction<Object, Class<?>, ?> converter();
 
+    /**
+     * Creates a new {@link Component} for the given column and value.
+     *
+     * @param name  the name of the column.
+     * @param value the value of the resulting component.
+     * @return a component
+     */
     public Component wrap(String name, Object value) {
         checkArgument(types().containsKey(name) && roles().containsKey(name),
                 "could not find %s in data structure %s", name, this);
@@ -187,10 +194,19 @@ public abstract class DataStructure {
         };
     }
 
-    public Dataset.Tuple wrap(Map<String, Object> objects) {
+    /**
+     * Creates a new {@link kohl.hadrien.Dataset.Tuple} for the given names and values.
+     * <p>
+     * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
+     * a {@link kohl.hadrien.Dataset.Tuple}.
+     *
+     * @param map a map of name and values
+     * @return the corresponding tuple (row)
+     */
+    public Dataset.Tuple wrap(Map<String, Object> map) {
 
         List<Component> components = Lists.newArrayList();
-        for (Map.Entry<String, Object> entry : objects.entrySet())
+        for (Map.Entry<String, Object> entry : map.entrySet())
             components.add(wrap(entry.getKey(), entry.getValue()));
 
         return Dataset.Tuple.create(components);
@@ -219,8 +235,8 @@ public abstract class DataStructure {
         }
 
         @Override
-        public Dataset.Tuple wrap(Map<String, Object> objects) {
-            return delegate().wrap(objects);
+        public Dataset.Tuple wrap(Map<String, Object> map) {
+            return delegate().wrap(map);
         }
 
         @Override

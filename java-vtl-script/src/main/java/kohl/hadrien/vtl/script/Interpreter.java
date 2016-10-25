@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -217,11 +216,6 @@ public class Interpreter {
                                     ));
 
                                 });
-                    }
-
-                    @Override
-                    public Set<List<Identifier>> cartesian() {
-                        return null;
                     }
 
                     @Override

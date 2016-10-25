@@ -20,14 +20,15 @@ package kohl.hadrien.vtl.script.operations;
  * #L%
  */
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import kohl.hadrien.Component;
 import kohl.hadrien.DataStructure;
 import kohl.hadrien.Dataset;
-import kohl.hadrien.Identifier;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -103,10 +104,6 @@ public class RenameOperation implements Function<Dataset, Dataset> {
         };
 
         return new Dataset() {
-            @Override
-            public Set<List<Identifier>> cartesian() {
-                return null;
-            }
 
             @Override
             public DataStructure getDataStructure() {

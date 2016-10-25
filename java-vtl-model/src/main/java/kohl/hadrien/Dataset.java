@@ -36,9 +36,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public interface Dataset extends Streamable<Dataset.Tuple> {
 
-    Set<List<Identifier>> cartesian();
-
-
     /**
      * Returns the data structure of the DataSet.
      */
