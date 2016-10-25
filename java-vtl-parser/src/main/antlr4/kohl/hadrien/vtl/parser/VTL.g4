@@ -38,7 +38,9 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
 
 componentID : IDENTIFIER;
 
-getExpression : 'get(todo)';
+getExpression : 'get' '(' datasetId ')';
 putExpression : 'put(todo)';
+
+datasetId : STRING_CONSTANT ;
 
 WS : [ \r\t\u000C] -> skip ;

@@ -59,7 +59,7 @@ public class VTLScriptEngineTest {
         when(connector.getDataset(anyString())).thenReturn(dataset);
 
         bindings.put("ds1", dataset);
-        engine.eval("ds2 := get(todo)");
+        engine.eval("ds2 := get(\"todo\")");
 
         assertThat(bindings).contains(entry("ds2", dataset));
 
