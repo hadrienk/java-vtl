@@ -31,8 +31,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
@@ -102,7 +102,7 @@ public class Interpreter {
 
             @Override
             public BiFunction<Object, Class<?>, ?> converter() {
-                return null;
+                return (o, aClass) -> o;
             }
 
             @Override
@@ -131,6 +131,8 @@ public class Interpreter {
 
         return new Connector() {
 
+            Random random = new Random();
+
             @Override
             public boolean canHandle(String identifier) {
                 return true;
@@ -145,76 +147,15 @@ public class Interpreter {
 
                         return IntStream.rangeClosed(1, 100).boxed()
                                 .map(integer -> {
-                                    Identifier<Integer> identifier = new Identifier<Integer>() {
-                                        @Override
-                                        public String name() {
-                                            return "id";
-                                        }
 
-                                        @Override
-                                        public Class<?> type() {
-                                            return Integer.class;
-                                        }
-
-                                        @Override
-                                        public Class<? extends Component<Integer>> role() {
-                                            return this.getClass();
-                                        }
-
-                                        @Override
-                                        public Integer get() {
-                                            return integer;
-                                        }
-                                    };
-
-                                    Measure<String> measure = new Measure<String>() {
-                                        @Override
-                                        public String name() {
-                                            return "measure";
-                                        }
-
-                                        @Override
-                                        public Class<?> type() {
-                                            return String.class;
-                                        }
-
-                                        @Override
-                                        public Class<? extends Component<String>> role() {
-                                            return this.getClass();
-                                        }
-
-                                        @Override
-                                        public String get() {
-                                            return "measure" + integer;
-                                        }
-                                    };
-
-                                    Attribute<String> attribute = new Attribute<String>() {
-                                        @Override
-                                        public String name() {
-                                            return "attribute";
-                                        }
-
-                                        @Override
-                                        public Class<?> type() {
-                                            return String.class;
-                                        }
-
-                                        @Override
-                                        public Class<? extends Component<String>> role() {
-                                            return this.getClass();
-                                        }
-
-                                        @Override
-                                        public String get() {
-                                            return "attribute" + integer;
-                                        }
-                                    };
-
-                                    return Tuple.create(Arrays.asList(
-                                            identifier, measure, attribute
-                                    ));
-
+                                    //Integer id = "random".equals(identifier) ? random.nextInt() : integer;
+                                    Integer id = random.nextInt(Integer.SIZE - 1);
+                                    ImmutableMap<String, Object> values = ImmutableMap.of(
+                                            "id", id,
+                                            "measure", "measure" + integer,
+                                            "attribute", "attribute" + integer
+                                    );
+                                    return dataStructure.wrap(values);
                                 });
                     }
 
