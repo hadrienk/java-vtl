@@ -22,10 +22,10 @@ package kohl.hadrien.vtl.script;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import kohl.hadrien.Dataset;
-import kohl.hadrien.VTLLexer;
-import kohl.hadrien.VTLParser;
-import kohl.hadrien.vtl.script.connector.Connector;
+import kohl.hadrien.vtl.model.Dataset;
+import kohl.hadrien.vtl.connector.Connector;
+import kohl.hadrien.vtl.parser.VTLLexer;
+import kohl.hadrien.vtl.parser.VTLParser;
 import kohl.hadrien.vtl.script.visitors.AssignmentVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -82,7 +82,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                 last = assignmentVisitor.visit(statementContext);
             }
             return last;
-        } catch (IOException ioe) {
+        } catch (IOException | RuntimeException ioe) {
             throw new ScriptException(ioe);
         }
     }
