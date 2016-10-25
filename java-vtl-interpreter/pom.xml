@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>java-vtl-parent</artifactId>
@@ -9,28 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>java-vtl-script</artifactId>
-
+    <artifactId>java-vtl-interpreter</artifactId>
     <dependencies>
-
         <dependency>
             <groupId>kohl.hadrien</groupId>
-            <artifactId>java-vtl-model</artifactId>
+            <artifactId>java-vtl-script</artifactId>
             <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>kohl.hadrien</groupId>
-            <artifactId>java-vtl-parser</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Needed to mock converters -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.8.2</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -38,7 +22,7 @@
             <artifactId>java-vtl-connector-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
     </dependencies>
+
 
 </project>

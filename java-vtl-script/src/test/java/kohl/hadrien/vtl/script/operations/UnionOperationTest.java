@@ -1,7 +1,7 @@
 package kohl.hadrien.vtl.script.operations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kohl.hadrien.*;
+import kohl.hadrien.vtl.model.*;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 

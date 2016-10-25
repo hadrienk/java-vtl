@@ -1,9 +1,9 @@
 package kohl.hadrien.vtl.script.visitors;
 
 import com.google.common.collect.Lists;
-import kohl.hadrien.Dataset;
-import kohl.hadrien.VTLBaseVisitor;
-import kohl.hadrien.VTLParser;
+import kohl.hadrien.vtl.model.Dataset;
+import kohl.hadrien.vtl.parser.VTLBaseVisitor;
+import kohl.hadrien.vtl.parser.VTLParser;
 import kohl.hadrien.vtl.script.operations.UnionOperation;
 
 import java.util.List;

@@ -2,7 +2,7 @@ package kohl.hadrien.vtl.script.operations;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import kohl.hadrien.*;
+import kohl.hadrien.vtl.model.*;
 
 import java.util.*;
 import java.util.function.Supplier;

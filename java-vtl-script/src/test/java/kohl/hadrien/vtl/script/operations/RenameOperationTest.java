@@ -22,7 +22,7 @@ package kohl.hadrien.vtl.script.operations;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import kohl.hadrien.*;
+import kohl.hadrien.vtl.model.*;
 import org.junit.Test;
 
 import java.util.Collections;

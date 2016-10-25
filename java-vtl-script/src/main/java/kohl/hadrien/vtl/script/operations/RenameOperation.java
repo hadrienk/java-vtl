@@ -24,9 +24,9 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import kohl.hadrien.Component;
-import kohl.hadrien.DataStructure;
-import kohl.hadrien.Dataset;
+import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 
 import java.util.Collections;
 import java.util.Map;

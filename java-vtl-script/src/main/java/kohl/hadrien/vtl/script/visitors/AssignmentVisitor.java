@@ -20,10 +20,10 @@ package kohl.hadrien.vtl.script.visitors;
  * #L%
  */
 
-import kohl.hadrien.Dataset;
-import kohl.hadrien.VTLBaseVisitor;
-import kohl.hadrien.VTLParser;
-import kohl.hadrien.vtl.script.connector.Connector;
+import kohl.hadrien.vtl.model.Dataset;
+import kohl.hadrien.vtl.parser.VTLBaseVisitor;
+import kohl.hadrien.vtl.parser.VTLParser;
+import kohl.hadrien.vtl.connector.Connector;
 
 import javax.script.ScriptContext;
 import java.util.List;

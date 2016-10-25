@@ -21,7 +21,9 @@ package kohl.hadrien.vtl.script.visitors;
  */
 
 import com.google.common.collect.ImmutableMap;
-import kohl.hadrien.*;
+import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.parser.VTLBaseVisitor;
+import kohl.hadrien.vtl.parser.VTLParser;
 import kohl.hadrien.vtl.script.operations.RenameOperation;
 
 import java.util.List;
