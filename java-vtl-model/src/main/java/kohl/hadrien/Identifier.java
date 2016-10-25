@@ -20,8 +20,5 @@ package kohl.hadrien;
  * #L%
  */
 
-/**
- * Created by hadrien on 07/09/16.
- */
 public interface Identifier<T extends Comparable> extends Component<T> {
 }

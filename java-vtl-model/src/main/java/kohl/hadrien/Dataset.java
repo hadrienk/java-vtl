@@ -23,10 +23,12 @@ package kohl.hadrien;
 import com.codepoetics.protonpack.Streamable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingList;
+import com.google.common.collect.Sets;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -34,13 +36,42 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public interface Dataset extends Streamable<Dataset.Tuple> {
 
-    Set<List<Identifier>> cartesian();
-
-
     /**
      * Returns the data structure of the DataSet.
      */
     DataStructure getDataStructure();
+
+    static Comparator<Tuple> comparatorFor(Class<? extends Component>... roles) {
+        Set<Class<? extends Component>> rolesHash = Sets.newHashSet(roles);
+        return new Comparator<Tuple>() {
+            @Override
+            public int compare(Tuple li, Tuple ri) {
+                Comparator comparator = Comparator.naturalOrder();
+
+                Map<String, Object> lm = li.stream().filter(component -> rolesHash.contains(component.role()))
+                        .collect(Collectors.toMap(
+                                Component::name,
+                                Component::get
+                        ));
+
+                Map<String, Object> rm = ri.stream().filter(component -> rolesHash.contains(component.role()))
+                        .collect(Collectors.toMap(
+                                Component::name,
+                                Component::get
+                        ));
+
+                checkArgument(lm.keySet().equals(rm.keySet()));
+                int i = 0;
+                for (String key : lm.keySet()) {
+                    i = comparator.compare(lm.get(key), rm.get(key));
+                    if (i != 0)
+                        return i;
+                }
+                return i;
+
+            }
+        };
+    }
 
     interface Tuple extends List<Component>, Comparable<Tuple> {
 
@@ -91,8 +122,8 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                         @Override
                         public String toString() {
                             return MoreObjects.toStringHelper(role())
-                                    .add("name", name())
-                                    .addValue(get()).toString();
+                                    .add(name(), get().toString())
+                                    .toString();
                         }
                     })
                     .collect(Collectors.toList());
@@ -194,14 +225,6 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
             return ids().hashCode();
         }
 
-        @Override
-        public boolean equals(Object other) {
-            if (this == other)
-                return true;
-            if (other == null || getClass() != other.getClass())
-                return false;
-            return this.ids().equals(((Tuple) other).ids());
-        }
 
         @Override
         public Tuple combine(Tuple tuple) {

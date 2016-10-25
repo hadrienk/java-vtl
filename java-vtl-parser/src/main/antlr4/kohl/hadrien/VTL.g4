@@ -19,7 +19,7 @@
  */
 grammar VTL;
 
-import Atoms, Clauses, Conditional;
+import Atoms, Clauses, Conditional, Relational;
 
 start : statement+ EOF;
 
@@ -30,9 +30,10 @@ exprMember : datasetExpression ('#' componentID)? ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
-           | getExpression                                #withGet
-           | putExpression                                #withPut
-           | exprAtom                                     #withAtom
+           | relationalExpression                                   #withRelational
+           | getExpression                                          #withGet
+           | putExpression                                          #withPut
+           | exprAtom                                               #withAtom
            ;
 
 componentID : IDENTIFIER;

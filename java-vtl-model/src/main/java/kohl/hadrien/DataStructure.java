@@ -29,22 +29,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
- * Datastructure of a {@link Dataset}.
- *
- * In addition to defining the type and roles of variable in the data sets, the data structure decouples
- * the creation of the {@link kohl.hadrien.Dataset.Tuple}.
+ * Data structure of a {@link Dataset}.
+ * <p>
+ * The data structure defines the role and type of the columns of a data set and
+ * serves as a {@link Component}'s factory.
  */
 public abstract class DataStructure {
 
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -68,12 +70,12 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1,
                                    String name2, Class<? extends Component> role2, Class<?> type2) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -97,13 +99,13 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1,
                                    String name2, Class<? extends Component> role2, Class<?> type2,
                                    String name3, Class<? extends Component> role3, Class<?> type3) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -127,14 +129,14 @@ public abstract class DataStructure {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<String, Object, Component> converter,
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Class<? extends Component> role1, Class<?> type1,
                                    String name2, Class<? extends Component> role2, Class<?> type2,
                                    String name3, Class<? extends Component> role3, Class<?> type3,
                                    String name4, Class<? extends Component> role4, Class<?> type4) {
         return new DataStructure() {
             @Override
-            public BiFunction<String, Object, Component> converter() {
+            public BiFunction<Object, Class<?>, ?> converter() {
                 return converter;
             }
 
@@ -155,15 +157,57 @@ public abstract class DataStructure {
         };
     }
 
-    public abstract BiFunction<String, Object, Component> converter();
 
-    public Dataset.Tuple wrap(Map<String, Object> objects) {
+    public abstract BiFunction<Object, Class<?>, ?> converter();
+
+    /**
+     * Creates a new {@link Component} for the given column and value.
+     *
+     * @param name  the name of the column.
+     * @param value the value of the resulting component.
+     * @return a component
+     */
+    public Component wrap(String name, Object value) {
+        checkArgument(types().containsKey(name) && roles().containsKey(name),
+                "could not find %s in data structure %s", name, this);
+
+        return new AbstractComponent() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public Class<?> type() {
+                return types().get(name);
+            }
+
+            @Override
+            public Class<? extends Component> role() {
+                return roles().get(name);
+            }
+
+            @Override
+            public Object get() {
+                return converter().apply(value, type());
+            }
+        };
+    }
+
+    /**
+     * Creates a new {@link kohl.hadrien.Dataset.Tuple} for the given names and values.
+     * <p>
+     * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
+     * a {@link kohl.hadrien.Dataset.Tuple}.
+     *
+     * @param map a map of name and values
+     * @return the corresponding tuple (row)
+     */
+    public Dataset.Tuple wrap(Map<String, Object> map) {
 
         List<Component> components = Lists.newArrayList();
-        for (Map.Entry<String, Object> entry : objects.entrySet()) {
-            Component component = converter().apply(entry.getKey(), entry.getValue());
-            components.add(component);
-        }
+        for (Map.Entry<String, Object> entry : map.entrySet())
+            components.add(wrap(entry.getKey(), entry.getValue()));
 
         return Dataset.Tuple.create(components);
 
@@ -186,13 +230,13 @@ public abstract class DataStructure {
         protected abstract DataStructure delegate();
 
         @Override
-        public BiFunction<String, Object, Component> converter() {
+        public BiFunction<Object, Class<?>, ?> converter() {
             return delegate().converter();
         }
 
         @Override
-        public Dataset.Tuple wrap(Map<String, Object> objects) {
-            return delegate().wrap(objects);
+        public Dataset.Tuple wrap(Map<String, Object> map) {
+            return delegate().wrap(map);
         }
 
         @Override
