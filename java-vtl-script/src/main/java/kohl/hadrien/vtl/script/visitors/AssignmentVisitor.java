@@ -20,15 +20,15 @@ package kohl.hadrien.vtl.script.visitors;
  * #L%
  */
 
-import kohl.hadrien.Dataset;
-import kohl.hadrien.VTLBaseVisitor;
-import kohl.hadrien.VTLParser;
-import kohl.hadrien.vtl.script.connector.Connector;
-import org.antlr.v4.runtime.misc.NotNull;
+import kohl.hadrien.vtl.model.Dataset;
+import kohl.hadrien.vtl.parser.VTLBaseVisitor;
+import kohl.hadrien.vtl.parser.VTLParser;
+import kohl.hadrien.vtl.connector.Connector;
 
 import javax.script.ScriptContext;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -40,11 +40,13 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final ScriptContext context;
     private final ConnectorVisitor connectorVisitor;
     private final ClauseVisitor clausesVisitor;
+    private final RelationalVisitor relationalVisitor;
 
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this.context = checkNotNull(context, "the context was null");
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
+        relationalVisitor = new RelationalVisitor(this);
     }
 
     @Override
@@ -53,15 +55,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitStart(VTLParser.StartContext ctx) {
-        for (VTLParser.StatementContext statement : ctx.statement()) {
-
-        }
-        return super.visitStart(ctx);
-    }
-
-    @Override
-    public Dataset visitStatement(@NotNull VTLParser.StatementContext ctx) {
+    public Dataset visitStatement(VTLParser.StatementContext ctx) {
         String name = ctx.variableRef().getText();
         Dataset dataset = visit(ctx.datasetExpression());
         context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
@@ -69,22 +63,28 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitVariableRef(@NotNull VTLParser.VariableRefContext ctx) {
+    public Dataset visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
+        Supplier<Dataset> datasetSupplier = relationalVisitor.visit(ctx);
+        return datasetSupplier.get();
+    }
+
+    @Override
+    public Dataset visitVariableRef(VTLParser.VariableRefContext ctx) {
         return (Dataset) context.getAttribute(ctx.getText());
     }
 
     @Override
-    public Dataset visitGetExpression(@NotNull VTLParser.GetExpressionContext ctx) {
+    public Dataset visitGetExpression(VTLParser.GetExpressionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitPutExpression(@NotNull VTLParser.PutExpressionContext ctx) {
+    public Dataset visitPutExpression(VTLParser.PutExpressionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitWithClause(@NotNull VTLParser.WithClauseContext ctx) {
+    public Dataset visitWithClause(VTLParser.WithClauseContext ctx) {
         Dataset dataset = visit(ctx.datasetExpression());
         Function<Dataset, Dataset> clause = clausesVisitor.visit(ctx.clauseExpression());
         return clause.apply(dataset);

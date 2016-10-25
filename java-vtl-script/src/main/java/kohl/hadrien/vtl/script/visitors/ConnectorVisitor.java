@@ -21,11 +21,11 @@ package kohl.hadrien.vtl.script.visitors;
  */
 
 import com.google.common.base.Throwables;
-import kohl.hadrien.Dataset;
-import kohl.hadrien.VTLBaseVisitor;
-import kohl.hadrien.VTLParser;
-import kohl.hadrien.vtl.script.connector.Connector;
-import kohl.hadrien.vtl.script.connector.ConnectorException;
+import kohl.hadrien.vtl.connector.Connector;
+import kohl.hadrien.vtl.connector.ConnectorException;
+import kohl.hadrien.vtl.model.Dataset;
+import kohl.hadrien.vtl.parser.VTLBaseVisitor;
+import kohl.hadrien.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.misc.NotNull;
 
 import java.util.List;

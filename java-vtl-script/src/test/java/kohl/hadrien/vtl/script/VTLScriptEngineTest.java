@@ -20,8 +20,8 @@ package kohl.hadrien.vtl.script;
  * #L%
  */
 
-import kohl.hadrien.*;
-import kohl.hadrien.vtl.script.connector.Connector;
+import kohl.hadrien.vtl.connector.Connector;
+import kohl.hadrien.vtl.model.*;
 import org.junit.Test;
 
 import javax.script.Bindings;

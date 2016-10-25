@@ -14,8 +14,9 @@
     <modules>
         <module>java-vtl-model</module>
         <module>java-vtl-parser</module>
-        <module>java-vtl-stream</module>
         <module>java-vtl-script</module>
+        <module>java-vtl-interpreter</module>
+        <module>java-vtl-connector-api</module>
     </modules>
 
     <developers>
@@ -166,7 +167,7 @@
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>3.4.1</version>
+                <version>3.5.2</version>
                 <scope>test</scope>
             </dependency>
 
