@@ -22,7 +22,6 @@ package kohl.hadrien.vtl.interpreter;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import kohl.hadrien.vtl.connector.Connector;
@@ -33,7 +32,9 @@ import org.fusesource.jansi.AnsiConsole;
 
 import javax.script.ScriptException;
 import java.io.*;
-import java.util.*;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -238,7 +239,7 @@ public class Interpreter implements Runnable {
                 Object result = vtlScriptEngine.eval(read);
 
                 if (result instanceof Dataset)
-                    printDataset((Dataset) result);
+                    printDataset(console, (Dataset) result);
 
                 output.println(result);
                 output.flush();
@@ -268,28 +269,50 @@ public class Interpreter implements Runnable {
         return true;
     }
 
-    private void printDataset(Dataset dataset) throws IOException {
+    private void printDataset(ConsoleReader console, Dataset dataset) throws IOException {
         Map<String, Class<? extends Component>> roles = dataset.getDataStructure().roles();
         Map<String, Class<?>> types = dataset.getDataStructure().types();
+        Set<String> names = dataset.getDataStructure().names();
 
         // Header
-        List<String> columns = Lists.newArrayList();
-        for (String name : dataset.getDataStructure().names())
-            columns.add(format("%s[%s,%s]", name, roles.get(name).getSimpleName(), types.get(name).getSimpleName()));
-        console.println(columns.stream().collect(Collectors.joining(",")));
+        String header = names.stream()
+                .map(name -> format(
+                        "%s[%s,%s]",
+                        name,
+                        roles.get(name).getSimpleName(),
+                        types.get(name).getSimpleName()
+                        )
+                )
+                .collect(Collectors.joining(","));
 
-        // Rows
-        Iterator<Dataset.Tuple> iterator = dataset.stream().iterator();
-        while (iterator.hasNext()) {
-            columns.clear();
-            Dataset.Tuple row = iterator.next();
+        Stream<String> rows = dataset.stream().map(row -> {
             Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
                     Component::name, Component::get
             ));
-            for (String name : dataset.getDataStructure().names())
-                columns.add(asMap.get(name).toString());
+            return names.stream()
+                    .map(asMap::get)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(","));
+        });
 
-            console.println(columns.stream().collect(Collectors.joining(",")));
+        Integer width = console.getTerminal().getWidth() - 1;
+        console.println(header);
+        for (String row : (Iterable<? extends String>) rows::iterator) {
+
+            if (width-- > 0)
+                console.println(row);
+
+            if (width <= 0) {
+                console.print("...");
+                console.flush();
+                int c = console.readCharacter();
+                if (c == '\r' || c == '\n')
+                    width = 1;
+                else if (c == 'q')
+                    break;
+                else
+                    width = console.getTerminal().getWidth() - 1;
+            }
         }
     }
 
