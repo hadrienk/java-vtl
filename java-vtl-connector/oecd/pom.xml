@@ -12,12 +12,22 @@
 
     <groupId>kohl.hadrien.vtl.connector.oecd</groupId>
     <artifactId>oecd</artifactId>
+
+
     <dependencies>
+
         <dependency>
             <groupId>kohl.hadrien.vtl.connector</groupId>
             <artifactId>java-vtl-connector-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
     </dependencies>
 
 
