@@ -16,7 +16,7 @@
         <module>java-vtl-parser</module>
         <module>java-vtl-script</module>
         <module>java-vtl-interpreter</module>
-        <module>java-vtl-connector-api</module>
+        <module>java-vtl-connector</module>
     </modules>
 
     <developers>
