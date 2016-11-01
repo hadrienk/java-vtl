@@ -11,6 +11,7 @@
 
     <modules>
         <module>api</module>
+        <module>oecd</module>
     </modules>
 
     <groupId>kohl.hadrien.vtl.connector</groupId>

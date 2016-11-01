@@ -12,10 +12,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>java-vtl-connector-api</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>../oecd</module>
-    </modules>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
