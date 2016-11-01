@@ -2,25 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <parent>
-        <artifactId>java-vtl-connector</artifactId>
+        <artifactId>java-vtl-connector-api</artifactId>
         <groupId>kohl.hadrien.vtl.connector</groupId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../api/pom.xml</relativePath>
     </parent>
-
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>java-vtl-connector-api</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>../oecd</module>
-    </modules>
-
+    <groupId>kohl.hadrien.vtl.connector.oecd</groupId>
+    <artifactId>oecd</artifactId>
     <dependencies>
         <dependency>
-            <groupId>kohl.hadrien</groupId>
-            <artifactId>java-vtl-model</artifactId>
+            <groupId>kohl.hadrien.vtl.connector</groupId>
+            <artifactId>java-vtl-connector-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
