@@ -88,6 +88,10 @@ public class UnionOperation implements Supplier<Dataset> {
         if (datasets.size() == 1)
             return datasets.get(0);
 
+        if (datasets.size() == 2)
+            if (datasets.get(0).equals(datasets.get(1)))
+                return datasets.get(0);
+
         return new Dataset() {
 
             @Override
