@@ -4,9 +4,10 @@ relationalExpression : unionExpression | joinExpression ;
 
 unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
 
-datasetExpression : 'datasetExpr' NUM+;
+joinExpression : '[' JOIN_TYPE? joinDefinition ']' joinBody ;
+joinDefinition : datasetExpression (',' datasetExpression )* 'on' dimensionExpression (',' dimensionExpression )* ;
+joinBody : '{' joinClause ( ',' joinClause )* '}' ;
 
-joinExpression : '[' (INNER | OUTER | CROSS ) datasetExpression (',' datasetExpression )* ']' joinClause (',' joinClause)* ;
 joinClause : joinCalc
            | joinFilter
            | joinKeep
@@ -20,10 +21,13 @@ joinFilter : 'TODO' ;
 joinKeep   : 'TODO' ;
 joinRename : 'TODO' ;
 
+JOIN_TYPE : INNER | OUTER | CROSS ;
 INNER : 'inner' ;
 OUTER : 'outer' ;
 CROSS : 'cross' ;
 
+// For tests only
+datasetExpression : 'datasetExpr' NUM+;
+dimensionExpression : 'dimensionExpr' NUM+;
 NUM : '0'..'9' ;
-
 WS          : [ \t\n\t] -> skip ;
