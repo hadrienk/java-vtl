@@ -37,10 +37,9 @@ public abstract class JoinOperation implements Supplier<Dataset> {
 
     // The datasets to operate on.
     private final Map<String, Dataset> datasets;
-
     // The dimensions to join on.
     private final Set<Component> dimensions;
-    // Holds the
+    // Holds the operations of the join.
     private final List<Function<Dataset, Dataset>> clauses;
 
     public JoinOperation(Map<String, Dataset> namedDatasets) {
@@ -65,8 +64,12 @@ public abstract class JoinOperation implements Supplier<Dataset> {
         clauses = Lists.newArrayList();
     }
 
-    public List<Function<Dataset, Dataset>> getClauses() {
-        return clauses;
+    public Map<String, Dataset> getDatasets() {
+        return datasets;
+    }
+
+    public Set<Component> getDimensions() {
+        return dimensions;
     }
 
     /**
@@ -83,5 +86,9 @@ public abstract class JoinOperation implements Supplier<Dataset> {
             dataset = clause.apply(dataset);
         }
         return dataset;
+    }
+
+    public List<Function<Dataset, Dataset>> getClauses() {
+        return clauses;
     }
 }
