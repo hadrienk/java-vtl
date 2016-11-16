@@ -1,6 +1,7 @@
 package kohl.hadrien.vtl.model;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
 
 import java.util.Objects;
 
@@ -12,7 +13,7 @@ public abstract class AbstractComponent<T> implements Component<T> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(type())
-                .add(name(), get().toString())
+                .add(name(), Optional.fromNullable(get()).transform(Object::toString).or("NULL"))
                 .toString();
     }
 

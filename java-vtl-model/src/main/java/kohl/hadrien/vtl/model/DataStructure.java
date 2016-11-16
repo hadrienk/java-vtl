@@ -157,6 +157,38 @@ public abstract class DataStructure {
         };
     }
 
+    /**
+     * Creates a new data structure.
+     */
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
+                                   String name1, Class<? extends Component> role1, Class<?> type1,
+                                   String name2, Class<? extends Component> role2, Class<?> type2,
+                                   String name3, Class<? extends Component> role3, Class<?> type3,
+                                   String name4, Class<? extends Component> role4, Class<?> type4,
+                                   String name5, Class<? extends Component> role5, Class<?> type5) {
+        return new DataStructure() {
+            @Override
+            public BiFunction<Object, Class<?>, ?> converter() {
+                return converter;
+            }
+
+            @Override
+            public Map<String, Class<? extends Component>> roles() {
+                return ImmutableMap.of(name1, role1, name2, role2, name3, role3, name4, role4, name5, role5);
+            }
+
+            @Override
+            public Map<String, Class<?>> types() {
+                return ImmutableMap.of(name1, type1, name2, type2, name3, type3, name4, type4, name5, type5);
+            }
+
+            @Override
+            public Set<String> names() {
+                return ImmutableSet.of(name1, name2, name3, name4, name5);
+            }
+        };
+    }
+
 
     public abstract BiFunction<Object, Class<?>, ?> converter();
 

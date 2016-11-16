@@ -19,44 +19,58 @@ package kohl.hadrien.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multiset;
+import com.google.common.collect.*;
 import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.model.Identifier;
+import kohl.hadrien.vtl.script.support.CombinedList;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class JoinOperation implements Supplier<Dataset> {
 
     // The datasets to operate on.
     private final Map<String, Dataset> datasets;
     // The dimensions to join on.
-    private final Set<Component> dimensions;
+    private final Set<String> dimensions;
     // Holds the operations of the join.
-    private final List<Function<Dataset, Dataset>> clauses;
+    private final List<Function<JoinTuple, JoinTuple>> clauses;
+
 
     public JoinOperation(Map<String, Dataset> namedDatasets) {
         // Find the common identifier.
         // Only if > 1
 
-        Multiset<Component<?>> components = HashMultiset.create();
+        Multiset<Comp> components = HashMultiset.create();
         for (Dataset dataset : namedDatasets.values()) {
-            // TODO: create DataPoint so we can use Components.
-            //components.addAll(dataset.getDataStructure());
+            // TODO: create DataPoint so we can use Component equality.
+            DataStructure structure = dataset.getDataStructure();
+            structure.names();
+            for (String key : structure.names()) {
+                components.add(new Comp() {{
+                    name = key;
+                    type = structure.types().get(key);
+                    role = structure.roles().get(key);
+                }});
+            }
         }
 
         datasets = namedDatasets;
         dimensions = components.entrySet().stream()
                 .filter(entry -> entry.getCount() == namedDatasets.size())
                 .map(Multiset.Entry::getElement)
-                .filter(component -> component instanceof Identifier)
+                .filter(component -> component.role.isAssignableFrom(Identifier.class))
+                .map(comp -> comp.name)
                 .collect(Collectors.toSet());
         // TODO: Throw exception if identifier not valid.
 
@@ -68,7 +82,7 @@ public abstract class JoinOperation implements Supplier<Dataset> {
         return datasets;
     }
 
-    public Set<Component> getDimensions() {
+    public Set<String> getDimensions() {
         return dimensions;
     }
 
@@ -82,13 +96,90 @@ public abstract class JoinOperation implements Supplier<Dataset> {
     @Override
     public Dataset get() {
         Dataset dataset = join();
-        for (Function<Dataset, Dataset> clause : clauses) {
-            dataset = clause.apply(dataset);
-        }
-        return dataset;
+        return new Dataset() {
+
+            Stream<Dataset.Tuple> rows = dataset.get();
+
+            @Override
+            public DataStructure getDataStructure() {
+                return dataset.getDataStructure();
+            }
+
+            @Override
+            public Stream<Tuple> get() {
+                for (Function<JoinTuple, JoinTuple> clause : clauses) {
+                    rows = rows.map(tuple -> clause.apply((JoinTuple) tuple));
+                }
+                return rows;
+            }
+        };
     }
 
-    public List<Function<Dataset, Dataset>> getClauses() {
+    public List<Function<JoinTuple, JoinTuple>> getClauses() {
         return clauses;
+    }
+
+    /**
+     * Holds the "working dataset" tuples.
+     */
+    static final class JoinTuple extends Dataset.AbstractTuple {
+
+        private final List<Identifier> ids;
+        private Multimap<String, Component> values = LinkedHashMultimap.create();
+
+        public JoinTuple(List<Identifier> ids) {
+            this.ids = checkNotNull(ids);
+        }
+
+        public List<Identifier> getKeyIds() {
+            return ids;
+        }
+
+        public Multimap<String, Component> getValues() {
+            return values;
+        }
+
+        public void setValues(Multimap<String, Component> values) {
+            this.values = values;
+        }
+
+        @Override
+        protected List<Component> delegate() {
+            return new CombinedList<>((List) ids(), values());
+        }
+
+        @Override
+        public List<Identifier> ids() {
+            return ids;
+        }
+
+        @Override
+        public List<Component> values() {
+            return new CombinedList<>(Lists.newArrayList(values.values()));
+        }
+    }
+
+    // TODO: create DataPoint so we can use Component equality.
+    private class Comp {
+        String name;
+
+        Class<?> type;
+
+        Class<? extends Component> role;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Comp comp = (Comp) o;
+            return Objects.equals(name, comp.name) &&
+                    Objects.equals(type, comp.type) &&
+                    Objects.equals(role, comp.role);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type, role);
+        }
     }
 }

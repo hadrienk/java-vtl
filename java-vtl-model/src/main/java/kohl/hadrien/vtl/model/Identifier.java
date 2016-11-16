@@ -20,5 +20,5 @@ package kohl.hadrien.vtl.model;
  * #L%
  */
 
-public interface Identifier<T extends Comparable> extends Component<T> {
+public interface Identifier<T extends Comparable<T>> extends Component<T> {
 }

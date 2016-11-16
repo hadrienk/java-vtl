@@ -220,11 +220,6 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                     .toString();
         }
 
-        @Override
-        public int hashCode() {
-            return ids().hashCode();
-        }
-
 
         @Override
         public Tuple combine(Tuple tuple) {

@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 /**
  * Component represent values of a dataset.
+ * // TODO: Subclass for values.
  */
 public interface Component<T> extends Supplier<T> {
 
