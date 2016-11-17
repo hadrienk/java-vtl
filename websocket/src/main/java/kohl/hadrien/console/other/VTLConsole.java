@@ -1,4 +1,4 @@
-package kohl.hadrien.console;
+package kohl.hadrien.console.other;
 
 import io.termd.core.readline.Function;
 import io.termd.core.readline.Keymap;
