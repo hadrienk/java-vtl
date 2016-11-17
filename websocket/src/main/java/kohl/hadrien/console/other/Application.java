@@ -1,11 +1,16 @@
 package kohl.hadrien.console.other;
 
+import io.termd.core.http.netty.NettyWebsocketTtyBootstrap;
+import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+
+import java.util.concurrent.TimeUnit;
+
 /**
  * A console application
  */
 public class Application {
 
-    /*public synchronized static void main(String[] args) throws Exception {
+    public synchronized static void main(String[] args) throws Exception {
         NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().
                 setHost("localhost").
                 setPort(4000);
@@ -20,6 +25,6 @@ public class Application {
         Application.class.wait();
 
 
-    }*/
+    }
 
 }

@@ -1,25 +1,30 @@
 package kohl.hadrien.console.spring;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.handler.PerConnectionWebSocketHandler;
 
 @Configuration
-@EnableWebSocketMessageBroker
 @EnableWebSocket
-public class ServerConfiguration extends AbstractWebSocketMessageBrokerConfigurer {
+public class ServerConfiguration implements WebSocketConfigurer {
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/app");
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        PerConnectionWebSocketHandler handler = new PerConnectionWebSocketHandler(
+                TermdSocketHandler.class, false
+        );
+        registry.addHandler(handler, "/pts").withSockJS();
     }
 
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").withSockJS();
+    @Bean
+    ThreadPoolTaskExecutor getPtsExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(10);
+        return executor;
     }
 }
