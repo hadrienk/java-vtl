@@ -1,4 +1,4 @@
-package kohl.hadrien.console.other;
+package kohl.hadrien.console.tty.parsing;
 
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;

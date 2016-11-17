@@ -1,10 +1,13 @@
-package kohl.hadrien.console.other;
+package kohl.hadrien.console.tty;
 
 import io.termd.core.readline.Function;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
+import kohl.hadrien.console.tty.parsing.ParsingResult;
+import kohl.hadrien.console.tty.parsing.SyntaxError;
+import kohl.hadrien.console.tty.parsing.SyntaxErrorListener;
 import kohl.hadrien.vtl.parser.VTLLexer;
 import kohl.hadrien.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.*;
@@ -22,14 +25,14 @@ import java.util.function.Consumer;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Created by hadrien on 16/11/16.
+ * A termd interpreter.
  */
 public class VTLConsole implements Consumer<TtyConnection> {
 
     private static final String MOTD = "" +
             "Java VTL interpreter version "
             + VTLConsole.class.getPackage().getImplementationVersion() + ".\n" +
-            "Type .help for command list.\n\n bla\n";
+            "Type .help for command list.\n\n";
 
     private static final String VTL = "" +
             "    ___       ___       ___   \n" +

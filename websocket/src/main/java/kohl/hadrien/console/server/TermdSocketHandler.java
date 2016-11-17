@@ -1,8 +1,8 @@
-package kohl.hadrien.console.spring;
+package kohl.hadrien.console.server;
 
 import io.termd.core.http.HttpTtyConnection;
 import io.termd.core.tty.TtyConnection;
-import kohl.hadrien.console.other.VTLConsole;
+import kohl.hadrien.console.tty.VTLConsole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.TextMessage;

@@ -1,4 +1,4 @@
-package kohl.hadrien.console.spring;
+package kohl.hadrien.console.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

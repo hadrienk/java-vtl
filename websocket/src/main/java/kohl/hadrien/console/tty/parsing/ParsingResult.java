@@ -1,4 +1,4 @@
-package kohl.hadrien.console.other;
+package kohl.hadrien.console.tty.parsing;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.tree.ParseTree;
