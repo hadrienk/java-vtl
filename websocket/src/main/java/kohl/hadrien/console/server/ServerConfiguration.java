@@ -17,7 +17,9 @@ public class ServerConfiguration implements WebSocketConfigurer {
         PerConnectionWebSocketHandler handler = new PerConnectionWebSocketHandler(
                 TermdSocketHandler.class, false
         );
-        registry.addHandler(handler, "/pts").withSockJS();
+        registry.addHandler(handler, "/pts")
+                .setAllowedOrigins("*")
+                .withSockJS();
     }
 
     @Bean
