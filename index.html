@@ -11,6 +11,18 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.1/sockjs.min.js"></script>
+
+    <script src="js/xterm.js"></script>
+    <link rel="stylesheet" href="js/xterm.css"/>
+
+    <script src="js/addons/attach/attach.js"></script>
+
+    <script src="js/addons/fit/fit.js"></script>
+
+    <script src="js/addons/fullscreen/fullscreen.js"></script>
+    <link rel="stylesheet" href="js/addons/fullscreen/fullscreen.css"/>
+
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -19,11 +31,35 @@
 
       ga('create', 'UA-85245041-1', 'auto');
       ga('send', 'pageview');
-    </script>
 
-    <script src="javascripts/wetty/hterm_all.js"></script>
-    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
-    <script src="javascripts/wetty/wetty.js"></script>
+      function loadTerminal() {
+        term = new Terminal({
+          cursorBlink: true
+        });
+
+        socket = new SockJS('https://vtl-console.ddns.net/pts');
+
+        socket.onmessage = function (event) {
+          if (event.type === 'message') {
+            var data = event.data;
+            term.write(data);
+          }
+        };
+        socket.onclose = function () {
+          socket.onmessage = null;
+          socket.onclose = null;
+          term.destroy();
+        };
+
+        term.on('data', function (data) {
+          socket.send(JSON.stringify({action: 'read', data: data}));
+        });
+
+        terminalContainer = document.getElementById('terminal');
+        term.open(terminalContainer);
+        term.fit();
+      }
+    </script>
 
     <title>Java VTL by hadrienk</title>
 
@@ -38,7 +74,7 @@
 
   </head>
 
-  <body>
+  <body onload="loadTerminal();">
     <div id="container">
       <div class="inner">
 
