@@ -8,7 +8,6 @@ import org.junit.Test;
 import java.time.Year;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +22,7 @@ public class InnerJoinOperationTest {
     private ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void testSimpleJoin() throws Exception {
+    public void testDefaultJoin() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         Dataset ds2 = mock(Dataset.class);
         Dataset ds3 = mock(Dataset.class);
@@ -39,7 +38,6 @@ public class InnerJoinOperationTest {
 
         given(ds1.getDataStructure()).willReturn(structure);
         given(ds2.getDataStructure()).willReturn(structure);
-        given(ds3.getDataStructure()).willReturn(structure);
 
         given(ds1.get()).willReturn(Stream.of(
                 tuple(
@@ -53,7 +51,7 @@ public class InnerJoinOperationTest {
                         structure.wrap("ref_area", "EU25"),
                         structure.wrap("partner", "BG"),
                         structure.wrap("obs_value", "2"),
-                        structure.wrap("obs_status", "E")
+                        structure.wrap("obs_status", "P")
                 ), tuple(
                         structure.wrap("time", Year.of(2010)),
                         structure.wrap("ref_area", "EU25"),
@@ -73,11 +71,21 @@ public class InnerJoinOperationTest {
                 )
         ));
 
-        JoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+        AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
-        result.getClauses().add(Function.identity());
+        result.getClauses().add(new JoinClause() {
+            @Override
+            public DataStructure transformDataStructure(DataStructure structure) {
+                return structure;
+            }
 
-        assertThat(result.get().get()).contains(
+            @Override
+            public Dataset.Tuple transformTuple(Dataset.Tuple structure) {
+                return structure;
+            }
+        });
+
+        assertThat(result.get()).contains(
                 tuple(
                         structure.wrap("time", Year.of(2010)),
                         structure.wrap("ref_area", "EU25"),

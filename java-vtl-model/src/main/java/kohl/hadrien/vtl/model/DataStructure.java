@@ -251,40 +251,4 @@ public abstract class DataStructure {
 
     public abstract Set<String> names();
 
-    /**
-     * A forwarding data structure.
-     * <p>
-     * All calls are forwarded to the instance returned by the abstract method
-     * {@link ForwardingDataStructure#delegate()}.
-     */
-    public abstract class ForwardingDataStructure extends DataStructure {
-
-        protected abstract DataStructure delegate();
-
-        @Override
-        public BiFunction<Object, Class<?>, ?> converter() {
-            return delegate().converter();
-        }
-
-        @Override
-        public Dataset.Tuple wrap(Map<String, Object> map) {
-            return delegate().wrap(map);
-        }
-
-        @Override
-        public Map<String, Class<? extends Component>> roles() {
-            return delegate().roles();
-        }
-
-        @Override
-        public Map<String, Class<?>> types() {
-            return delegate().types();
-        }
-
-        @Override
-        public Set<String> names() {
-            return delegate().names();
-        }
-
-    }
 }

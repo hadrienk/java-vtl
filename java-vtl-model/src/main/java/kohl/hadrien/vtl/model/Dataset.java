@@ -36,11 +36,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public interface Dataset extends Streamable<Dataset.Tuple> {
 
-    /**
-     * Returns the data structure of the DataSet.
-     */
-    DataStructure getDataStructure();
-
     static Comparator<Tuple> comparatorFor(Class<? extends Component>... roles) {
         Set<Class<? extends Component>> rolesHash = Sets.newHashSet(roles);
         return new Comparator<Tuple>() {
@@ -73,6 +68,11 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
         };
     }
 
+    /**
+     * Returns the data structure of the DataSet.
+     */
+    DataStructure getDataStructure();
+
     interface Tuple extends List<Component>, Comparable<Tuple> {
 
         static Tuple create(List<Component> components) {
@@ -98,7 +98,7 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
         public List<Identifier> ids() {
             return stream()
                     .filter(component -> component.role().isAssignableFrom(Identifier.class))
-                    .map(component -> new Identifier() {
+                    .map(component -> new TempIdentifier() {
                         @Override
                         public String name() {
                             return component.name();
@@ -110,21 +110,10 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                         }
 
                         @Override
-                        public Class<? extends Component> role() {
-                            return component.role();
-                        }
-
-                        @Override
                         public Object get() {
                             return component.get();
                         }
 
-                        @Override
-                        public String toString() {
-                            return MoreObjects.toStringHelper(role())
-                                    .add(name(), get().toString())
-                                    .toString();
-                        }
                     })
                     .collect(Collectors.toList());
         }
@@ -136,7 +125,7 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                     .map(component -> {
                         // TODO
                         if (component.role().isAssignableFrom(Measure.class)) {
-                            return new Measure() {
+                            return new TempMeasure() {
                                 @Override
                                 public String name() {
                                     return component.name();
@@ -148,24 +137,13 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                                 }
 
                                 @Override
-                                public Class<? extends Component> role() {
-                                    return component.role();
-                                }
-
-                                @Override
                                 public Object get() {
                                     return component.get();
                                 }
 
-                                @Override
-                                public String toString() {
-                                    return MoreObjects.toStringHelper(role())
-                                            .add("name", name())
-                                            .addValue(get()).toString();
-                                }
                             };
                         } else {
-                            return new Attribute() {
+                            return new TempAttribute() {
                                 @Override
                                 public String name() {
                                     return component.name();
@@ -177,21 +155,10 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                                 }
 
                                 @Override
-                                public Class<? extends Component> role() {
-                                    return component.role();
-                                }
-
-                                @Override
                                 public Object get() {
                                     return component.get();
                                 }
 
-                                @Override
-                                public String toString() {
-                                    return MoreObjects.toStringHelper(role())
-                                            .add("name", name())
-                                            .addValue(get()).toString();
-                                }
                             };
                         }
                     })
@@ -200,6 +167,8 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
         @Override
         public int compareTo(Tuple o) {
+            checkNotNull(o);
+
             Comparator comparator = Comparator.naturalOrder();
             Iterator<Identifier> li = this.ids().iterator();
             Iterator<Identifier> ri = o.ids().iterator();
@@ -232,6 +201,33 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
             };
         }
+    }
+
+    abstract class TempIdentifier extends AbstractComponent implements Identifier {
+
+        @Override
+        public Class<? extends Component> role() {
+            return Identifier.class;
+        }
+
+    }
+
+    abstract class TempMeasure extends AbstractComponent implements Measure {
+
+        @Override
+        public Class<? extends Component> role() {
+            return Measure.class;
+        }
+
+    }
+
+    abstract class TempAttribute extends AbstractComponent implements Measure {
+
+        @Override
+        public Class<? extends Component> role() {
+            return Attribute.class;
+        }
+
     }
 
     class CombinedList<T, A extends T, B extends T> extends AbstractList<T> implements RandomAccess {

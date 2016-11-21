@@ -24,33 +24,41 @@ import kohl.hadrien.vtl.model.Component;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.model.Identifier;
-import kohl.hadrien.vtl.script.support.CombinedList;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 
-public abstract class JoinOperation implements Supplier<Dataset> {
+/**
+ * Abstract join operation.
+ * <p>
+ * Implementations should provide the joined stream and its data structure.
+ * TODO: Define a common interface for operation that expose {@link DataStructure}?
+ */
+public abstract class AbstractJoinOperation implements Dataset {
 
     // The datasets to operate on.
+    // TODO: Abstract this as a Context/Bindings to allow reusability of the Clauses.
     private final Map<String, Dataset> datasets;
-    // The dimensions to join on.
-    private final Set<String> dimensions;
+
+    // The ids to join on.
+    private final Set<String> ids;
+
     // Holds the operations of the join.
-    private final List<Function<JoinTuple, JoinTuple>> clauses;
+    private final List<JoinClause> clauses;
 
+    public AbstractJoinOperation(Map<String, Dataset> namedDatasets) {
+        checkArgument(
+                !namedDatasets.isEmpty(),
+                "join operation impossible on empty dataset list"
+        );
 
-    public JoinOperation(Map<String, Dataset> namedDatasets) {
         // Find the common identifier.
-        // Only if > 1
-
         Multiset<Comp> components = HashMultiset.create();
         for (Dataset dataset : namedDatasets.values()) {
             // TODO: create DataPoint so we can use Component equality.
@@ -66,7 +74,7 @@ public abstract class JoinOperation implements Supplier<Dataset> {
         }
 
         datasets = namedDatasets;
-        dimensions = components.entrySet().stream()
+        ids = components.entrySet().stream()
                 .filter(entry -> entry.getCount() == namedDatasets.size())
                 .map(Multiset.Entry::getElement)
                 .filter(component -> component.role.isAssignableFrom(Identifier.class))
@@ -78,45 +86,38 @@ public abstract class JoinOperation implements Supplier<Dataset> {
         clauses = Lists.newArrayList();
     }
 
-    public Map<String, Dataset> getDatasets() {
+    Map<String, Dataset> getDatasets() {
         return datasets;
     }
 
-    public Set<String> getDimensions() {
-        return dimensions;
+    Set<String> getIds() {
+        return ids;
     }
 
-    /**
-     * Returns the initial Dataset that is the result of the join.
-     * <p>
-     * Inner, Outer and Cross implementations of JoinOperation override this method.
-     */
-    abstract Dataset join();
+    public List<JoinClause> getClauses() {
+        return clauses;
+    }
+
+    abstract Stream<Tuple> joinStream();
+
+    abstract DataStructure joinStructure();
 
     @Override
-    public Dataset get() {
-        Dataset dataset = join();
-        return new Dataset() {
-
-            Stream<Dataset.Tuple> rows = dataset.get();
-
-            @Override
-            public DataStructure getDataStructure() {
-                return dataset.getDataStructure();
-            }
-
-            @Override
-            public Stream<Tuple> get() {
-                for (Function<JoinTuple, JoinTuple> clause : clauses) {
-                    rows = rows.map(tuple -> clause.apply((JoinTuple) tuple));
-                }
-                return rows;
-            }
-        };
+    public Stream<Tuple> get() {
+        Stream<Tuple> dataset = joinStream();
+        for (JoinClause clause : clauses) {
+            dataset = dataset.map(clause::transformTuple);
+        }
+        return dataset;
     }
 
-    public List<Function<JoinTuple, JoinTuple>> getClauses() {
-        return clauses;
+    @Override
+    public DataStructure getDataStructure() {
+        DataStructure structure = joinStructure();
+        for (JoinClause clause : clauses) {
+            structure = clause.transformDataStructure(structure);
+        }
+        return structure;
     }
 
     /**
@@ -124,18 +125,14 @@ public abstract class JoinOperation implements Supplier<Dataset> {
      */
     static final class JoinTuple extends Dataset.AbstractTuple {
 
-        private final List<Identifier> ids;
+        private final ImmutableList<Identifier> ids;
         private Multimap<String, Component> values = LinkedHashMultimap.create();
 
         public JoinTuple(List<Identifier> ids) {
-            this.ids = checkNotNull(ids);
+            this.ids = ImmutableList.copyOf(ids);
         }
 
-        public List<Identifier> getKeyIds() {
-            return ids;
-        }
-
-        public Multimap<String, Component> getValues() {
+        protected Multimap<String, Component> getValues() {
             return values;
         }
 
@@ -145,7 +142,7 @@ public abstract class JoinOperation implements Supplier<Dataset> {
 
         @Override
         protected List<Component> delegate() {
-            return new CombinedList<>((List) ids(), values());
+            return new kohl.hadrien.vtl.script.support.CombinedList<>((List) ids(), values());
         }
 
         @Override
@@ -155,7 +152,7 @@ public abstract class JoinOperation implements Supplier<Dataset> {
 
         @Override
         public List<Component> values() {
-            return new CombinedList<>(Lists.newArrayList(values.values()));
+            return new kohl.hadrien.vtl.script.support.CombinedList<>(Lists.newArrayList(values.values()));
         }
     }
 
