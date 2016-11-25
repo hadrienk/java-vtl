@@ -4,27 +4,33 @@ relationalExpression : unionExpression | joinExpression ;
 
 unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
 
-joinExpression : '[' JOIN_TYPE* joinDefinition ']' joinBody ;
-joinDefinition : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )* ;
-joinBody : '{' joinClause ( ',' joinClause )* '}' ;
+joinExpression : '[' joinDefinition ']' '{' joinBody '}';
 
-joinClause : joinCalc
-           | joinFilter
-           | joinKeep
-           | joinRename ;
-           // | joinDrop
-           // | joinUnfold
-           // | joinFold ;
+joinDefinition : INNER? joinParam  #joinDefinitionInner
+               | OUTER  joinParam  #joinDefinitionOuter
+               | CROSS  joinParam  #joinDefinitionCross ;
 
-joinCalc   : role* variableRef '=' aritmeticExpression ;
+joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )* ;
 
-aritmeticExpression : aritmeticExpression  ( '*' | '/' ) aritmeticExpression
-                     | aritmeticExpression  ( '+' | '-' ) aritmeticExpression
-                     | variableRef ;
+joinBody : role? varID '=' joinClause ( ',' role? varID '=' joinClause )* ;
 
-joinFilter : 'TODO' ;
-joinKeep   : 'TODO' ;
-joinRename : 'TODO' ;
+joinClause : joinCalcExpression # joinCalcClause;
+           //| joinFilter
+           //| joinKeep
+           //| joinRename ;
+           //| joinDrop
+           //| joinUnfold
+           //| joinFold ;
+
+// Left recursive
+joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
+                   | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
+                   | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
+                   | joinCalcRef                                                                        #joinCalcReference
+                   | constant                                                                           #joinCalcAtom
+                   ;
+
+joinCalcRef : (aliasName=varID '.')? componentName=varID ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
@@ -39,6 +45,8 @@ varID               : 'varID' NUM+;
 variableRef         : ( 'varName' | 'constant' ) NUM+;
 datasetExpression   : 'datasetExpr' NUM*;
 dimensionExpression : 'dimensionExpr' NUM*;
+constant            : NUM ;
+
 NUM : '0'..'9' ;
 
 WS          : [ \t\n\t] -> skip ;

@@ -77,6 +77,38 @@ public class VTLScriptEngineTest {
     }
 
     @Test
+    public void testJoin() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        Dataset ds2 = mock(Dataset.class);
+
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> null,
+                "id1", Identifier.class, String.class,
+                "id2", Identifier.class, String.class,
+                "m1", Measure.class, Integer.class,
+                "m2", Measure.class, Double.class,
+                "at1", Attribute.class, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds2.getDataStructure()).thenReturn(ds);
+
+
+
+        bindings.put("ds1", ds1);
+        bindings.put("ds2", ds2);
+
+        engine.eval("" +
+                "ds3 := [ds1, ds2]{" +
+                "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1" +
+                "}" +
+                "");
+
+        assertThat(bindings).containsKey("ds3");
+
+    }
+
+    @Test
     public void testRename() throws Exception {
 
         when(dataset.getDataStructure()).thenReturn(
