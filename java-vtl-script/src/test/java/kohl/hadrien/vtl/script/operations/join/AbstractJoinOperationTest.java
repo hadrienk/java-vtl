@@ -2,9 +2,9 @@ package kohl.hadrien.vtl.script.operations.join;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import kohl.hadrien.vtl.model.Component;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
-import kohl.hadrien.vtl.model.Measure;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
@@ -39,7 +39,7 @@ public class AbstractJoinOperationTest {
             DataStructure structure = DataStructure.of(
                     mapper::convertValue,
                     "m",
-                    Measure.class,
+                    Component.Role.MEASURE,
                     Integer.class
             );
 
@@ -56,13 +56,18 @@ public class AbstractJoinOperationTest {
                 ) {
 
                     @Override
-                    Stream<Tuple> joinStream() {
-                        return ds1.get();
-                    }
+                    WorkingDataset workDataset() {
+                        return new WorkingDataset() {
+                            @Override
+                            public DataStructure getDataStructure() {
+                                return ds1.getDataStructure();
+                            }
 
-                    @Override
-                    DataStructure joinStructure() {
-                        return ds1.getDataStructure();
+                            @Override
+                            public Stream<Tuple> get() {
+                                return ds1.get();
+                            }
+                        };
                     }
                 };
             } catch (Throwable t) {
@@ -80,15 +85,9 @@ public class AbstractJoinOperationTest {
                 ) {
 
                     @Override
-                    Stream<Tuple> joinStream() {
+                    WorkingDataset workDataset() {
                         return null;
                     }
-
-                    @Override
-                    DataStructure joinStructure() {
-                        return null;
-                    }
-
                 };
             } catch (Throwable t) {
                 ex = t;
@@ -109,12 +108,7 @@ public class AbstractJoinOperationTest {
         try {
             new AbstractJoinOperation(Collections.emptyMap()) {
                 @Override
-                Stream<Tuple> joinStream() {
-                    return null;
-                }
-
-                @Override
-                DataStructure joinStructure() {
+                WorkingDataset workDataset() {
                     return null;
                 }
             };
@@ -135,7 +129,7 @@ public class AbstractJoinOperationTest {
         DataStructure ds1Struct = DataStructure.of(
                 mapper::convertValue,
                 "m",
-                Measure.class,
+                Component.Role.MEASURE,
                 Integer.class
         );
 
@@ -152,26 +146,38 @@ public class AbstractJoinOperationTest {
         AbstractJoinOperation result = new AbstractJoinOperation(ImmutableMap.of("ds1", ds1)) {
 
             @Override
-            Stream<Tuple> joinStream() {
-                return ds1.get();
-            }
+            WorkingDataset workDataset() {
+                return new WorkingDataset() {
+                    @Override
+                    public DataStructure getDataStructure() {
+                        return ds1.getDataStructure();
+                    }
 
-            @Override
-            DataStructure joinStructure() {
-                return ds1.getDataStructure();
+                    @Override
+                    public Stream<Tuple> get() {
+                        return ds1.get();
+                    }
+                };
             }
         };
 
         result.getClauses().add(new JoinClause() {
-            @Override
-            public DataStructure transformDataStructure(DataStructure structure) {
-                return structure;
-            }
 
             @Override
-            public Dataset.Tuple transformTuple(Dataset.Tuple tuple) {
-                return tuple;
+            public WorkingDataset apply(WorkingDataset workingDataset) {
+                return new WorkingDataset() {
+                    @Override
+                    public DataStructure getDataStructure() {
+                        return workingDataset.getDataStructure();
+                    }
+
+                    @Override
+                    public Stream<Tuple> get() {
+                        return workingDataset.get();
+                    }
+                };
             }
+
         });
 
         assertThat(result.get())

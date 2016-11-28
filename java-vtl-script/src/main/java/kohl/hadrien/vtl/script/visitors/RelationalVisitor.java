@@ -5,6 +5,7 @@ import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLBaseVisitor;
 import kohl.hadrien.vtl.parser.VTLParser;
 import kohl.hadrien.vtl.script.operations.UnionOperation;
+import kohl.hadrien.vtl.script.visitors.join.JoinDefinitionVisitor;
 
 import javax.script.ScriptContext;
 import java.util.List;
@@ -18,11 +19,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
 
     final AssignmentVisitor assignmentVisitor;
-    final JoinVisitor joinVisitor;
+    final JoinDefinitionVisitor joinVisitor;
 
     public RelationalVisitor(AssignmentVisitor assignmentVisitor, ScriptContext context) {
         this.assignmentVisitor = checkNotNull(assignmentVisitor);
-        this.joinVisitor = new JoinVisitor(context);
+        this.joinVisitor = new JoinDefinitionVisitor(context);
     }
 
 

@@ -172,7 +172,7 @@ tokens {
   MISSING           = 'missing';
   CHARSET_MATCH     = 'match_characters';
   CODELIST_MATCH    = 'match_values';
-  TYPE              = 'type';
+  TYPE              = 'datatype';
   CHARLENGTH        = 'charlength';
   NVL               = 'nvl';
   HIERARCHY         = 'hierarchy';

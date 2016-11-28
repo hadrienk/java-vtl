@@ -19,11 +19,9 @@ package kohl.hadrien.vtl.script.operations.join;
  * #L%
  */
 
-import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Created by hadrien on 16/11/2016.
@@ -35,12 +33,8 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    Stream<Tuple> joinStream() {
+    WorkingDataset workDataset() {
         return null;
     }
 
-    @Override
-    DataStructure joinStructure() {
-        return null;
-    }
 }

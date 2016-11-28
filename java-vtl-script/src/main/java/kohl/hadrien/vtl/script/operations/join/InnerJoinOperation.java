@@ -19,14 +19,15 @@ package kohl.hadrien.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.collect.Maps;
 import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,40 +44,105 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         super(namedDatasets);
     }
 
-
     @Override
-    DataStructure joinStructure() {
-        return null;
+    WorkingDataset workDataset() {
+
+        return new WorkingDataset() {
+            @Override
+            public DataStructure getDataStructure() {
+                Map<String, Component> newComponents = Maps.newHashMap();
+                Map<String, Dataset> datasets = getDatasets();
+
+                for (String datasetName : datasets.keySet()) {
+                    DataStructure structure = datasets.get(datasetName).getDataStructure();
+                    for (String componentName : structure.keySet()) {
+                        newComponents.put(componentName, structure.get(componentName));
+                    }
+                }
+
+                return DataStructure.copyOf((o, aClass) -> o, newComponents);
+            }
+
+            @Override
+            public Stream<Tuple> get() {
+                Collection<Dataset> datasets = getDatasets().values();
+                checkArgument(!datasets.isEmpty(), "no dataset for the join %s", this);
+
+                // Optimization.
+                if (datasets.size() == 1) {
+                    return datasets.iterator().next().get();
+                }
+
+                // Simple algorithm for now.
+                final Set<String> dimensions = getIds();
+
+                // Get the key comparator.
+                Comparator<List<DataPoint>> keyComparator = getKeyComparator(dimensions);
+
+                // How to merge the tuples.
+                BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> merger = getMerger();
+
+                DataStructure joinedDataStructure = getDataStructure();
+                Iterator<Dataset> iterator = datasets.iterator();
+                Stream<JoinTuple> result = iterator.next().get().map(components -> {
+                    components.replaceAll(dataPoint -> {
+                        // Get the new component.
+                        Component newComponent = joinedDataStructure.get(joinedDataStructure.getName(dataPoint.getComponent()));
+                        return new DataPoint(newComponent) {
+                            @Override
+                            public Object get() {
+                                return dataPoint.get();
+                            }
+                        };
+                    });
+                    JoinTuple joinTuple = new JoinTuple(components.ids());
+                    joinTuple.addAll(components.values());
+                    return joinTuple;
+                });
+
+                while (iterator.hasNext()) {
+                    result = StreamSupport.stream(
+                            new JoinSpliterator<>(
+                                    keyComparator,
+                                    result.spliterator(),
+                                    iterator.next().get().spliterator(),
+                                    Tuple::ids,
+                                    Tuple::ids,
+                                    merger
+                            ), false
+                    );
+                }
+                return result.map(tuple -> (Tuple) tuple);
+            }
+        };
     }
 
-    @Override
-    Stream<Tuple> joinStream() {
+    private BiFunction<JoinTuple, Tuple, JoinTuple> getMerger() {
+        return new BiFunction<JoinTuple, Tuple, JoinTuple>() {
 
-        Collection<Dataset> datasets = getDatasets().values();
-        checkArgument(!datasets.isEmpty(), "no dataset for the join %s", this);
-
-        // Optimization.
-        if (datasets.size() == 1) {
-            return datasets.iterator().next().get();
-        }
-
-        // Simple algorithm for now.
-        final Set<String> dimensions = getIds();
-
-        Comparator<List<Component>> keyComparator = new Comparator<List<Component>>() {
             @Override
-            public int compare(List<Component> l, List<Component> r) {
+            public JoinTuple apply(JoinTuple joinTuple, Tuple components) {
+                joinTuple.addAll(components.values());
+                return joinTuple;
+            }
+        };
+    }
+
+    private Comparator<List<DataPoint>> getKeyComparator(final Set<String> dimensions) {
+        return new Comparator<List<DataPoint>>() {
+            @Override
+            public int compare(List<DataPoint> l, List<DataPoint> r) {
                 // TODO: Tuple should expose method to handle this.
                 // TODO: Evaluate migrating to DataPoint.
                 // TODO: When using on, the left over identifiers should be transformed to measures.
                 Map<String, Comparable> lIds = l.stream()
                         .collect(Collectors.toMap(
-                                Component::name,
+                                DataPoint::getName,
                                 t -> (Comparable) t.get()
                         ));
                 Map<String, Object> rIds = r.stream()
                         .collect(Collectors.toMap(
-                                Component::name,
+                                DataPoint::getName,
                                 Supplier::get
                         ));
                 for (String key : dimensions) {
@@ -87,46 +153,5 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 return 0;
             }
         };
-
-        BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> merger = new BiFunction<JoinTuple, Dataset.Tuple, JoinTuple>() {
-            Integer id = 0;
-
-            @Override
-            public JoinTuple apply(JoinTuple joinTuple, Dataset.Tuple components) {
-                joinTuple.getValues().putAll(Integer.toString(++id), components.values());
-                return joinTuple;
-            }
-        };
-
-        Iterator<Dataset> iterator = datasets.iterator();
-        Stream<JoinTuple> result = iterator.next().get().map(components -> {
-            JoinTuple joinTuple = new JoinTuple(components.ids());
-            joinTuple.getValues().putAll("0", components.values());
-            return joinTuple;
-        });
-
-        while (iterator.hasNext()) {
-            result = StreamSupport.stream(
-                    new JoinSpliterator<>(
-                            keyComparator,
-                            result.spliterator(),
-                            iterator.next().get().spliterator(),
-                            new Function<JoinTuple, List<Component>>() {
-                                @Override
-                                public List<Component> apply(JoinTuple l) {
-                                    return (List) l.ids();
-                                }
-                            },
-                            new Function<Dataset.Tuple, List<Component>>() {
-                                @Override
-                                public List<Component> apply(Dataset.Tuple r) {
-                                    return (List) r.ids();
-                                }
-                            },
-                            merger
-                    ), false
-            );
-        }
-        return result.map(tuple -> (Tuple) tuple);
     }
 }

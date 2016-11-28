@@ -20,18 +20,80 @@ package kohl.hadrien.vtl.model;
  * #L%
  */
 
-import java.util.function.Supplier;
+import com.google.common.base.MoreObjects;
+
+import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Component represent values of a dataset.
- * // TODO: Subclass for values.
  */
-public interface Component<T> extends Supplier<T> {
+public class Component {
 
-    String name();
+    private final Class<?> type;
+    private final Role role;
+    private final String name;
 
-    Class<?> type();
+    // Use data structure static methods to create component.
+    Component(Class<?> type, Role role, String name) {
+        this.type = checkNotNull(type);
+        this.role = checkNotNull(role);
+        this.name = checkNotNull(name);
+    }
 
-    Class<? extends Component<T>> role();
+    public Class<?> getType() {
+        return type;
+    }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isIdentifier() {
+        return getRole() == Role.IDENTIFIER;
+    }
+
+    public boolean isMeasure() {
+        return getRole() == Role.MEASURE;
+    }
+
+    public boolean isAttribute() {
+        return getRole() == Role.ATTRIBUTE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Component component = (Component) o;
+        return Objects.equals(getType(), component.getType()) &&
+                Objects.equals(getName(), component.getName()) &&
+                getRole() == component.getRole();
+    }
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getType(), getName(), getRole());
+    }
+
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(name)
+                .addValue(type)
+                .addValue(role)
+                .toString();
+    }
+
+    public enum Role {
+        IDENTIFIER,
+        MEASURE,
+        ATTRIBUTE
+    }
 }

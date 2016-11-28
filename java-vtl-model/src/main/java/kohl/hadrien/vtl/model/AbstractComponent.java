@@ -1,21 +1,17 @@
 package kohl.hadrien.vtl.model;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
-
-import java.util.Objects;
-
 /**
  * Abstract component implementation.
  */
-public abstract class AbstractComponent<T> implements Component<T> {
+@Deprecated
+public abstract class AbstractComponent { //implements Component {
 
-    @Override
+    /*@Override
     public String toString() {
         return MoreObjects.toStringHelper(role())
                 .add("type", type().getSimpleName())
-                .add("name", name())
-                .addValue(Optional.fromNullable(get()).transform(Object::toString).or("NULL"))
+                //.add("name", name())
+                //.addValue(Optional.fromNullable(get()).transform(Object::toString).or("NULL"))
                 .toString();
     }
 
@@ -36,5 +32,5 @@ public abstract class AbstractComponent<T> implements Component<T> {
         return Objects.equals(that.name(), name())
                 && Objects.equals(that.type(), type())
                 && Objects.equals(that.get(), get());
-    }
+    }*/
 }

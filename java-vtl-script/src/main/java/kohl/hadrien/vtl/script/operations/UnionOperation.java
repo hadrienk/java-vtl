@@ -2,7 +2,9 @@ package kohl.hadrien.vtl.script.operations;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -51,10 +53,10 @@ public class UnionOperation implements Supplier<Dataset> {
                 Sets.difference(providedNames, requiredNames)
         );
 
-        Map<String, Class<? extends Component>> requiredRoles;
-        requiredRoles = Maps.filterKeys(this.dataStructure.roles(), requiredNames::contains);
-        Map<String, Class<? extends Component>> providedRoles;
-        providedRoles = Maps.filterKeys(dataset.getDataStructure().roles(), requiredNames::contains);
+        Map<String, Component.Role> requiredRoles;
+        requiredRoles = Maps.filterKeys(this.dataStructure.getRoles(), requiredNames::contains);
+        Map<String, Component.Role> providedRoles;
+        providedRoles = Maps.filterKeys(dataset.getDataStructure().getRoles(), requiredNames::contains);
 
         checkArgument(
                 requiredNames.equals(providedNames),
@@ -65,9 +67,9 @@ public class UnionOperation implements Supplier<Dataset> {
         );
 
         Map<String, Class<?>> requiredTypes;
-        requiredTypes = Maps.filterKeys(this.dataStructure.types(), requiredNames::contains);
+        requiredTypes = Maps.filterKeys(this.dataStructure.getTypes(), requiredNames::contains);
         Map<String, Class<?>> providedTypes;
-        providedTypes = Maps.filterKeys(dataset.getDataStructure().types(), requiredNames::contains);
+        providedTypes = Maps.filterKeys(dataset.getDataStructure().getTypes(), requiredNames::contains);
 
         checkArgument(
                 requiredNames.equals(providedNames),
@@ -80,7 +82,7 @@ public class UnionOperation implements Supplier<Dataset> {
     }
 
     private Set<String> nonAttributeNames(DataStructure dataStructure) {
-        return Maps.filterValues(dataStructure.roles(), component -> !Attribute.class.equals(component)).keySet();
+        return Maps.filterValues(dataStructure.getRoles(), role -> role != Component.Role.ATTRIBUTE).keySet();
     }
 
     @Override
@@ -98,7 +100,7 @@ public class UnionOperation implements Supplier<Dataset> {
             @Override
             public Stream<Tuple> get() {
                 // TODO: Attribute propagation.
-                Set<Tuple> bucket = Sets.newTreeSet(Dataset.comparatorFor(Identifier.class, Measure.class));
+                Set<Tuple> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
                 Set<Tuple> seen = Collections.synchronizedSet(bucket);
                 return datasets.stream().flatMap(Supplier::get)
                         .filter((o) -> !seen.contains(o))

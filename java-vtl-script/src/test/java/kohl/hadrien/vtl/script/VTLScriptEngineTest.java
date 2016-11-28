@@ -20,14 +20,21 @@ package kohl.hadrien.vtl.script;
  * #L%
  */
 
+import com.google.common.collect.ImmutableMap;
 import kohl.hadrien.vtl.connector.Connector;
-import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.model.DataPoint;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 import org.junit.Test;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
+import static kohl.hadrien.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
@@ -83,17 +90,39 @@ public class VTLScriptEngineTest {
         Dataset ds2 = mock(Dataset.class);
 
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> null,
-                "id1", Identifier.class, String.class,
-                "id2", Identifier.class, String.class,
-                "m1", Measure.class, Integer.class,
-                "m2", Measure.class, Double.class,
-                "at1", Attribute.class, String.class
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "id2", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class,
+                "m2", Role.MEASURE, Double.class,
+                "at1", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
         when(ds2.getDataStructure()).thenReturn(ds);
 
+        when(ds1.get()).then(invocation -> {
+            return Stream.of(
+                    ds.wrap(ImmutableMap.of(
+                            "id1", "1",
+                            "id2", "1",
+                            "m1", 10,
+                            "m2", 20,
+                            "at1", "attr1"
+                    ))
+            );
+        });
 
+        when(ds2.get()).then(invocation -> {
+            return Stream.of(
+                    ds.wrap(ImmutableMap.of(
+                            "id1", "1",
+                            "id2", "1",
+                            "m1", 30,
+                            "m2", 40,
+                            "at1", "attr1"
+                    ))
+            );
+        });
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", ds2);
@@ -106,6 +135,18 @@ public class VTLScriptEngineTest {
 
         assertThat(bindings).containsKey("ds3");
 
+
+        assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+        Dataset ds3 = (Dataset) bindings.get("ds3");
+        assertThat(ds3.getDataStructure()).containsKeys("ident");
+        assertThat(ds3.get()).doesNotContainNull();
+
+        ds3.get().forEach(tuple -> {
+            System.out.println(tuple);
+        });
+
+
+
     }
 
     @Test
@@ -113,15 +154,15 @@ public class VTLScriptEngineTest {
 
         when(dataset.getDataStructure()).thenReturn(
                 DataStructure.of((s, o) -> null,
-                        "id1", Identifier.class, String.class,
-                        "me1", Measure.class, String.class,
-                        "at1", Attribute.class, String.class
+                        "id1", Role.IDENTIFIER, String.class,
+                        "me1", Role.MEASURE, String.class,
+                        "at1", Role.ATTRIBUTE, String.class
                 )
         );
 
         bindings.put("ds1", dataset);
         engine.eval("ds2 := ds1[rename id1 as id3]"
-                + "                [rename id3 as id1]"
+                + "            [rename id3 as id1]"
                 + "                [rename id1 as id1m role = MEASURE,"
                 + "                        me1 as me1a role = ATTRIBUTE,"
                 + "                        at1 as at1i role = IDENTIFIER]");
@@ -129,11 +170,19 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("ds2");
         Dataset result = (Dataset) bindings.get("ds2");
 
-        assertThat(result.getDataStructure().roles()).contains(
-                entry("id1m", Measure.class),
-                entry("me1a", Attribute.class),
-                entry("at1i", Identifier.class)
+        assertThat(result.getDataStructure().getRoles()).contains(
+                entry("id1m", Role.MEASURE),
+                entry("me1a", Role.ATTRIBUTE),
+                entry("at1i", Role.IDENTIFIER)
         );
+    }
 
+    private Dataset.Tuple tuple(DataPoint... components) {
+        return new Dataset.AbstractTuple() {
+            @Override
+            protected List<DataPoint> delegate() {
+                return Arrays.asList(components);
+            }
+        };
     }
 }

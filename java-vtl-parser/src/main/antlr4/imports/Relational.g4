@@ -12,9 +12,9 @@ joinDefinition : INNER? joinParam  #joinDefinitionInner
 
 joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )* ;
 
-joinBody : role? varID '=' joinClause ( ',' role? varID '=' joinClause )* ;
+joinBody : joinClause (',' joinClause)* ;
 
-joinClause : joinCalcExpression # joinCalcClause;
+joinClause : role? varID '=' joinCalcExpression # joinCalcClause;
            //| joinFilter
            //| joinKeep
            //| joinRename ;

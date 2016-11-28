@@ -3,9 +3,12 @@ package kohl.hadrien.vtl.script.operations;
 import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.model.DataPoint;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.script.operations.join.InnerJoinOperation;
 import kohl.hadrien.vtl.script.operations.join.JoinClause;
+import kohl.hadrien.vtl.script.operations.join.WorkingDataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
@@ -13,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static kohl.hadrien.vtl.model.Component.Role;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +26,6 @@ import static org.mockito.Mockito.when;
 public class SumOperationTest {
 
     ObjectMapper mapper = new ObjectMapper();
-
 
     /**
      * Both Datasets must have at least one Identifier Component
@@ -39,17 +42,17 @@ public class SumOperationTest {
         SoftAssertions softly = new SoftAssertions();
         try {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "ID1", Identifier.class, String.class,
-                    "ID2", Identifier.class, String.class,
-                    "ME1", Measure.class, Integer.class
+                    "ID1", Role.IDENTIFIER, String.class,
+                    "ID2", Role.IDENTIFIER, String.class,
+                    "ME1", Role.MEASURE, Integer.class
             ));
             Throwable expectedThrowable = null;
 
             // Different name
             when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "ID1DIFFERENTNAME", Identifier.class, String.class,
-                    "ID2", Identifier.class, String.class,
-                    "ME1", Measure.class, Integer.class
+                    "ID1DIFFERENTNAME", Role.IDENTIFIER, String.class,
+                    "ID2", Role.IDENTIFIER, String.class,
+                    "ME1", Role.MEASURE, Integer.class
             ));
             expectedThrowable = null;
             try {
@@ -76,9 +79,9 @@ public class SumOperationTest {
 
             // Different type
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "ID1", Identifier.class, Integer.class,
-                    "ID2", Identifier.class, String.class,
-                    "ME1", Measure.class, Integer.class
+                    "ID1", Role.IDENTIFIER, String.class,
+                    "ID2", Role.IDENTIFIER, String.class,
+                    "ME1", Role.MEASURE, Integer.class
             ));
             expectedThrowable = null;
             try {
@@ -122,17 +125,17 @@ public class SumOperationTest {
         SoftAssertions softly = new SoftAssertions();
         try {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "ID1", Identifier.class, String.class,
-                    "ID2", Identifier.class, String.class,
-                    "ME1", Measure.class, Integer.class
+                    "ID1", Role.IDENTIFIER, String.class,
+                    "ID2", Role.IDENTIFIER, String.class,
+                    "ME1", Role.MEASURE, Integer.class
             ));
             Throwable expectedThrowable = null;
 
             // Different measure
             when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "ID1", Identifier.class, String.class,
-                    "ID2", Identifier.class, String.class,
-                    "ME1NOTSAMEMEASURE", Measure.class, Integer.class
+                    "ID1", Role.IDENTIFIER, String.class,
+                    "ID2", Role.IDENTIFIER, String.class,
+                    "ME1NOTSAMEMEASURE", Role.MEASURE, Integer.class
             ));
             expectedThrowable = null;
             try {
@@ -177,16 +180,16 @@ public class SumOperationTest {
         SoftAssertions softly = new SoftAssertions();
         try {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "TIME", Identifier.class, String.class,
-                    "GEO", Identifier.class, String.class,
-                    "POPULATION", Measure.class, Integer.class
+                    "TIME", Role.IDENTIFIER, String.class,
+                    "GEO", Role.IDENTIFIER, String.class,
+                    "POPULATION", Role.MEASURE, Integer.class
             ));
 
             when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "TIME", Identifier.class, String.class,
-                    "GEO", Identifier.class, String.class,
-                    "AGE", Identifier.class, String.class,
-                    "POPULATION", Measure.class, Integer.class
+                    "TIME", Role.IDENTIFIER, String.class,
+                    "GEO", Role.IDENTIFIER, String.class,
+                    "AGE", Role.IDENTIFIER, String.class,
+                    "POPULATION", Role.MEASURE, Integer.class
             ));
 
             DataStructure ld = left.getDataStructure();
@@ -241,14 +244,22 @@ public class SumOperationTest {
                     tuple -> tuple.get(3), rd
             );
             join.getClauses().add(new JoinClause() {
-                @Override
-                public DataStructure transformDataStructure(DataStructure structure) {
-                    return sumOperation.getDataStructure();
-                }
+
 
                 @Override
-                public Dataset.Tuple transformTuple(Dataset.Tuple tuple) {
-                    return sumOperation.apply(tuple, null);
+                public WorkingDataset apply(WorkingDataset workingDataset) {
+                    return new WorkingDataset() {
+                        @Override
+                        public DataStructure getDataStructure() {
+                            return sumOperation.getDataStructure();
+                        }
+
+                        @Override
+                        public Stream<Tuple> get() {
+                            return workingDataset.get().map(tuple -> sumOperation.apply(tuple, null));
+
+                        }
+                    };
                 }
             });
 
@@ -301,11 +312,11 @@ public class SumOperationTest {
         SoftAssertions softly = new SoftAssertions();
         try {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "TIME", Identifier.class, String.class,
-                    "REF_AREA", Identifier.class, String.class,
-                    "PARTNER", Identifier.class, String.class,
-                    "OBS_VALUE", Measure.class, Integer.class,
-                    "OBS_STATUS", Attribute.class, String.class
+                    "TIME", Role.IDENTIFIER, String.class,
+                    "REF_AREA", Role.IDENTIFIER, String.class,
+                    "PARTNER", Role.IDENTIFIER, String.class,
+                    "OBS_VALUE", Role.MEASURE, String.class,
+                    "OBS_STATUS", Role.ATTRIBUTE, String.class
             ));
 
             DataStructure ld = left.getDataStructure();
@@ -382,11 +393,11 @@ public class SumOperationTest {
         try {
 
             DataStructure ds = DataStructure.of(mapper::convertValue,
-                    "TIME", Identifier.class, String.class,
-                    "REF_AREA", Identifier.class, String.class,
-                    "PARTNER", Identifier.class, String.class,
-                    "OBS_VALUE", Measure.class, Integer.class,
-                    "OBS_STATUS", Attribute.class, String.class
+                    "TIME", Role.IDENTIFIER, String.class,
+                    "REF_AREA", Role.IDENTIFIER, String.class,
+                    "PARTNER", Role.IDENTIFIER, String.class,
+                    "OBS_VALUE", Role.MEASURE, Integer.class,
+                    "OBS_STATUS", Role.ATTRIBUTE, String.class
             );
 
             // Same DS.
@@ -439,13 +450,19 @@ public class SumOperationTest {
             );
             join.getClauses().add(new JoinClause() {
                 @Override
-                public DataStructure transformDataStructure(DataStructure structure) {
-                    return sumOperation.getDataStructure();
-                }
+                public WorkingDataset apply(WorkingDataset workingDataset) {
+                    return new WorkingDataset() {
+                        @Override
+                        public DataStructure getDataStructure() {
+                            return workingDataset.getDataStructure();
+                        }
 
-                @Override
-                public Dataset.Tuple transformTuple(Dataset.Tuple tuple) {
-                    return sumOperation.apply(tuple, null);
+                        @Override
+                        public Stream<Tuple> get() {
+                            return workingDataset.get().map(tuple -> sumOperation.apply(tuple, null));
+                        }
+
+                    };
                 }
             });
 
@@ -470,10 +487,10 @@ public class SumOperationTest {
         }
     }
 
-    private Dataset.Tuple tuple(Component... components) {
+    private Dataset.Tuple tuple(DataPoint... components) {
         return new Dataset.AbstractTuple() {
             @Override
-            protected List<Component> delegate() {
+            protected List<DataPoint> delegate() {
                 return Arrays.asList(components);
             }
         };

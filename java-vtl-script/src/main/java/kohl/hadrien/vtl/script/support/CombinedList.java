@@ -49,6 +49,21 @@ public class CombinedList<T> extends AbstractList<T> implements RandomAccess {
     }
 
     @Override
+    public boolean add(T t) {
+        return lists.get(lists.size()-1).add(t);
+    }
+
+    @Override
+    public T remove(int index) {
+        for (List<T> list : lists) {
+            if (index < list.size())
+                return list.remove(index);
+            index -= list.size();
+        }
+        throw new IndexOutOfBoundsException();
+    }
+
+    @Override
     public T set(int index, T element) {
         for (List<T> list : lists) {
             if (index < list.size())

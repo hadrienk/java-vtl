@@ -1,6 +1,6 @@
 package kohl.hadrien.vtl.script.operations;
 
-import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 
@@ -12,18 +12,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Addition and subtraction operation
+ * TODO: Use join.
  */
 public class SumOperation implements BinaryOperator<Dataset.Tuple>, Supplier<DataStructure> {
 
-    private final Function<Dataset.Tuple, Component> leftExtractor;
+    private final Function<Dataset.Tuple, DataPoint> leftExtractor;
     private final DataStructure leftDataStructure;
-    private final Function<Dataset.Tuple, Component> rightExtractor;
+    private final Function<Dataset.Tuple, DataPoint> rightExtractor;
     private final DataStructure rightDataStructure;
     private final Number scalar;
 
-    public SumOperation(Function<Dataset.Tuple, Component> leftExtractor,
+    public SumOperation(Function<Dataset.Tuple, DataPoint> leftExtractor,
                         DataStructure leftDataStructure,
-                        Function<Dataset.Tuple, Component> rightExtractor,
+                        Function<Dataset.Tuple, DataPoint> rightExtractor,
                         DataStructure rightDataStructure
     ) {
         this.leftExtractor = checkNotNull(leftExtractor);
@@ -33,7 +34,7 @@ public class SumOperation implements BinaryOperator<Dataset.Tuple>, Supplier<Dat
         this.scalar = null;
     }
 
-    public SumOperation(Function<Dataset.Tuple, Component> extractor, DataStructure dataStructure, Number scalar) {
+    public SumOperation(Function<Dataset.Tuple, DataPoint> extractor, DataStructure dataStructure, Number scalar) {
         this.leftExtractor = checkNotNull(extractor);
         this.leftDataStructure = checkNotNull(dataStructure);
         this.rightExtractor = null;
@@ -48,7 +49,12 @@ public class SumOperation implements BinaryOperator<Dataset.Tuple>, Supplier<Dat
 
     // TODO: Candidate for abstraction?
     BinaryOperator<Dataset.Tuple> getTupleOperator() {
-        return Dataset.Tuple::combine;
+        return new BinaryOperator<Dataset.Tuple>() {
+            @Override
+            public Dataset.Tuple apply(Dataset.Tuple dataPoints, Dataset.Tuple dataPoints2) {
+                return null;
+            }
+        };
     }
 
     public DataStructure getDataStructure() {
@@ -61,7 +67,7 @@ public class SumOperation implements BinaryOperator<Dataset.Tuple>, Supplier<Dat
 
     @Override
     public Dataset.Tuple apply(Dataset.Tuple left, Dataset.Tuple right) {
-        Component leftValue = leftExtractor.apply(left);
+        DataPoint leftValue = leftExtractor.apply(left);
         if (scalar != null) {
             return left;
         } else {

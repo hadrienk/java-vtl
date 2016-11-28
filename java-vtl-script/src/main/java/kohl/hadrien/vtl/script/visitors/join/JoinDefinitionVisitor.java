@@ -4,10 +4,7 @@ import com.google.common.collect.Maps;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLBaseVisitor;
 import kohl.hadrien.vtl.parser.VTLParser;
-import kohl.hadrien.vtl.script.operations.join.AbstractJoinOperation;
-import kohl.hadrien.vtl.script.operations.join.CrossJoinOperation;
-import kohl.hadrien.vtl.script.operations.join.InnerJoinOperation;
-import kohl.hadrien.vtl.script.operations.join.OuterJoinOperation;
+import kohl.hadrien.vtl.script.operations.join.*;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -25,6 +22,17 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
 
     public JoinDefinitionVisitor(ScriptContext context) {
         this.context = checkNotNull(context);
+    }
+
+    @Override
+    public AbstractJoinOperation visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
+        AbstractJoinOperation joinOperation = visit(ctx.joinDefinition());
+        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(joinOperation);
+
+        // TODO: Not used?
+        JoinClause joinClause = joinBodyVisitor.visitJoinBody(ctx.joinBody());
+
+        return joinOperation;
     }
 
     @Override
