@@ -10,7 +10,7 @@ joinDefinition : INNER? joinParam  #joinDefinitionInner
                | OUTER  joinParam  #joinDefinitionOuter
                | CROSS  joinParam  #joinDefinitionCross ;
 
-joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )* ;
+joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )? ;
 
 joinBody : joinClause (',' joinClause)* ;
 
@@ -34,8 +34,6 @@ joinCalcRef : (aliasName=varID '.')? componentName=varID ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
-
-JOIN_TYPE : INNER | OUTER | CROSS ;
 INNER : 'inner' ;
 OUTER : 'outer' ;
 CROSS : 'cross' ;

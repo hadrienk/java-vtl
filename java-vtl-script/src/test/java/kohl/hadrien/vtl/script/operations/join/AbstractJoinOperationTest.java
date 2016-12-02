@@ -129,7 +129,7 @@ public class AbstractJoinOperationTest {
         DataStructure ds1Struct = DataStructure.of(
                 mapper::convertValue,
                 "m",
-                Component.Role.MEASURE,
+                Component.Role.IDENTIFIER,
                 Integer.class
         );
 

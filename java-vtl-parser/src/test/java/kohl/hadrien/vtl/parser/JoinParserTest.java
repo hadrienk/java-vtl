@@ -36,26 +36,27 @@ public class JoinParserTest {
     public void testJoin() throws Exception {
         String expression = "" +
                 "[varID1, varID2]{\n" +
-                "  varName10 = varName1 + constant1 * constant2 / varName2 - constant3,\n" +
-                "  varName20 = varName3 + constant4 * constant5 / varName4 - constant6\n" +
+                "  varID2 = varID2.varID2 + 1 * 2 / varID2.varID2 - 2,\n" +
+                "  varID2 = varID2.varID2 + 3 * 4 / varID2.varID2 - 5\n" +
                 "}";
         String parseTree = parse(expression);
 
         // TODO: Check this.
-        assertThat(parseTree).isEqualTo("(joinExpression:1 [ (joinDefinition:1 (varID:1 varID 1) , (varID:1 varID 2)) ] (joinBody:1 { (joinClause:1 (joinCalc:1 (variableRef:1 varName 1 0) = (aritmeticExpression:2 (aritmeticExpression:2 (aritmeticExpression:1 (variableRef:1 varName 1)) + (aritmeticExpression:1 (aritmeticExpression:1 (aritmeticExpression:1 (variableRef:1 constant 1)) * (aritmeticExpression:1 (variableRef:1 constant 2))) / (aritmeticExpression:1 (variableRef:1 varName 2)))) - (aritmeticExpression:1 (variableRef:1 constant 3))))) , (joinClause:1 (joinCalc:1 (variableRef:1 varName 2 0) = (aritmeticExpression:2 (aritmeticExpression:2 (aritmeticExpression:1 (variableRef:1 varName 3)) + (aritmeticExpression:1 (aritmeticExpression:1 (aritmeticExpression:1 (variableRef:1 constant 4)) * (aritmeticExpression:1 (variableRef:1 constant 5))) / (aritmeticExpression:1 (variableRef:1 varName 4)))) - (aritmeticExpression:1 (variableRef:1 constant 6))))) }))");
+        assertThat(parseTree).isEqualTo("(joinExpression:1 [ (joinDefinition:1 (joinParam:1 (varID:1 varID 1) , (varID:1 varID 2))) ] { (joinBody:1 (joinClause:2 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 1)) * (joinCalcExpression:5 (constant:1 2))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 2)))) , (joinClause:2 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) * (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })");
     }
 
     @Test
     public void testJoinWithOn() throws Exception {
         String expression = "" +
-                "[inner varID1, varID2 on dimensionExpr1, dimensionExpr2]{\n" +
-                "  varName10 = varName1 + constant1 * constant2 / varName2 - constant3,\n" +
-                "  varName20 = varName3 + constant4 * constant5 / varName4 - constant6\n" +
+                "[outer varID1, varID2 on dimensionExpr1, dimensionExpr2]{\n" +
+                "  varID2 = varID2.varID2 + 1 * 2 / varID2.varID2 - 2,\n" +
+                "  varID2 = varID2.varID2 + 3 * 4 / varID2.varID2 - 5\n" +
                 "}";
         String parseTree = parse(expression);
 
         // TODO: Check this.
-        assertThat(parseTree).isEqualTo("(joinExpression:1 [ inner (joinDefinition:1 (varID:1 varID 1) , (varID:1 varID 2) on (dimensionExpression:1 dimensionExpr 1) , (dimensionExpression:1 dimensionExpr 2)) ] (joinBody:1 { (joinClause:1 (joinCalc:1 (variableRef:1 varName 1 0) = (aritmeticExpression:2 (aritmeticExpression:2 (aritmeticExpression:1 (variableRef:1 varName 1)) + (aritmeticExpression:1 (aritmeticExpression:1 (aritmeticExpression:1 (variableRef:1 constant 1)) * (aritmeticExpression:1 (variableRef:1 constant 2))) / (aritmeticExpression:1 (variableRef:1 varName 2)))) - (aritmeticExpression:1 (variableRef:1 constant 3))))) , (joinClause:1 (joinCalc:1 (variableRef:1 varName 2 0) = (aritmeticExpression:2 (aritmeticExpression:2 (aritmeticExpression:1 (variableRef:1 varName 3)) + (aritmeticExpression:1 (aritmeticExpression:1 (aritmeticExpression:1 (variableRef:1 constant 4)) * (aritmeticExpression:1 (variableRef:1 constant 5))) / (aritmeticExpression:1 (variableRef:1 varName 4)))) - (aritmeticExpression:1 (variableRef:1 constant 6))))) }))");
+        assertThat(parseTree).isEqualTo("(joinExpression:1 [ " +
+                "(joinDefinition:2 outer (joinParam:1 (varID:1 varID 1) , (varID:1 varID 2) on (dimensionExpression:1 dimensionExpr 1) , (dimensionExpression:1 dimensionExpr 2))) ] { (joinBody:1 (joinClause:2 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 1)) * (joinCalcExpression:5 (constant:1 2))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 2)))) , (joinClause:2 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) * (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })");
     }
 
     // TODO: Build a more robust way to test.

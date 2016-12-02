@@ -63,7 +63,8 @@ public abstract class AbstractJoinOperation implements Dataset {
         // Find the common identifier.
         Multiset<Component> components = HashMultiset.create();
         for (Dataset dataset : namedDatasets.values()) {
-            components.addAll(dataset.getDataStructure().values());
+            DataStructure structure = dataset.getDataStructure();
+            components.addAll(structure.values());
         }
 
         commonIdentifierNames = components.entrySet().stream()
@@ -72,7 +73,8 @@ public abstract class AbstractJoinOperation implements Dataset {
                 .filter(component -> component.getRole() == Role.IDENTIFIER)
                 .map(Component::getName)
                 .collect(Collectors.toSet());
-        checkArgument(!commonIdentifierNames.isEmpty());
+        checkArgument(!commonIdentifierNames.isEmpty(), "could not find common identifiers in the datasets %s", namedDatasets);
+
 
         // Rename all the components except the common identifiers.
         for (String datasetName : namedDatasets.keySet()) {

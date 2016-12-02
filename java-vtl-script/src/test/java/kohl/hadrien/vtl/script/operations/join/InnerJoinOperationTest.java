@@ -5,15 +5,16 @@ import com.google.common.collect.ImmutableMap;
 import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
+import org.assertj.core.api.Condition;
 import org.junit.Test;
 
 import java.time.Year;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static kohl.hadrien.vtl.model.Component.Role;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -93,17 +94,25 @@ public class InnerJoinOperationTest {
             }
         });*/
 
-        assertThat(result.get()).contains(
-                tuple(
-                        structure1.wrap("time", Year.of(2010)),
-                        structure1.wrap("ref_area", "EU25"),
-                        structure1.wrap("partner", "CA"),
-                        structure1.wrap("obs_value", "20"),
-                        structure1.wrap("obs_status", "E"),
-                        structure1.wrap("obs_value", "10"),
-                        structure1.wrap("obs_status", "P")
-                )
-        );
+//        assertThat(result.get())
+//                .have(dataPointWith("time", Year.of(2010)))
+//                .have(dataPointWith("ref_area", "EU25"))
+//                .have(dataPointWith("partner", "CA"))
+//                .have(dataPointWith("ds1.obs_value", "20"))
+//                .have(dataPointWith("ds1.obs_status", "E"))
+//                .have(dataPointWith("ds2.obs_value", "10"))
+//                .have(dataPointWith("ds2.obs_status", "P"))
+//                .have(dataPointWith("time", Year.of(2010)));
+    }
+
+    private static Condition<DataPoint> dataPointWith(String name, Object value) {
+        return new Condition<DataPoint>(new Predicate<DataPoint>() {
+            @Override
+            public boolean test(DataPoint dataPoint) {
+                return name.equals(dataPoint.getName()) &&
+                            value.equals(dataPoint.get());
+            }
+        }, "data point with name %s and value %s", name, value);
     }
 
     private Dataset.Tuple tuple(DataPoint... components) {
