@@ -25,125 +25,90 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Rename operation.
+ *
+ * TODO: Implement {@link Dataset}
  */
-public class RenameOperation implements Function<Dataset, Dataset> {
+public class RenameOperation implements Dataset {
 
+    private final Dataset dataset;
     private final ImmutableMap<String, String> names;
-    private final ImmutableMap<String, Class<? extends Component>> roles;
+    private final ImmutableMap<String, Component.Role> roles;
+    private DataStructure cache;
+    Map<String, String> mapping = HashBiMap.create();
 
-    public RenameOperation(Map<String, String> names, Map<String, Class<? extends Component>> roles) {
+    public RenameOperation(Dataset dataset, Map<String, String> names, Map<String, Component.Role> roles) {
+        this.dataset = checkNotNull(dataset, "dataset was null");
+
+        // Checks that names key and values are unique.
         HashBiMap.create(names);
+
         checkArgument(names.keySet().containsAll(roles.keySet()), "keys %s not present in %s",
                 Sets.difference(roles.keySet(), names.keySet()), names.keySet());
+
         this.names = ImmutableMap.copyOf(names);
         this.roles = ImmutableMap.copyOf(roles);
     }
 
     @Override
-    public Dataset apply(final Dataset dataset) {
+    public DataStructure getDataStructure() {
 
-        Set<String> oldNames = dataset.getDataStructure().names();
-        checkArgument(oldNames.containsAll(names.keySet()),
-                "the data set %s did not contain components with names %s", dataset,
-                Sets.difference(names.keySet(), oldNames)
-        );
+        if (cache == null) {
+            Set<String> oldNames = dataset.getDataStructure().keySet();
+            checkArgument(oldNames.containsAll(names.keySet()),
+                    "the data set %s did not contain components with names %s", dataset,
+                    Sets.difference(names.keySet(), oldNames)
+            );
 
-        // Copy.
-        final Map<String, Class<? extends Component>> oldRoles, newRoles;
-        oldRoles = dataset.getDataStructure().roles();
-        newRoles = Maps.newHashMap();
+            // Copy.
+            final Map<String, Component.Role> oldRoles, newRoles;
+            oldRoles = dataset.getDataStructure().getRoles();
+            newRoles = Maps.newHashMap();
 
-        final Map<String, Class<?>> oldTypes, newTypes;
-        oldTypes = dataset.getDataStructure().types();
-        newTypes = Maps.newHashMap();
+            final Map<String, Class<?>> oldTypes, newTypes;
+            oldTypes = dataset.getDataStructure().getTypes();
+            newTypes = Maps.newHashMap();
 
-        final Map<String, String> mapping = HashBiMap.create();
 
-        for (String oldName : oldNames) {
-            String newName = names.getOrDefault(oldName, oldName);
-            newTypes.put(newName, oldTypes.get(oldName));
-            newRoles.put(newName, roles.getOrDefault(oldName, oldRoles.get(oldName)));
-            mapping.put(oldName, newName);
+
+            for (String oldName : oldNames) {
+                String newName = names.getOrDefault(oldName, oldName);
+                newTypes.put(newName, oldTypes.get(oldName));
+                newRoles.put(newName, roles.getOrDefault(oldName, oldRoles.get(oldName)));
+                mapping.put(oldName, newName);
+            }
+
+            BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
+            cache = DataStructure.of(converter, newTypes, newRoles);
         }
 
-        final DataStructure renamedStructure = new DataStructure() {
+        return cache;
+    }
 
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return dataset.getDataStructure().converter();
-            }
+    @Override
+    public Stream<Tuple> get() {
+        return dataset.get().map(components -> {
 
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return Collections.unmodifiableMap(newRoles);
-            }
-
-            @Override
-            public Map<String, Class<?>> types() {
-                return Collections.unmodifiableMap(newTypes);
-            }
-
-            @Override
-            public Set<String> names() {
-                return Collections.unmodifiableSet(Sets.newHashSet(types().keySet()));
-            }
-        };
-
-        return new Dataset() {
-
-            @Override
-            public DataStructure getDataStructure() {
-                return renamedStructure;
-            }
-
-            @Override
-            public Stream<Tuple> get() {
-                return dataset.get().map(components -> {
-
-                    components.replaceAll(component -> new Component() {
-
-                        @Override
-                        public Object get() {
-                            return component.get();
-                        }
-
-                        @Override
-                        public String name() {
-                            return mapping.get(component.name());
-                        }
-
-                        @Override
-                        public Class<?> type() {
-                            return newTypes.get(name());
-                        }
-
-                        @Override
-                        public Class<? extends Component> role() {
-                            return newRoles.get(name());
-                        }
-
-                        @Override
-                        public String toString() {
-                            return get().toString();
-                        }
-                    });
-                    return components;
-                });
-            }
-        };
+            components.replaceAll(component -> new DataPoint(getDataStructure().get(mapping.get(component.getName()))) {
+                @Override
+                public Object get() {
+                    return component.get();
+                }
+            });
+            return components;
+        });
     }
 }

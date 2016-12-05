@@ -53,7 +53,7 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
         List<VTLParser.RenameParamContext> parameters = ctx.renameParam();
 
         ImmutableMap.Builder<String, String> names = ImmutableMap.builder();
-        ImmutableMap.Builder<String, Class<? extends Component>> roles = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Component.Role> roles = ImmutableMap.builder();
 
         for (VTLParser.RenameParamContext parameter : parameters) {
             String from = parameter.from.getText();
@@ -62,24 +62,24 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
 
             Optional<String> role = ofNullable(parameter.role()).map(VTLParser.RoleContext::getText);
             if (role.isPresent()) {
-                Class<? extends Component> roleClass;
+                Component.Role roleEnum;
                 switch (role.get()) {
                     case "IDENTIFIER":
-                        roleClass = Identifier.class;
+                        roleEnum = Component.Role.IDENTIFIER;
                         break;
                     case "MEASURE":
-                        roleClass = Measure.class;
+                        roleEnum = Component.Role.MEASURE;
                         break;
                     case "ATTRIBUTE":
-                        roleClass = Attribute.class;
+                        roleEnum = Component.Role.ATTRIBUTE;
                         break;
                     default:
                         throw new RuntimeException("unknown component type " + role.get());
                 }
-                roles.put(from, roleClass);
+                roles.put(from, roleEnum);
             }
         }
 
-        return new RenameOperation(names.build(), roles.build());
+        return dataset -> new RenameOperation(dataset, names.build(), roles.build());
     }
 }

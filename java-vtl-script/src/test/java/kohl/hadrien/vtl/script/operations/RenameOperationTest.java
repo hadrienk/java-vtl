@@ -21,15 +21,15 @@ package kohl.hadrien.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
+import static kohl.hadrien.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
@@ -37,11 +37,23 @@ import static org.mockito.Mockito.when;
 
 public class RenameOperationTest {
 
+    Dataset notNullDataset = new Dataset() {
+        @Override
+        public DataStructure getDataStructure() {
+            return null;
+        }
+
+        @Override
+        public Stream<Tuple> get() {
+            return null;
+        }
+    };
+
     @Test(expected = IllegalArgumentException.class)
     public void testNotDuplicates() throws Exception {
         ImmutableMap<String, String> names = ImmutableMap.of("a1", "a2", "b1", "a2");
         try {
-            new RenameOperation(names, Collections.emptyMap());
+            new RenameOperation(notNullDataset, names, Collections.emptyMap());
         } catch (Throwable t) {
             assertThat(t).hasMessageContaining("a2");
             throw t;
@@ -51,38 +63,51 @@ public class RenameOperationTest {
     @Test(expected = IllegalArgumentException.class)
     public void testConsistentArguments() throws Exception {
         ImmutableMap<String, String> names = ImmutableMap.of("a1", "a2", "b1", "b2");
-        ImmutableMap<String, Class<? extends Component>> roles;
-        roles = ImmutableMap.of("nothere", Identifier.class);
+        ImmutableMap<String, Component.Role> roles;
+        roles = ImmutableMap.of("nothere", Role.IDENTIFIER);
         try {
-            new RenameOperation(names, roles);
+            new RenameOperation(notNullDataset, names, roles);
         } catch (Throwable t) {
             assertThat(t).hasMessageContaining("nothere");
             throw t;
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test()
     public void testKeyNotFound() throws Exception {
-        RenameOperation rename;
-        rename = new RenameOperation(ImmutableMap.of("1a", "1b"), Collections.emptyMap());
 
         Dataset dataset = mock(Dataset.class);
         when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of((s, o) -> null, "notfound", Identifier.class, String.class)
+                DataStructure.of((s, o) -> null, "notfound", Role.IDENTIFIER, String.class)
         );
+
+        Throwable ex = null;
         try {
-            rename.apply(dataset);
+            RenameOperation renameOperation = new RenameOperation(dataset, ImmutableMap.of("1a", "1b"), Collections.emptyMap());
+            renameOperation.getDataStructure();
         } catch (Throwable t) {
-            assertThat(t).hasMessageContaining("1a");
-            throw t;
+            ex = t;
         }
+        assertThat(ex).hasMessageContaining("1a");
 
     }
 
     @Test
     public void testRename() throws Exception {
+
+        Dataset dataset = mock(Dataset.class);
+
+        when(dataset.getDataStructure()).thenReturn(
+                DataStructure.of((s, o) -> null,
+                        "Ia", Role.IDENTIFIER, String.class,
+                        "Ma", Role.MEASURE, String.class,
+                        "Aa", Role.ATTRIBUTE, String.class
+                )
+        );
+
         RenameOperation rename;
         rename = new RenameOperation(
+                dataset,
                 ImmutableMap.of(
                         "Ia", "Ib",
                         "Ma", "Mb",
@@ -90,29 +115,30 @@ public class RenameOperationTest {
                 ), Collections.emptyMap()
         );
 
-        Dataset dataset = mock(Dataset.class);
-
-        when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of((s, o) -> null,
-                        "Ia", Identifier.class, String.class,
-                        "Ma", Measure.class, String.class,
-                        "Aa", Attribute.class, String.class
-                )
-        );
-        Dataset renamedDataset = rename.apply(dataset);
-
-        assertThat(renamedDataset.getDataStructure().roles()).contains(
-                entry("Ib", Identifier.class),
-                entry("Mb", Measure.class),
-                entry("Ab", Attribute.class)
+        assertThat(rename.getDataStructure().getRoles()).contains(
+                entry("Ib", Role.IDENTIFIER),
+                entry("Mb", Role.MEASURE),
+                entry("Ab", Role.ATTRIBUTE)
         );
 
     }
 
     @Test
     public void testRenameAndCast() throws Exception {
+        Dataset dataset = mock(Dataset.class);
+
+        when(dataset.getDataStructure()).thenReturn(DataStructure.of((o, aClass) -> o,
+                "Identifier1", Role.IDENTIFIER, Object.class,
+                "Identifier2", Role.IDENTIFIER, Object.class,
+                "Measure1", Role.MEASURE, Object.class,
+                "Measure2", Role.MEASURE, Object.class,
+                "Attribute1", Role.ATTRIBUTE, Object.class,
+                "Attribute2", Role.ATTRIBUTE, Object.class
+        ));
+
         RenameOperation rename;
         rename = new RenameOperation(
+                dataset,
                 new ImmutableMap.Builder<String, String>()
                         .put("Identifier1", "Identifier1Measure")
                         .put("Identifier2", "Identifier2Attribute")
@@ -121,63 +147,22 @@ public class RenameOperationTest {
                         .put("Attribute1", "Attribute1Identifier")
                         .put("Attribute2", "Attribute2Measure")
                         .build()
-                , new ImmutableMap.Builder<String, Class<? extends Component>>()
-                .put("Identifier1", Measure.class)
-                .put("Identifier2", Attribute.class)
-                .put("Measure1", Identifier.class)
-                .put("Measure2", Attribute.class)
-                .put("Attribute1", Identifier.class)
-                .put("Attribute2", Measure.class).build()
+                , new ImmutableMap.Builder<String, Role>()
+                .put("Identifier1", Role.MEASURE)
+                .put("Identifier2", Role.ATTRIBUTE)
+                .put("Measure1", Role.IDENTIFIER)
+                .put("Measure2", Role.ATTRIBUTE)
+                .put("Attribute1", Role.IDENTIFIER)
+                .put("Attribute2", Role.MEASURE).build()
         );
 
-        Dataset dataset = mock(Dataset.class);
-
-        when(dataset.getDataStructure()).thenReturn(new DataStructure() {
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return null;
-            }
-
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return new ImmutableMap.Builder<String, Class<? extends Component>>()
-                        .put("Identifier1", Identifier.class)
-                        .put("Identifier2", Identifier.class)
-                        .put("Measure1", Measure.class)
-                        .put("Measure2", Measure.class)
-                        .put("Attribute1", Attribute.class)
-                        .put("Attribute2", Attribute.class).build();
-            }
-
-            @Override
-            public Map<String, Class<?>> types() {
-                return new ImmutableMap.Builder<String, Class<?>>()
-                        .put("Identifier1", String.class)
-                        .put("Identifier2", String.class)
-                        .put("Measure1", String.class)
-                        .put("Measure2", String.class)
-                        .put("Attribute1", String.class)
-                        .put("Attribute2", String.class).build();
-            }
-
-            @Override
-            public Set<String> names() {
-                return ImmutableSet.of(
-                        "Identifier1", "Identifier2",
-                        "Measure1", "Measure2",
-                        "Attribute1", "Attribute2"
-                );
-            }
-        });
-        Dataset renamedDataset = rename.apply(dataset);
-
-        assertThat(renamedDataset.getDataStructure().roles()).contains(
-                entry("Identifier1Measure", Measure.class),
-                entry("Identifier2Attribute", Attribute.class),
-                entry("Measure1Identifier", Identifier.class),
-                entry("Measure2Attribute", Attribute.class),
-                entry("Attribute1Identifier", Identifier.class),
-                entry("Attribute2Measure", Measure.class)
+        assertThat(rename.getDataStructure().getRoles()).contains(
+                entry("Identifier1Measure", Role.MEASURE),
+                entry("Identifier2Attribute", Role.ATTRIBUTE),
+                entry("Measure1Identifier", Role.IDENTIFIER),
+                entry("Measure2Attribute", Role.ATTRIBUTE),
+                entry("Attribute1Identifier", Role.IDENTIFIER),
+                entry("Attribute2Measure", Role.MEASURE)
         );
 
     }
