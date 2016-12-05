@@ -39,7 +39,7 @@ public class AbstractJoinOperationTest {
             DataStructure structure = DataStructure.of(
                     mapper::convertValue,
                     "m",
-                    Component.Role.MEASURE,
+                    Component.Role.IDENTIFIER,
                     Integer.class
             );
 
@@ -95,7 +95,9 @@ public class AbstractJoinOperationTest {
             softly.assertThat(ex)
                     .as("exception thrown when using same dataset" +
                             " more than once in a join operation")
-                    .isNotNull();
+                    // TODO: Reevaluate after the 1.1 release of the spec.
+                    //.isNotNull();
+                    .isNull();
 
         } finally {
             softly.assertAll();

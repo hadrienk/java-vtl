@@ -93,7 +93,7 @@ public abstract class AbstractJoinOperation implements Dataset {
                 newNames.put(component.getName(), newName);
                 newRoles.put(component.getName(), component.getRole());
             }
-            datasets.put(datasetName, new RenameOperation(dataset, newNames, newRoles));
+            this.datasets.put(datasetName, new RenameOperation(dataset, newNames, newRoles));
         }
 
     }

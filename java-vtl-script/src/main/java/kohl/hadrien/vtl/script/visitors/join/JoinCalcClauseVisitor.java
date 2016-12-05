@@ -20,7 +20,6 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
         return new Function<Dataset.Tuple, Object>() {
             @Override
             public Object apply(Dataset.Tuple tuple) {
-                // TODO: Improve this.
                 for (DataPoint dataPoint : tuple) {
                     if (variableName.equals(dataPoint.getName())) {
                         return dataPoint.get();

@@ -12,6 +12,8 @@ import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -75,19 +77,27 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        Map<String, DataPoint> variables = Maps.newHashMap();
-        variables.put("a", createNumericalDataPoint(20));
-        variables.put("b", createNumericalDataPoint(15));
-        variables.put("c", createNumericalDataPoint(10));
-        variables.put("d", createNumericalDataPoint(5));
+        DataStructure ds = DataStructure.of((o, aClass) -> o,
+                "a", Component.Role.MEASURE, Integer.class,
+                "b", Component.Role.MEASURE, Integer.class,
+                "c", Component.Role.MEASURE, Integer.class,
+                "d", Component.Role.MEASURE, Integer.class
+        );
 
+        Map<String, Object> variables = Maps.newHashMap();
+        variables.put("a", 20);
+        variables.put("b", 15);
+        variables.put("c", 10);
+        variables.put("d", 5);
+
+        Dataset.Tuple tuple = ds.wrap(variables);
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
         Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
 
         // TODO: Set variables.
-        assertThat(result.apply(null)).isEqualTo(1 * 2 + 20 * (15 - 10) / 5 - 10);
+        assertThat(result.apply(tuple)).isEqualTo(1 * 2 + 20 * (15 - 10) / 5 - 10);
 
     }
 
@@ -123,7 +133,12 @@ public class JoinCalcClauseVisitorTest {
         try {
             // TODO: This should happen during execution (when data is computed).
             Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
-            result.apply(null);
+            result.apply(new Dataset.AbstractTuple() {
+                @Override
+                protected List<DataPoint> delegate() {
+                    return Collections.emptyList();
+                }
+            });
         } catch (Throwable t) {
             ex = t;
         }
