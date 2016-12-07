@@ -94,9 +94,9 @@ public class SsbApiConnector implements Connector {
         try {
             //http://data.ssb.no/api/v0/dataset/1106.json?lang=en;
             ResponseEntity<Map<String, DatasetBuildable>> exchange = restTemplate.exchange(
-                    "http://data.ssb.no/api/v0/dataset/1106.json?lang=en",
+                    "http://data.ssb.no/api/v0/dataset/{id}.json?lang=en",
                     HttpMethod.GET,
-                    null, ref);
+                    null, ref, identifier);
 
             if (!exchange.getBody().values().iterator().hasNext()) {
                 throw new NotFoundException(format("empty dataset returned for the identifier %s", identifier));
