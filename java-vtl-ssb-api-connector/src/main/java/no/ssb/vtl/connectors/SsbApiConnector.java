@@ -7,9 +7,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.Cache;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import kohl.hadrien.vtl.connector.Connector;
 import kohl.hadrien.vtl.connector.ConnectorException;
 import kohl.hadrien.vtl.connector.NotFoundException;
@@ -106,56 +104,15 @@ public class SsbApiConnector implements Connector {
 
             Map<String, Dimension> dimensions = dataset.getDimension();
 
-            // TODO: Fix json-stat-java so that we get access to the roles.
-            Set<String> metric = Sets.newHashSet("ContentsCode");
+            ImmutableMultimap<Dimension.Roles, String> role = dataset.getRole();
+            Set<String> metric = ImmutableSet.copyOf(role.get(Dimension.Roles.METRIC));
+            Set<String> ids = Sets.symmetricDifference(dataset.getId(), metric);
 
-            Map<List<String>, Number> values = dataset.asMap();
+            Set<String> rotatedMetricName = computeMetricNames(dimensions, metric);
+            DataStructure structure = generateStructure(ids, rotatedMetricName);
 
-            List<Map<String, Object>> collect = values.entrySet().stream().collect(
-                    Collectors.groupingBy(entry -> {
-                        HashMap<String, Object> idMap = Maps.newHashMap();
-                        Iterator<Map.Entry<String, Dimension>> dimensionEntry = dimensions.entrySet().iterator();
-                        for (String name : entry.getKey()) {
-                            Map.Entry<String, Dimension> dimension = dimensionEntry.next();
-                            if (!metric.contains(dimension.getKey())) {
-                                ImmutableMap<String, String> labelMap = dimension.getValue().getCategory().getLabel();
-                                idMap.put(dimension.getKey(), labelMap.get(name));
-                            }
-                        }
-                        return idMap;
-                    })
-            ).entrySet().stream()
-                    .map(entry -> {
-                        HashMap<String, Object> measureMap = Maps.newHashMap();
-                        measureMap.putAll(entry.getKey());
+            Table<List<String>, List<String>, Number> table = dataset.asTable(ids, metric);
 
-                        entry.getValue().stream().map(listNumberEntry -> {
-                            Map<String, Object> tmp = Maps.newHashMap();
-                            Iterator<Map.Entry<String, Dimension>> dimensionEntry = dimensions.entrySet().iterator();
-                            for (String name : listNumberEntry.getKey()) {
-                                Map.Entry<String, Dimension> dimension = dimensionEntry.next();
-                                if (metric.contains(dimension.getKey())) {
-                                    tmp.put(name, listNumberEntry.getValue());
-                                }
-                            }
-                            return tmp;
-                        }).forEach(measureMap::putAll);
-
-                        return measureMap;
-                    }).collect(Collectors.toList());
-
-            Map<String, Object> firstRow  = collect.get(0);
-            Map<String, Component.Role> roles = Maps.newHashMap();
-            Map<String, Class<?>> types = Maps.newHashMap();
-            for (String name : firstRow.keySet()) {
-                if (metric.contains(name)) {
-                    roles.put(name, Component.Role.IDENTIFIER);
-                } else {
-                    roles.put(name, Component.Role.MEASURE);
-                }
-                types.put(name, firstRow.get(name).getClass());
-            }
-            DataStructure structure = DataStructure.of((o, aClass) -> o, types, roles);
             return new Dataset() {
                 @Override
                 public DataStructure getDataStructure() {
@@ -164,7 +121,18 @@ public class SsbApiConnector implements Connector {
 
                 @Override
                 public Stream<Tuple> get() {
-                    return collect.stream().map(structure::wrap);
+                    return table.rowMap().entrySet().stream()
+                            .map(entry -> {
+                                Map<String, Object> row = Maps.newHashMap();
+                                Iterator<String> identifierValues = entry.getKey().iterator();
+                                for (String id : ids) {
+                                    row.put(id, identifierValues.next());
+                                }
+                                entry.getValue().entrySet().forEach(metrics -> {
+                                    row.put(String.join("_", metrics.getKey()), metrics.getValue());
+                                });
+                                return row;
+                            }).map(structure::wrap);
                 }
             };
 
@@ -173,6 +141,30 @@ public class SsbApiConnector implements Connector {
                     format("error when accessing the dataset with id %s", identifier)
             );
         }
+    }
+
+    private Set<String> computeMetricNames(Map<String, Dimension> dimensions, Set<String> metric) {
+        List<Set<String>> metricValues = Lists.newArrayList();
+        for (String metricName : metric) {
+            metricValues.add(dimensions.get(metricName).getCategory().getIndex());
+        }
+        return Sets.cartesianProduct(metricValues).stream().map(
+                strings -> String.join("_", strings)
+        ).collect(Collectors.toSet());
+    }
+
+    private DataStructure generateStructure(Set<String> ids, Set<String> metrics) {
+        Map<String, Component.Role> roles = Maps.newHashMap();
+        Map<String, Class<?>> types = Maps.newHashMap();
+        for (String name : ids) {
+            roles.put(name, Component.Role.IDENTIFIER);
+            types.put(name, String.class);
+        }
+        for (String name : metrics) {
+            roles.put(name, Component.Role.MEASURE);
+            types.put(name, Number.class);
+        }
+        return DataStructure.of((o, aClass) -> o, types, roles);
     }
 
     public Dataset putDataset(String identifier, Dataset dataset) throws ConnectorException {
