@@ -72,6 +72,10 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
             Number leftNumber = (Number) leftResult.apply(tuple);
             Number rightNumber = (Number) rightResult.apply(tuple);
 
+            if (leftNumber == null ^ rightNumber == null) {
+                return null;
+            }
+
             // TODO: document boxing and overflow
             if (leftNumber instanceof Float || rightNumber instanceof Float) {
                 if (ctx.sign.getText().equals("+")) {
@@ -121,6 +125,10 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
         return tuple -> {
             Number leftNumber = (Number) leftResult.apply(tuple);
             Number rightNumber = (Number) rightResult.apply(tuple);
+
+            if (leftNumber == null ^ rightNumber == null) {
+                return null;
+            }
 
             // TODO: document boxing and overflow
             if (leftNumber instanceof Float || rightNumber instanceof Float) {
