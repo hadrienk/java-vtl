@@ -212,7 +212,7 @@ public class Interpreter implements Runnable {
             //for (String name : dataset.getDataStructure().keySet())
             //    columns.add(asMap.get(name).toString());
 
-            console.println(row.values().stream()
+            console.println(row.stream()
                     .map(dataPoint -> {
                         return dataPoint.get() != null ? dataPoint.get().toString() : "[NULL]";
                     })
