@@ -21,12 +21,6 @@
             <version>1.9</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.codepoetics</groupId>
-            <artifactId>protonpack</artifactId>
-            <version>1.10</version>
-        </dependency>
-
     </dependencies>
 
 </project>

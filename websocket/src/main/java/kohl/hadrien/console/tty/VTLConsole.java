@@ -10,6 +10,7 @@ import kohl.hadrien.console.tty.parsing.ParsingResult;
 import kohl.hadrien.console.tty.parsing.SyntaxError;
 import kohl.hadrien.console.tty.parsing.SyntaxErrorListener;
 import kohl.hadrien.vtl.model.Component;
+import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLLexer;
 import kohl.hadrien.vtl.parser.VTLParser;
@@ -23,7 +24,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -157,13 +157,20 @@ public class VTLConsole implements Consumer<TtyConnection> {
     }
 
     private void printDataset(TtyConnection ttyConnection, Dataset dataset) throws IOException {
-        Map<String, Class<? extends Component>> roles = dataset.getDataStructure().roles();
-        Map<String, Class<?>> types = dataset.getDataStructure().types();
+        DataStructure dataStructure = dataset.getDataStructure();
 
         // Header
         List<String> columns = Lists.newArrayList();
-        for (String name : dataset.getDataStructure().names())
-            columns.add(format("%s[%s,%s]", name, roles.get(name).getSimpleName(), types.get(name).getSimpleName()));
+        for (Component component : dataStructure.values()) {
+            columns.add(
+                    format(
+                            "%s[%s,%s]",
+                            component.getName(),
+                            component.getType().getSimpleName(),
+                            component.getType().getSimpleName()
+                    )
+            );
+        }
         ttyConnection.write(columns.stream().collect(Collectors.joining(",")) + "\n");
 
         // Rows
@@ -171,12 +178,9 @@ public class VTLConsole implements Consumer<TtyConnection> {
         while (iterator.hasNext()) {
             columns.clear();
             Dataset.Tuple row = iterator.next();
-            Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
-                    Component::name, Component::get
-            ));
-            for (String name : dataset.getDataStructure().names())
-                columns.add(asMap.get(name).toString());
-
+            columns = row.stream().map(dataPoint -> {
+                return dataPoint.get() == null ? "[NULL]" : dataPoint.get().toString();
+            }).collect(Collectors.toList());
             ttyConnection.write(columns.stream().collect(Collectors.joining(",")) + "\n");
         }
     }

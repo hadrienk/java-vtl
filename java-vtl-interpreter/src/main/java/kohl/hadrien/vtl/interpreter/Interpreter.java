@@ -21,25 +21,29 @@ package kohl.hadrien.vtl.interpreter;
  */
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import kohl.hadrien.vtl.connector.Connector;
 import kohl.hadrien.vtl.connector.ConnectorException;
-import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.model.DataPoint;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.script.VTLScriptEngine;
 import org.fusesource.jansi.AnsiConsole;
 
 import javax.script.ScriptException;
 import java.io.*;
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static kohl.hadrien.vtl.model.Component.Role;
 
 /**
  * A VTL interpreter.
@@ -78,17 +82,17 @@ public class Interpreter implements Runnable {
 
     private static void printDataset(PrintStream output, Dataset dataset) {
         // Quickly print stream for now.
-        for (String name : dataset.getDataStructure().names()) {
+        for (String name : dataset.getDataStructure().keySet()) {
             output.print(name);
             output.print("[");
-            output.print(dataset.getDataStructure().roles().get(name).getSimpleName());
+            output.print(dataset.getDataStructure().getRoles().get(name).name());
             output.print(",");
-            output.print(dataset.getDataStructure().types().get(name).getSimpleName());
+            output.print(dataset.getDataStructure().getTypes().get(name).getSimpleName());
             output.print("]");
         }
         output.println();
         for (Dataset.Tuple tuple : (Iterable<Dataset.Tuple>) dataset.stream()::iterator) {
-            for (Component component : tuple) {
+            for (DataPoint component : tuple) {
                 output.print(component.get());
                 output.print(",");
             }
@@ -98,36 +102,12 @@ public class Interpreter implements Runnable {
 
     static Connector getFakeConnector() {
 
-        DataStructure dataStructure = new DataStructure() {
-
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return (o, aClass) -> o;
-            }
-
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return ImmutableMap.of(
-                        "id", Identifier.class,
-                        "measure", Measure.class,
-                        "attribute", Attribute.class
-                );
-            }
-
-            @Override
-            public Map<String, Class<?>> types() {
-                return ImmutableMap.of(
-                        "id", String.class,
-                        "measure", String.class,
-                        "attribute", String.class
-                );
-            }
-
-            @Override
-            public Set<String> names() {
-                return ImmutableSet.of("id", "measure", "attribute");
-            }
-        };
+        DataStructure dataStructure = DataStructure.of(
+                (o, aClass) -> o,
+                "id", Role.IDENTIFIER, String.class,
+                "measure", Role.MEASURE, String.class,
+                "attribute", Role.ATTRIBUTE, String.class
+        );
 
         return new Connector() {
 
@@ -269,13 +249,13 @@ public class Interpreter implements Runnable {
     }
 
     private void printDataset(Dataset dataset) throws IOException {
-        Map<String, Class<? extends Component>> roles = dataset.getDataStructure().roles();
-        Map<String, Class<?>> types = dataset.getDataStructure().types();
+        Map<String, Role> roles = dataset.getDataStructure().getRoles();
+        Map<String, Class<?>> types = dataset.getDataStructure().getTypes();
 
         // Header
         List<String> columns = Lists.newArrayList();
-        for (String name : dataset.getDataStructure().names())
-            columns.add(format("%s[%s,%s]", name, roles.get(name).getSimpleName(), types.get(name).getSimpleName()));
+        for (String name : dataset.getDataStructure().keySet())
+            columns.add(format("%s[%s,%s]", name, roles.get(name).name(), types.get(name).getSimpleName()));
         console.println(columns.stream().collect(Collectors.joining(",")));
 
         // Rows
@@ -284,9 +264,9 @@ public class Interpreter implements Runnable {
             columns.clear();
             Dataset.Tuple row = iterator.next();
             Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
-                    Component::name, Component::get
+                    DataPoint::getName, DataPoint::get
             ));
-            for (String name : dataset.getDataStructure().names())
+            for (String name : dataset.getDataStructure().keySet())
                 columns.add(asMap.get(name).toString());
 
             console.println(columns.stream().collect(Collectors.joining(",")));

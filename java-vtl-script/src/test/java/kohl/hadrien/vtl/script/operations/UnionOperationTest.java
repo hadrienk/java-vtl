@@ -1,7 +1,9 @@
 package kohl.hadrien.vtl.script.operations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kohl.hadrien.vtl.model.*;
+import kohl.hadrien.vtl.model.DataPoint;
+import kohl.hadrien.vtl.model.DataStructure;
+import kohl.hadrien.vtl.model.Dataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
@@ -9,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static kohl.hadrien.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -39,9 +42,9 @@ public class UnionOperationTest {
         try {
 
             DataStructure dataStructure = DataStructure.of(mapper::convertValue,
-                    "TIME", Identifier.class, String.class,
-                    "GEO", Identifier.class, String.class,
-                    "POP", Measure.class, Integer.class
+                    "TIME", Role.IDENTIFIER, String.class,
+                    "GEO", Role.IDENTIFIER, String.class,
+                    "POP", Role.MEASURE, Integer.class
             );
 
             Dataset dataset1 = mock(Dataset.class);
@@ -56,9 +59,9 @@ public class UnionOperationTest {
             softly.assertThat(unionOperation).isNotNull();
 
             DataStructure wrongStructure = DataStructure.of(mapper::convertValue,
-                    "TIME2", Identifier.class, String.class,
-                    "GEO2", Identifier.class, String.class,
-                    "POP2", Measure.class, Integer.class
+                    "TIME2", Role.IDENTIFIER, String.class,
+                    "GEO2", Role.IDENTIFIER, String.class,
+                    "POP2", Role.MEASURE, Integer.class
             );
 
             Dataset wrongDataset = mock(Dataset.class);
@@ -82,9 +85,9 @@ public class UnionOperationTest {
         // Example 1 of the operator specification
 
         DataStructure dataStructure = DataStructure.of(mapper::convertValue,
-                "TIME", Identifier.class, String.class,
-                "GEO", Identifier.class, String.class,
-                "POP", Measure.class, Integer.class
+                "TIME", Role.IDENTIFIER, String.class,
+                "GEO", Role.IDENTIFIER, String.class,
+                "POP", Role.MEASURE, Integer.class
         );
 
         Dataset totalPopulation1 = mock(Dataset.class);
@@ -196,9 +199,9 @@ public class UnionOperationTest {
         // Example 2 of the operator specification.
 
         DataStructure dataStructure = DataStructure.of(mapper::convertValue,
-                "TIME", Identifier.class, String.class,
-                "GEO", Identifier.class, String.class,
-                "POP", Measure.class, Integer.class
+                "TIME", Role.IDENTIFIER, String.class,
+                "GEO", Role.IDENTIFIER, String.class,
+                "POP", Role.MEASURE, Integer.class
         );
 
         Dataset totalPopulation1 = mock(Dataset.class);
@@ -326,10 +329,10 @@ public class UnionOperationTest {
 
     }
 
-    Dataset.Tuple tuple(Component... components) {
+    private Dataset.Tuple tuple(DataPoint... components) {
         return new Dataset.AbstractTuple() {
             @Override
-            protected List<Component> delegate() {
+            protected List<DataPoint> delegate() {
                 return Arrays.asList(components);
             }
         };

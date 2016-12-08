@@ -46,7 +46,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         this.context = checkNotNull(context, "the context was null");
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
-        relationalVisitor = new RelationalVisitor(this);
+        relationalVisitor = new RelationalVisitor(this, context);
     }
 
     @Override

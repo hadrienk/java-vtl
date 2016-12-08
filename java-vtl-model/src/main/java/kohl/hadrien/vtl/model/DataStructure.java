@@ -20,145 +20,177 @@ package kohl.hadrien.vtl.model;
  * #L%
  */
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Data structure of a {@link Dataset}.
  * <p>
  * The data structure defines the role and type of the columns of a data set and
- * serves as a {@link Component}'s factory.
+ * serves as a {@link DataPoint}s and {@link kohl.hadrien.vtl.model.Dataset.Tuple}s factory.
  */
-public abstract class DataStructure {
+public class DataStructure extends ForwardingMap<String, Component> {
 
-    /**
-     * Creates a new data structure.
-     */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Class<? extends Component> role1, Class<?> type1) {
-        return new DataStructure() {
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return converter;
-            }
+    private final BiMap<String, Component> delegate;
+    private final BiFunction<Object, Class<?>, ?> converter;
 
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return ImmutableMap.of(name1, role1);
-            }
+    protected DataStructure(BiFunction<Object, Class<?>, ?> converter) {
+        delegate = HashBiMap.create();
+        this.converter = checkNotNull(converter);
+    }
 
-            @Override
-            public Map<String, Class<?>> types() {
-                return ImmutableMap.of(name1, type1);
-            }
+    public static DataStructure copyOf(
+            BiFunction<Object, Class<?>, ?> converter,
+            Map<String, Component> newComponents
+    ) {
+        DataStructure instance = new DataStructure(converter);
+        instance.putAll(newComponents);
+        return instance;
+    }
 
-            @Override
-            public Set<String> names() {
-                return ImmutableSet.of(name1);
-            }
-        };
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter, Map<String, Class<?>> types, Map<String, Component.Role> roles) {
+        checkArgument(types.keySet().equals(roles.keySet()));
+        DataStructure instance = new DataStructure(converter);
+        for (String name : types.keySet()) {
+            instance.put(name, new Component(types.get(name), roles.get(name), name));
+        }
+        return instance;
     }
 
     /**
      * Creates a new data structure.
      */
     public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Class<? extends Component> role1, Class<?> type1,
-                                   String name2, Class<? extends Component> role2, Class<?> type2) {
-        return new DataStructure() {
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return converter;
-            }
-
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return ImmutableMap.of(name1, role1, name2, role2);
-            }
-
-            @Override
-            public Map<String, Class<?>> types() {
-                return ImmutableMap.of(name1, type1, name2, type2);
-            }
-
-            @Override
-            public Set<String> names() {
-                return ImmutableSet.of(name1, name2);
-            }
-        };
+                                   String name1, Component.Role role1, Class<?> type1) {
+        DataStructure instance = new DataStructure(converter);
+        instance.put(name1, new Component(type1, role1, name1));
+        return instance;
     }
 
     /**
      * Creates a new data structure.
      */
     public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Class<? extends Component> role1, Class<?> type1,
-                                   String name2, Class<? extends Component> role2, Class<?> type2,
-                                   String name3, Class<? extends Component> role3, Class<?> type3) {
-        return new DataStructure() {
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return converter;
-            }
-
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return ImmutableMap.of(name1, role1, name2, role2, name3, role3);
-            }
-
-            @Override
-            public Map<String, Class<?>> types() {
-                return ImmutableMap.of(name1, type1, name2, type2, name3, type3);
-            }
-
-            @Override
-            public Set<String> names() {
-                return ImmutableSet.of(name1, name2, name3);
-            }
-        };
+                                   String name1, Component.Role role1, Class<?> type1,
+                                   String name2, Component.Role role2, Class<?> type2) {
+        DataStructure instance = new DataStructure(converter);
+        instance.put(name1, new Component(type1, role1, name1));
+        instance.put(name2, new Component(type2, role2, name2));
+        return instance;
     }
 
     /**
      * Creates a new data structure.
      */
     public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Class<? extends Component> role1, Class<?> type1,
-                                   String name2, Class<? extends Component> role2, Class<?> type2,
-                                   String name3, Class<? extends Component> role3, Class<?> type3,
-                                   String name4, Class<? extends Component> role4, Class<?> type4) {
-        return new DataStructure() {
-            @Override
-            public BiFunction<Object, Class<?>, ?> converter() {
-                return converter;
-            }
+                                   String name1, Component.Role role1, Class<?> type1,
+                                   String name2, Component.Role role2, Class<?> type2,
+                                   String name3, Component.Role role3, Class<?> type3) {
+        DataStructure instance = new DataStructure(converter);
+        instance.put(name1, new Component(type1, role1, name1));
+        instance.put(name2, new Component(type2, role2, name2));
+        instance.put(name3, new Component(type3, role3, name3));
+        return instance;
+    }
 
-            @Override
-            public Map<String, Class<? extends Component>> roles() {
-                return ImmutableMap.of(name1, role1, name2, role2, name3, role3, name4, role4);
-            }
+    /**
+     * Creates a new data structure.
+     */
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
+                                   String name1, Component.Role role1, Class<?> type1,
+                                   String name2, Component.Role role2, Class<?> type2,
+                                   String name3, Component.Role role3, Class<?> type3,
+                                   String name4, Component.Role role4, Class<?> type4) {
+        DataStructure instance = new DataStructure(converter);
+        instance.put(name1, new Component(type1, role1, name1));
+        instance.put(name2, new Component(type2, role2, name2));
+        instance.put(name3, new Component(type3, role3, name3));
+        instance.put(name4, new Component(type4, role4, name4));
+        return instance;
+    }
 
-            @Override
-            public Map<String, Class<?>> types() {
-                return ImmutableMap.of(name1, type1, name2, type2, name3, type3, name4, type4);
-            }
+    /**
+     * Creates a new data structure.
+     */
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
+                                   String name1, Component.Role role1, Class<?> type1,
+                                   String name2, Component.Role role2, Class<?> type2,
+                                   String name3, Component.Role role3, Class<?> type3,
+                                   String name4, Component.Role role4, Class<?> type4,
+                                   String name5, Component.Role role5, Class<?> type5) {
+        DataStructure instance = new DataStructure(converter);
+        instance.put(name1, new Component(type1, role1, name1));
+        instance.put(name2, new Component(type2, role2, name2));
+        instance.put(name3, new Component(type3, role3, name3));
+        instance.put(name4, new Component(type4, role4, name4));
+        instance.put(name5, new Component(type5, role5, name5));
+        return instance;
+    }
 
-            @Override
-            public Set<String> names() {
-                return ImmutableSet.of(name1, name2, name3, name4);
-            }
-        };
+    /**
+     * Creates a new data structure.
+     */
+    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
+                                   String name1, Component.Role role1, Class<?> type1,
+                                   String name2, Component.Role role2, Class<?> type2,
+                                   String name3, Component.Role role3, Class<?> type3,
+                                   String name4, Component.Role role4, Class<?> type4,
+                                   String name5, Component.Role role5, Class<?> type5,
+                                   String name6, Component.Role role6, Class<?> type6) {
+        DataStructure instance = new DataStructure(converter);
+        instance.put(name1, new Component(type1, role1, name1));
+        instance.put(name2, new Component(type2, role2, name2));
+        instance.put(name3, new Component(type3, role3, name3));
+        instance.put(name4, new Component(type4, role4, name4));
+        instance.put(name5, new Component(type5, role5, name5));
+        instance.put(name6, new Component(type6, role6, name6));
+        return instance;
+    }
+
+    public String getName(Component component) {
+        return delegate.inverse().get(component);
+    }
+
+    public Component addComponent(String name, Component.Role role, Class<?> type) {
+        Component component = new Component(type, role, name);
+        put(name, component);
+        return component;
+    }
+
+    public Map<String, Component.Role> getRoles() {
+        // TODO: Cache.
+        return this.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Entry::getKey,
+                        entry -> entry.getValue().getRole()
+                ));
+    }
+
+    public Map<String, Class<?>> getTypes() {
+        // TODO: Cache.
+        return this.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Entry::getKey,
+                        entry -> entry.getValue().getType()
+                ));
     }
 
 
-    public abstract BiFunction<Object, Class<?>, ?> converter();
+    public BiFunction<Object, Class<?>, ?> converter() {
+        return this.converter;
+    }
+
+    ;
 
     /**
      * Creates a new {@link Component} for the given column and value.
@@ -167,29 +199,18 @@ public abstract class DataStructure {
      * @param value the value of the resulting component.
      * @return a component
      */
-    public Component wrap(String name, Object value) {
-        checkArgument(types().containsKey(name) && roles().containsKey(name),
-                "could not find %s in data structure %s", name, this);
+    public DataPoint wrap(String name, Object value) {
+        checkArgument(
+                containsKey(name),
+                "could not find %s in data structure %s",
+                name, this
+        );
 
-        return new AbstractComponent() {
-            @Override
-            public String name() {
-                return name;
-            }
-
-            @Override
-            public Class<?> type() {
-                return types().get(name);
-            }
-
-            @Override
-            public Class<? extends Component> role() {
-                return roles().get(name);
-            }
-
+        Component component = get(name);
+        return new DataPoint(component) {
             @Override
             public Object get() {
-                return converter().apply(value, type());
+                return converter().apply(value, component.getType());
             }
         };
     }
@@ -205,7 +226,7 @@ public abstract class DataStructure {
      */
     public Dataset.Tuple wrap(Map<String, Object> map) {
 
-        List<Component> components = Lists.newArrayList();
+        List<DataPoint> components = Lists.newArrayList();
         for (Map.Entry<String, Object> entry : map.entrySet())
             components.add(wrap(entry.getKey(), entry.getValue()));
 
@@ -213,46 +234,8 @@ public abstract class DataStructure {
 
     }
 
-    public abstract Map<String, Class<? extends Component>> roles();
-
-    public abstract Map<String, Class<?>> types();
-
-    public abstract Set<String> names();
-
-    /**
-     * A forwarding data structure.
-     * <p>
-     * All calls are forwarded to the instance returned by the abstract method
-     * {@link ForwardingDataStructure#delegate()}.
-     */
-    public abstract class ForwardingDataStructure extends DataStructure {
-
-        protected abstract DataStructure delegate();
-
-        @Override
-        public BiFunction<Object, Class<?>, ?> converter() {
-            return delegate().converter();
-        }
-
-        @Override
-        public Dataset.Tuple wrap(Map<String, Object> map) {
-            return delegate().wrap(map);
-        }
-
-        @Override
-        public Map<String, Class<? extends Component>> roles() {
-            return delegate().roles();
-        }
-
-        @Override
-        public Map<String, Class<?>> types() {
-            return delegate().types();
-        }
-
-        @Override
-        public Set<String> names() {
-            return delegate().names();
-        }
-
+    @Override
+    protected Map<String, Component> delegate() {
+        return delegate;
     }
 }
