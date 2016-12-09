@@ -36,7 +36,7 @@ public class KeepClauseTest {
         String parseTree = parse(expression, "joinKeepExpression");
 
         // TODO: Check this.
-        assertThat(parseTree).isEqualTo("(joinKeepExpression:1 keep (joidKeepRef:2 (varID:1 varID 1)) , (joidKeepRef:2 (varID:1 varID 2)) , (joidKeepRef:1 (varID:1 varID 3) . (varID:1 varID 4)))");
+        assertThat(parseTree).isEqualTo("(joinKeepExpression:1 keep (joinKeepRef:2 (varID:1 varID 1)) , (joinKeepRef:2 (varID:1 varID 2)) , (joinKeepRef:1 (varID:1 varID 3) . (varID:1 varID 4)))");
     }
 
     // TODO: Build a more robust way to test.
