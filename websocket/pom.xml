@@ -68,6 +68,11 @@
             <artifactId>antlr4</artifactId>
             <version>RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>kohl.hadrien</groupId>
+            <artifactId>java-vtl-ssb-api-connector</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
     </dependencies>
 

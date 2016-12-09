@@ -1,5 +1,6 @@
 package kohl.hadrien.console.tty;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.termd.core.readline.Function;
 import io.termd.core.readline.Keymap;
@@ -14,10 +15,15 @@ import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLLexer;
 import kohl.hadrien.vtl.parser.VTLParser;
+import kohl.hadrien.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.connectors.SsbApiConnector;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import javax.script.*;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -27,7 +33,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**
@@ -77,8 +82,12 @@ public class VTLConsole implements Consumer<TtyConnection> {
         ttyConnection.write(VTL);
         ttyConnection.write(MOTD);
 
-        ScriptEngineManager manager = new ScriptEngineManager();
-        engine = checkNotNull(manager.getEngineByName("VTLJava"));
+        // TODO: Use engine.getContext().setAttribute() to setup the connector.
+        // ScriptEngineManager manager = new ScriptEngineManager();
+        // engine = checkNotNull(manager.getEngineByName("VTLJava"));
+
+        engine = new VTLScriptEngine(new SsbApiConnector(new ObjectMapper()));
+
 
         read(ttyConnection, readline);
     }
@@ -129,18 +138,18 @@ public class VTLConsole implements Consumer<TtyConnection> {
             return true;
         }
         if (".exit".equals(command) || ".quit".equals(command)) {
-            ttyConnection.write("\nExiting...");
+            ttyConnection.write("Exiting...\n");
             return false;
         }
         if (".exit".equals(command)) {
-            ttyConnection.write("\nExiting...");
+            ttyConnection.write("Exiting...\n");
             return false;
         }
-        if (".show".startsWith(command)) {
+        if (command.startsWith(".show")) {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             // TODO: Use regexp.
             if (!bindings.containsKey(command.split(" ")[1])) {
-                ttyConnection.write("\nvariable not found");
+                ttyConnection.write("variable not found\n");
             } else {
                 printDataset(ttyConnection, (Dataset) bindings.get(command.split(" ")[1]));
             }
@@ -149,10 +158,11 @@ public class VTLConsole implements Consumer<TtyConnection> {
         if (".list".equals(command)) {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             for (String name : bindings.keySet()) {
-                ttyConnection.write(name + "\t:\t" + bindings.get(name));
+                ttyConnection.write(name + "\t->\t" + bindings.get(name) + "\n");
             }
+            return true;
         }
-        ttyConnection.write("\nUnrecognized command");
+        ttyConnection.write("Unrecognized command\n");
         return true;
     }
 
