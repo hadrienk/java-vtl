@@ -21,8 +21,8 @@
             var errors = [];
             for (var i = 0; i < json.length; i++) {
                 errors.push({
-                    from: CodeMirror.Pos(json[i].line - 1, json[i].column),
-                    to: CodeMirror.Pos(json[i].line - 1, json[i].column + 1),
+                    from: CodeMirror.Pos(json[i].startLine - 1, json[i].startColumn),
+                    to: CodeMirror.Pos(json[i].stopLine - 1, json[i].stopColumn),
                     message: json[i].message,
                     severity: "error"
                 });

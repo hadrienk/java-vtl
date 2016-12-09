@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import kohl.hadrien.vtl.parser.VTLLexer;
 import kohl.hadrien.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.tool.GrammarParserInterpreter;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,7 +43,10 @@ public class ValidatorController {
 
         ErrorListener errorListener = new ErrorListener();
         lexer.addErrorListener(errorListener);
+        parser.addErrorListener(new DiagnosticErrorListener());
         parser.addErrorListener(errorListener);
+
+        parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
 
         parser.start();
 
@@ -53,24 +57,36 @@ public class ValidatorController {
 
     public static class Error {
 
-        private final Integer line;
-        private final Integer column;
+        private final Integer startLine;
+        private final Integer stopLine;
+        private final Integer startColumn;
+        private final Integer stopColumn;
         private final String message;
         private final RecognitionException exception;
 
-        public Error(Integer line, Integer column, String message, RecognitionException exception) {
-            this.line = line;
-            this.column = column;
+        public Error(Integer startLine, Integer stopLine, Integer startColumn, Integer stopColumn, String message, RecognitionException exception) {
+            this.startLine = startLine;
+            this.stopLine = stopLine;
+            this.startColumn = startColumn;
+            this.stopColumn = stopColumn;
             this.message = message;
             this.exception = exception;
         }
 
-        public Integer getLine() {
-            return line;
+        public Integer getStartLine() {
+            return startLine;
         }
 
-        public Integer getColumn() {
-            return column;
+        public Integer getStopLine() {
+            return stopLine;
+        }
+
+        public Integer getStartColumn() {
+            return startColumn;
+        }
+
+        public Integer getStopColumn() {
+            return stopColumn;
         }
 
         public String getMessage() {
@@ -93,7 +109,17 @@ public class ValidatorController {
 
         @Override
         public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-            errors.add(new Error(line, charPositionInLine, msg, e));
+            int startLine = line, stopLine = line;
+            int startColumn = charPositionInLine, stopColumn = charPositionInLine;
+            if (offendingSymbol instanceof Token) {
+                Token symbol = (Token) offendingSymbol;
+                int start = symbol.getStartIndex();
+                int stop = symbol.getStopIndex();
+                if (start >= 0 && stop >= 0) {
+                    stopColumn = startColumn + (stop - start) + 1;
+                }
+            }
+            errors.add(new Error(startLine, stopLine, startColumn, stopColumn, msg, e));
         }
     }
 }
