@@ -37,12 +37,12 @@ joinCalcRef : (aliasName=varID '.')? componentName=varID ;
 
 
 // Drop clause
-joinDropExpression : 'drop' joinDropRef (',' joinDropRef)+ ;
+joinDropExpression : 'drop' joinDropRef (',' joinDropRef)* ;
 joinDropRef : (aliasName=varID '.')? componentName=varID ;
 
 // Keep clause
-joinKeepExpression : 'keep' joidKeepRef (',' joidKeepRef)+ ;
-joidKeepRef : (aliasName=varID '.')? componentName=varID ;
+joinKeepExpression : 'keep' joinKeepRef (',' joinKeepRef)* ;
+joinKeepRef : (aliasName=varID '.')? componentName=varID ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
