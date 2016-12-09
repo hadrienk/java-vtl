@@ -112,31 +112,21 @@ public abstract class AbstractJoinOperation implements Dataset {
 
     abstract WorkingDataset workDataset();
 
+    private WorkingDataset applyClauses() {
+        WorkingDataset dataset = workDataset();
+        for (JoinClause clause : clauses) {
+            dataset = clause.apply(dataset);
+        }
+        return dataset;
+    }
     @Override
     public Stream<Tuple> get() {
-
-        if (workingDataset != null) {
-            return workingDataset.get();
-        }
-
-        workingDataset = workDataset();
-        for (JoinClause clause : clauses) {
-            workingDataset = clause.apply(workingDataset);
-        }
-        return workingDataset.get();
+        return (workingDataset = (workingDataset == null ? applyClauses() : workingDataset)).get();
     }
 
     @Override
     public DataStructure getDataStructure() {
-        if (workingDataset != null) {
-            return workingDataset.getDataStructure();
-        }
-
-        workingDataset = workDataset();
-        for (JoinClause clause : clauses) {
-            workingDataset = clause.apply(workingDataset);
-        }
-        return workingDataset.getDataStructure();
+        return (workingDataset = (workingDataset == null ? applyClauses() : workingDataset)).getDataStructure();
     }
 
     /**

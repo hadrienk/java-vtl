@@ -5,6 +5,8 @@ import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLBaseVisitor;
 import kohl.hadrien.vtl.parser.VTLParser;
+import kohl.hadrien.vtl.script.operations.DropOperator;
+import kohl.hadrien.vtl.script.operations.KeepOperator;
 import kohl.hadrien.vtl.script.operations.join.AbstractJoinOperation;
 import kohl.hadrien.vtl.script.operations.join.JoinClause;
 import kohl.hadrien.vtl.script.operations.join.WorkingDataset;
@@ -28,6 +30,67 @@ public class JoinBodyVisitor extends VTLBaseVisitor<JoinClause> {
 
     public JoinBodyVisitor(AbstractJoinOperation joinOperation) {
         this.joinOperation = checkNotNull(joinOperation);
+    }
+
+    @Override
+    public JoinClause visitJoinKeepClause(VTLParser.JoinKeepClauseContext ctx) {
+
+        List<JoinClause> clauses = this.joinOperation.getClauses();
+
+        JoinClause keepClause = new JoinClause() {
+
+            @Override
+            public WorkingDataset apply(WorkingDataset workingDataset) {
+                JoinKeepClauseVisitor visitor = new JoinKeepClauseVisitor(workingDataset);
+                KeepOperator keep = visitor.visit(ctx);
+                return new WorkingDataset() {
+                    @Override
+                    public DataStructure getDataStructure() {
+                        return keep.getDataStructure();
+                    }
+
+                    @Override
+                    public Stream<Tuple> get() {
+                        return keep.get();
+                    }
+                };
+            }
+        };
+
+        clauses.add(keepClause);
+
+        return keepClause;
+
+    }
+
+    @Override
+    public JoinClause visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
+
+        List<JoinClause> clauses = this.joinOperation.getClauses();
+
+        JoinClause dropClause = new JoinClause() {
+
+            @Override
+            public WorkingDataset apply(WorkingDataset workingDataset) {
+                JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
+                DropOperator drop = visitor.visit(ctx);
+                return new WorkingDataset() {
+                    @Override
+                    public DataStructure getDataStructure() {
+                        return drop.getDataStructure();
+                    }
+
+                    @Override
+                    public Stream<Tuple> get() {
+                        return drop.get();
+                    }
+                };
+            }
+        };
+
+        clauses.add(dropClause);
+
+        return dropClause;
     }
 
     @Override

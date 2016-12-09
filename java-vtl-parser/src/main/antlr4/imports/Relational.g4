@@ -14,7 +14,10 @@ joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpress
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : role? varID '=' joinCalcExpression # joinCalcClause;
+joinClause : role? varID '=' joinCalcExpression # joinCalcClause
+           | joinDropExpression                 # joinDropClause
+           | joinKeepExpression                 # joinKeepClause
+           ;
            //| joinFilter
            //| joinKeep
            //| joinRename ;
@@ -29,8 +32,17 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | joinCalcRef                                                                        #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    ;
-
+// TODO: This is the membership operator!
 joinCalcRef : (aliasName=varID '.')? componentName=varID ;
+
+
+// Drop clause
+joinDropExpression : 'drop' joinDropRef (',' joinDropRef)* ;
+joinDropRef : (aliasName=varID '.')? componentName=varID ;
+
+// Keep clause
+joinKeepExpression : 'keep' joinKeepRef (',' joinKeepRef)* ;
+joinKeepRef : (aliasName=varID '.')? componentName=varID ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
