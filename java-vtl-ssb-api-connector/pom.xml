@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>java-vtl-parent</artifactId>
+        <groupId>kohl.hadrien</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>java-vtl-ssb-api-connector</artifactId>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>no.ssb.jsonstat</groupId>
+            <artifactId>json-stat-java</artifactId>
+            <version>0.2.2-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>kohl.hadrien</groupId>
+            <artifactId>java-vtl-connector-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>4.3.4.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

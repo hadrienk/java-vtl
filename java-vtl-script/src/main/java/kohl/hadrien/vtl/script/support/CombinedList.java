@@ -3,6 +3,7 @@ package kohl.hadrien.vtl.script.support;
 import com.google.common.collect.Lists;
 
 import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.RandomAccess;
 
@@ -27,6 +28,7 @@ public class CombinedList<T> extends AbstractList<T> implements RandomAccess {
     }
 
     private void computeSize() {
+        size = 0;
         for (List<T> list : lists) {
             // TODO: Check for overflow.
             size += list.size();
@@ -50,17 +52,44 @@ public class CombinedList<T> extends AbstractList<T> implements RandomAccess {
 
     @Override
     public boolean add(T t) {
-        return lists.get(lists.size()-1).add(t);
+        boolean added = lists.get(lists.size() - 1).add(t);
+        computeSize();
+        return added;
     }
 
     @Override
     public T remove(int index) {
         for (List<T> list : lists) {
-            if (index < list.size())
-                return list.remove(index);
+            if (index < list.size()) {
+                T removed = list.remove(index);
+                computeSize();
+                return removed;
+            }
             index -= list.size();
         }
         throw new IndexOutOfBoundsException();
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+
+            int pos = -1;
+            @Override
+            public boolean hasNext() {
+                return pos + 1 < size();
+            }
+
+            @Override
+            public T next() {
+                return CombinedList.this.get(++pos);
+            }
+
+            @Override
+            public void remove() {
+                CombinedList.this.remove(pos);
+            }
+        };
     }
 
     @Override

@@ -4,14 +4,17 @@ Java implementation of the Validation Transformation Language
 
 # Implementation roadmap
 
-Group|Operators|Progress
----|---|---
+
+[done]: http://progressed.io/bar/100?title=done "Done"
+
+Group|Operators|Progress|Comment
+---|---|---|---
 General purpose|round parenthesis|
-General purpose|assignment|done
-General purpose|membership|done
-General purpose|get|in progress
-General purpose|put|in progress
-Clauses|rename|done
+General purpose|assignment|![done][done]
+General purpose|membership|![done][done]
+General purpose|get|![usable](http://progressed.io/bar/20)|The keep, filter and aggregate are not yet reflected in the connector interface.
+General purpose|put|![usable](http://progressed.io/bar/90)|The Connector interface is defined but expressions are not recognized yet.
+Clauses|rename|![done][done]
 Clauses|filter|
 Clauses|keep|
 Clauses|calc|
