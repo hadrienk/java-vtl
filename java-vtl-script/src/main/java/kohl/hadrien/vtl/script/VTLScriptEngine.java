@@ -22,13 +22,15 @@ package kohl.hadrien.vtl.script;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.connector.Connector;
+import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLLexer;
 import kohl.hadrien.vtl.parser.VTLParser;
+import kohl.hadrien.vtl.script.error.SyntaxException;
+import kohl.hadrien.vtl.script.error.WrappedException;
 import kohl.hadrien.vtl.script.visitors.AssignmentVisitor;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import javax.script.*;
 import java.io.IOException;
@@ -70,11 +72,51 @@ public class VTLScriptEngine extends AbstractScriptEngine {
 
     @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
+        /*
+            Until compilation is done, this is the main method that allows
+            VTL execution.
+            Exceptions' hierarchy is as follow:
+                - ScriptException
+                    - CompilationException
+                        - SyntaxException
+                        - TypeException
+                        - ConstraintException
+                    - ValidationException
+                    - ScriptRuntimeException
+            The WrappedScriptException is used to report errors that are not originating
+            from the VTL Parser.
+         */
         try {
             VTLLexer lexer = new VTLLexer(new ANTLRInputStream(reader));
             VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
 
+            lexer.removeErrorListeners();
+            parser.removeErrorListeners();
+
+            BaseErrorListener errorListener = new BaseErrorListener() {
+                @Override
+                public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int column, String msg, RecognitionException e) {
+                    WrappedException wrappedException;
+                    if (e instanceof WrappedException) {
+                        wrappedException = (WrappedException) e;
+                    } else {
+                         wrappedException = new WrappedException(
+                                 msg, recognizer, e.getInputStream(), (ParserRuleContext) e.getCtx(),
+                                 new SyntaxException(
+                                         msg, null, line, column, "VTL-0199"
+                                 )
+                        );
+                    }
+                    wrappedException.setLine(line);
+                    wrappedException.setColumn(column);
+                    throw new ParseCancellationException(msg, wrappedException);
+                }
+            };
+            lexer.addErrorListener(errorListener);
+            parser.addErrorListener(errorListener);
+
             VTLParser.StartContext start = parser.start();
+
             // Run loop.
             AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
             Dataset last = null;
@@ -82,6 +124,25 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                 last = assignmentVisitor.visit(statementContext);
             }
             return last;
+
+        } catch (ParseCancellationException pce) {
+            if (pce.getCause() instanceof WrappedException) {
+                WrappedException cause = (WrappedException) pce.getCause();
+
+                if (cause.getCause() instanceof ScriptException) {
+                    throw ((ScriptException) cause.getCause());
+                } else {
+                    throw new ScriptException(
+                            pce.getMessage(),
+                            null,
+                            cause.getLineNumber(),
+                            cause.getColumnNumber()
+                    );
+                }
+
+            } else {
+                throw new ScriptException((Exception) pce.getCause());
+            }
         } catch (IOException | RuntimeException ioe) {
             throw new ScriptException(ioe);
         }
