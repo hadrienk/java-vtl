@@ -54,7 +54,6 @@ public class SsbApiConnector implements Connector {
     Cache<String, Dataset> datasetCache;
     Cache<String, URI> uriCache;
 
-
     public SsbApiConnector(ObjectMapper mapper) {
 
         this.mapper = checkNotNull(mapper, "the mapper was null").copy();
@@ -77,6 +76,13 @@ public class SsbApiConnector implements Connector {
         ));
 
 
+    }
+
+    /**
+     * Gives access to the rest template to tests.
+     */
+    RestTemplate getRestTemplate() {
+        return restTemplate;
     }
 
     public boolean canHandle(String identifier) {
@@ -138,7 +144,8 @@ public class SsbApiConnector implements Connector {
 
         } catch (RestClientException rce) {
             throw new ConnectorException(
-                    format("error when accessing the dataset with id %s", identifier)
+                    format("error when accessing the dataset with id %s", identifier),
+                    rce
             );
         }
     }
