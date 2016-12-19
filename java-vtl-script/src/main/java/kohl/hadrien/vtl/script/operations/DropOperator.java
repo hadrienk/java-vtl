@@ -1,13 +1,13 @@
 package kohl.hadrien.vtl.script.operations;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import kohl.hadrien.vtl.model.Component;
-import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
-import kohl.hadrien.vtl.script.support.CombinedList;
 
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -66,14 +66,8 @@ public class DropOperator implements Dataset {
         DataStructure structure = getDataStructure();
         return dataset.get().map(
                 dataPoints -> {
-                    List<DataPoint> keptDatapoints = dataPoints.values();
-                    keptDatapoints.removeIf(dataPoint -> !structure.containsKey(dataPoint.getName()));
-                    return new AbstractTuple() {
-                        @Override
-                        protected List<DataPoint> delegate() {
-                            return new CombinedList<>(dataPoints.ids(), keptDatapoints);
-                        }
-                    };
+                    dataPoints.removeIf(dataPoint -> !structure.containsKey(dataPoint.getName()));
+                    return dataPoints;
                 }
         );
     }

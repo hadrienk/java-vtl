@@ -19,16 +19,19 @@ package kohl.hadrien.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset;
 import kohl.hadrien.vtl.model.Component;
 import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.script.operations.RenameOperation;
-import kohl.hadrien.vtl.script.support.CombinedList;
 
 import java.util.List;
 import java.util.Map;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -131,46 +134,18 @@ public abstract class AbstractJoinOperation implements Dataset {
 
     /**
      * Holds the "working dataset" tuples.
-     * <p>
-     * The identifier components are immutables. The methods add, remove and set are forwarded to the values.
      */
-    static final class JoinTuple extends Dataset.AbstractTuple {
+    static final class JoinTuple extends Dataset.AbstractTuple implements RandomAccess {
 
-        private final ImmutableList<DataPoint> ids;
-        private final List<DataPoint> values = Lists.newArrayList();
+        private final List<DataPoint> delegate = Lists.newArrayList();
 
         public JoinTuple(List<DataPoint> ids) {
-            this.ids = ImmutableList.copyOf(ids);
+            this.delegate.addAll(ids);
         }
 
         @Override
         protected List<DataPoint> delegate() {
-            return new CombinedList<DataPoint>(ids, values);
-        }
-
-        @Override
-        protected boolean standardAdd(DataPoint element) {
-            return super.standardAdd(element);
-        }
-
-        @Override
-        protected boolean standardRemove(Object object) {
-            return super.standardRemove(object);
-        }
-
-        @Override
-        public boolean add(DataPoint e) {
-            return values.add(e);
-        }
-
-        @Override
-        public DataPoint remove(int index) {
-            return values.remove(index);
-        }
-
-        @Override
-        public DataPoint set(int index, DataPoint element) {
-            return values.set(index, element);
+            return delegate;
         }
 
     }
