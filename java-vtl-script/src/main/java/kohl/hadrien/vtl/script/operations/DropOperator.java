@@ -77,4 +77,17 @@ public class DropOperator implements Dataset {
                 }
         );
     }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        Integer limit = 5;
+        Iterables.limit(Iterables.concat(
+                components,
+                Collections.singletonList("and " + (components.size() - limit) + " more")
+        ), Math.min(limit, components.size())).forEach(
+                helper::addValue
+        );
+        return helper.toString();
+    }
 }

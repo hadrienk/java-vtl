@@ -47,8 +47,8 @@ public class RenameOperation implements Dataset {
     private final Dataset dataset;
     private final ImmutableMap<String, String> names;
     private final ImmutableMap<String, Component.Role> roles;
-    private DataStructure cache;
     Map<String, String> mapping = HashBiMap.create();
+    private DataStructure cache;
 
     public RenameOperation(Dataset dataset, Map<String, String> names, Map<String, Component.Role> roles) {
         this.dataset = checkNotNull(dataset, "dataset was null");
@@ -110,5 +110,18 @@ public class RenameOperation implements Dataset {
             });
             return components;
         });
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        Integer limit = 5;
+        Iterables.limit(Iterables.concat(
+                mapping.entrySet(),
+                Collections.singletonList("and " + (mapping.entrySet().size() - limit) + " more")
+        ), Math.min(limit, mapping.entrySet().size())).forEach(
+                helper::addValue
+        );
+        return helper.toString();
     }
 }
