@@ -20,15 +20,14 @@ package kohl.hadrien.vtl.script.operations;
  * #L%
  */
 
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.*;
 import kohl.hadrien.vtl.model.Component;
 import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;

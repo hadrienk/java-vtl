@@ -17,6 +17,7 @@ joinBody : joinClause (',' joinClause)* ;
 joinClause : role? varID '=' joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
+           | joinRenameExpression               # joinRenameClause
            ;
            //| joinFilter
            //| joinKeep
@@ -32,7 +33,7 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | joinCalcRef                                                                        #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    ;
-// TODO: This is the membership operator!
+
 joinCalcRef : (aliasName=varID '.')? componentName=varID ;
 
 
@@ -43,6 +44,15 @@ joinDropRef : (aliasName=varID '.')? componentName=varID ;
 // Keep clause
 joinKeepExpression : 'keep' joinKeepRef (',' joinKeepRef)* ;
 joinKeepRef : (aliasName=varID '.')? componentName=varID ;
+
+// TODO: Use in keep, drop and calc.
+// TODO: Make this the membership operator.
+// TODO: Revise this when the final version of the specification precisely define if the rename needs ' or not.
+joinComponentReference : (aliasName=varID '.')? componentName=varID ;
+
+// Rename clause
+joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
+joinRenameParameter  : from=joinComponentReference 'to' to=varID ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
