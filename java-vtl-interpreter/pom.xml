@@ -49,8 +49,8 @@
         </dependency>
 
         <dependency>
-            <groupId>kohl.hadrien.vtl.connector</groupId>
-            <artifactId>java-vtl-connector-api</artifactId>
+            <groupId>kohl.hadrien</groupId>
+            <artifactId>java-vtl-connector</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 

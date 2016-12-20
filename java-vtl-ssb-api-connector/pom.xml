@@ -22,7 +22,7 @@
 
         <dependency>
             <groupId>kohl.hadrien</groupId>
-            <artifactId>java-vtl-connector-api</artifactId>
+            <artifactId>java-vtl-connector</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
