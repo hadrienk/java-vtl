@@ -101,7 +101,10 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                         wrappedException = (WrappedException) e;
                     } else {
                          wrappedException = new WrappedException(
-                                 msg, recognizer, e.getInputStream(), (ParserRuleContext) e.getCtx(),
+                                 msg,
+                                 recognizer,
+                                 e != null ? e.getInputStream() : null,
+                                 e != null ? (ParserRuleContext) e.getCtx() : null,
                                  new SyntaxException(
                                          msg, null, line, column, "VTL-0199"
                                  )
