@@ -44,3 +44,5 @@ putExpression : 'put(todo)';
 datasetId : STRING_CONSTANT ;
 
 WS : [ \n\r\t\u000C] -> skip ;
+COMMENT : '/*' .*? '*/' -> skip;
+
