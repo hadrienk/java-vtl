@@ -72,7 +72,8 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
             Number leftNumber = (Number) leftResult.apply(tuple);
             Number rightNumber = (Number) rightResult.apply(tuple);
 
-            if (leftNumber == null ^ rightNumber == null) {
+            // TODO: Write test
+            if (leftNumber == null || rightNumber == null) {
                 return null;
             }
 
