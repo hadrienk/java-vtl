@@ -9,6 +9,7 @@ import kohl.hadrien.vtl.parser.VTLParser;
 import kohl.hadrien.vtl.script.operations.RenameOperation;
 import kohl.hadrien.vtl.script.operations.join.WorkingDataset;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -31,6 +32,11 @@ public class JoinRenameClauseVisitor extends VTLBaseVisitor<RenameOperation> {
             String from = renameParam.from.getText();
             String to = renameParam.to.getText();
             newNames.put(from, to);
+            checkArgument(
+                    dataStructure.containsKey(from),
+                    "could not find component with name %s",
+                    from
+                    );
             newRoles.put(from, dataStructure.get(from).getRole());
         }
         return new RenameOperation(dataset, newNames.build(), newRoles.build());
