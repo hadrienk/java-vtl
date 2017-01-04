@@ -28,6 +28,7 @@ import kohl.hadrien.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -101,13 +102,27 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 });
 
                 while (iterator.hasNext()) {
+                    Function<Tuple, List<DataPoint>> keyExtractor = tuple -> {
+                        // Filter by common ids.
+                        List<DataPoint> ids = tuple.stream().filter(dataPoint ->
+                                getCommonIdentifierNames().contains(dataPoint.getName())
+                        ).collect(Collectors.toList());
+                        return ids;
+                    };
+                    Function<JoinTuple, List<DataPoint>> joinKeyExtractor = tuple -> {
+                        // Filter by common ids.
+                        List<DataPoint> ids =  tuple.stream().filter(dataPoint ->
+                                getCommonIdentifierNames().contains(dataPoint.getName())
+                        ).collect(Collectors.toList());
+                        return ids;
+                    };
                     result = StreamSupport.stream(
                             new JoinSpliterator<>(
                                     keyComparator,
                                     result.spliterator(),
                                     iterator.next().get().spliterator(),
-                                    Tuple::ids,
-                                    Tuple::ids,
+                                    joinKeyExtractor,
+                                    keyExtractor,
                                     merger
                             ), false
                     );
