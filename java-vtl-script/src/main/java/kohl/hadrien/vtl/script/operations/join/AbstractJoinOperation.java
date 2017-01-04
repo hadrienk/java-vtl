@@ -47,6 +47,10 @@ public abstract class AbstractJoinOperation implements Dataset {
     // The datasets the join operates on.
     private final Map<String, Dataset> datasets = Maps.newHashMap();
 
+    public Set<String> getCommonIdentifierNames() {
+        return commonIdentifierNames;
+    }
+
     // The identifiers that will be used to join the datasets.
     private final Set<String> commonIdentifierNames;
 
