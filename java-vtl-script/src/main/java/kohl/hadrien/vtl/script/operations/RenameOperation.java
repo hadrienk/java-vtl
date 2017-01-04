@@ -20,15 +20,14 @@ package kohl.hadrien.vtl.script.operations;
  * #L%
  */
 
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.*;
 import kohl.hadrien.vtl.model.Component;
 import kohl.hadrien.vtl.model.DataPoint;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -47,8 +46,8 @@ public class RenameOperation implements Dataset {
     private final Dataset dataset;
     private final ImmutableMap<String, String> names;
     private final ImmutableMap<String, Component.Role> roles;
-    private DataStructure cache;
     Map<String, String> mapping = HashBiMap.create();
+    private DataStructure cache;
 
     public RenameOperation(Dataset dataset, Map<String, String> names, Map<String, Component.Role> roles) {
         this.dataset = checkNotNull(dataset, "dataset was null");
@@ -110,5 +109,18 @@ public class RenameOperation implements Dataset {
             });
             return components;
         });
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        Integer limit = 5;
+        Iterables.limit(Iterables.concat(
+                mapping.entrySet(),
+                Collections.singletonList("and " + (mapping.entrySet().size() - limit) + " more")
+        ), Math.min(limit, mapping.entrySet().size())).forEach(
+                helper::addValue
+        );
+        return helper.toString();
     }
 }

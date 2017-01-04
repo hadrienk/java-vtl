@@ -47,7 +47,6 @@ public abstract class DataPoint<V> implements Supplier<V> {
 
     @Override
     public String toString() {
-        String name = super.getClass().toGenericString();
         String value = get() == null ? "[NULL]" : get().toString();
 
         return MoreObjects.toStringHelper(super.toString())

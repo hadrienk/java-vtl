@@ -20,16 +20,14 @@ package kohl.hadrien.vtl.interpreter;
  * #L%
  */
 
-import com.google.common.collect.ImmutableMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
-import kohl.hadrien.vtl.connector.Connector;
-import kohl.hadrien.vtl.connector.ConnectorException;
 import kohl.hadrien.vtl.model.DataPoint;
-import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.connectors.SsbApiConnector;
 import org.fusesource.jansi.AnsiConsole;
 
 import javax.script.ScriptException;
@@ -37,10 +35,7 @@ import java.io.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static kohl.hadrien.vtl.model.Component.Role;
@@ -100,62 +95,10 @@ public class Interpreter implements Runnable {
         }
     }
 
-    static Connector getFakeConnector() {
 
-        DataStructure dataStructure = DataStructure.of(
-                (o, aClass) -> o,
-                "id", Role.IDENTIFIER, String.class,
-                "measure", Role.MEASURE, String.class,
-                "attribute", Role.ATTRIBUTE, String.class
-        );
-
-        return new Connector() {
-
-            Random random = new Random();
-
-            @Override
-            public boolean canHandle(String identifier) {
-                return true;
-            }
-
-            @Override
-            public Dataset getDataset(String identifier) throws ConnectorException {
-                return new Dataset() {
-
-                    @Override
-                    public Stream<Tuple> get() {
-
-                        return IntStream.rangeClosed(1, 100).boxed()
-                                .map(integer -> {
-
-                                    //Integer id = "random".equals(identifier) ? random.nextInt() : integer;
-                                    Integer id = random.nextInt(Integer.SIZE - 1);
-                                    ImmutableMap<String, Object> values = ImmutableMap.of(
-                                            "id", id,
-                                            "measure", "measure" + integer,
-                                            "attribute", "attribute" + integer
-                                    );
-                                    return dataStructure.wrap(values);
-                                });
-                    }
-
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return dataStructure;
-                    }
-                };
-
-            }
-
-            @Override
-            public Dataset putDataset(String identifier, Dataset dataset) throws ConnectorException {
-                return dataset;
-            }
-        };
-    }
 
     private VTLScriptEngine setupEngine() {
-        return new VTLScriptEngine(getFakeConnector());
+        return new VTLScriptEngine(new SsbApiConnector(new ObjectMapper()));
     }
 
     private ConsoleReader setupConsole() throws IOException {
@@ -263,13 +206,17 @@ public class Interpreter implements Runnable {
         while (iterator.hasNext()) {
             columns.clear();
             Dataset.Tuple row = iterator.next();
-            Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
-                    DataPoint::getName, DataPoint::get
-            ));
-            for (String name : dataset.getDataStructure().keySet())
-                columns.add(asMap.get(name).toString());
+            //Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
+            //        DataPoint::getName, DataPoint::get
+            //));
+            //for (String name : dataset.getDataStructure().keySet())
+            //    columns.add(asMap.get(name).toString());
 
-            console.println(columns.stream().collect(Collectors.joining(",")));
+            console.println(row.stream()
+                    .map(dataPoint -> {
+                        return dataPoint.get() != null ? dataPoint.get().toString() : "[NULL]";
+                    })
+                    .collect(Collectors.joining(",")));
         }
     }
 

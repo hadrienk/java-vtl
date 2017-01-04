@@ -132,7 +132,8 @@ public class VTLScriptEngineTest {
                 "ds3 := [ds1, ds2]{" +
                 "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +           // id1, id2, ident, ds1.m1, ds2.m1, ds2.m2
-                "  drop ds2.m1" +                                   // id1, id2, ident, ds1.m1, ds2.m2
+                "  drop ds2.m1," +                                  // id1, id2, ident, ds1.m1, ds2.m2
+                "  rename id1 to renamedId1, ds1.m1 to m1" +        // renamedId1, id2, ident, m1, ds2.m2
                 "}" +
                 "");
 
@@ -142,13 +143,13 @@ public class VTLScriptEngineTest {
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
         Dataset ds3 = (Dataset) bindings.get("ds3");
         assertThat(ds3.getDataStructure()).containsOnlyKeys(
-                "id1", "id2", "ds2.m2", "ds1.m1", "ident"
+                "renamedId1", "id2", "ds2.m2", "m1", "ident"
         );
         ListAssert<DataPoint> datapoints = assertThat(ds3.get())
                 .flatExtracting(input -> input);
 
         datapoints.extracting(DataPoint::getName).containsExactly(
-                "id1", "id2", "ds2.m2", "ds1.m1", "ident"
+                "renamedId1", "id2", "ds2.m2", "m1", "ident"
         );
 
         datapoints.extracting(DataPoint::get).containsExactly(
