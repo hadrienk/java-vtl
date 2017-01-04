@@ -87,6 +87,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>kohl.hadrien.console.server.Application</mainClass>
+                    <addResources>true</addResources>
                 </configuration>
             </plugin>
         </plugins>
