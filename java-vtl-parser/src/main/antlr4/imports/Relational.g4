@@ -18,6 +18,7 @@ joinClause : role? varID '=' joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
+           | joinFilterExpression               # joinFilterClause
            ;
            //| joinFilter
            //| joinKeep
@@ -54,6 +55,9 @@ joinComponentReference : (aliasName=varID '.')? componentName=varID ;
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
 joinRenameParameter  : from=joinComponentReference 'to' to=varID ;
 
+// Filter clause
+joinFilterExpression : 'filter' booleanExpression ;
+
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
 INNER : 'inner' ;
@@ -66,6 +70,7 @@ variableRef         : ( 'varName' | 'constant' ) NUM+;
 datasetExpression   : 'datasetExpr' NUM*;
 dimensionExpression : 'dimensionExpr' NUM*;
 constant            : NUM ;
+booleanExpression   : 'boolean' ;
 
 NUM : '0'..'9' ;
 
