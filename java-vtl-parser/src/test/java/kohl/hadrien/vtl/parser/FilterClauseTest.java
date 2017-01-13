@@ -27,7 +27,7 @@ public class FilterClauseTest {
     public static ExternalResource grammarResource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            URL grammarURL = getResource(this.getClass(), "VTL.g4");
+            URL grammarURL = getResource(this.getClass(), "/imports/Relational.g4");
             String grammarString = Resources.toString(grammarURL, Charset.defaultCharset());
             grammar = new Grammar(checkNotNull(grammarString));
         }
@@ -37,13 +37,13 @@ public class FilterClauseTest {
     public void testJoinWithFilter() throws Exception {
         String expression = "" +
                // "[varID1, varID2]{\n" +
-                "  filter boolean";
+                "  filter true";
                // "}";
         
         String parseTree = parse(expression, "joinFilterExpression");
         System.out.println(parseTree);
     
-        assertThat(parseTree).isEqualTo("(joinFilterExpression:1 filter (booleanExpression:1 boolean))");
+        assertThat(parseTree).isEqualTo("(joinFilterExpression:1 filter (booleanExpression:1 true))");
     }
     
     

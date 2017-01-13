@@ -70,7 +70,7 @@ variableRef         : ( 'varName' | 'constant' ) NUM+;
 datasetExpression   : 'datasetExpr' NUM*;
 dimensionExpression : 'dimensionExpr' NUM*;
 constant            : NUM ;
-booleanExpression   : 'boolean' ;
+booleanExpression   : 'true'|'false' ;
 
 NUM : '0'..'9' ;
 
