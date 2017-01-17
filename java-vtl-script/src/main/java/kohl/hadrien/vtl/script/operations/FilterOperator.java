@@ -1,12 +1,13 @@
 package kohl.hadrien.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Iterables;
 import kohl.hadrien.vtl.model.DataStructure;
 import kohl.hadrien.vtl.model.Dataset;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -15,15 +16,13 @@ public class FilterOperator implements Dataset{
     
     // The dataset we are applying the FilterOperator on.
     private final Dataset dataset;
-    private final Set<String> components;
+    private final Predicate<Tuple> predicate;
     
     private DataStructure cache;
     
-    public FilterOperator(Dataset dataset, Set<String> names) {
+    public FilterOperator(Dataset dataset, Predicate<Tuple> predicate) {
         this.dataset = checkNotNull(dataset, "the dataset was null");
-        this.components = checkNotNull(names, "the component list was null");
-        
-        checkArgument(!names.isEmpty(), "the list of component to filter on was null");
+        this.predicate = checkNotNull(predicate, "the predicate was null");
     }
     
     @Override
@@ -33,21 +32,14 @@ public class FilterOperator implements Dataset{
     
     @Override
     public Stream<Tuple> get() {
-        return this.dataset.filter(tuple -> tuple.ids().stream()
-                .filter(dataPoint -> components.contains(dataPoint.getComponent().getName()))
-                .anyMatch(dataPoint -> dataPoint.get().equals("1"))).stream();  //TODO do not hardcode filter criteria
+        return this.dataset.filter(predicate).stream();
     }
     
     @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        Integer limit = 5;
-        Iterables.limit(Iterables.concat(
-                components,
-                Collections.singletonList("and " + (components.size() - limit) + " more")
-        ), Math.min(limit, components.size())).forEach(
-                helper::addValue
-        );
+        Map<Boolean, List<Tuple>> predicateResultMap = dataset.stream().collect(Collectors.partitioningBy(predicate));
+        helper.addValue(predicateResultMap);
         return helper.toString();
     }
 }
