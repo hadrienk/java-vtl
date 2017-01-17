@@ -6,6 +6,7 @@ import kohl.hadrien.vtl.model.Dataset;
 import kohl.hadrien.vtl.parser.VTLBaseVisitor;
 import kohl.hadrien.vtl.parser.VTLParser;
 import kohl.hadrien.vtl.script.operations.DropOperator;
+import kohl.hadrien.vtl.script.operations.FilterOperator;
 import kohl.hadrien.vtl.script.operations.KeepOperator;
 import kohl.hadrien.vtl.script.operations.RenameOperation;
 import kohl.hadrien.vtl.script.operations.join.AbstractJoinOperation;
@@ -162,5 +163,30 @@ public class JoinBodyVisitor extends VTLBaseVisitor<JoinClause> {
 
         clauses.add(calcClause);
         return calcClause;
+    }
+    
+    @Override
+    public JoinClause visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
+        List<JoinClause> clauses = this.joinOperation.getClauses();
+    
+        JoinClause filterClause = workingDataset -> {
+            JoinFilterClauseVisitor visitor = new JoinFilterClauseVisitor(workingDataset);
+            FilterOperator filter = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return filter.getDataStructure();
+                }
+            
+                @Override
+                public Stream<Tuple> get() {
+                    return filter.get();
+                }
+            };
+        };
+    
+        clauses.add(filterClause);
+    
+        return filterClause;
     }
 }

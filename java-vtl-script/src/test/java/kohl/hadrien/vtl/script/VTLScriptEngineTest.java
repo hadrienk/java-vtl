@@ -101,35 +101,46 @@ public class VTLScriptEngineTest {
         when(ds1.getDataStructure()).thenReturn(ds);
         when(ds2.getDataStructure()).thenReturn(ds);
 
-        when(ds1.get()).then(invocation -> {
-            return Stream.of(
-                    ds.wrap(ImmutableMap.of(
-                            "id1", "1",
-                            "id2", "1",
-                            "m1", 10,
-                            "m2", 20,
-                            "at1", "attr1"
-                    ))
-            );
-        });
+        when(ds1.get()).then(invocation -> Stream.of(
+                ds.wrap(ImmutableMap.of(
+                        "id1", "1",
+                        "id2", "1",
+                        "m1", 10,
+                        "m2", 20,
+                        "at1", "attr1"
+                )),
+                ds.wrap(ImmutableMap.of(
+                        "id1", "2",
+                        "id2", "2",
+                        "m1", 100,
+                        "m2", 200,
+                        "at1", "attr2"
+                ))
+        ));
 
-        when(ds2.get()).then(invocation -> {
-            return Stream.of(
-                    ds.wrap(ImmutableMap.of(
-                            "id1", "1",
-                            "id2", "1",
-                            "m1", 30,
-                            "m2", 40,
-                            "at1", "attr1"
-                    ))
-            );
-        });
+        when(ds2.get()).then(invocation -> Stream.of(
+                ds.wrap(ImmutableMap.of(
+                        "id1", "1",
+                        "id2", "1",
+                        "m1", 30,
+                        "m2", 40,
+                        "at1", "attr1"
+                )),
+                ds.wrap(ImmutableMap.of(
+                        "id1", "2",
+                        "id2", "2",
+                        "m1", 300,
+                        "m2", 400,
+                        "at1", "attr2"
+                ))
+        ));
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", ds2);
 
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +
+                "  filter id1=1," +
                 "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +           // id1, id2, ident, ds1.m1, ds2.m1, ds2.m2
                 "  drop ds2.m1," +                                  // id1, id2, ident, ds1.m1, ds2.m2
