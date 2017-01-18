@@ -1,7 +1,7 @@
-package kohl.hadrien.console.server;
+package no.ssb.console.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kohl.hadrien.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

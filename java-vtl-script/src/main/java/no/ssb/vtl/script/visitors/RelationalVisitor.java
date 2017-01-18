@@ -1,11 +1,11 @@
-package no.ssb.vtl.script.operations.visitors;
+package no.ssb.vtl.script.visitors;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.UnionOperation;
-import no.ssb.vtl.script.join.JoinDefinitionVisitor;
+import no.ssb.vtl.script.visitors.join.JoinDefinitionVisitor;
 
 import javax.script.ScriptContext;
 import java.util.List;

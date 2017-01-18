@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.join;
+package no.ssb.vtl.script.visitors.join;
 
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
@@ -8,6 +8,9 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.DropOperator;
 import no.ssb.vtl.script.operations.KeepOperator;
 import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
+import no.ssb.vtl.script.operations.join.JoinClause;
+import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.antlr.v4.runtime.RuleContext;
 
 import java.util.List;

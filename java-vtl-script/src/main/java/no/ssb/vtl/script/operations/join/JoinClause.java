@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.visitors.join;
+package no.ssb.vtl.script.operations.join;
 
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;

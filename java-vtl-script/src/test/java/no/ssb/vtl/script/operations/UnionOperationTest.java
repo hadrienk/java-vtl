@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.operations;
+package no.ssb.vtl.script.operations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.ssb.vtl.model.DataPoint;
@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static kohl.hadrien.vtl.model.Component.Role;
+import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

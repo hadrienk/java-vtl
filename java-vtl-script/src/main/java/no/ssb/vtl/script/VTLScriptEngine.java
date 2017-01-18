@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script;
+package no.ssb.vtl.script;
 
 /*-
  * #%L
@@ -22,13 +22,13 @@ package kohl.hadrien.vtl.script;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import kohl.hadrien.vtl.connector.Connector;
+import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Dataset;
-import kohl.hadrien.vtl.parser.VTLLexer;
-import kohl.hadrien.vtl.parser.VTLParser;
-import kohl.hadrien.vtl.script.error.SyntaxException;
-import kohl.hadrien.vtl.script.error.WrappedException;
-import kohl.hadrien.vtl.script.visitors.AssignmentVisitor;
+import no.ssb.vtl.parser.VTLLexer;
+import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.SyntaxException;
+import no.ssb.vtl.script.error.WrappedException;
+import no.ssb.vtl.script.visitors.AssignmentVisitor;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 

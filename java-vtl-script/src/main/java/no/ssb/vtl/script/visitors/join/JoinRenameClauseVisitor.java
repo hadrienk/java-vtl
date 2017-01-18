@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.join;
+package no.ssb.vtl.script.visitors.join;
 
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.join.WorkingDataset;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;

@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.error;
+package no.ssb.vtl.script.error;
 
 /**
  * Created by hadrien on 13/12/2016.

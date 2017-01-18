@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.visitors;
+package no.ssb.vtl.script.visitors;
 
 /*-
  * #%L
@@ -26,7 +26,6 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Component;
-
 
 import java.util.List;
 import java.util.Optional;

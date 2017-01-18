@@ -425,11 +425,11 @@ tokens {
 }
 
 @parser::header {
-package kohl.hadrien.antlr3;
+package no.ssb.antlr3;
 }
 
 @lexer::header {
-package kohl.hadrien.antlr3;
+package no.ssb.antlr3;
 }
 
 @lexer::members {

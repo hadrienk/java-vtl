@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.visitors;
+package no.ssb.vtl.script.visitors;
 
 /*-
  * #%L

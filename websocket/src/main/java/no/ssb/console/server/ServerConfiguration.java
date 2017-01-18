@@ -1,4 +1,4 @@
-package kohl.hadrien.console.server;
+package no.ssb.console.server;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,10 +1,10 @@
-package kohl.hadrien.console.server;
+package no.ssb.console.server;
 
 import com.codepoetics.protonpack.Streamable;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
-import kohl.hadrien.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;

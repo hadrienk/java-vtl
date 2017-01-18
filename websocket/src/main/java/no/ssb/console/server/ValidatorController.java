@@ -1,9 +1,9 @@
-package kohl.hadrien.console.server;
+package no.ssb.console.server;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Lists;
-import kohl.hadrien.vtl.parser.VTLLexer;
-import kohl.hadrien.vtl.parser.VTLParser;
+import no.ssb.vtl.parser.VTLLexer;
+import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.tool.GrammarParserInterpreter;

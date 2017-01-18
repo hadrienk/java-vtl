@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.interpreter;
+package no.ssb.vtl.interpreter;
 
 /*-
  * #%L
@@ -24,9 +24,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
-import kohl.hadrien.vtl.model.DataPoint;
-import kohl.hadrien.vtl.model.Dataset;
-import kohl.hadrien.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import org.fusesource.jansi.AnsiConsole;
 
@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static kohl.hadrien.vtl.model.Component.Role;
+import static no.ssb.vtl.model.Component.Role;
 
 /**
  * A VTL interpreter.

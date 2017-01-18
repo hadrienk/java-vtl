@@ -1,6 +1,6 @@
-package kohl.hadrien.vtl.script.error;
+package no.ssb.vtl.script.error;
 
-import static kohl.hadrien.vtl.script.error.VTLErrorCodeUtil.checkVTLCode;
+import static no.ssb.vtl.script.error.VTLErrorCodeUtil.checkVTLCode;
 
 /**
  * Thrown when the VTL received a syntactically invalid expression.

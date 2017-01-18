@@ -1,4 +1,4 @@
-package kohl.hadrien.console.server;
+package no.ssb.console.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;

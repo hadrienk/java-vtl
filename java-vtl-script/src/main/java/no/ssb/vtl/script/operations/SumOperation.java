@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.operations;
+package no.ssb.vtl.script.operations;
 
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;

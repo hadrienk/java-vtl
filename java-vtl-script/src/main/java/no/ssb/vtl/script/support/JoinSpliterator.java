@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.support;
+package no.ssb.vtl.script.support;
 
 import java.util.Comparator;
 import java.util.Spliterator;

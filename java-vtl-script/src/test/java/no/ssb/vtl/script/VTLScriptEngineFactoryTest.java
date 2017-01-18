@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script;
 
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.junit.Before;

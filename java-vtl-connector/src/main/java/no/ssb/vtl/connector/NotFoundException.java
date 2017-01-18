@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.connector;
+package no.ssb.vtl.connector;
 
 /*-
  * #%L

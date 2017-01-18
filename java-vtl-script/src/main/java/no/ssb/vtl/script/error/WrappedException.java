@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.error;
+package no.ssb.vtl.script.error;
 
 import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.ParserRuleContext;

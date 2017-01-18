@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.parser;
+package no.ssb.vtl.parser;
 
 /*-
  * #%L

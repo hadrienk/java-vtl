@@ -1,4 +1,4 @@
-package kohl.hadrien.console.tty;
+package no.ssb.console.tty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -7,15 +7,15 @@ import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
-import kohl.hadrien.console.tty.parsing.ParsingResult;
-import kohl.hadrien.console.tty.parsing.SyntaxError;
-import kohl.hadrien.console.tty.parsing.SyntaxErrorListener;
-import kohl.hadrien.vtl.model.Component;
+import no.ssb.console.tty.parsing.ParsingResult;
+import no.ssb.console.tty.parsing.SyntaxError;
+import no.ssb.console.tty.parsing.SyntaxErrorListener;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import kohl.hadrien.vtl.parser.VTLLexer;
-import kohl.hadrien.vtl.parser.VTLParser;
-import kohl.hadrien.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.parser.VTLLexer;
+import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;

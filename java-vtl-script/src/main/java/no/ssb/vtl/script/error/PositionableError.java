@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.error;
+package no.ssb.vtl.script.error;
 
 /**
  * Mark the exception as positionable.

@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script;
+package no.ssb.vtl.script;
 
 /*-
  * #%L
@@ -21,7 +21,7 @@ package kohl.hadrien.vtl.script;
  */
 
 import com.google.common.collect.ImmutableMap;
-import kohl.hadrien.vtl.connector.Connector;
+import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static kohl.hadrien.vtl.model.Component.Role;
+import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;

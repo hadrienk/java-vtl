@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.operations;
+package no.ssb.vtl.script.operations;
 
 /*-
  * #%L
@@ -22,7 +22,7 @@ package kohl.hadrien.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.*;
-import kohl.hadrien.vtl.model.Component;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;

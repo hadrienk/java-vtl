@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.visitors.join;
+package no.ssb.vtl.script.operations.join;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;

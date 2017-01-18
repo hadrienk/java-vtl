@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.visitors;
+package no.ssb.vtl.script.visitors;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Dataset;

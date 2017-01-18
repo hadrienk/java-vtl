@@ -1,9 +1,10 @@
-package no.ssb.vtl.script.join;
+package no.ssb.vtl.script.visitors.join;
 
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.antlr.v4.runtime.*;
 import org.junit.Test;
 

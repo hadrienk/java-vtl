@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.join;
+package no.ssb.vtl.script.visitors.join;
 
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Dataset;

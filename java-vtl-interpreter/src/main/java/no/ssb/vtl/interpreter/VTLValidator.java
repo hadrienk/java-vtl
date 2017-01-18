@@ -1,8 +1,8 @@
-package kohl.hadrien.vtl.interpreter;
+package no.ssb.vtl.interpreter;
 
 import com.google.common.collect.Lists;
-import kohl.hadrien.vtl.parser.VTLLexer;
-import kohl.hadrien.vtl.parser.VTLParser;
+import no.ssb.vtl.parser.VTLLexer;
+import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.*;
 import org.fusesource.jansi.Ansi;
 

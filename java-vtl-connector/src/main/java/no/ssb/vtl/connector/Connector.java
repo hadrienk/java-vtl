@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.connector;
+package no.ssb.vtl.connector;
 
 /*-
  * #%L
@@ -21,7 +21,7 @@ package kohl.hadrien.vtl.connector;
  */
 
 
-import kohl.hadrien.vtl.model.Dataset;
+import no.ssb.vtl.model.Dataset;
 
 /**
  * Interface that allows the dataset

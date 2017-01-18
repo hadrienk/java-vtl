@@ -1,9 +1,9 @@
-package kohl.hadrien.vtl.script.operations;
+package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import kohl.hadrien.vtl.model.Component;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 

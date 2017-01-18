@@ -1,9 +1,10 @@
-package no.ssb.vtl.script.join;
+package no.ssb.vtl.script.visitors.join;
 
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.operations.join.*;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;

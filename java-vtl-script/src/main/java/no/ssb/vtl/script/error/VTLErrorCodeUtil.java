@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.error;
+package no.ssb.vtl.script.error;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;

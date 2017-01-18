@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.model;
+package no.ssb.vtl.model;
 
 import com.google.common.base.MoreObjects;
 

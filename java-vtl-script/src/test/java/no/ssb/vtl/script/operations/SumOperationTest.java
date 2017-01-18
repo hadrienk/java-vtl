@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.operations;
+package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,16 +6,16 @@ import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import kohl.hadrien.vtl.script.operations.join.InnerJoinOperation;
-import kohl.hadrien.vtl.script.operations.join.JoinClause;
-import kohl.hadrien.vtl.script.operations.join.WorkingDataset;
+import no.ssb.vtl.script.operations.join.InnerJoinOperation;
+import no.ssb.vtl.script.operations.join.JoinClause;
+import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.assertj.core.api.SoftAssertions;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static kohl.hadrien.vtl.model.Component.Role;
+import static no.ssb.vtl.model.Component.Role;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

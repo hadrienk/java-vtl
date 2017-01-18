@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script;
+package no.ssb.vtl.script;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;

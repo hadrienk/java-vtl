@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.script.support;
+package no.ssb.vtl.script.support;
 
 import com.google.common.collect.Lists;
 

@@ -1,4 +1,4 @@
-package kohl.hadrien.vtl.model;
+package no.ssb.vtl.model;
 
 /*-
  * #%L
@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Data structure of a {@link Dataset}.
  * <p>
  * The data structure defines the role and type of the columns of a data set and
- * serves as a {@link DataPoint}s and {@link kohl.hadrien.vtl.model.Dataset.Tuple}s factory.
+ * serves as a {@link DataPoint}s and {@link no.ssb.vtl.model.Dataset.Tuple}s factory.
  */
 public class DataStructure extends ForwardingMap<String, Component> {
 
