@@ -1,6 +1,18 @@
 Java implementation of the Validation Transformation Language
 # Status
-[![Build Status](https://travis-ci.org/hadrienk/java-vtl.svg?branch=master)](https://travis-ci.org/hadrienk/java-vtl)
+
+[codacy-link]: https://www.codacy.com/app/hadrien-kohl/ssb-java-vtl/dashboard
+[travis-link]: https://travis-ci.org/statisticsnorway/java-vtl.svg?branch=develop
+
+[codacy-img]: https://img.shields.io/codacy/grade/e187c210f99b4c179550b9bcb1c92860/develop.svg
+[codacy-cov-img]: https://img.shields.io/codacy/coverage/e187c210f99b4c179550b9bcb1c92860/develop.svg
+[travis-img]: https://img.shields.io/travis/statisticsnorway/java-vtl/develop.svg
+
+
+
+[![Build Status][travis-img]][travis-link]
+[![Codacy Badge][codacy-img]][codacy-link]
+[![Codacy coverage][codacy-cov-img]][travis-link]
 
 # Implementation roadmap
 
