@@ -12,7 +12,6 @@
 
     <artifactId>java-vtl-ssb-api-connector</artifactId>
 
-
     <dependencies>
         <dependency>
             <groupId>no.ssb.jsonstat</groupId>
