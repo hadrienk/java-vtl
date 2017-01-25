@@ -1,6 +1,8 @@
 package kohl.hadrien.console.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import kohl.hadrien.vtl.connector.Connector;
 import kohl.hadrien.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import org.springframework.boot.SpringApplication;
@@ -11,6 +13,7 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import javax.script.Bindings;
+import java.util.List;
 
 /**
  * Spring application
@@ -24,13 +27,15 @@ public class Application {
     }
 
     @Bean
-    public VTLScriptEngine getVTLEngine(ObjectMapper mapper) {
-        //ScriptEngineManager factory = new ScriptEngineManager();
-        //VTLScriptEngine engine = (VTLScriptEngine) factory.getEngineByMimeType("text/x-vtl");
+    List<Connector> getConnectors(ObjectMapper mapper) {
+        return Lists.newArrayList(
+                new SsbApiConnector(mapper)
+        );
+    }
 
-        SsbApiConnector ssbApiConnector = new SsbApiConnector(mapper);
-        VTLScriptEngine engine = new VTLScriptEngine(ssbApiConnector);
-        return engine;
+    @Bean
+    public VTLScriptEngine getVTLEngine(List<Connector> connectors) {
+        return new VTLScriptEngine(connectors.toArray(new Connector[]{}));
     }
 
     @Bean(name = "vtlBindings")

@@ -21,11 +21,16 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
 
         $scope.datasets = {};
 
+        $scope.executionError = null;
+
         $scope.fetchData = function (dataset) {
             var data = $http.get("/dataset/" + dataset + "/data");
-            data.then(function (responce) {
-                $scope.datasets[dataset]["data"] = responce.data;
-            });
+            data.then(function (response) {
+                $scope.datasets[dataset]["data"] = response.data;
+            },function (response) {
+                    $scope.datasets[dataset]["error"] = response.data;
+                }
+            );
         };
 
         $scope.remove = function (dataset) {
@@ -33,6 +38,19 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
             data.then(function (responce) {
                 delete $scope.datasets[dataset];
             });
+        };
+
+        $scope.roleOrder = function (variable) {
+            switch(variable.role) {
+                case "IDENTIFIER":
+                    return 1;
+                case "MEASURE":
+                    return 2;
+                case "ATTRIBUTE":
+                    return 3;
+                default:
+                    return 4;
+            }
         };
 
         $scope.execute = function () {
@@ -43,6 +61,7 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
                 url: '/execute'
             }).then(function successCallback(response) {
 
+                $scope.executionError = null;
                 var datasets = response.data;
                 var promises = {};
 
@@ -53,7 +72,10 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
                     var promise = $http.get("/dataset/" + dataset + "/structure");
                     promises[dataset] = promise.then(function (response) {
                         return {variables: response.data.dataStructure};
-                    });
+                    },function (response) {
+                            $scope.datasets[i]["error"] = response.data;
+                        }
+                    );
                 }
 
                 $q.all(promises).then(function (result) {
@@ -61,6 +83,7 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
                 })
 
             }, function errorCallback(response) {
+                $scope.executionError = response.data;
                 // called asynchronously if an error occurs
                 // or server returns response with an error status.
             });
