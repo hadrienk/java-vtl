@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>kohl.hadrien</groupId>
+        <groupId>no.ssb.vtl</groupId>
         <artifactId>java-vtl-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
@@ -51,17 +51,11 @@
 
     <dependencies>
 
-        <dependency><!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>4.5.3</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.antlr/antlr-runtime -->
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
         <dependency>
             <groupId>org.antlr</groupId>
-            <artifactId>antlr-runtime</artifactId>
-            <version>3.5.2</version>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.6</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->

@@ -2,10 +2,10 @@ package no.ssb.vtl.connectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import kohl.hadrien.vtl.connector.Connector;
-import kohl.hadrien.vtl.model.Component;
-import kohl.hadrien.vtl.model.DataPoint;
-import kohl.hadrien.vtl.model.Dataset;
+import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.Dataset;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.InputStreamResource;
