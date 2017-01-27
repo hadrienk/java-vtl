@@ -1,8 +1,8 @@
-package no.ssb.vtl.tools.webconsole.server;
+package no.ssb.vtl.tools.webconsole;
 
 import io.termd.core.http.HttpTtyConnection;
 import io.termd.core.tty.TtyConnection;
-import no.ssb.vtl.tools.webconsole.tty.VTLConsole;
+import no.ssb.vtl.tools.termd.TtyConsole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.TextMessage;
@@ -22,7 +22,7 @@ public class TermdSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        Consumer<TtyConnection> handler = new VTLConsole();
+        Consumer<TtyConnection> handler = new TtyConsole();
         connection = new HttpTtyConnection() {
             @Override
             protected void write(byte[] buffer) {

@@ -92,8 +92,15 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <mainClass>no.ssb.vtl.tools.webconsole.server.Application</mainClass>
+                    <mainClass>no.ssb.vtl.tools.webconsole.Application</mainClass>
                     <addResources>true</addResources>
                 </configuration>
             </plugin>

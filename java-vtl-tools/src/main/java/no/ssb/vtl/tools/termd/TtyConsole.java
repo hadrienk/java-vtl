@@ -1,4 +1,4 @@
-package no.ssb.vtl.tools.webconsole.tty;
+package no.ssb.vtl.tools.termd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -7,9 +7,6 @@ import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
-import no.ssb.vtl.tools.webconsole.tty.parsing.ParsingResult;
-import no.ssb.vtl.tools.webconsole.tty.parsing.SyntaxError;
-import no.ssb.vtl.tools.webconsole.tty.parsing.SyntaxErrorListener;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -38,11 +35,11 @@ import static java.lang.String.format;
 /**
  * A termd interpreter.
  */
-public class VTLConsole implements Consumer<TtyConnection> {
+public class TtyConsole implements Consumer<TtyConnection> {
 
     private static final String MOTD = "" +
             "\nJava VTL interpreter version "
-            + VTLConsole.class.getPackage().getImplementationVersion() + ".\n" +
+            + TtyConsole.class.getPackage().getImplementationVersion() + ".\n" +
             "Type .help for command list.\n\n";
 
     private static final String VTL = "" +

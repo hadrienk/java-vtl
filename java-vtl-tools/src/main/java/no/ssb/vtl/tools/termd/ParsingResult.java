@@ -1,4 +1,4 @@
-package no.ssb.vtl.tools.webconsole.tty.parsing;
+package no.ssb.vtl.tools.termd;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.tree.ParseTree;
