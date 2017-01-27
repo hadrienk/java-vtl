@@ -29,6 +29,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.operations.RenameOperation;
 
+import javax.script.Bindings;
 import java.util.List;
 import java.util.Map;
 import java.util.RandomAccess;
@@ -60,7 +61,7 @@ public abstract class AbstractJoinOperation implements Dataset {
 
     private WorkingDataset workingDataset;
 
-    public AbstractJoinOperation(Map<String, Dataset> namedDatasets) {
+    public AbstractJoinOperation(Bindings namedDatasets) {
 
         checkArgument(
                 !namedDatasets.isEmpty(),
@@ -69,7 +70,8 @@ public abstract class AbstractJoinOperation implements Dataset {
 
         // Find the common identifier.
         Multiset<Component> components = HashMultiset.create();
-        for (Dataset dataset : namedDatasets.values()) {
+        for (Object o : namedDatasets.values()) {
+            Dataset dataset = (Dataset) o;
             DataStructure structure = dataset.getDataStructure();
             components.addAll(structure.values());
         }
@@ -85,7 +87,7 @@ public abstract class AbstractJoinOperation implements Dataset {
 
         // Rename all the components except the common identifiers.
         for (String datasetName : namedDatasets.keySet()) {
-            Dataset dataset = namedDatasets.get(datasetName);
+            Dataset dataset = (Dataset) namedDatasets.get(datasetName);
 
             Map<String, String> newNames = Maps.newHashMap();
             Map<String, Component.Role> newRoles = Maps.newHashMap();

@@ -8,6 +8,7 @@ import no.ssb.vtl.script.operations.join.*;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
+import javax.script.SimpleBindings;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
     public AbstractJoinOperation visitJoinDefinitionInner(VTLParser.JoinDefinitionInnerContext ctx) {
         List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
 
-        Map<String, Dataset> theDatasets = createJoinScope(datasets);
+        Bindings theDatasets = createJoinScope(datasets);
 
         InnerJoinOperation joinOperation = new InnerJoinOperation(theDatasets);
         return joinOperation;
@@ -50,7 +51,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
     public AbstractJoinOperation visitJoinDefinitionOuter(VTLParser.JoinDefinitionOuterContext ctx) {
         List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
 
-        Map<String, Dataset> datasetMap = createJoinScope(datasets);
+        Bindings datasetMap = createJoinScope(datasets);
 
         OuterJoinOperation joinOperation = new OuterJoinOperation(datasetMap);
         return joinOperation;
@@ -60,7 +61,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
     public AbstractJoinOperation visitJoinDefinitionCross(VTLParser.JoinDefinitionCrossContext ctx) {
         List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
 
-        Map<String, Dataset> datasetMap = createJoinScope(datasets);
+        Bindings datasetMap = createJoinScope(datasets);
 
         CrossJoinOperation joinOperation = new CrossJoinOperation(datasetMap);
         return joinOperation;
@@ -70,8 +71,9 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
     /**
      * Finds the datasets in the context.
      */
-    private Map<String, Dataset> createJoinScope(List<VTLParser.VarIDContext> names) {
+    private Bindings createJoinScope(List<VTLParser.VarIDContext> names) {
         Map<String, Dataset> datasets = Maps.newHashMap();
+        Bindings joinScope = new SimpleBindings();
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         for (VTLParser.VarIDContext dataset : names) {
             String datasetName = dataset.getText();
@@ -84,9 +86,11 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
                 // TODO: Exception, invalid type.
                 throw new RuntimeException(datasetName + " was not a dataset");
             }
-            datasets.put(datasetName, (Dataset) datasetVariable);
+            joinScope.put(datasetName, datasetVariable);
+//            datasets.put(datasetName, (Dataset) datasetVariable);
         }
-        return datasets;
+        return joinScope;
+//        return datasets;
     }
 
 }

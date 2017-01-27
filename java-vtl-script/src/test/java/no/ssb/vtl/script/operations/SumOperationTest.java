@@ -11,6 +11,7 @@ import no.ssb.vtl.script.operations.join.JoinClause;
 import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.assertj.core.api.SoftAssertions;
 
+import javax.script.SimpleBindings;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -235,9 +236,9 @@ public class SumOperationTest {
                     )
             );
 
-            InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
+            InnerJoinOperation join = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of(
                     "left", left, "right", right
-            ));
+            )));
             SumOperation sumOperation = new SumOperation(
                     tuple -> tuple.get(3), ld,
                     tuple -> tuple.get(3), rd
@@ -339,9 +340,9 @@ public class SumOperationTest {
                     )
             );
 
-            InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
+            InnerJoinOperation join = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of(
                     "left", left
-            ));
+            )));
             SumOperation sumOperation = new SumOperation(tuple -> tuple.get(3), ld, 1);
 
             softly.assertThat(
@@ -435,10 +436,10 @@ public class SumOperationTest {
                     )
             );
 
-            InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
+            InnerJoinOperation join = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of(
                     "left", left,
                     "right", right
-            ));
+            )));
 
 
             SumOperation sumOperation = new SumOperation(
