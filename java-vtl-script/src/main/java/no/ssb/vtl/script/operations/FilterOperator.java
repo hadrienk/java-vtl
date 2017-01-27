@@ -1,8 +1,8 @@
-package kohl.hadrien.vtl.script.operations;
+package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
-import kohl.hadrien.vtl.model.DataStructure;
-import kohl.hadrien.vtl.model.Dataset;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
 
 import java.util.List;
 import java.util.Map;

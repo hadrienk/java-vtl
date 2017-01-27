@@ -1,9 +1,9 @@
-package kohl.hadrien.vtl.script.visitors.join;
+package no.ssb.vtl.script.visitors.join;
 
-import kohl.hadrien.vtl.model.Dataset;
-import kohl.hadrien.vtl.parser.VTLBaseVisitor;
-import kohl.hadrien.vtl.parser.VTLParser;
-import kohl.hadrien.vtl.script.operations.FilterOperator;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.parser.VTLBaseVisitor;
+import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.operations.FilterOperator;
 
 import java.util.Set;
 import java.util.function.Predicate;

@@ -6,6 +6,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.DropOperator;
+import no.ssb.vtl.script.operations.FilterOperator;
 import no.ssb.vtl.script.operations.KeepOperator;
 import no.ssb.vtl.script.operations.RenameOperation;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
