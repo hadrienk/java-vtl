@@ -4,12 +4,17 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>kohl.hadrien</groupId>
+    <groupId>no.ssb.vtl</groupId>
     <artifactId>java-vtl-parent</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
 
     <name>Java VTL Maven Parent</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+    </properties>
 
     <modules>
         <module>java-vtl-model</module>
@@ -19,7 +24,6 @@
         <module>java-vtl-connector</module>
         <module>java-vtl-ssb-api-connector</module>
         <module>websocket</module>
-
     </modules>
 
     <developers>
@@ -29,10 +33,72 @@
         </developer>
     </developers>
 
+    <profiles>
+        <profile>
+            <id>travis</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>env.TRAVIS</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.7.8</version>
+                        <executions>
+                            <execution>
+                                <id>jacoco-initialize</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.gavinmogan</groupId>
+                        <artifactId>codacy-maven-plugin</artifactId>
+                        <version>1.0.3</version>
+                        <configuration>
+                            <commit>${env.TRAVIS_COMMIT}</commit>
+                            <projectToken>01c6bf9024ea4792b80ad19921fc68d3</projectToken>
+                            <coverageReportFile>target/site/jacoco/jacoco.xml</coverageReportFile>
+                            <failOnMissingReportFile>false</failOnMissingReportFile>
+                            <!-- <apiToken>NEEDED</apiToken> -->
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>coverage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/hadrienk/java-vtl/</url>
+        <url>https://github.com/statisticsnorway/java-vtl/</url>
     </issueManagement>
+
     <inceptionYear>2016</inceptionYear>
     <licenses>
         <license>
@@ -47,11 +113,11 @@
         <url>https://travis-ci.org/hadrienk/java-vtl</url>
     </ciManagement>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-    
     <build>
+
+        <plugins>
+        </plugins>
+
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -149,6 +215,43 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!-- Depend on ourselves -->
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-parser</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-script</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-ssb-api-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>websocket</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.google.guava</groupId>

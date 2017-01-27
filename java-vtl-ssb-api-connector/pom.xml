@@ -6,24 +6,23 @@
 
     <parent>
         <artifactId>java-vtl-parent</artifactId>
-        <groupId>kohl.hadrien</groupId>
+        <groupId>no.ssb.vtl</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>java-vtl-ssb-api-connector</artifactId>
 
-
     <dependencies>
+
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-connector</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>no.ssb.jsonstat</groupId>
             <artifactId>json-stat-java</artifactId>
             <version>0.2.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>kohl.hadrien</groupId>
-            <artifactId>java-vtl-connector</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -37,6 +36,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <!-- bridge jck to slf4j -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -50,13 +50,6 @@
             <version>RELEASE</version>
         </dependency>
 
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
