@@ -22,10 +22,10 @@ package no.ssb.vtl.script;
 
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import org.assertj.core.api.ListAssert;
 import org.junit.Test;
 
 import javax.script.Bindings;
@@ -33,9 +33,11 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
+import static no.ssb.vtl.test.ComponentConditions.componentWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
@@ -138,24 +140,23 @@ public class VTLScriptEngineTest {
                 "");
 
         assertThat(bindings).containsKey("ds3");
-
-
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+
         Dataset ds3 = (Dataset) bindings.get("ds3");
-        assertThat(ds3.getDataStructure()).containsOnlyKeys(
+
+        assertThat(ds3.getDataStructure().values())
+                .haveAtLeastOne(componentWith("renamedId1", Role.IDENTIFIER))
+                .haveAtLeastOne(componentWith("id2", Role.IDENTIFIER))
+                .haveAtLeastOne(componentWith("ds2.m2", Role.MEASURE))
+                .haveAtLeastOne(componentWith("m1", Role.MEASURE))
+                .haveAtLeastOne(componentWith("ident", Role.MEASURE));
+
+        assertThat((Map<String, Component>) ds3.getDataStructure()).containsOnlyKeys(
                 "renamedId1", "id2", "ds2.m2", "m1", "ident"
         );
-        ListAssert<DataPoint> datapoints = assertThat(ds3.get())
+
+        assertThat(ds3.get())
                 .flatExtracting(input -> input);
-
-        datapoints.extracting(DataPoint::getName).containsExactly(
-                "renamedId1", "id2", "ds2.m2", "m1", "ident"
-        );
-
-        datapoints.extracting(DataPoint::get).containsExactly(
-                "1", "1", 40, 10, 0
-        );
-
 
     }
 
