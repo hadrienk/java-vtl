@@ -11,6 +11,11 @@
 
     <name>Java VTL Maven Parent</name>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+    </properties>
+
     <modules>
         <module>java-vtl-model</module>
         <module>java-vtl-parser</module>
@@ -19,7 +24,6 @@
         <module>java-vtl-connector</module>
         <module>java-vtl-ssb-api-connector</module>
         <module>websocket</module>
-
     </modules>
 
     <developers>
@@ -94,6 +98,7 @@
         <system>GitHub Issues</system>
         <url>https://github.com/statisticsnorway/java-vtl/</url>
     </issueManagement>
+
     <inceptionYear>2016</inceptionYear>
     <licenses>
         <license>
@@ -107,10 +112,6 @@
         <system>Travis CI</system>
         <url>https://travis-ci.org/hadrienk/java-vtl</url>
     </ciManagement>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <build>
 
@@ -214,6 +215,43 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!-- Depend on ourselves -->
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-parser</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-script</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>java-vtl-ssb-api-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>no.ssb.vtl</groupId>
+                <artifactId>websocket</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.google.guava</groupId>
