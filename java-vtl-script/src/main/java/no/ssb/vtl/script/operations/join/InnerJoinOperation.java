@@ -27,7 +27,12 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -35,7 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Represent an inner join on datasets.
@@ -47,7 +52,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
 
         return new WorkingDataset() {
             @Override
@@ -133,11 +138,11 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         };
     }
 
-    private BiFunction<JoinTuple, Tuple, JoinTuple> getMerger() {
-        return new BiFunction<JoinTuple, Tuple, JoinTuple>() {
+    private BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> getMerger() {
+        return new BiFunction<JoinTuple, Dataset.Tuple, JoinTuple>() {
 
             @Override
-            public JoinTuple apply(JoinTuple joinTuple, Tuple components) {
+            public JoinTuple apply(JoinTuple joinTuple, Dataset.Tuple components) {
                 joinTuple.addAll(components.values());
                 return joinTuple;
             }

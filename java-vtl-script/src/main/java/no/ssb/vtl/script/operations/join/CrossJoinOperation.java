@@ -27,7 +27,7 @@ public class CrossJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
         return null;
     }
 

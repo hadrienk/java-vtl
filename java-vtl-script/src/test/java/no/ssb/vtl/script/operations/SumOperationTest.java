@@ -264,7 +264,7 @@ public class SumOperationTest {
             });
 
             softly.assertThat(
-                    join.getDataStructure()
+                    join.workDataset().getDataStructure()
             ).as("data structure of the sum operation of %s and %s", left, right)
                     .isNotNull();
             // TODO: Better check.
@@ -346,13 +346,13 @@ public class SumOperationTest {
             SumOperation sumOperation = new SumOperation(tuple -> tuple.get(3), ld, 1);
 
             softly.assertThat(
-                    join.getDataStructure()
+                    join.workDataset().getDataStructure()
             ).as("data structure of the sum operation of %s and 1", left)
-                    .isEqualTo(join.getDataStructure());
+                    .isEqualTo(join.workDataset().getDataStructure());
 
             DataStructure sumDs = sumOperation.getDataStructure();
             softly.assertThat(
-                    join.get()
+                    join.workDataset().get()
             ).as("data of the sum operation of %s and 1", left)
                     .containsExactly(
                             tuple(sumDs.wrap("TIME", "2010"),
@@ -471,9 +471,9 @@ public class SumOperationTest {
             ).as("data structure of the sum operation of %s and %s", left, right)
                     .isNotEqualTo(left.getDataStructure());
 
-            DataStructure sumDs = join.getDataStructure();
+            DataStructure sumDs = join.workDataset().getDataStructure();
             softly.assertThat(
-                    join.get()
+                    join.workDataset().get()
             ).as("data of the sum operation of %s and %s", left, right)
                     .containsExactly(
                             tuple(sumDs.wrap("TIME", "2010"),

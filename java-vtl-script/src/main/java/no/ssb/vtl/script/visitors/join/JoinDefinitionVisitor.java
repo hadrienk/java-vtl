@@ -1,18 +1,19 @@
 package no.ssb.vtl.script.visitors.join;
 
-import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.join.*;
+import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
+import no.ssb.vtl.script.operations.join.CrossJoinOperation;
+import no.ssb.vtl.script.operations.join.InnerJoinOperation;
+import no.ssb.vtl.script.operations.join.OuterJoinOperation;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.SimpleBindings;
 import java.util.List;
-import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Visitor that handle the join definition
@@ -25,16 +26,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
         this.context = checkNotNull(context);
     }
 
-    @Override
-    public AbstractJoinOperation visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
-        AbstractJoinOperation joinOperation = visit(ctx.joinDefinition());
-        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(joinOperation);
-
-        // TODO: Not used?
-        JoinClause joinClause = joinBodyVisitor.visitJoinBody(ctx.joinBody());
-
-        return joinOperation;
-    }
+    
 
     @Override
     public AbstractJoinOperation visitJoinDefinitionInner(VTLParser.JoinDefinitionInnerContext ctx) {
@@ -72,7 +64,6 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
      * Finds the datasets in the context.
      */
     private Bindings createJoinScope(List<VTLParser.VarIDContext> names) {
-        Map<String, Dataset> datasets = Maps.newHashMap();
         Bindings joinScope = new SimpleBindings();
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         for (VTLParser.VarIDContext dataset : names) {
@@ -87,10 +78,8 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
                 throw new RuntimeException(datasetName + " was not a dataset");
             }
             joinScope.put(datasetName, datasetVariable);
-//            datasets.put(datasetName, (Dataset) datasetVariable);
         }
         return joinScope;
-//        return datasets;
     }
 
 }

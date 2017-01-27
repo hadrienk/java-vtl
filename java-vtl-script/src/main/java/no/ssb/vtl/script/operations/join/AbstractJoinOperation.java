@@ -35,15 +35,14 @@ import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static no.ssb.vtl.model.Component.Role;
+import static com.google.common.base.Preconditions.*;
+import static no.ssb.vtl.model.Component.*;
 
 /**
  * Abstract join operation.
  */
-public abstract class AbstractJoinOperation implements Dataset {
+public abstract class AbstractJoinOperation {
 
     // The datasets the join operates on.
     private final Map<String, Dataset> datasets = Maps.newHashMap();
@@ -119,7 +118,7 @@ public abstract class AbstractJoinOperation implements Dataset {
         return clauses;
     }
 
-    abstract WorkingDataset workDataset();
+    public abstract WorkingDataset workDataset();
 
     private WorkingDataset applyClauses() {
         WorkingDataset dataset = workDataset();
@@ -127,15 +126,6 @@ public abstract class AbstractJoinOperation implements Dataset {
             dataset = clause.apply(dataset);
         }
         return dataset;
-    }
-    @Override
-    public Stream<Tuple> get() {
-        return (workingDataset = (workingDataset == null ? applyClauses() : workingDataset)).get();
-    }
-
-    @Override
-    public DataStructure getDataStructure() {
-        return (workingDataset = (workingDataset == null ? applyClauses() : workingDataset)).getDataStructure();
     }
 
     /**
