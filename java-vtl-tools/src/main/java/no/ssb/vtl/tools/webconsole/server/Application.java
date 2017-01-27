@@ -1,4 +1,4 @@
-package no.ssb.console.server;
+package no.ssb.vtl.tools.webconsole.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.ssb.vtl.script.VTLScriptEngine;

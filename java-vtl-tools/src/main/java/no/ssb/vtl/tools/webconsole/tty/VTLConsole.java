@@ -1,4 +1,4 @@
-package no.ssb.console.tty;
+package no.ssb.vtl.tools.webconsole.tty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -7,9 +7,9 @@ import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
-import no.ssb.console.tty.parsing.ParsingResult;
-import no.ssb.console.tty.parsing.SyntaxError;
-import no.ssb.console.tty.parsing.SyntaxErrorListener;
+import no.ssb.vtl.tools.webconsole.tty.parsing.ParsingResult;
+import no.ssb.vtl.tools.webconsole.tty.parsing.SyntaxError;
+import no.ssb.vtl.tools.webconsole.tty.parsing.SyntaxErrorListener;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;

@@ -1,8 +1,8 @@
-package no.ssb.console.server;
+package no.ssb.vtl.tools.webconsole.server;
 
 import io.termd.core.http.HttpTtyConnection;
 import io.termd.core.tty.TtyConnection;
-import no.ssb.console.tty.VTLConsole;
+import no.ssb.vtl.tools.webconsole.tty.VTLConsole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.TextMessage;

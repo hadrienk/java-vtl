@@ -1,4 +1,4 @@
-package no.ssb.console.server;
+package no.ssb.vtl.tools.webconsole.server;
 
 import com.codepoetics.protonpack.Streamable;
 import com.fasterxml.jackson.annotation.JsonIgnore;

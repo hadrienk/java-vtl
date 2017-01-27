@@ -23,7 +23,7 @@
         <module>java-vtl-interpreter</module>
         <module>java-vtl-connector</module>
         <module>java-vtl-ssb-api-connector</module>
-        <module>websocket</module>
+        <module>java-vtl-tools</module>
     </modules>
 
     <developers>

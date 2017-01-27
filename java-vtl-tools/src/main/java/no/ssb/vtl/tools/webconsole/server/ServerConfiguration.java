@@ -1,4 +1,4 @@
-package no.ssb.console.server;
+package no.ssb.vtl.tools.webconsole.server;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

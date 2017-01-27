@@ -1,8 +1,8 @@
-package no.ssb.console.sandbox;
+package no.ssb.vtl.tools.webconsole.console;
 
 import io.termd.core.http.netty.NettyWebsocketTtyBootstrap;
 import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
-import no.ssb.console.tty.VTLConsole;
+import no.ssb.vtl.tools.webconsole.tty.VTLConsole;
 
 import java.util.concurrent.TimeUnit;
 
