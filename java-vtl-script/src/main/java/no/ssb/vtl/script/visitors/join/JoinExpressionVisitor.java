@@ -20,7 +20,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     @Override
     public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
         AbstractJoinOperation joinOperation = joinDefVisitor.visit(ctx.joinDefinition());
-        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(joinOperation);
+        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor();
         
         Function<WorkingDataset, WorkingDataset> joinClause = joinBodyVisitor.visitJoinBody(ctx.joinBody());
         WorkingDataset workingDataset = joinOperation.workDataset();

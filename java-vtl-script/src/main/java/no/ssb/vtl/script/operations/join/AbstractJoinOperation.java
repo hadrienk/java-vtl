@@ -57,9 +57,7 @@ public abstract class AbstractJoinOperation {
     // Holds the operations of the join.
     private final List<JoinClause> clauses = Lists.newArrayList();
     //private final Iterator<JoinClause> clauseIterator = ;
-
-    private WorkingDataset workingDataset;
-
+    
     public AbstractJoinOperation(Bindings namedDatasets) {
 
         checkArgument(
@@ -119,15 +117,7 @@ public abstract class AbstractJoinOperation {
     }
 
     public abstract WorkingDataset workDataset();
-
-    private WorkingDataset applyClauses() {
-        WorkingDataset dataset = workDataset();
-        for (JoinClause clause : clauses) {
-            dataset = clause.apply(dataset);
-        }
-        return dataset;
-    }
-
+    
     /**
      * Holds the "working dataset" tuples.
      */

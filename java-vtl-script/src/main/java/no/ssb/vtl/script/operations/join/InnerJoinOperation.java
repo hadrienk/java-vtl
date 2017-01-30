@@ -110,17 +110,15 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 while (iterator.hasNext()) {
                     Function<Tuple, List<DataPoint>> keyExtractor = tuple -> {
                         // Filter by common ids.
-                        List<DataPoint> ids = tuple.stream().filter(dataPoint ->
+                        return tuple.stream().filter(dataPoint ->
                                 getCommonIdentifierNames().contains(dataPoint.getName())
                         ).collect(Collectors.toList());
-                        return ids;
                     };
                     Function<JoinTuple, List<DataPoint>> joinKeyExtractor = tuple -> {
                         // Filter by common ids.
-                        List<DataPoint> ids =  tuple.stream().filter(dataPoint ->
+                        return tuple.stream().filter(dataPoint ->
                                 getCommonIdentifierNames().contains(dataPoint.getName())
                         ).collect(Collectors.toList());
-                        return ids;
                     };
                     result = StreamSupport.stream(
                             new JoinSpliterator<>(
@@ -139,40 +137,33 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     private BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> getMerger() {
-        return new BiFunction<JoinTuple, Dataset.Tuple, JoinTuple>() {
-
-            @Override
-            public JoinTuple apply(JoinTuple joinTuple, Dataset.Tuple components) {
-                joinTuple.addAll(components.values());
-                return joinTuple;
-            }
+        return (joinTuple, components) -> {
+            joinTuple.addAll(components.values());
+            return joinTuple;
         };
     }
 
     private Comparator<List<DataPoint>> getKeyComparator(final Set<String> dimensions) {
-        return new Comparator<List<DataPoint>>() {
-            @Override
-            public int compare(List<DataPoint> l, List<DataPoint> r) {
-                // TODO: Tuple should expose method to handle this.
-                // TODO: Evaluate migrating to DataPoint.
-                // TODO: When using on, the left over identifiers should be transformed to measures.
-                Map<String, Comparable> lIds = l.stream()
-                        .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                t -> (Comparable) t.get()
-                        ));
-                Map<String, Object> rIds = r.stream()
-                        .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                Supplier::get
-                        ));
-                for (String key : dimensions) {
-                    int res = lIds.get(key).compareTo(rIds.get(key));
-                    if (res != 0)
-                        return res;
-                }
-                return 0;
+        return (l, r) -> {
+            // TODO: Tuple should expose method to handle this.
+            // TODO: Evaluate migrating to DataPoint.
+            // TODO: When using on, the left over identifiers should be transformed to measures.
+            Map<String, Comparable> lIds = l.stream()
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            t -> (Comparable) t.get()
+                    ));
+            Map<String, Object> rIds = r.stream()
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            Supplier::get
+                    ));
+            for (String key : dimensions) {
+                int res = lIds.get(key).compareTo(rIds.get(key));
+                if (res != 0)
+                    return res;
             }
+            return 0;
         };
     }
 }

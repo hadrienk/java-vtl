@@ -33,9 +33,8 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
         List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
 
         Bindings theDatasets = createJoinScope(datasets);
-
-        InnerJoinOperation joinOperation = new InnerJoinOperation(theDatasets);
-        return joinOperation;
+    
+        return new InnerJoinOperation(theDatasets);
 
     }
 
@@ -44,9 +43,8 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
         List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
 
         Bindings datasetMap = createJoinScope(datasets);
-
-        OuterJoinOperation joinOperation = new OuterJoinOperation(datasetMap);
-        return joinOperation;
+    
+        return new OuterJoinOperation(datasetMap);
     }
 
     @Override
@@ -54,9 +52,8 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
         List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
 
         Bindings datasetMap = createJoinScope(datasets);
-
-        CrossJoinOperation joinOperation = new CrossJoinOperation(datasetMap);
-        return joinOperation;
+    
+        return new CrossJoinOperation(datasetMap);
     }
 
 

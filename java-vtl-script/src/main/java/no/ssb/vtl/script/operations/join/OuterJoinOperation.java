@@ -21,9 +21,6 @@ package no.ssb.vtl.script.operations.join;
 
 import javax.script.Bindings;
 
-/**
- * Created by hadrien on 16/11/2016.
- */
 public class OuterJoinOperation extends AbstractJoinOperation {
 
     public OuterJoinOperation(Bindings namedDatasets) {

@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.*;
  */
 public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
 
-    final AssignmentVisitor assignmentVisitor;
-    final JoinExpressionVisitor joinVisitor;
+    private final AssignmentVisitor assignmentVisitor;
+    private final JoinExpressionVisitor joinVisitor;
 
     public RelationalVisitor(AssignmentVisitor assignmentVisitor, ScriptContext context) {
         this.assignmentVisitor = checkNotNull(assignmentVisitor);
@@ -43,8 +43,4 @@ public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
         return () -> visit;
     }
 
-    @Override
-    public Supplier<Dataset> visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        return super.visitRelationalExpression(ctx);
-    }
 }

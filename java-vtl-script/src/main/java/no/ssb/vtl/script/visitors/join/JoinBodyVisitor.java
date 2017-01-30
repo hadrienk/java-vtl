@@ -18,97 +18,75 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-
 /**
  * Sets up the join clauses in the given {@link AbstractJoinOperation}.
  * <p>
  * The last join clause is returned.
  */
 public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, WorkingDataset>> {
-
-    private final AbstractJoinOperation joinOperation;
-
-    public JoinBodyVisitor(AbstractJoinOperation joinOperation) {
-        this.joinOperation = checkNotNull(joinOperation);
+    
+    public JoinBodyVisitor() {
     }
 
     @Override
     public JoinClause visitJoinKeepClause(VTLParser.JoinKeepClauseContext ctx) {
+    
+        return workingDataset -> {
+            JoinKeepClauseVisitor visitor = new JoinKeepClauseVisitor(workingDataset);
+            KeepOperator keep = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return keep.getDataStructure();
+                }
 
-        JoinClause keepClause = new JoinClause() {
-
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                JoinKeepClauseVisitor visitor = new JoinKeepClauseVisitor(workingDataset);
-                KeepOperator keep = visitor.visit(ctx);
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return keep.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return keep.get();
-                    }
-                };
-            }
+                @Override
+                public Stream<Tuple> get() {
+                    return keep.get();
+                }
+            };
         };
-
-        return keepClause;
 
     }
 
     @Override
     public JoinClause visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
-        JoinClause renameClause = new JoinClause() {
+    
+        return workingDataset -> {
+            JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset);
+            RenameOperation renameOperator = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return renameOperator.getDataStructure();
+                }
 
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset);
-                RenameOperation renameOperator = visitor.visit(ctx);
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return renameOperator.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return renameOperator.get();
-                    }
-                };
-            }
+                @Override
+                public Stream<Tuple> get() {
+                    return renameOperator.get();
+                }
+            };
         };
-
-        return renameClause;
     }
 
     @Override
     public JoinClause visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
+    
+        return workingDataset -> {
+            JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
+            DropOperator drop = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return drop.getDataStructure();
+                }
 
-        JoinClause dropClause = new JoinClause() {
-
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
-                DropOperator drop = visitor.visit(ctx);
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return drop.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return drop.get();
-                    }
-                };
-            }
+                @Override
+                public Stream<Tuple> get() {
+                    return drop.get();
+                }
+            };
         };
-
-        return dropClause;
     }
 
     @Override
@@ -120,36 +98,30 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
 
         JoinCalcClauseVisitor joinCalcClauseVisitor = new JoinCalcClauseVisitor();
         Function<Dataset.Tuple, Object> clauseFunction = joinCalcClauseVisitor.visit(ctx);
-        JoinClause calcClause = new JoinClause() {
+    
+        return workingDataset -> new WorkingDataset() {
+            @Override
+            public DataStructure getDataStructure() {
+                DataStructure structure = workingDataset.getDataStructure();
+                structure.addComponent(variableName, Component.Role.MEASURE, Number.class);
+                return structure;
+            }
 
             @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        DataStructure structure = workingDataset.getDataStructure();
-                        structure.addComponent(variableName, Component.Role.MEASURE, Number.class);
-                        return structure;
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return workingDataset.get()
-                                .map(tuple -> {
-                                    tuple.add(getDataStructure().wrap(variableName, clauseFunction.apply(tuple)));
-                                    return tuple;
-                                });
-                    }
-                };
+            public Stream<Tuple> get() {
+                return workingDataset.get()
+                        .map(tuple -> {
+                            tuple.add(getDataStructure().wrap(variableName, clauseFunction.apply(tuple)));
+                            return tuple;
+                        });
             }
         };
-
-        return calcClause;
     }
     
     @Override
     public JoinClause visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
-        JoinClause filterClause = workingDataset -> {
+    
+        return workingDataset -> {
             JoinFilterClauseVisitor visitor = new JoinFilterClauseVisitor(workingDataset);
             FilterOperator filter = visitor.visit(ctx);
             return new WorkingDataset() {
@@ -164,8 +136,6 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
                 }
             };
         };
-    
-        return filterClause;
     }
     
     @Override
