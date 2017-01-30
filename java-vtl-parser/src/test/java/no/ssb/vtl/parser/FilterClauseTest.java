@@ -29,16 +29,12 @@ public class FilterClauseTest {
     
     @Test
     public void testJoinWithFilter() throws Exception {
-        String expression = "" +
-               // "[varID1, varID2]{\n" +
-                "  filter true";
-               // "}";
+        String expression = "filter true";
         
         String parseTree = parse(expression, "joinFilterExpression", grammar);
-        System.out.println(parseTree);
     
         assertThat(filterWhiteSpaces(parseTree)).isEqualTo(
-                filterWhiteSpaces("(joinFilterExpression:1 filter (booleanExpression:1 true))"));
+                filterWhiteSpaces("(joinFilterExpression:1 filter (booleanExpression:3(booleanEquallity:1(datasetExpression:5(exprAtom:1(variableRef:2(varID:1true)))))))"));
     }
     
 }
