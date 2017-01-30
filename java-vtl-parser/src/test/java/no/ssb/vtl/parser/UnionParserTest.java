@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.Resources.getResource;
+import static no.ssb.vtl.parser.ParserTestHelper.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class UnionParserTest {
@@ -26,7 +27,7 @@ public class UnionParserTest {
     public static ExternalResource grammarResource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            URL grammarURL = getResource(this.getClass(), "/imports/Relational.g4");
+            URL grammarURL = getResource(this.getClass(), "VTL.g4");
             String grammarString = Resources.toString(grammarURL, Charset.defaultCharset());
             grammar = new Grammar(checkNotNull(grammarString));
         }
@@ -37,13 +38,13 @@ public class UnionParserTest {
         String expression = "union( datasetExpr1, datasetExpr2, datasetExpr3 )";
 
         String parseResult = parse(expression);
-        assertThat(parseResult).isEqualToIgnoringWhitespace(
+        assertThat(filterWhiteSpaces(parseResult)).isEqualTo(filterWhiteSpaces(
             "(unionExpression:1 union ( " +
                     "(datasetExpression:1 datasetExpr 1) , " +
                     "(datasetExpression:1 datasetExpr 2) , " +
                     "(datasetExpression:1 datasetExpr 3) " +
             "))"
-        );
+        ));
     }
 
     @Test
@@ -51,11 +52,13 @@ public class UnionParserTest {
         String expression = "union( datasetExpr1 )";
 
         String parseResult = parse(expression);
-        assertThat(parseResult).isEqualToIgnoringWhitespace(
+        // @formatter:off
+        assertThat(filterWhiteSpaces(parseResult)).isEqualToIgnoringWhitespace(filterWhiteSpaces(
                 "(unionExpression:1 union ( " +
                         "(datasetExpression:1 datasetExpr 1) " +
                 "))"
-        );
+        ));
+        // @formatter:on
     }
 
     // TODO: Build a more robust way to test.
