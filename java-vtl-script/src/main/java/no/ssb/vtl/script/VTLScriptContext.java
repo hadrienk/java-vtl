@@ -76,6 +76,17 @@ public class VTLScriptContext extends SimpleScriptContext{
     }
     
     /**
+     * Sets the value of an attribute in the default engine scope.
+     * @param name The name of the attribute to set
+     * @param value The value of the attribute
+     * @throws IllegalArgumentException if the name is empty.
+     * @throws NullPointerException if the name is null.
+     */
+    public void setAttribute(String name, Object value) {
+        setAttribute(name, value, ENGINE_SCOPE);
+    }
+    
+    /**
      * Gets the value of an attribute in a given scope.
      * @param name The name of the attribute to retrieve.
      * @param scope The scope in which to retrieve the attribute.

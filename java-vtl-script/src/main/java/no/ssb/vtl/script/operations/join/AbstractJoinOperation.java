@@ -25,7 +25,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.operations.RenameOperation;
 
@@ -64,17 +63,19 @@ public abstract class AbstractJoinOperation {
                 !namedDatasets.isEmpty(),
                 "join operation impossible on empty dataset list"
         );
-
-        // Find the common identifier.
-        Multiset<Component> components = HashMultiset.create();
-        for (Object o : namedDatasets.values()) {
-            Dataset dataset = (Dataset) o;
-            DataStructure structure = dataset.getDataStructure();
-            components.addAll(structure.values());
-        }
+    
+        //TODO use the join scope instead of recreating it
+        Map<String, Dataset> dataSets = namedDatasets.entrySet().stream()
+                .filter(o -> o.getValue() instanceof Dataset)
+                .collect(Collectors.toMap(Map.Entry::getKey, t -> (Dataset) t.getValue()));
+        List<Component> componentsList = namedDatasets.values().stream()
+                .filter(o -> o instanceof Component)
+                .map(o -> (Component) o)
+                .collect(Collectors.toList());
+        Multiset<Component> components = HashMultiset.create(componentsList);
 
         commonIdentifierNames = components.entrySet().stream()
-                .filter(entry -> entry.getCount() == namedDatasets.size())
+                .filter(entry -> entry.getCount() == dataSets.size()+1)
                 .map(Multiset.Entry::getElement)
                 .filter(component -> component.getRole() == Role.IDENTIFIER)
                 .map(Component::getName)
@@ -83,7 +84,7 @@ public abstract class AbstractJoinOperation {
 
 
         // Rename all the components except the common identifiers.
-        for (String datasetName : namedDatasets.keySet()) {
+        for (String datasetName : dataSets.keySet()) {
             Dataset dataset = (Dataset) namedDatasets.get(datasetName);
 
             Map<String, String> newNames = Maps.newHashMap();
