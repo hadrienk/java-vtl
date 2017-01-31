@@ -24,8 +24,8 @@ public class CheckOperation {
         if (rowsToReturn != null) {
             checkArgument(!rowsToReturn.isEmpty(), "the rowsToReturn argument was empty");
             checkArgument(ROWS_TO_RETURN_POSSIBLE_VALUES.contains(rowsToReturn),
-                    "the rowsToReturn argument has incorrect value: " + rowsToReturn
-                            + ". Allowed values: " + Arrays.toString(ROWS_TO_RETURN_POSSIBLE_VALUES.toArray()));
+                    "the rowsToReturn argument has incorrect value: %s. Allowed values: %s",
+                    rowsToReturn, Arrays.toString(ROWS_TO_RETURN_POSSIBLE_VALUES.toArray()));
             this.rowsToReturn = rowsToReturn;
         } else {
             this.rowsToReturn = "not_valid";
@@ -34,8 +34,8 @@ public class CheckOperation {
         if (componentsToReturn != null) {
             checkArgument(!componentsToReturn.isEmpty(), "the componentsToReturn argument was empty");
             checkArgument(COMPONENTS_TO_RETURN_POSSIBLE_VALUES.contains(componentsToReturn),
-                    "the componentsToReturn argument has incorrect value: " + componentsToReturn
-                            + ". Allowed values: " + Arrays.toString(COMPONENTS_TO_RETURN_POSSIBLE_VALUES.toArray()));
+                    "the componentsToReturn argument has incorrect value: %s. Allowed values: %s",
+                    componentsToReturn, Arrays.toString(COMPONENTS_TO_RETURN_POSSIBLE_VALUES.toArray()));
             this.componentsToReturn = componentsToReturn;
         } else {
             this.componentsToReturn = "measures";
