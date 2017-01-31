@@ -19,22 +19,16 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
+import javax.script.Bindings;
 
-import java.util.Map;
-
-/**
- * Created by hadrien on 16/11/2016.
- */
 public class OuterJoinOperation extends AbstractJoinOperation {
 
-    public OuterJoinOperation(Map<String, Dataset> namedDatasets) {
+    public OuterJoinOperation(Bindings namedDatasets) {
         super(namedDatasets);
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
         return null;
     }
 

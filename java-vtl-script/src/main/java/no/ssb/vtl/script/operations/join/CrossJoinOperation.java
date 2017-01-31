@@ -19,18 +19,15 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
-
-import java.util.Map;
+import javax.script.Bindings;
 
 public class CrossJoinOperation extends AbstractJoinOperation {
-    public CrossJoinOperation(Map<String, Dataset> namedDatasets) {
+    public CrossJoinOperation(Bindings namedDatasets) {
         super(namedDatasets);
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
         return null;
     }
 

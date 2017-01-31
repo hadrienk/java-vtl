@@ -11,6 +11,7 @@ import no.ssb.vtl.script.operations.join.JoinClause;
 import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.assertj.core.api.SoftAssertions;
 
+import javax.script.SimpleBindings;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -235,9 +236,9 @@ public class SumOperationTest {
                     )
             );
 
-            InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
+            InnerJoinOperation join = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of(
                     "left", left, "right", right
-            ));
+            )));
             SumOperation sumOperation = new SumOperation(
                     tuple -> tuple.get(3), ld,
                     tuple -> tuple.get(3), rd
@@ -263,7 +264,7 @@ public class SumOperationTest {
             });
 
             softly.assertThat(
-                    join.getDataStructure()
+                    join.workDataset().getDataStructure()
             ).as("data structure of the sum operation of %s and %s", left, right)
                     .isNotNull();
             // TODO: Better check.
@@ -339,19 +340,19 @@ public class SumOperationTest {
                     )
             );
 
-            InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
+            InnerJoinOperation join = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of(
                     "left", left
-            ));
+            )));
             SumOperation sumOperation = new SumOperation(tuple -> tuple.get(3), ld, 1);
 
             softly.assertThat(
-                    join.getDataStructure()
+                    join.workDataset().getDataStructure()
             ).as("data structure of the sum operation of %s and 1", left)
-                    .isEqualTo(join.getDataStructure());
+                    .isEqualTo(join.workDataset().getDataStructure());
 
             DataStructure sumDs = sumOperation.getDataStructure();
             softly.assertThat(
-                    join.get()
+                    join.workDataset().get()
             ).as("data of the sum operation of %s and 1", left)
                     .containsExactly(
                             tuple(sumDs.wrap("TIME", "2010"),
@@ -435,10 +436,10 @@ public class SumOperationTest {
                     )
             );
 
-            InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
+            InnerJoinOperation join = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of(
                     "left", left,
                     "right", right
-            ));
+            )));
 
 
             SumOperation sumOperation = new SumOperation(
@@ -470,9 +471,9 @@ public class SumOperationTest {
             ).as("data structure of the sum operation of %s and %s", left, right)
                     .isNotEqualTo(left.getDataStructure());
 
-            DataStructure sumDs = join.getDataStructure();
+            DataStructure sumDs = join.workDataset().getDataStructure();
             softly.assertThat(
-                    join.get()
+                    join.workDataset().get()
             ).as("data of the sum operation of %s and %s", left, right)
                     .containsExactly(
                             tuple(sumDs.wrap("TIME", "2010"),

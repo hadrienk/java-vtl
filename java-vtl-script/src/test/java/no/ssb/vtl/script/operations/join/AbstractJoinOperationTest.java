@@ -8,13 +8,13 @@ import no.ssb.vtl.model.Dataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
-import java.util.Collections;
+import javax.script.SimpleBindings;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,12 +51,12 @@ public class AbstractJoinOperationTest {
             ex = null;
             try {
 
-                new AbstractJoinOperation(
+                new AbstractJoinOperation(new SimpleBindings(
                         ImmutableMap.of("ds1", ds1, "ds2", ds2)
-                ) {
+                )) {
 
                     @Override
-                    WorkingDataset workDataset() {
+                    public WorkingDataset workDataset() {
                         return new WorkingDataset() {
                             @Override
                             public DataStructure getDataStructure() {
@@ -80,12 +80,12 @@ public class AbstractJoinOperationTest {
 
             ex = null;
             try {
-                new AbstractJoinOperation(
+                new AbstractJoinOperation(new SimpleBindings(
                         ImmutableMap.of("ds1", ds1, "ds12", ds1)
-                ) {
+                )) {
 
                     @Override
-                    WorkingDataset workDataset() {
+                    public WorkingDataset workDataset() {
                         return null;
                     }
                 };
@@ -108,9 +108,9 @@ public class AbstractJoinOperationTest {
     public void testEmptyFails() throws Exception {
         Throwable ex = null;
         try {
-            new AbstractJoinOperation(Collections.emptyMap()) {
+            new AbstractJoinOperation(new SimpleBindings()) {
                 @Override
-                WorkingDataset workDataset() {
+                public WorkingDataset workDataset() {
                     return null;
                 }
             };
@@ -145,10 +145,10 @@ public class AbstractJoinOperationTest {
                     )
             );
         });
-        AbstractJoinOperation result = new AbstractJoinOperation(ImmutableMap.of("ds1", ds1)) {
+        AbstractJoinOperation result = new AbstractJoinOperation(new SimpleBindings(ImmutableMap.of("ds1", ds1))) {
 
             @Override
-            WorkingDataset workDataset() {
+            public WorkingDataset workDataset() {
                 return new WorkingDataset() {
                     @Override
                     public DataStructure getDataStructure() {
@@ -182,7 +182,7 @@ public class AbstractJoinOperationTest {
 
         });
 
-        assertThat(result.get())
+        assertThat(result.workDataset().get())
                 .containsAll(ds1.get().collect(Collectors.toList()));
 
     }
