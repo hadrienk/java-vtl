@@ -6,6 +6,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.DropOperator;
+import no.ssb.vtl.script.operations.FilterOperator;
 import no.ssb.vtl.script.operations.KeepOperator;
 import no.ssb.vtl.script.operations.RenameOperation;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
@@ -162,5 +163,30 @@ public class JoinBodyVisitor extends VTLBaseVisitor<JoinClause> {
 
         clauses.add(calcClause);
         return calcClause;
+    }
+    
+    @Override
+    public JoinClause visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
+        List<JoinClause> clauses = this.joinOperation.getClauses();
+    
+        JoinClause filterClause = workingDataset -> {
+            JoinFilterClauseVisitor visitor = new JoinFilterClauseVisitor(workingDataset);
+            FilterOperator filter = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return filter.getDataStructure();
+                }
+            
+                @Override
+                public Stream<Tuple> get() {
+                    return filter.get();
+                }
+            };
+        };
+    
+        clauses.add(filterClause);
+    
+        return filterClause;
     }
 }
