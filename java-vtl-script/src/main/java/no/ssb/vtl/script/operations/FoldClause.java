@@ -51,18 +51,18 @@ public class FoldClause implements Dataset {
             checkArgument(
                     dataStructure.keySet().containsAll(elements),
                     "the element(s) [%s] were not found in [%s]",
-                    Sets.difference(elements, dataStructure.keySet()), dataset
+                    Sets.difference(elements, dataStructure.keySet()), dataStructure.keySet()
             );
 
             // Checks that elements are of the same type
             ListMultimap<Class<?>, String> classes = ArrayListMultimap.create();
-            for (Map.Entry<String, Component> component : dataStructure.entrySet()) {
-                classes.put(component.getValue().getType(), component.getKey());
+            for (String element : elements) {
+                classes.put(dataStructure.get(element).getType(), element);
             }
             checkArgument(
                     classes.asMap().size() == 1,
                     "the element(s) [%s] must be of the same type, found [%s] in dataset [%s]",
-                    elements, classes, dataset
+                    elements, classes, dataStructure
             );
 
             Map<String, Component.Role> newRoles = Maps.newLinkedHashMap();
