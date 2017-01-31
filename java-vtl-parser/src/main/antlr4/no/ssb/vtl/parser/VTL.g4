@@ -135,13 +135,19 @@ joinClause : role? varID '=' joinCalcExpression # joinCalcClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
            | joinFilterExpression               # joinFilterClause
+           | joinFoldExpression                 # joinFoldClause
+           | joinUnfoldExpression               # joinUnfoldClause
            ;
-           //| joinFilter
-           //| joinKeep
-           //| joinRename ;
-           //| joinDrop
-           //| joinUnfold
-           //| joinFold ;
+
+joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=joinFoldUnfoldRef ',' measure=joinFoldUnfoldRef ;
+joinUnfoldExpression    : 'unfold' dimension=joinFoldUnfoldRef ',' measure=joinFoldUnfoldRef 'to' elements=foldUnfoldElements ;
+// TODO: The spec writes examples with parentheses, but it seems unecessary to me.
+// TODO: The spec is unclear regarding types of the elements, we support strings only for now.
+// TODO: Reuse component references
+joinFoldUnfoldRef   : varID '.' componentID
+                    | componentID
+                    ;
+foldUnfoldElements      : STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
