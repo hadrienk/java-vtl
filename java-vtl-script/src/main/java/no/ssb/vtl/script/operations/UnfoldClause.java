@@ -24,11 +24,10 @@ public class UnfoldClause implements Dataset {
 
     // Source dataset.
     private final Dataset dataset;
+
     private final String dimension;
     private final String measure;
     private final Set<String> elements;
-
-
     private Optional<DataStructure> computedDatastructure = Optional.empty();
 
     public UnfoldClause(Dataset dataset, String dimensionReference, String measureReference, Set<String> elements) {
@@ -41,6 +40,7 @@ public class UnfoldClause implements Dataset {
                 "measureReference was empty");
         checkArgument(!(this.elements = checkNotNull(elements, "elements cannot be null")).isEmpty(),
                 "elements was empty");
+        // TODO: Introduce type here. Elements should be of the type of the Component.
     }
 
     @Override
@@ -48,7 +48,7 @@ public class UnfoldClause implements Dataset {
         return computedDatastructure.orElseGet(() -> {
             DataStructure dataStructure = dataset.getDataStructure();
 
-            // TODO: Constrain error.
+            // TODO: Constraint error.
             checkArgument(
                     dataStructure.containsKey(dimension),
                     "the dimension [%s] was not found in %s", dimension, dataset
