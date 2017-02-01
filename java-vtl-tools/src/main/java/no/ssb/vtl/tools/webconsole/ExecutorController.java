@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -71,7 +72,8 @@ public class ExecutorController {
             method = RequestMethod.POST
     )
     public Set<String> execute(Reader script) throws IOException, ScriptException {
-        vtlEngine.eval(script, bindings);
+        vtlEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        vtlEngine.eval(script);
         return bindings.keySet();
     }
 
