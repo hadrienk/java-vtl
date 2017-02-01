@@ -1,5 +1,7 @@
 package no.ssb.vtl.script.operations;
 
+import com.google.common.collect.Maps;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 
 import java.util.Arrays;
@@ -20,6 +22,7 @@ public class CheckOperation {
 
     public CheckOperation(Dataset dataset, String rowsToReturn, String componentsToReturn, String errorCode, Integer errorLevel) {
         this.dataset = checkNotNull(dataset, "dataset was null");
+        checkDataStructure(this.dataset);
 
         if (rowsToReturn != null) {
             checkArgument(!rowsToReturn.isEmpty(), "the rowsToReturn argument was empty");
@@ -49,5 +52,15 @@ public class CheckOperation {
         }
 
         this.errorLevel = errorLevel;
+    }
+
+    private void checkDataStructure(Dataset dataset) {
+        int noIdentifiers = Maps.filterValues(dataset.getDataStructure().getRoles(), role -> role == Component.Role.IDENTIFIER)
+                .size();
+        checkArgument(noIdentifiers > 0, "dataset does not have identifier components");
+
+        long noBooleanMeasures = dataset.getDataStructure().values().stream().filter(c -> c.isMeasure() && c.getType().equals(Boolean.class)).count();
+        checkArgument(noBooleanMeasures < 2, "dataset has too many boolean measure components");
+        checkArgument(noBooleanMeasures > 0, "dataset has no boolean measure component");
     }
 }
