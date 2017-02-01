@@ -46,15 +46,12 @@ import static no.ssb.vtl.model.Component.*;
 public abstract class AbstractJoinOperation {
 
     // The datasets the join operates on.
-    private final Map<String, Dataset> datasets = Maps.newHashMap();
+    private final Map<String, Dataset> datasets;
 
     // The identifiers that will be used to join the datasets.
     private final Set<String> commonIdentifierNames;
 
-    // Holds the operations of the join.
-    private final List<JoinClause> clauses = Lists.newArrayList();
-    
-    private Bindings joinScope;
+    private final Bindings joinScope;
     
     public AbstractJoinOperation(Map<String, Dataset> namedDatasets) {
 
@@ -63,10 +60,7 @@ public abstract class AbstractJoinOperation {
                 "join operation impossible on empty dataset list"
         );
     
-        List<Component> componentsList = namedDatasets.values().stream()
-                .flatMap(dataset -> dataset.getDataStructure().values().stream())
-                .collect(Collectors.toList());
-        Multiset<Component> components = HashMultiset.create(componentsList);
+        Multiset<Component> components = getComponents(namedDatasets);
     
         Set<Component> commonIdentifiers = components.entrySet()
                 .stream()
@@ -81,24 +75,28 @@ public abstract class AbstractJoinOperation {
         
         checkArgument(!commonIdentifierNames.isEmpty(), "could not find common identifiers in the datasets %s", namedDatasets);
     
-        joinScope = new SimpleBindings();
-        namedDatasets.forEach((name, dataset) -> joinScope.put(name, dataset));
-        for (Map.Entry<String, Dataset> dataset : namedDatasets.entrySet()) {
-        
-            Collection<Component> datasetComponents = dataset.getValue().getDataStructure().values();
-            for (Component component : datasetComponents) {
-                joinScope.put(String.format("%s.%s", dataset.getKey(), component.getName()), component);
-            }
-        }
-        commonIdentifiers.forEach(component -> joinScope.put(component.getName(), component));
+        joinScope = createJoinScope(namedDatasets, commonIdentifiers);
 
         // Rename all the components except the common identifiers.
+        this.datasets = createDataset(namedDatasets);
+
+    }
+    
+    private Multiset<Component> getComponents(Map<String, Dataset> namedDatasets) {
+        List<Component> componentsList = namedDatasets.values().stream()
+                .flatMap(dataset -> dataset.getDataStructure().values().stream())
+                .collect(Collectors.toList());
+        return HashMultiset.create(componentsList);
+    }
+    
+    private Map<String, Dataset> createDataset(Map<String, Dataset> namedDatasets) {
+        Map<String, Dataset> datasets = Maps.newHashMap();
         for (String datasetName : namedDatasets.keySet()) {
             Dataset dataset = namedDatasets.get(datasetName);
-
+            
             Map<String, String> newNames = Maps.newHashMap();
-            Map<String, Component.Role> newRoles = Maps.newHashMap();
-
+            Map<String, Role> newRoles = Maps.newHashMap();
+            
             for (Component component : dataset.getDataStructure().values()) {
                 String newName;
                 if (commonIdentifierNames.contains(component.getName())) {
@@ -109,32 +107,42 @@ public abstract class AbstractJoinOperation {
                 newNames.put(component.getName(), newName);
                 newRoles.put(component.getName(), component.getRole());
             }
-            this.datasets.put(datasetName, new RenameOperation(dataset, newNames, newRoles));
+            datasets.put(datasetName, new RenameOperation(dataset, newNames, newRoles));
         }
-
+        return datasets;
+    }
+    
+    private Bindings createJoinScope(Map<String, Dataset> namedDatasets, Set<Component> commonIdentifiers) {
+        Bindings bindings = new SimpleBindings();
+        namedDatasets.forEach(bindings::put);
+        for (Map.Entry<String, Dataset> dataset : namedDatasets.entrySet()) {
+        
+            Collection<Component> datasetComponents = dataset.getValue().getDataStructure().values();
+            for (Component component : datasetComponents) {
+                bindings.put(String.format("%s.%s", dataset.getKey(), component.getName()), component);
+            }
+        }
+        commonIdentifiers.forEach(component -> bindings.put(component.getName(), component));
+        return bindings;
     }
     
     public Set<String> getCommonIdentifierNames() {
         return commonIdentifierNames;
     }
     
-    Map<String, Dataset> getDatasets() {
-        return datasets;
-    }
-    
     public Bindings getJoinScope() {
         return joinScope;
+    }
+    
+    public abstract WorkingDataset workDataset();
+    
+    Map<String, Dataset> getDatasets() {
+        return datasets;
     }
 
     Set<String> getIds() {
         return commonIdentifierNames;
     }
-
-    public List<JoinClause> getClauses() {
-        return clauses;
-    }
-
-    public abstract WorkingDataset workDataset();
     
     /**
      * Holds the "working dataset" tuples.
