@@ -24,18 +24,22 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
         $scope.executionError = null;
 
         $scope.fetchData = function (dataset) {
+            if (angular.isUndefined($scope.datasets[dataset])) {
+                $scope.datasets[dataset] = {};
+            }
+
             var data = $http.get("/dataset/" + dataset + "/data");
+
             data.then(function (response) {
                 $scope.datasets[dataset]["data"] = response.data;
             },function (response) {
-                    $scope.datasets[dataset]["error"] = response.data;
-                }
-            );
+                $scope.datasets[dataset]["error"] = response.data;
+            });
         };
 
         $scope.remove = function (dataset) {
             var data = $http.delete("/dataset/" + dataset);
-            data.then(function (responce) {
+            data.then(function () {
                 delete $scope.datasets[dataset];
             });
         };
@@ -69,11 +73,15 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
 
                 for (var i in datasets) {
                     var dataset = datasets[i];
+
+                    if (angular.isUndefined($scope.datasets[dataset])) {
+                        $scope.datasets[dataset] = {};
+                    }
                     var promise = $http.get("/dataset/" + dataset + "/structure");
                     promises[dataset] = promise.then(function (response) {
                         return {variables: response.data.dataStructure};
                     },function (response) {
-                            $scope.datasets[i]["error"] = response.data;
+                            $scope.datasets[dataset]["error"] = response.data;
                         }
                     );
                 }
