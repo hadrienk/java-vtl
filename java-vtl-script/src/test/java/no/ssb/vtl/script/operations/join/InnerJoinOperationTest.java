@@ -8,7 +8,6 @@ import no.ssb.vtl.model.Dataset;
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 
-import javax.script.SimpleBindings;
 import java.time.Year;
 import java.util.Arrays;
 import java.util.List;
@@ -81,7 +80,7 @@ public class InnerJoinOperationTest {
                 )
         ));
 
-        AbstractJoinOperation result = new InnerJoinOperation(new SimpleBindings(ImmutableMap.of("ds1", ds1, "ds2", ds2)));
+        AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
         /*result.getClauses().add(new JoinClause() {
             @Override
