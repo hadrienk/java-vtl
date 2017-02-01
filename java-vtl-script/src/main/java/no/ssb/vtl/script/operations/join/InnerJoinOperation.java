@@ -26,7 +26,6 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import javax.script.Bindings;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -47,7 +46,7 @@ import static com.google.common.base.Preconditions.*;
  */
 public class InnerJoinOperation extends AbstractJoinOperation {
 
-    public InnerJoinOperation(Bindings namedDatasets) {
+    public InnerJoinOperation(Map<String, Dataset> namedDatasets) {
         super(namedDatasets);
     }
 
