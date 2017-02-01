@@ -25,7 +25,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.operations.RenameOperation;
 
@@ -34,15 +33,14 @@ import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static no.ssb.vtl.model.Component.Role;
+import static com.google.common.base.Preconditions.*;
+import static no.ssb.vtl.model.Component.*;
 
 /**
  * Abstract join operation.
  */
-public abstract class AbstractJoinOperation implements Dataset {
+public abstract class AbstractJoinOperation {
 
     // The datasets the join operates on.
     private final Map<String, Dataset> datasets = Maps.newHashMap();
@@ -57,22 +55,18 @@ public abstract class AbstractJoinOperation implements Dataset {
     // Holds the operations of the join.
     private final List<JoinClause> clauses = Lists.newArrayList();
     //private final Iterator<JoinClause> clauseIterator = ;
-
-    private WorkingDataset workingDataset;
-
+    
     public AbstractJoinOperation(Map<String, Dataset> namedDatasets) {
 
         checkArgument(
                 !namedDatasets.isEmpty(),
                 "join operation impossible on empty dataset list"
         );
-
-        // Find the common identifier.
-        Multiset<Component> components = HashMultiset.create();
-        for (Dataset dataset : namedDatasets.values()) {
-            DataStructure structure = dataset.getDataStructure();
-            components.addAll(structure.values());
-        }
+    
+        List<Component> componentsList = namedDatasets.values().stream()
+                .flatMap(dataset -> dataset.getDataStructure().values().stream())
+                .collect(Collectors.toList());
+        Multiset<Component> components = HashMultiset.create(componentsList);
 
         commonIdentifierNames = components.entrySet().stream()
                 .filter(entry -> entry.getCount() == namedDatasets.size())
@@ -85,7 +79,7 @@ public abstract class AbstractJoinOperation implements Dataset {
 
         // Rename all the components except the common identifiers.
         for (String datasetName : namedDatasets.keySet()) {
-            Dataset dataset = namedDatasets.get(datasetName);
+            Dataset dataset = (Dataset) namedDatasets.get(datasetName);
 
             Map<String, String> newNames = Maps.newHashMap();
             Map<String, Component.Role> newRoles = Maps.newHashMap();
@@ -117,25 +111,8 @@ public abstract class AbstractJoinOperation implements Dataset {
         return clauses;
     }
 
-    abstract WorkingDataset workDataset();
-
-    private WorkingDataset applyClauses() {
-        WorkingDataset dataset = workDataset();
-        for (JoinClause clause : clauses) {
-            dataset = clause.apply(dataset);
-        }
-        return dataset;
-    }
-    @Override
-    public Stream<Tuple> get() {
-        return (workingDataset = (workingDataset == null ? applyClauses() : workingDataset)).get();
-    }
-
-    @Override
-    public DataStructure getDataStructure() {
-        return (workingDataset = (workingDataset == null ? applyClauses() : workingDataset)).getDataStructure();
-    }
-
+    public abstract WorkingDataset workDataset();
+    
     /**
      * Holds the "working dataset" tuples.
      */

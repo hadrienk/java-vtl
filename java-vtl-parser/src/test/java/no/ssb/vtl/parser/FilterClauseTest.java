@@ -14,8 +14,8 @@ import static com.google.common.io.Resources.*;
 import static no.ssb.vtl.parser.ParserTestHelper.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class DropClauseTest {
-
+public class FilterClauseTest {
+    
     private static Grammar grammar;
     @ClassRule
     public static ExternalResource grammarResource = new ExternalResource() {
@@ -26,16 +26,15 @@ public class DropClauseTest {
             grammar = new Grammar(checkNotNull(grammarString));
         }
     };
-
+    
     @Test
-    public void testJoinDrop() throws Exception {
-        String expression = "" +
-                "drop varID1, varID2, varID3.varID4";
-        String parseTree = parse(expression, "joinDropExpression", grammar);
-
-        // TODO: Check this.
-        assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
-                "(joinDropExpression:1 drop (joinDropRef:2 (varID:1 varID 1)) , (joinDropRef:2 (varID:1 varID 2)) , (joinDropRef:1 (varID:1 varID 3) . (varID:1 varID 4)))"));
+    public void testJoinWithFilter() throws Exception {
+        String expression = "filter true";
+        
+        String parseTree = parse(expression, "joinFilterExpression", grammar);
+    
+        assertThat(filterWhiteSpaces(parseTree)).isEqualTo(
+                filterWhiteSpaces("(joinFilterExpression:1 filter (booleanExpression:3(booleanEquallity:1(datasetExpression:5(exprAtom:1(variableRef:2(varID:1true)))))))"));
     }
-
+    
 }

@@ -17,6 +17,7 @@ import java.util.BitSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.Resources.getResource;
+import static no.ssb.vtl.parser.ParserTestHelper.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JoinParserTest {
@@ -26,7 +27,7 @@ public class JoinParserTest {
     public static ExternalResource grammarResource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            URL grammarURL = getResource(this.getClass(), "/imports/Relational.g4");
+            URL grammarURL = getResource(this.getClass(), "VTL.g4");
             String grammarString = Resources.toString(grammarURL, Charset.defaultCharset());
             grammar = new Grammar(checkNotNull(grammarString));
         }
@@ -42,10 +43,12 @@ public class JoinParserTest {
         String parseTree = parse(expression);
 
         // TODO: Check this.
-        assertThat(parseTree).isEqualTo("(joinExpression:1 [ " +
+        assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
+                "(joinExpression:1 [ " +
                 "(joinDefinition:1 (joinParam:1 (varID:1 varID 1) , (varID:1 varID 2))) " +
                 "] { " +
-                "(joinBody:1 (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 1)) * (joinCalcExpression:5 (constant:1 2))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 2)))) , (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) * (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })");
+                "(joinBody:1 (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 1)) * (joinCalcExpression:5 (constant:1 2))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 2)))) , (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) * (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })"
+        ));
     }
 
     @Test
@@ -58,7 +61,8 @@ public class JoinParserTest {
         String parseTree = parse(expression);
 
         // TODO: Check this.
-        assertThat(parseTree).isEqualTo("(joinExpression:1 [ (joinDefinition:2 outer (joinParam:1 (varID:1 varID 1) ," +
+        assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
+                "(joinExpression:1 [ (joinDefinition:2 outer (joinParam:1 (varID:1 varID 1) ," +
                 " (varID:1 varID 2) on (dimensionExpression:1 dimensionExpr 1) , (dimensionExpression:1 dimensionExpr 2))) " +
                 "] { (joinBody:1 (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 " +
                 "(joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5" +
@@ -67,7 +71,7 @@ public class JoinParserTest {
                 "(joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . " +
                 "(varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) " +
                 "* (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . " +
-                "(varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })");
+                "(varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })"));
     }
 
     // TODO: Build a more robust way to test.

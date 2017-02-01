@@ -20,7 +20,6 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 
 import java.util.Map;
 
@@ -30,7 +29,7 @@ public class CrossJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
         return null;
     }
 
