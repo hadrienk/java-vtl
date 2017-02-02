@@ -40,10 +40,6 @@ putExpression : 'put(todo)';
 
 datasetId : STRING_CONSTANT ;
 
-WS : [ \n\r\t\u000C] -> skip ;
-COMMENT : '/*' .*? '*/' -> skip;
-
-
 /* Atom */
 exprAtom : variableRef;
 
@@ -55,25 +51,6 @@ varID : IDENTIFIER;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
-IDENTIFIER:LETTER(LETTER|'_'|'0'..'9')* ;
-
-INTEGER_CONSTANT  : DIGIT+;
-BOOLEAN_CONSTANT  : 'true' | 'false' ;
-STRING_CONSTANT   :'"' (~'"')* '"';
-
-FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
-                  | (DIGIT)+ FLOATEXP
-                  ;
-
-NULL_CONSTANT     : 'null';
-
-
-PLUS : '+';
-MINUS : '-';
-
-fragment DIGIT    : '0'..'9' ;
-fragment FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
-fragment LETTER   : 'A'..'Z' | 'a'..'z';
 
 clauseExpression      : '[' clause ']' ;
 
@@ -149,6 +126,8 @@ joinDefinition : INNER? joinParam  #joinDefinitionInner
 
 joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )? ;
 
+dimensionExpression : IDENTIFIER; //unimplemented
+
 joinBody : joinClause (',' joinClause)* ;
 
 joinClause : role? varID '=' joinCalcExpression # joinCalcClause
@@ -156,13 +135,19 @@ joinClause : role? varID '=' joinCalcExpression # joinCalcClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
            | joinFilterExpression               # joinFilterClause
+           | joinFoldExpression                 # joinFoldClause
+           | joinUnfoldExpression               # joinUnfoldClause
            ;
-           //| joinFilter
-           //| joinKeep
-           //| joinRename ;
-           //| joinDrop
-           //| joinUnfold
-           //| joinFold ;
+
+joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=joinFoldUnfoldRef ',' measure=joinFoldUnfoldRef ;
+joinUnfoldExpression    : 'unfold' dimension=joinFoldUnfoldRef ',' measure=joinFoldUnfoldRef 'to' elements=foldUnfoldElements ;
+// TODO: The spec writes examples with parentheses, but it seems unecessary to me.
+// TODO: The spec is unclear regarding types of the elements, we support strings only for now.
+// TODO: Reuse component references
+joinFoldUnfoldRef   : varID '.' componentID
+                    | componentID
+                    ;
+foldUnfoldElements      : STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
@@ -201,14 +186,25 @@ INNER : 'inner' ;
 OUTER : 'outer' ;
 CROSS : 'cross' ;
 
-// For tests only
-//varID               : 'varID' NUM+;
-//variableRef         : ( 'varName' | 'constant' ) NUM+;
-//datasetExpression   : 'datasetExpr' NUM*;
-dimensionExpression : 'dimensionExpr' NUM*;
-//constant            : NUM ;
+IDENTIFIER:LETTER(LETTER|'_'|DIGIT)* ;
 
-NUM : '0'..'9' ;
+INTEGER_CONSTANT  : DIGIT+;
+BOOLEAN_CONSTANT  : 'true' | 'false' ;
+STRING_CONSTANT   :'"' (~'"')* '"';
 
-//WS          : [ \t\n\t] -> skip ;
+FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
+                  | (DIGIT)+ FLOATEXP
+                  ;
+
+NULL_CONSTANT     : 'null';
+
+PLUS : '+';
+MINUS : '-';
+
+fragment DIGIT    : '0'..'9' ;
+fragment FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
+fragment LETTER   : 'A'..'Z' | 'a'..'z';
+
+WS : [ \n\r\t\u000C] -> skip ;
+COMMENT : '/*' .*? '*/' -> skip;
 

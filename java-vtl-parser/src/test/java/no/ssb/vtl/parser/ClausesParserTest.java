@@ -38,6 +38,7 @@ import java.nio.charset.Charset;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.io.Resources.getResource;
+import static no.ssb.vtl.parser.ParserTestHelper.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClausesParserTest {
@@ -47,7 +48,7 @@ public class ClausesParserTest {
     public static ExternalResource grammarResource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            URL grammarURL = getResource(this.getClass(), "/imports/Clauses.g4");
+            URL grammarURL = getResource(this.getClass(), "VTL.g4");
             String grammarString = Resources.toString(grammarURL, Charset.defaultCharset());
             grammar = new Grammar(checkNotNull(grammarString));
         }
@@ -57,10 +58,7 @@ public class ClausesParserTest {
     public void testRenameWithRole() throws Exception {
 
         SoftAssertions softly = new SoftAssertions();
-
-        String expectedTree;
-        String actualTree;
-
+    
         String renameAsIdentifier = "[rename varId as varId role = IDENTIFIER]";
         softly.assertThat(filterWhiteSpaces(parse(renameAsIdentifier)))
                 .isEqualTo(filterWhiteSpaces("" +
@@ -149,7 +147,4 @@ public class ClausesParserTest {
         return parse.toStringTree(parserInterpreter);
     }
 
-    String filterWhiteSpaces(String string) {
-        return string.replaceAll("\\s+", "");
-    }
 }

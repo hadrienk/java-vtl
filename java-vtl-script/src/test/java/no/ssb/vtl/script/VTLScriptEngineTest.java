@@ -21,6 +21,7 @@ package no.ssb.vtl.script;
  */
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -32,7 +33,9 @@ import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -166,8 +169,132 @@ public class VTLScriptEngineTest {
         datapoints.extracting(DataPoint::get).containsExactly(
                 "1", "1", 40, 10, 0
         );
+    }
 
+    @Test
+    public void testJoinFold() throws Exception {
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Number.class,
+                "m2", Role.MEASURE, Number.class,
+                "m3", Role.MEASURE, Number.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.get()).then(invocation -> Stream.of(
+                Arrays.asList("1", 101, 102, 103),
+                Arrays.asList("2", 201, 202, 203),
+                Arrays.asList("3", 301, 302, 303)
+        ).map(list -> {
+            Iterator<?> it = list.iterator();
+            List<DataPoint> points = Lists.newArrayList();
+            for (String name : ds.keySet()) {
+                Object value = it.hasNext() ? it.next() : null;
+                points.add(ds.wrap(name, value));
+            }
+            return Dataset.Tuple.create(points);
+        }));
 
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "  total = ds1.m1 + ds1.m2 + ds1.m3," +
+                "  fold \"ds1.m1\", \"ds1.m2\", \"ds1.m3\", \"total\" to type, value" +
+                "}"
+        );
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset ds2 = (Dataset) bindings.get("ds2");
+
+        assertThat(ds2.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("type", Role.IDENTIFIER),
+                entry("value", Role.MEASURE)
+        );
+
+        assertThat(ds2.get()).flatExtracting(input -> input)
+                .extracting(DataPoint::get)
+                .containsExactly(
+
+                        // TODO: Check with null. Fails because of null in calc.
+                        "1", "ds1.m1", 101,
+                        "1", "ds1.m2", 102,
+                        "1", "ds1.m3", 103,
+                        "1", "total", 101 + 102 + 103,
+
+                        "2", "ds1.m1", 201,
+                        "2", "ds1.m2", 202,
+                        "2", "ds1.m3", 203,
+                        "2", "total", 201 + 202 + 203,
+
+                        "3", "ds1.m1", 301,
+                        "3", "ds1.m2", 302,
+                        "3", "ds1.m3", 303,
+                        "3", "total", 301 + 302 + 303
+                );
+    }
+
+    @Test
+    public void testJoinUnfold() throws Exception {
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "id2", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class,
+                "m2", Role.MEASURE, Double.class,
+                "at1", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.get()).then(invocation -> Stream.of(
+                (Map) ImmutableMap.of(
+                        "id1", "1",
+                        "id2", "one",
+                        "m1", 101,
+                        "at1", "attr1"
+                ),
+                ImmutableMap.of(
+                        "id1", "1",
+                        "id2", "two",
+                        "m1", 102,
+                        "at1", "attr2"
+                ),
+                ImmutableMap.of(
+                        "id1", "2",
+                        "id2", "one",
+                        "m1", 201,
+                        "at1", "attr2"
+                ), ImmutableMap.of(
+                        "id1", "2",
+                        "id2", "two",
+                        "m1", 202,
+                        "at1", "attr2"
+                )
+        ).map(ds::wrap));
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "  unfold id2, ds1.m1 to \"one\", \"two\"," +
+                "  onePlusTwo = one + two" +
+                "}"
+        );
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset ds2 = (Dataset) bindings.get("ds2");
+
+        assertThat(ds2.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("one", Role.MEASURE),
+                entry("two", Role.MEASURE),
+                entry("onePlusTwo", Role.MEASURE)
+        );
+
+        assertThat(ds2.get()).flatExtracting(input -> input)
+                .extracting(DataPoint::get)
+                .containsExactly(
+                        "1", 101, 102, 101 + 102,
+                        "2", 201, 202, 201 + 202
+                );
     }
 
     @Test

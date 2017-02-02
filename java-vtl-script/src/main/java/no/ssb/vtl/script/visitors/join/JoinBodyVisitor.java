@@ -5,10 +5,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.DropOperator;
-import no.ssb.vtl.script.operations.FilterOperator;
-import no.ssb.vtl.script.operations.KeepOperator;
-import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.*;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.JoinClause;
 import no.ssb.vtl.script.operations.join.WorkingDataset;
@@ -24,13 +21,13 @@ import java.util.stream.Stream;
  * The last join clause is returned.
  */
 public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, WorkingDataset>> {
-    
+
     public JoinBodyVisitor() {
     }
 
     @Override
     public JoinClause visitJoinKeepClause(VTLParser.JoinKeepClauseContext ctx) {
-    
+
         return workingDataset -> {
             JoinKeepClauseVisitor visitor = new JoinKeepClauseVisitor(workingDataset);
             KeepOperator keep = visitor.visit(ctx);
@@ -50,8 +47,46 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
     }
 
     @Override
+    public Function<WorkingDataset, WorkingDataset> visitJoinFoldClause(VTLParser.JoinFoldClauseContext ctx) {
+        return workingDataset -> {
+            JoinFoldClauseVisitor visitor = new JoinFoldClauseVisitor(workingDataset);
+            FoldClause foldClause = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return foldClause.getDataStructure();
+                }
+
+                @Override
+                public Stream<Tuple> get() {
+                    return foldClause.get();
+                }
+            };
+        };
+    }
+
+    @Override
+    public Function<WorkingDataset, WorkingDataset> visitJoinUnfoldClause(VTLParser.JoinUnfoldClauseContext ctx) {
+        return workingDataset -> {
+            JoinUnfoldClauseVisitor visitor = new JoinUnfoldClauseVisitor(workingDataset);
+            UnfoldClause unfoldClause = visitor.visit(ctx);
+            return new WorkingDataset() {
+                @Override
+                public DataStructure getDataStructure() {
+                    return unfoldClause.getDataStructure();
+                }
+
+                @Override
+                public Stream<Tuple> get() {
+                    return unfoldClause.get();
+                }
+            };
+        };
+    }
+
+    @Override
     public JoinClause visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
-    
+
         return workingDataset -> {
             JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset);
             RenameOperation renameOperator = visitor.visit(ctx);
@@ -71,7 +106,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
 
     @Override
     public JoinClause visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
-    
+
         return workingDataset -> {
             JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
             DropOperator drop = visitor.visit(ctx);
@@ -98,7 +133,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
 
         JoinCalcClauseVisitor joinCalcClauseVisitor = new JoinCalcClauseVisitor();
         Function<Dataset.Tuple, Object> clauseFunction = joinCalcClauseVisitor.visit(ctx);
-    
+
         return workingDataset -> new WorkingDataset() {
             @Override
             public DataStructure getDataStructure() {
@@ -117,10 +152,10 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
             }
         };
     }
-    
+
     @Override
     public JoinClause visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
-    
+
         return workingDataset -> {
             JoinFilterClauseVisitor visitor = new JoinFilterClauseVisitor(workingDataset);
             FilterOperator filter = visitor.visit(ctx);
@@ -129,7 +164,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
                 public DataStructure getDataStructure() {
                     return filter.getDataStructure();
                 }
-            
+
                 @Override
                 public Stream<Tuple> get() {
                     return filter.get();
@@ -137,14 +172,14 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
             };
         };
     }
-    
+
     @Override
     protected Function<WorkingDataset, WorkingDataset> aggregateResult(
             Function<WorkingDataset, WorkingDataset> aggregate, Function<WorkingDataset, WorkingDataset> nextResult) {
-    
+
         return aggregate.andThen(nextResult);
     }
-    
+
     @Override
     protected Function<WorkingDataset, WorkingDataset> defaultResult() {
         return Function.identity();
