@@ -5,7 +5,12 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.*;
+import no.ssb.vtl.script.operations.DropOperator;
+import no.ssb.vtl.script.operations.FilterOperator;
+import no.ssb.vtl.script.operations.FoldClause;
+import no.ssb.vtl.script.operations.KeepOperator;
+import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.UnfoldClause;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.JoinClause;
 import no.ssb.vtl.script.operations.join.WorkingDataset;
@@ -126,7 +131,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
 
     @Override
     public JoinClause visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        String variableName = ctx.varID().getText();
+        String variableName = ctx.variableID().getText();
 
         // TODO: Spec does not specify what is the default role.
         String variableRole = Optional.ofNullable(ctx.role()).map(RuleContext::getText).orElse("MEASURE");

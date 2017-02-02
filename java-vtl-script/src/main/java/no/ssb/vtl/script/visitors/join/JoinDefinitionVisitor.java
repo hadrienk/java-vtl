@@ -31,7 +31,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
 
     @Override
     public AbstractJoinOperation visitJoinDefinitionInner(VTLParser.JoinDefinitionInnerContext ctx) {
-        List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
+        List<VTLParser.DatasetRefContext> datasets = ctx.joinParam().datasetRef();
 
         Map<String, Dataset> theDatasets = createJoinScope(datasets);
     
@@ -41,7 +41,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
 
     @Override
     public AbstractJoinOperation visitJoinDefinitionOuter(VTLParser.JoinDefinitionOuterContext ctx) {
-        List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
+        List<VTLParser.DatasetRefContext> datasets = ctx.joinParam().datasetRef();
 
         Map<String, Dataset> datasetMap = createJoinScope(datasets);
     
@@ -50,7 +50,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
 
     @Override
     public AbstractJoinOperation visitJoinDefinitionCross(VTLParser.JoinDefinitionCrossContext ctx) {
-        List<VTLParser.VarIDContext> datasets = ctx.joinParam().varID();
+        List<VTLParser.DatasetRefContext> datasets = ctx.joinParam().datasetRef();
 
         Map<String, Dataset> datasetMap = createJoinScope(datasets);
     
@@ -60,12 +60,13 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
 
     /**
      * Finds the datasets in the context.
+     * @param varIDContexts
      */
-    Map<String, Dataset> createJoinScope(List<VTLParser.VarIDContext> varIDContexts) {
+    Map<String, Dataset> createJoinScope(List<VTLParser.DatasetRefContext> varIDContexts) {
         Map<String, Dataset> joinScope = new HashMap<>();
         
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
-        for (VTLParser.VarIDContext varIDContext : varIDContexts) {
+        for (VTLParser.DatasetRefContext varIDContext : varIDContexts) {
             String datasetName = varIDContext.getText();
             if (!bindings.containsKey(datasetName)) {
                 // TODO: Exception, invalid type.

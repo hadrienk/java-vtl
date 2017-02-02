@@ -22,8 +22,8 @@ public class JoinKeepClauseVisitor  extends VTLBaseVisitor<KeepOperator> {
     @Override
     public KeepOperator visitJoinKeepExpression(VTLParser.JoinKeepExpressionContext ctx) {
         ImmutableSet.Builder<String> components = ImmutableSet.builder();
-        for (VTLParser.JoinKeepRefContext joidKeepRefContext : ctx.joinKeepRef()) {
-            components.add(joidKeepRefContext.getText());
+        for (VTLParser.ComponentRefContext componentRef : ctx.componentRef()) {
+            components.add(componentRef.getText());
         }
         return new KeepOperator(dataset, components.build());
     }

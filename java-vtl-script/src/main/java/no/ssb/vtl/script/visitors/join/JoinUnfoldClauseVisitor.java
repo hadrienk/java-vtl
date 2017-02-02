@@ -24,15 +24,15 @@ public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldClause> {
     public UnfoldClause visitJoinUnfoldExpression(VTLParser.JoinUnfoldExpressionContext ctx) {
         // TODO: Migrate to component references.
         String dimension = "";
-        if (ctx.dimension.varID() != null) {
-            dimension += ctx.dimension.varID().getText() + ".";
+        if (ctx.dimension.datasetRef() != null) {
+            dimension += ctx.dimension.datasetRef().getText() + ".";
         }
         dimension += ctx.dimension.componentID().getText();
 
         // TODO: Migrate to component references.
         String measure = "";
-        if (ctx.measure.varID() != null) {
-            measure += ctx.measure.varID().getText() + ".";
+        if (ctx.measure.datasetRef() != null) {
+            measure += ctx.measure.datasetRef().getText() + ".";
         }
         measure += ctx.measure.componentID().getText();
 

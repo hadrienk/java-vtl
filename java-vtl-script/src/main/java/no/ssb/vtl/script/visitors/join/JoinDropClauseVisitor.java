@@ -24,7 +24,7 @@ public class JoinDropClauseVisitor extends VTLBaseVisitor<DropOperator> {
     @Override
     public DropOperator visitJoinDropExpression(VTLParser.JoinDropExpressionContext ctx) {
         Set<String> components = Sets.newHashSet();
-        for (VTLParser.JoinDropRefContext joinDropRefContext : ctx.joinDropRef()) {
+        for (VTLParser.ComponentRefContext joinDropRefContext : ctx.componentRef()) {
             components.add(joinDropRefContext.getText());
         }
         return new DropOperator(dataset, components);
