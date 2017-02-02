@@ -81,9 +81,8 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
                     promises[dataset] = promise.then(function (response) {
                         return {variables: response.data.dataStructure};
                     },function (response) {
-                            $scope.datasets[dataset]["error"] = response.data;
-                        }
-                    );
+                        return { error: response.data};
+                    });
                 }
 
                 $q.all(promises).then(function (result) {

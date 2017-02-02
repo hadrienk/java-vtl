@@ -142,7 +142,7 @@
                 <div class="col-md-12 dataset">
                     <!-- display the dataset. -->
                     <div class="table-responsive" ng-repeat="(name, dataset) in datasets">
-                        <table class="table-responsive table-bordered table-condensed">
+                        <table ng-if="!dataset.error" class="table-responsive table-bordered table-condensed">
                             <caption>{{ name }}, <a ng-click="remove(name)">delete</a></caption>
                             <thead>
                             <tr>
