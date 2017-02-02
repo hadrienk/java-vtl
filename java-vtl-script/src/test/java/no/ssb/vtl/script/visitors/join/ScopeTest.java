@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.script.Bindings;
+import javax.script.ScriptContext;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -67,12 +68,12 @@ public class ScopeTest {
         Map<String, Dataset> datasetMap = visitor.createJoinScope(Arrays.asList(varIdDs1, varIdDs2));
         InnerJoinOperation joinOperation = new InnerJoinOperation(datasetMap);
         Bindings joinScope = joinOperation.getJoinScope();
-        joinScope.putAll(datasetMap);
-        int JOIN_SCOPE = 50;
-        ctx.setBindings(joinScope, JOIN_SCOPE);
     
-        assertThat(ctx.getAttribute("ds3", JOIN_SCOPE)).isNull();
-        assertThat(ctx.getAttribute("ds1.id1", JOIN_SCOPE)).isNotNull();
-        assertThat(ctx.getAttribute("id1", JOIN_SCOPE)).isEqualTo(ctx.getAttribute("ds2.id1"));
+        JoinExpressionVisitor joinExpressionVisitor = new JoinExpressionVisitor(ctx);
+        ScriptContext joinContext = joinExpressionVisitor.createJoinContext(joinScope, ctx);
+    
+        assertThat(joinContext.getAttribute("ds3")).isNull();
+        assertThat(joinContext.getAttribute("ds1.id1")).isNotNull();
+        assertThat(joinContext.getAttribute("id1")).isEqualTo(joinContext.getAttribute("ds2.id1"));
     }
 }
