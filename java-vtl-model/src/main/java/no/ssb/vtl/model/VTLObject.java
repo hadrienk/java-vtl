@@ -1,17 +1,34 @@
 package no.ssb.vtl.model;
 
-public class VTLObject {
-    
-    public Dataset asDataset() {
-        return null;
+public abstract class VTLObject {
+
+    private VTLObject() {
     }
-    
+
     public static VTLObject wrap(Object o) {
-        return null;
+        return new VTLObject() {
+            @Override
+            Object getValue() {
+                return null;
+            }
+        };
+    }
+
+    abstract Object getValue();
+
+    public Dataset asDataset() {
+        return (Dataset) getValue();
+    }
+
+    private boolean isDataset() {
+        return getValue() instanceof Dataset;
     }
 
     public Component asComponent() {
-        return null;
+        return (Component) getValue();
     }
-    //TODO
+
+    private boolean isComponent() {
+        return getValue() instanceof Component;
+    }
 }

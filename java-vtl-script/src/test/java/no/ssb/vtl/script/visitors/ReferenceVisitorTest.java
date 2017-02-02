@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.visitors;
 
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
@@ -18,7 +19,6 @@ import javax.script.Bindings;
 import javax.script.SimpleBindings;
 
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class ReferenceVisitorTest {
@@ -55,11 +55,26 @@ public class ReferenceVisitorTest {
         when(emptyBindings.isEmpty()).thenReturn(true);
 
         ReferenceVisitor referenceVisitor = new ReferenceVisitor(emptyBindings);
-        VTLParser parser = parse("component");
-        assertThat(referenceVisitor.visitVariableRef(parser.variableRef()))
-                .describedAs("resolved variableRef with empty scope")
-                .isNull();
 
+        VTLParser parser;
+        try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
+            parser = parse("component");
+            softly.assertThat(referenceVisitor.visit(parser.variableRef()))
+                    .describedAs("resolved %s with empty scope",((Supplier) parser::variableRef))
+                    .isNull();
+
+            parser = parse("component");
+            softly.assertThat(referenceVisitor.visit(parser.componentRef()))
+                    .describedAs("resolved %s with empty scope", ((Supplier) parser::componentRef))
+                    .isNull();
+
+            parser = parse("component");
+            softly.assertThat(referenceVisitor.visit(parser.datasetRef()))
+                    .describedAs("resolved %s with empty scope",((Supplier) parser::datasetRef))
+                    .isNull();
+        }
+
+        verify(emptyBindings, times(3)).isEmpty();
         verifyNoMoreInteractions(emptyBindings);
     }
 
@@ -72,12 +87,11 @@ public class ReferenceVisitorTest {
                 "'dataset'.component"
         };
 
-
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             ReferenceVisitor referenceVisitor = new ReferenceVisitor(bindings);
             for (String componentExpression : components) {
                 VTLParser parser = parse(componentExpression);
-                softly.assertThat(referenceVisitor.visit(parser.variableRef()).asComponent())
+                softly.assertThat(referenceVisitor.visit(parser.variableRef()))
                         .describedAs("resolved variableRef for [%s]", componentExpression)
                         .isSameAs(component);
             }
@@ -95,8 +109,9 @@ public class ReferenceVisitorTest {
             ReferenceVisitor referenceVisitor = new ReferenceVisitor(bindings);
             for (String datasetExpression : datasets) {
                 VTLParser parser = parse(datasetExpression);
-                softly.assertThat(referenceVisitor.visit(parser.variableRef()).asDataset())
+                softly.assertThat(referenceVisitor.visit(parser.variableRef()))
                         .describedAs("resolved variableRef for [%s]", datasetExpression)
+                        .isNotNull()
                         .isSameAs(dataset);
             }
         }
