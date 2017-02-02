@@ -7,20 +7,25 @@ import no.ssb.vtl.parser.VTLParser;
 
 import javax.script.Bindings;
 
-public class ReferenceVisitor extends VTLBaseVisitor<VTLObject>{
-    
+import static com.google.common.base.Preconditions.checkNotNull;
+
+/**
+ * The reference visitor tries to find references to object in a Bindings.
+ */
+public class ReferenceVisitor extends VTLBaseVisitor<VTLObject> {
+
     private Bindings scope;
-    
+
     public ReferenceVisitor(Bindings scope) {
-        this.scope = scope;
+        this.scope = checkNotNull(scope, "scope cannot be empty");
     }
-    
-    
+
     /**
      * {@inheritDoc}
      * <p>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
+     *
      * @param ctx
      */
     @Override
@@ -34,13 +39,14 @@ public class ReferenceVisitor extends VTLBaseVisitor<VTLObject>{
         }
         return VTLObject.wrap(o);
     }
-    
-    
+
+
     /**
      * {@inheritDoc}
      * <p>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
+     *
      * @param ctx
      */
     @Override

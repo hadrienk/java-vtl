@@ -9,5 +9,9 @@ public class VTLObject {
     public static VTLObject wrap(Object o) {
         return null;
     }
+
+    public Component asComponent() {
+        return null;
+    }
     //TODO
 }
