@@ -163,25 +163,6 @@ public class AbstractJoinOperationTest {
             }
         };
 
-        result.getClauses().add(new JoinClause() {
-
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return workingDataset.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return workingDataset.get();
-                    }
-                };
-            }
-
-        });
-
         assertThat(result.workDataset().get())
                 .containsAll(ds1.get().collect(Collectors.toList()));
 
