@@ -21,9 +21,7 @@ grammar VTL;
 start : statement+ EOF;
 
 /* Assignment */
-statement : variableRef ':=' datasetExpression;
-
-exprMember : datasetExpression ('#' componentID)? ;
+statement : variableID ':=' datasetExpression;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
@@ -33,7 +31,6 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | exprAtom                                               #withAtom
            ;
 
-componentID : IDENTIFIER;
 
 getExpression : 'get' '(' datasetId ')';
 putExpression : 'put(todo)';
@@ -43,11 +40,17 @@ datasetId : STRING_CONSTANT ;
 /* Atom */
 exprAtom : variableRef;
 
-variableRef : constant
-            | varID
-            ;
+datasetRef: IDENTIFIER;
 
-varID : IDENTIFIER;
+componentRef : datasetRef '.' componentID
+             | componentID ;
+componentID : IDENTIFIER;
+
+variableRef : datasetRef
+            | componentRef
+            ;
+variableID: IDENTIFIER;
+
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
@@ -67,7 +70,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=varID 'as' to=varID ( 'role' '=' role )? ;
+renameParam : from=componentRef 'as' to=componentRef ( 'role' '=' role )? ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
@@ -124,13 +127,13 @@ joinDefinition : INNER? joinParam  #joinDefinitionInner
                | OUTER  joinParam  #joinDefinitionOuter
                | CROSS  joinParam  #joinDefinitionCross ;
 
-joinParam : varID (',' varID )* ( 'on' dimensionExpression (',' dimensionExpression )* )? ;
+joinParam : datasetRef (',' datasetRef )* ( 'on' dimensionExpression (',' dimensionExpression )* )? ;
 
 dimensionExpression : IDENTIFIER; //unimplemented
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : role? varID '=' joinCalcExpression # joinCalcClause
+joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -139,43 +142,35 @@ joinClause : role? varID '=' joinCalcExpression # joinCalcClause
            | joinUnfoldExpression               # joinUnfoldClause
            ;
 
-joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=joinFoldUnfoldRef ',' measure=joinFoldUnfoldRef ;
-joinUnfoldExpression    : 'unfold' dimension=joinFoldUnfoldRef ',' measure=joinFoldUnfoldRef 'to' elements=foldUnfoldElements ;
+joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=componentRef ',' measure=componentRef ;
+joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements=foldUnfoldElements ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support strings only for now.
 // TODO: Reuse component references
-joinFoldUnfoldRef   : varID '.' componentID
-                    | componentID
-                    ;
 foldUnfoldElements      : STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
-                   | joinCalcRef                                                                        #joinCalcReference
+                   | componentRef                                                                        #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    ;
 
-joinCalcRef : (aliasName=varID '.')? componentName=varID ;
-
 
 // Drop clause
-joinDropExpression : 'drop' joinDropRef (',' joinDropRef)* ;
-joinDropRef : (aliasName=varID '.')? componentName=varID ;
+joinDropExpression : 'drop' componentRef (',' componentRef)* ;
 
 // Keep clause
-joinKeepExpression : 'keep' joinKeepRef (',' joinKeepRef)* ;
-joinKeepRef : (aliasName=varID '.')? componentName=varID ;
+joinKeepExpression : 'keep' componentRef (',' componentRef)* ;
 
 // TODO: Use in keep, drop and calc.
 // TODO: Make this the membership operator.
 // TODO: Revise this when the final version of the specification precisely define if the rename needs ' or not.
-joinComponentReference : (aliasName=varID '.')? componentName=varID ;
 
 // Rename clause
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
-joinRenameParameter  : from=joinComponentReference 'to' to=varID ;
+joinRenameParameter  : from=componentRef 'to' to=componentID ;
 
 // Filter clause
 joinFilterExpression : 'filter' booleanExpression ;
@@ -186,7 +181,8 @@ INNER : 'inner' ;
 OUTER : 'outer' ;
 CROSS : 'cross' ;
 
-IDENTIFIER:LETTER(LETTER|'_'|DIGIT)* ;
+
+
 
 INTEGER_CONSTANT  : DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
@@ -197,6 +193,13 @@ FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
                   ;
 
 NULL_CONSTANT     : 'null';
+
+IDENTIFIER : REG_IDENTIFIER | ESCAPED_IDENTIFIER ;
+//regular identifiers start with a (lowercase or uppercase) English alphabet letter, followed by zero or more letters, decimal digits, or underscores
+fragment REG_IDENTIFIER: LETTER(LETTER|'_'|DIGIT)* ; //TODO: Case insensitive??
+//VTL 1.1 allows us to escape the limitations imposed on regular identifiers by enclosing them in single quotes (apostrophes).
+fragment ESCAPED_IDENTIFIER:  QUOTE (~'\'' | '\'\'')+ QUOTE;
+fragment QUOTE : '\'';
 
 PLUS : '+';
 MINUS : '-';
