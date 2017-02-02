@@ -59,13 +59,17 @@ public class ScopeTest {
     @Test
     public void testJoinScope() throws Exception {
         JoinDefinitionVisitor visitor = new JoinDefinitionVisitor(ctx);
-        VTLParser.VarIDContext varIdDs1= mock(VTLParser.VarIDContext.class);
+        VTLParser.DatasetRefContext varIdDs1= mock(VTLParser.DatasetRefContext.class);
         when(varIdDs1.getText()).thenReturn("ds1");
-        VTLParser.VarIDContext varIdDs2= mock(VTLParser.VarIDContext.class);
+        when(varIdDs1.accept(any())).thenCallRealMethod();
+        VTLParser.DatasetRefContext varIdDs2= mock(VTLParser.DatasetRefContext.class);
         when(varIdDs2.getText()).thenReturn("ds2");
+        when(varIdDs2.accept(any())).thenCallRealMethod();
+        VTLParser.JoinParamContext joinParamCtx = mock(VTLParser.JoinParamContext.class);
+        when(joinParamCtx.datasetRef()).thenReturn(Arrays.asList(varIdDs1, varIdDs2));
     
-        
-        Map<String, Dataset> datasetMap = visitor.createJoinScope(Arrays.asList(varIdDs1, varIdDs2));
+    
+        Map<String, Dataset> datasetMap = visitor.getDatasetParameters(joinParamCtx);
         InnerJoinOperation joinOperation = new InnerJoinOperation(datasetMap);
         Bindings joinScope = joinOperation.getJoinScope();
     

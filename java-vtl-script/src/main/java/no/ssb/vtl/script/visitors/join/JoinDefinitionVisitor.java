@@ -7,12 +7,12 @@ import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.CrossJoinOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import no.ssb.vtl.script.operations.join.OuterJoinOperation;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import org.antlr.v4.runtime.RuleContext;
 
-import javax.script.Bindings;
 import javax.script.ScriptContext;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -21,67 +21,41 @@ import static com.google.common.base.Preconditions.*;
  */
 public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation> {
 
-    private final ScriptContext context;
-
+    private final ReferenceVisitor referenceVisitor;
+    
     public JoinDefinitionVisitor(ScriptContext context) {
-        this.context = checkNotNull(context);
+        checkNotNull(context);
+        referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
     }
 
     
 
     @Override
     public AbstractJoinOperation visitJoinDefinitionInner(VTLParser.JoinDefinitionInnerContext ctx) {
-        List<VTLParser.DatasetRefContext> datasets = ctx.joinParam().datasetRef();
-
-        Map<String, Dataset> theDatasets = createJoinScope(datasets);
-    
+        Map<String, Dataset> theDatasets = getDatasetParameters(ctx.joinParam());
         return new InnerJoinOperation(theDatasets);
-
     }
-
+    
     @Override
     public AbstractJoinOperation visitJoinDefinitionOuter(VTLParser.JoinDefinitionOuterContext ctx) {
-        List<VTLParser.DatasetRefContext> datasets = ctx.joinParam().datasetRef();
-
-        Map<String, Dataset> datasetMap = createJoinScope(datasets);
-    
+        Map<String, Dataset> datasetMap = getDatasetParameters(ctx.joinParam());
         return new OuterJoinOperation(datasetMap);
     }
-
+    
     @Override
     public AbstractJoinOperation visitJoinDefinitionCross(VTLParser.JoinDefinitionCrossContext ctx) {
-        List<VTLParser.DatasetRefContext> datasets = ctx.joinParam().datasetRef();
-
-        Map<String, Dataset> datasetMap = createJoinScope(datasets);
-    
+        Map<String, Dataset> datasetMap = getDatasetParameters(ctx.joinParam());
         return new CrossJoinOperation(datasetMap);
     }
-
-
-    /**
-     * Finds the datasets in the context.
-     * @param varIDContexts
-     */
-    Map<String, Dataset> createJoinScope(List<VTLParser.DatasetRefContext> varIDContexts) {
-        Map<String, Dataset> joinScope = new HashMap<>();
-        
-        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
-        for (VTLParser.DatasetRefContext varIDContext : varIDContexts) {
-            String datasetName = varIDContext.getText();
-            if (!bindings.containsKey(datasetName)) {
-                // TODO: Exception, invalid type.
-                throw new RuntimeException(datasetName + " does not exist");
-            }
-            Object datasetVariable = bindings.get(datasetName);
-            if (!(datasetVariable instanceof Dataset)) {
-                // TODO: Exception, invalid type.
-                throw new RuntimeException(datasetName + " was not a dataset");
-            }
-            Dataset dataset = (Dataset) datasetVariable;
-            joinScope.put(datasetName, dataset);
-        }
-        
-        return joinScope;
+    
+    Map<String, Dataset> getDatasetParameters(VTLParser.JoinParamContext ctx) {
+        return ctx.datasetRef().stream()
+                .collect(Collectors.toMap(RuleContext::getText, this::getDataset));
     }
-
+    
+    private Dataset getDataset(VTLParser.DatasetRefContext ref) {
+        Object referencedObject = referenceVisitor.visit(ref);
+        return (Dataset) referencedObject; //TODO: Is this always safe?
+    }
+    
 }
