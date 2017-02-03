@@ -21,11 +21,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DropOperator implements Dataset {
     // The dataset we are applying the KeepOperator on.
     private final Dataset dataset;
-    private final Set<String> components;
+    private final Set<Component> components;
 
     private DataStructure cache;
 
-    public DropOperator(Dataset dataset, Set<String> names) {
+    public DropOperator(Dataset dataset, Set<Component> names) {
         this.dataset = checkNotNull(dataset, "the dataset was null");
         this.components = checkNotNull(names, "the component list was null");
 
@@ -46,12 +46,13 @@ public class DropOperator implements Dataset {
         DataStructure structure = dataset.getDataStructure();
         Map<String, Component.Role> roles = Maps.newHashMap();
         Map<String, Class<?>> types = Maps.newHashMap();
-        for (String componentName : structure.keySet()) {
-            if (!components.contains(componentName) || structure.get(componentName).isIdentifier()) {
-                Class<?> type = structure.getTypes().get(componentName);
-                Component.Role role = structure.getRoles().get(componentName);
-                roles.put(componentName, role);
-                types.put(componentName, type);
+        for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
+            Component component = componentEntry.getValue();
+            if (!components.contains(component) || component.isIdentifier()) {
+                Class<?> type = component.getType();
+                Component.Role role = component.getRole();
+                roles.put(componentEntry.getKey(), role);
+                types.put(componentEntry.getKey(), type);
             }
         }
         return DataStructure.of(

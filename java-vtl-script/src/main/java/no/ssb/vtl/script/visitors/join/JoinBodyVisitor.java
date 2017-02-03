@@ -16,6 +16,7 @@ import no.ssb.vtl.script.operations.join.JoinClause;
 import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.antlr.v4.runtime.RuleContext;
 
+import javax.script.Bindings;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -26,8 +27,11 @@ import java.util.stream.Stream;
  * The last join clause is returned.
  */
 public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, WorkingDataset>> {
-
-    public JoinBodyVisitor() {
+    
+    private Bindings scope;
+    
+    public JoinBodyVisitor(Bindings scope) {
+        this.scope = scope;
     }
 
     @Override
@@ -113,7 +117,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
     public JoinClause visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
 
         return workingDataset -> {
-            JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
+            JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset, scope);
             DropOperator drop = visitor.visit(ctx);
             return new WorkingDataset() {
                 @Override

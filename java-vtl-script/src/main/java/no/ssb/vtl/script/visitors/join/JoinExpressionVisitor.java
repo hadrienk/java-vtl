@@ -14,20 +14,16 @@ import java.util.function.Function;
 public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     
     private final JoinDefinitionVisitor joinDefVisitor;
-    private final ScriptContext context;
     
     public JoinExpressionVisitor(ScriptContext context) {
-        this.context = context;
-        joinDefVisitor = new JoinDefinitionVisitor(this.context);
+        joinDefVisitor = new JoinDefinitionVisitor(context);
     }
     
     @Override
     public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
         AbstractJoinOperation joinOperation = joinDefVisitor.visit(ctx.joinDefinition());
         Bindings joinScope = joinOperation.getJoinScope();
-        VTLScriptContext joinContext = createJoinContext(joinScope, context);
-        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor();
-        
+        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(joinScope);
         Function<WorkingDataset, WorkingDataset> joinClause = joinBodyVisitor.visitJoinBody(ctx.joinBody());
         WorkingDataset workingDataset = joinOperation.workDataset();
     
