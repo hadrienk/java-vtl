@@ -6,9 +6,10 @@ import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
 import javax.script.Bindings;
+import java.lang.String;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 import static java.lang.String.format;
 
 /**
@@ -16,19 +17,22 @@ import static java.lang.String.format;
  */
 public class ReferenceVisitor extends VTLBaseVisitor<Object> {
 
-    private Bindings scope;
+    protected Bindings scope;
 
     public ReferenceVisitor(Bindings scope) {
         this.scope = checkNotNull(scope, "scope cannot be empty");
     }
+    
+    protected ReferenceVisitor(){}
 
-    private static <T> T findObject(Map<String, ?> scope, String key, Class<T> clazz) {
+    protected static <T> T findObject(Map<String, ?> scope, String key, Class<T> clazz) {
         if (!scope.containsKey(key)) {
             return null;
         }
 
         Object ref = scope.get(key);
         if (clazz.isAssignableFrom(ref.getClass())) {
+            //noinspection unchecked
             return (T) ref;
         }
         throw new RuntimeException(

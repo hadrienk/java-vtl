@@ -117,7 +117,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
     public JoinClause visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
 
         return workingDataset -> {
-            JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset, scope);
+            JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
             DropOperator drop = visitor.visit(ctx);
             return new WorkingDataset() {
                 @Override
