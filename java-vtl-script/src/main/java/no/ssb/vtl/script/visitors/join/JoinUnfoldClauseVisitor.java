@@ -27,14 +27,14 @@ public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldClause> {
         if (ctx.dimension.datasetRef() != null) {
             dimension += ctx.dimension.datasetRef().getText() + ".";
         }
-        dimension += ctx.dimension.componentID().getText();
+        dimension += ctx.dimension.getText();
 
         // TODO: Migrate to component references.
         String measure = "";
         if (ctx.measure.datasetRef() != null) {
             measure += ctx.measure.datasetRef().getText() + ".";
         }
-        measure += ctx.measure.componentID().getText();
+        measure += ctx.measure.getText();
 
         Set<String> elements = Sets.newLinkedHashSet();
         for (TerminalNode element : ctx.elements.STRING_CONSTANT()) {

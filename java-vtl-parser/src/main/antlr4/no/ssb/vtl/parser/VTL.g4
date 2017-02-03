@@ -40,16 +40,14 @@ datasetId : STRING_CONSTANT ;
 /* Atom */
 exprAtom : variableRef;
 
-datasetRef: IDENTIFIER;
+datasetRef: variableRef ;
 
-componentRef : datasetRef '.' componentID
-             | componentID ;
-componentID : IDENTIFIER;
+componentRef : ( datasetRef '.')? variableRef ;
+variableRef : identifier;
 
-variableRef : datasetRef
-            | componentRef
-            ;
-variableID: IDENTIFIER;
+identifier : '\'' STRING_CONSTANT '\'' | IDENTIFIER ;
+
+variableID : IDENTIFIER ;
 
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
@@ -142,7 +140,7 @@ joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
            | joinUnfoldExpression               # joinUnfoldClause
            ;
 
-joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=componentRef ',' measure=componentRef ;
+joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=identifier ',' measure=identifier ;
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements=foldUnfoldElements ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support strings only for now.
@@ -170,7 +168,7 @@ joinKeepExpression : 'keep' componentRef (',' componentRef)* ;
 
 // Rename clause
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
-joinRenameParameter  : from=componentRef 'to' to=componentID ;
+joinRenameParameter  : from=componentRef 'to' to=identifier ;
 
 // Filter clause
 joinFilterExpression : 'filter' booleanExpression ;

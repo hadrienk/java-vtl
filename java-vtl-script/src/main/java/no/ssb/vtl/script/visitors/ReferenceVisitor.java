@@ -1,11 +1,13 @@
 package no.ssb.vtl.script.visitors;
 
+import com.google.common.collect.Queues;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
 import javax.script.Bindings;
+import java.util.Deque;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -16,24 +18,10 @@ import static java.lang.String.format;
  */
 public class ReferenceVisitor extends VTLBaseVisitor<Object> {
 
-    private Bindings scope;
+    private Deque<Map<String, ?>> stack = Queues.newArrayDeque();
 
     public ReferenceVisitor(Bindings scope) {
-        this.scope = checkNotNull(scope, "scope cannot be empty");
-    }
-
-    private static <T> T findObject(Map<String, ?> scope, String key, Class<T> clazz) {
-        if (!scope.containsKey(key)) {
-            return null;
-        }
-
-        Object ref = scope.get(key);
-        if (clazz.isAssignableFrom(ref.getClass())) {
-            return (T) ref;
-        }
-        throw new RuntimeException(
-                format("wrong type for [%s], expected %s, got %s", key, clazz, ref.getClass())
-        );
+        this.stack.push(checkNotNull(scope, "scope cannot be empty"));
     }
 
     private static String removeQuoteIfNeeded(String key) {
@@ -43,6 +31,27 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
             }
         }
         return key;
+    }
+
+    private static <T> T checkFound(String expression, T instance) {
+        if (instance != null) {
+            return instance;
+        }
+        throw new RuntimeException(format("variable [%s] not found", expression));
+    }
+
+    private static <T> T checkType(String expression, Object instance, Class<T> clazz) {
+        if (clazz.isAssignableFrom(instance.getClass())) {
+            return (T) instance;
+        }
+        throw new RuntimeException(format("wrong type for [%s], expected %s, got %s", expression, clazz, instance.getClass()));
+    }
+
+    @Override
+    public Object visitVariableRef(VTLParser.VariableRefContext ctx) {
+        // TODO: Would be nice to handle quote removal in ANTLR
+        String key = removeQuoteIfNeeded(ctx.identifier().getText());
+        return checkFound(ctx.getText(), stack.peek().get(key));
     }
 
     /**
@@ -55,20 +64,16 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
      */
     @Override
     public Object visitComponentRef(VTLParser.ComponentRefContext ctx) {
-        String key = removeQuoteIfNeeded(ctx.componentID().getText());
-        Map<String, ?> scope = this.scope;
-
+        // Ensure data type component.
+        Component component;
         if (ctx.datasetRef() != null) {
             Dataset ds = (Dataset) visit(ctx.datasetRef());
-            scope = ds.getDataStructure();
+            this.stack.push(ds.getDataStructure());
+            component = checkType(ctx.getText(), visit(ctx.variableRef()), Component.class);
+            this.stack.pop();
+        } else {
+            component = checkType(ctx.getText(), visit(ctx.variableRef()), Component.class);
         }
-
-        Component component = findObject(scope, key, Component.class);
-
-        if (component == null) {
-            throw new RuntimeException(format("component [%s] not found", ctx.getText()));
-        }
-
         return component;
     }
 
@@ -82,15 +87,8 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
      */
     @Override
     public Object visitDatasetRef(VTLParser.DatasetRefContext ctx) {
-        String key = removeQuoteIfNeeded(ctx.getText());
-
-        Dataset dataset = findObject(scope, key, Dataset.class);
-
-        if (dataset == null) {
-            throw new RuntimeException(format("component [%s] not found", ctx.getText()));
-        }
-
+        // Ensure data type dataset.
+        Dataset dataset = checkType(ctx.getText(), visit(ctx.variableRef()), Dataset.class);
         return dataset;
-
     }
 }

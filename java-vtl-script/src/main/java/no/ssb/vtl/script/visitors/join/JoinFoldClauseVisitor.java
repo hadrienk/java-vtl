@@ -22,8 +22,8 @@ public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
     @Override
     public FoldClause visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
         // TODO: Migrate to component type.
-        String dimension = ctx.dimension.componentID().getText();
-        String measure = ctx.measure.componentID().getText();
+        String dimension = ctx.dimension.getText();
+        String measure = ctx.measure.getText();
 
         Set<String> elements = Sets.newLinkedHashSet();
         for (TerminalNode element : ctx.elements.STRING_CONSTANT()) {

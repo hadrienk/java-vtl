@@ -1,7 +1,6 @@
 package no.ssb.vtl.script.visitors;
 
 
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
@@ -12,6 +11,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
+import org.assertj.core.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,32 +50,37 @@ public class ReferenceVisitorTest {
     }
 
     @Test
-    public void testEmpty() throws Exception {
-        Bindings emptyBindings = mock(Bindings.class);
-        when(emptyBindings.isEmpty()).thenReturn(true);
-
+    public void testNotFound() throws Exception {
+        Bindings emptyBindings = new SimpleBindings(
+                Maps.newHashMap("dataset", dataset));
         ReferenceVisitor referenceVisitor = new ReferenceVisitor(emptyBindings);
 
-        VTLParser parser;
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            parser = parse("component");
-            softly.assertThat(referenceVisitor.visit(parser.variableRef()))
-                    .describedAs("resolved %s with empty scope",((Supplier) parser::variableRef))
-                    .isNull();
+            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("componentNotFound").componentRef()))
+                    .describedAs("exception when component not found")
+                    .hasMessageContaining("variable")
+                    .hasMessageContaining("componentNotFound")
+                    .hasMessageContaining("not found");
 
-            parser = parse("component");
-            softly.assertThat(referenceVisitor.visit(parser.componentRef()))
-                    .describedAs("resolved %s with empty scope", ((Supplier) parser::componentRef))
-                    .isNull();
+            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("dataset.componentNotFound").componentRef()))
+                    .describedAs("exception when component not found")
+                    .hasMessageContaining("variable")
+                    .hasMessageContaining("componentNotFound")
+                    .hasMessageContaining("not found");
 
-            parser = parse("component");
-            softly.assertThat(referenceVisitor.visit(parser.datasetRef()))
-                    .describedAs("resolved %s with empty scope",((Supplier) parser::datasetRef))
-                    .isNull();
+            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("datasetNotFound").datasetRef()))
+                    .describedAs("exception when component not found")
+                    .hasMessageContaining("variable")
+                    .hasMessageContaining("datasetNotFound")
+                    .hasMessageContaining("not found");
+
+            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("variableNotFound").variableRef()))
+                    .describedAs("exception when component not found")
+                    .hasMessageContaining("variable")
+                    .hasMessageContaining("variableNotFound")
+                    .hasMessageContaining("not found");
+
         }
-
-        verify(emptyBindings, times(3)).isEmpty();
-        verifyNoMoreInteractions(emptyBindings);
     }
 
     @Test
@@ -91,8 +96,8 @@ public class ReferenceVisitorTest {
             ReferenceVisitor referenceVisitor = new ReferenceVisitor(bindings);
             for (String componentExpression : components) {
                 VTLParser parser = parse(componentExpression);
-                softly.assertThat(referenceVisitor.visit(parser.variableRef()))
-                        .describedAs("resolved variableRef for [%s]", componentExpression)
+                softly.assertThat(referenceVisitor.visit(parser.componentRef()))
+                        .describedAs("resolved componentRef for [%s]", componentExpression)
                         .isSameAs(component);
             }
         }
@@ -109,8 +114,8 @@ public class ReferenceVisitorTest {
             ReferenceVisitor referenceVisitor = new ReferenceVisitor(bindings);
             for (String datasetExpression : datasets) {
                 VTLParser parser = parse(datasetExpression);
-                softly.assertThat(referenceVisitor.visit(parser.variableRef()))
-                        .describedAs("resolved variableRef for [%s]", datasetExpression)
+                softly.assertThat(referenceVisitor.visit(parser.datasetRef()))
+                        .describedAs("resolved datasetRef for [%s]", datasetExpression)
                         .isNotNull()
                         .isSameAs(dataset);
             }
