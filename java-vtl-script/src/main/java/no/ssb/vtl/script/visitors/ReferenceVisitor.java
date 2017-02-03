@@ -32,7 +32,7 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
             return (T) ref;
         }
         throw new RuntimeException(
-                format("wrong type for %s, expected %s, got %s", key, clazz, ref.getClass())
+                format("wrong type for [%s], expected %s, got %s", key, clazz, ref.getClass())
         );
     }
 
@@ -66,7 +66,7 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
         Component component = findObject(scope, key, Component.class);
 
         if (component == null) {
-            throw new RuntimeException(format("component %s not found", ctx.getText()));
+            throw new RuntimeException(format("component [%s] not found", ctx.getText()));
         }
 
         return component;
@@ -87,7 +87,7 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
         Dataset dataset = findObject(scope, key, Dataset.class);
 
         if (dataset == null) {
-            throw new RuntimeException(format("component %s not found", ctx.getText()));
+            throw new RuntimeException(format("component [%s] not found", ctx.getText()));
         }
 
         return dataset;

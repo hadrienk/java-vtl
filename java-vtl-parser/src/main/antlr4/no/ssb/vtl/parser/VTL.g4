@@ -182,8 +182,6 @@ OUTER : 'outer' ;
 CROSS : 'cross' ;
 
 
-
-
 INTEGER_CONSTANT  : DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
 STRING_CONSTANT   :'"' (~'"')* '"';
