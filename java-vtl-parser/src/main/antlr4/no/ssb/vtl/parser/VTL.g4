@@ -21,7 +21,11 @@ grammar VTL;
 start : statement+ EOF;
 
 /* Assignment */
-statement : variableID ':=' datasetExpression;
+statement : variableID ':=' datasetExpression
+          | variableID ':=' block
+          ;
+
+block : '{' statement+ '}' ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
