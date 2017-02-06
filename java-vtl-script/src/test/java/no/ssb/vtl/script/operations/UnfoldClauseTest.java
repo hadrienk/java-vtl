@@ -3,16 +3,14 @@ package no.ssb.vtl.script.operations;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -35,14 +33,14 @@ public class UnfoldClauseTest {
     @Test
     public void testArguments() throws Exception {
 
-        String validDimensionReference = "aDimension";
-        String validMeasureReference = "aDimension";
-        Set<String> validElements = Sets.newHashSet("element1, element2");
         Dataset dataset = mock(Dataset.class);
+        Component validIdentifierReference = mock(Component.class);
+        Component validMeasureReference = mock(Component.class);
+        Set<String> validElements = Sets.newHashSet("element1, element2");
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(null, validDimensionReference, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldClause(null, validIdentifierReference, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dataset")
                     .hasMessageContaining("null");
@@ -52,27 +50,17 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("dimensionReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validDimensionReference, null, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, null, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("measureReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validDimensionReference, validMeasureReference, null))
+            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, validMeasureReference, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, "", validMeasureReference, validElements))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("dimensionReference")
-                    .hasMessageContaining("empty");
-
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validDimensionReference, "", validElements))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("measureReference")
-                    .hasMessageContaining("empty");
-
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validDimensionReference, validMeasureReference, Collections.emptySet()))
+            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, validMeasureReference, Collections.emptySet()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("empty");
@@ -81,35 +69,37 @@ public class UnfoldClauseTest {
 
     @Test
     public void testConstraint() throws Exception {
-        String validDimension = "id2";
-        String validMeasure = "measure1";
-        Set<String> validElements = Sets.newHashSet("some value");
 
-        Dataset dataset = mock(Dataset.class);
+        Set<String> validElements = Sets.newHashSet("some value");
         DataStructure structure = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
-                validDimension, IDENTIFIER, String.class,
-                validMeasure, MEASURE, String.class
+                "id2", IDENTIFIER, String.class,
+                "measure1", MEASURE, String.class
         );
+        Dataset dataset = mock(Dataset.class);
         when(dataset.getDataStructure()).thenReturn(structure);
+
+        Component validDimension = structure.get("id2");
+        Component validMeasure = structure.get("measure1");
+        Component invalidReference = mock(Component.class);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, "nogood", validMeasure, validElements);
+                UnfoldClause clause = new UnfoldClause(dataset, invalidReference, validMeasure, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("dimension")
-                    .hasMessageContaining("nogood")
+                    .hasMessageContaining(invalidReference.toString())
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, validDimension, "nogood", validElements);
+                UnfoldClause clause = new UnfoldClause(dataset, validDimension, invalidReference, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("measure")
-                    .hasMessageContaining("nogood")
+                    .hasMessageContaining(invalidReference.toString())
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
@@ -117,7 +107,7 @@ public class UnfoldClauseTest {
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining(validMeasure)
+                    .hasMessageContaining(validMeasure.toString())
                     .hasMessageContaining("was not a dimension");
 
 
@@ -129,7 +119,7 @@ public class UnfoldClauseTest {
     @Test
     public void testUnfold() throws Exception {
 
-        Set<String> elements = Sets.newHashSet("id2-1", "id2-2");
+        Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
         Dataset dataset = mock(Dataset.class);
         DataStructure structure = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
@@ -149,7 +139,7 @@ public class UnfoldClauseTest {
         ));
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            UnfoldClause clause = new UnfoldClause(dataset, "id2", "measure1", elements);
+            UnfoldClause clause = new UnfoldClause(dataset, structure.get("id2"), structure.get("measure1"), elements);
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
                     "id1", "id2-1", "id2-2"

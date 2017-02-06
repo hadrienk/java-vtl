@@ -21,19 +21,18 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -44,64 +43,106 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RenameOperation implements Dataset {
 
     private final Dataset dataset;
-    private final ImmutableMap<String, String> names;
-    private final ImmutableMap<String, Component.Role> roles;
-    Map<String, String> mapping = HashBiMap.create();
+    //private final ImmutableMap<String, String> names;
+    //private final ImmutableMap<String, Component.Role> roles;
+
+    private final ImmutableMap<Component, String> newNames;
+    private final ImmutableMap<Component, Component.Role> newRoles;
+
+    //Map<String, String> mapping = HashBiMap.create();
     private DataStructure cache;
 
-    public RenameOperation(Dataset dataset, Map<String, String> names, Map<String, Component.Role> roles) {
-        this.dataset = checkNotNull(dataset, "dataset was null");
+//    @Deprecated
+//    public RenameOperation(Dataset dataset, Map<String, String> names, Map<String, Component.Role> roles) {
+//        this.dataset = checkNotNull(dataset, "dataset was null");
+//
+//        // Checks that names key and values are unique.
+//        HashBiMap.create(names);
+//
+//        checkArgument(names.keySet().containsAll(roles.keySet()), "keys %s not present in %s",
+//                Sets.difference(roles.keySet(), names.keySet()), names.keySet());
+//
+//        this.names = ImmutableMap.copyOf(names);
+//        this.roles = ImmutableMap.copyOf(roles);
+//    }
 
-        // Checks that names key and values are unique.
-        HashBiMap.create(names);
+    public RenameOperation(Dataset dataset, Map<Component, String> newNames) {
+        this(dataset, newNames, Collections.emptyMap());
+    }
 
-        checkArgument(names.keySet().containsAll(roles.keySet()), "keys %s not present in %s",
-                Sets.difference(roles.keySet(), names.keySet()), names.keySet());
-
-        this.names = ImmutableMap.copyOf(names);
-        this.roles = ImmutableMap.copyOf(roles);
+    public RenameOperation(Dataset dataset, Map<Component, String> newNames, Map<Component, Component.Role> newRoles) {
+        this.dataset = checkNotNull(dataset);
+        this.newNames = ImmutableMap.copyOf(newNames);
+        if (newRoles.isEmpty()) {
+            LinkedHashMap<Component, Component.Role> roles = Maps.newLinkedHashMap();
+            for (Component component : newNames.keySet()) {
+                roles.put(component, component.getRole());
+            }
+            this.newRoles = ImmutableMap.copyOf(roles);
+        } else {
+            this.newRoles = ImmutableMap.copyOf(newRoles);
+          // TODO: Check keySets of newNames and newRoles is ok.
+        }
     }
 
     @Override
     public DataStructure getDataStructure() {
+        return cache = (cache == null ? computeDataStructure() : cache);
+    }
 
-        if (cache == null) {
-            Set<String> oldNames = dataset.getDataStructure().keySet();
-            checkArgument(oldNames.containsAll(names.keySet()),
-                    "the data set %s did not contain components with names %s", dataset,
-                    Sets.difference(names.keySet(), oldNames)
-            );
+    private DataStructure computeDataStructure() {
+        // Copy
+        Map<String, Component> structure = Maps.newLinkedHashMap();
+        BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
 
-            // Copy.
-            final Map<String, Component.Role> oldRoles, newRoles;
-            oldRoles = dataset.getDataStructure().getRoles();
-            newRoles = Maps.newHashMap();
-
-            final Map<String, Class<?>> oldTypes, newTypes;
-            oldTypes = dataset.getDataStructure().getTypes();
-            newTypes = Maps.newHashMap();
-
-
-
-            for (String oldName : oldNames) {
-                String newName = names.getOrDefault(oldName, oldName);
-                newTypes.put(newName, oldTypes.get(oldName));
-                newRoles.put(newName, roles.getOrDefault(oldName, oldRoles.get(oldName)));
-                mapping.put(oldName, newName);
+        // Check identity
+        Map<Component, String> mapping = Maps.newIdentityHashMap();
+        mapping.putAll(newNames);
+        for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
+            String name;
+            Component component = componentEntry.getValue();
+            if (mapping.containsKey(component)) {
+                name = mapping.get(component);
+            } else {
+                name = componentEntry.getKey();
             }
-
-            BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
-            cache = DataStructure.of(converter, newTypes, newRoles);
+            // TODO: Maybe throw exception if
+            structure.put(name, component);
         }
 
-        return cache;
+//        Set<String> oldNames = dataset.getDataStructure().keySet();
+//        checkArgument(oldNames.containsAll(names.keySet()),
+//                "the data set %s did not contain components with names %s", dataset,
+//                Sets.difference(names.keySet(), oldNames)
+//        );
+//
+//        // Copy.
+//        final Map<String, Component.Role> oldRoles, newRoles;
+//        oldRoles = dataset.getDataStructure().getRoles();
+//        newRoles = Maps.newHashMap();
+//
+//        final Map<String, Class<?>> oldTypes, newTypes;
+//        oldTypes = dataset.getDataStructure().getTypes();
+//        newTypes = Maps.newHashMap();
+//
+//
+//
+//        for (String oldName : oldNames) {
+//            String newNames = names.getOrDefault(oldName, oldName);
+//            newTypes.put(newNames, oldTypes.get(oldName));
+//            newRoles.put(newNames, roles.getOrDefault(oldName, oldRoles.get(oldName)));
+//            mapping.put(oldName, newNames);
+//        }
+
+
+        return DataStructure.copyOf(converter, structure);
     }
 
     @Override
     public Stream<Tuple> get() {
         return dataset.get().map(components -> {
 
-            components.replaceAll(component -> new DataPoint(getDataStructure().get(mapping.get(component.getName()))) {
+            components.replaceAll(component -> new DataPoint(getDataStructure().get(newNames.get(component.getComponent()))) {
                 @Override
                 public Object get() {
                     return component.get();
@@ -116,9 +157,9 @@ public class RenameOperation implements Dataset {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         Integer limit = 5;
         Iterables.limit(Iterables.concat(
-                mapping.entrySet(),
-                Collections.singletonList("and " + (mapping.entrySet().size() - limit) + " more")
-        ), Math.min(limit, mapping.entrySet().size())).forEach(
+                newNames.entrySet(),
+                Collections.singletonList("and " + (newNames.entrySet().size() - limit) + " more")
+        ), Math.min(limit, newNames.entrySet().size())).forEach(
                 helper::addValue
         );
         return helper.toString();

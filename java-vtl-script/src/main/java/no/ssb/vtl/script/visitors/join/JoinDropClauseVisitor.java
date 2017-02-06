@@ -21,9 +21,15 @@ public class JoinDropClauseVisitor extends VTLBaseVisitor<DropOperator> {
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;
 
+    @Deprecated
     public JoinDropClauseVisitor(WorkingDataset dataset) {
         this.dataset = checkNotNull(dataset, "dataset was null");
         this.referenceVisitor = new JoinReferenceVisitor(dataset);
+    }
+
+    public JoinDropClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
+        this.dataset = checkNotNull(dataset);
+        this.referenceVisitor = checkNotNull(referenceVisitor);
     }
 
     @Override

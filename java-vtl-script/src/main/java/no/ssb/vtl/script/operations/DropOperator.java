@@ -19,17 +19,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * TODO: Implement "operator" and  "function" interfaces.
  */
 public class DropOperator implements Dataset {
+
     // The dataset we are applying the KeepOperator on.
     private final Dataset dataset;
     private final Set<Component> components;
 
     private DataStructure cache;
 
-    public DropOperator(Dataset dataset, Set<Component> names) {
+    public DropOperator(Dataset dataset, Set<Component> components) {
         this.dataset = checkNotNull(dataset, "the dataset was null");
-        this.components = checkNotNull(names, "the component list was null");
+        this.components = checkNotNull(components, "the component list was null");
 
-        checkArgument(!names.isEmpty(), "the list of component to drop was null");
+        checkArgument(!components.isEmpty(), "the list of component to drop was null");
     }
 
     @Override
@@ -39,8 +40,6 @@ public class DropOperator implements Dataset {
 
     /**
      * Compute the new data structure.
-     *
-     * @return
      */
     private DataStructure computeDataStructure() {
         DataStructure structure = dataset.getDataStructure();
