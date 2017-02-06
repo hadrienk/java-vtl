@@ -72,7 +72,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=componentRef ( 'role' '=' role )? ;
+renameParam : from=componentRef 'as' to=identifier ( 'role' '=' role )? ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
@@ -101,6 +101,7 @@ booleanExpression
 booleanEquallity
     : booleanEquallity ( ( EQ | NE | LE | GE ) booleanEquallity )
     | datasetExpression
+    | constant
     // typed constant?
     ;
 
@@ -144,7 +145,9 @@ joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
            | joinUnfoldExpression               # joinUnfoldClause
            ;
 
-joinFoldExpression      : 'fold' elements=foldUnfoldElements 'to' dimension=identifier ',' measure=identifier ;
+joinFoldExpression      : 'fold' elements=componentRefs 'to' dimension=identifier ',' measure=identifier ;
+componentRefs : componentRef (',' componentRef)* ;
+
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements=foldUnfoldElements ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support strings only for now.
@@ -196,7 +199,7 @@ NULL_CONSTANT     : 'null';
 
 IDENTIFIER : REG_IDENTIFIER | ESCAPED_IDENTIFIER ;
 //regular identifiers start with a (lowercase or uppercase) English alphabet letter, followed by zero or more letters, decimal digits, or underscores
-fragment REG_IDENTIFIER: LETTER(LETTER|'_'|DIGIT)* ; //TODO: Case insensitive??
+REG_IDENTIFIER: LETTER(LETTER|'_'|DIGIT)* ; //TODO: Case insensitive??
 //VTL 1.1 allows us to escape the limitations imposed on regular identifiers by enclosing them in single quotes (apostrophes).
 fragment ESCAPED_IDENTIFIER:  QUOTE (~'\'' | '\'\'')+ QUOTE;
 fragment QUOTE : '\'';
