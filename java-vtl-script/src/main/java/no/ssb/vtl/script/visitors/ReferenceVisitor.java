@@ -5,10 +5,9 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import javax.script.Bindings;
 import java.util.Deque;
-import java.lang.String;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -21,11 +20,12 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
 
     private Deque<Map<String, ?>> stack = Queues.newArrayDeque();
 
-    public ReferenceVisitor(Bindings scope) {
+    public ReferenceVisitor(Map<String, ?> scope) {
         this.stack.push(checkNotNull(scope, "scope cannot be empty"));
     }
 
-    protected ReferenceVisitor(){}
+    protected ReferenceVisitor() {
+    }
 
     private static String removeQuoteIfNeeded(String key) {
         if (!key.isEmpty() && key.length() > 3) {
@@ -40,7 +40,12 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
         if (instance != null) {
             return instance;
         }
-        throw new RuntimeException(format("variable [%s] not found", expression));
+        throw new ParseCancellationException(
+                format(
+                        "variable [%s] not found",
+                        expression
+                )
+        );
     }
 
     private static <T> T checkType(String expression, Object instance, Class<T> clazz) {
@@ -48,7 +53,14 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
             //noinspection unchecked
             return (T) instance;
         }
-        throw new RuntimeException(format("wrong type for [%s], expected %s, got %s", expression, clazz, instance.getClass()));
+        throw new ParseCancellationException(
+                format(
+                        "wrong type for [%s], expected %s, got %s",
+                        expression,
+                        clazz,
+                        instance.getClass()
+                )
+        );
     }
 
     @Override

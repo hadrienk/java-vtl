@@ -1,9 +1,11 @@
 package no.ssb.vtl.script.visitors.join;
 
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.function.Function;
 
@@ -14,16 +16,22 @@ import static java.lang.String.format;
  */
 public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple, Object>> {
 
+    private final ReferenceVisitor referenceVisitor;
+
+    public JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
+        this.referenceVisitor = referenceVisitor;
+    }
+
     @Override
     public Function<Dataset.Tuple, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
-        String variableName = ctx.getText();
+        Component component = (Component) referenceVisitor.visit(ctx.componentRef());
         return tuple -> {
             for (DataPoint dataPoint : tuple) {
-                if (variableName.equals(dataPoint.getName())) {
+                if (component == dataPoint.getComponent()) {
                     return dataPoint.get();
                 }
             }
-            throw new RuntimeException(format("variable %s not found", variableName));
+            throw new RuntimeException(format("component %s not found in %s", component, tuple));
         };
     }
 

@@ -7,9 +7,8 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
-import no.ssb.vtl.script.operations.join.WorkingDataset;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -18,27 +17,28 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class JoinRenameClauseVisitor extends VTLBaseVisitor<RenameOperation> {
 
     private final Dataset dataset;
+    private final ReferenceVisitor referenceVisitor;
 
-    public JoinRenameClauseVisitor(WorkingDataset dataset) {
+    @Deprecated
+    public JoinRenameClauseVisitor(Dataset dataset) {
+        this.dataset = checkNotNull(dataset); this.referenceVisitor = null;
+    }
+
+    public JoinRenameClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
         this.dataset = checkNotNull(dataset);
+        this.referenceVisitor = checkNotNull(referenceVisitor);
     }
 
     @Override
     public RenameOperation visitJoinRenameExpression(VTLParser.JoinRenameExpressionContext ctx) {
         DataStructure dataStructure = dataset.getDataStructure();
-        ImmutableMap.Builder<String, String> newNames = ImmutableMap.builder();
-        ImmutableMap.Builder<String, Component.Role> newRoles = ImmutableMap.builder();
+
+        ImmutableMap.Builder<Component, String> newNames = ImmutableMap.builder();
         for (VTLParser.JoinRenameParameterContext renameParam : ctx.joinRenameParameter()) {
-            String from = renameParam.from.getText();
+            Component component = (Component) referenceVisitor.visit(renameParam.componentRef());
             String to = renameParam.to.getText();
-            newNames.put(from, to);
-            checkArgument(
-                    dataStructure.containsKey(from),
-                    "could not find component with name %s",
-                    from
-                    );
-            newRoles.put(from, dataStructure.get(from).getRole());
+            newNames.put(component, to);
         }
-        return new RenameOperation(dataset, newNames.build(), newRoles.build());
+        return new RenameOperation(dataset, newNames.build());
     }
 }

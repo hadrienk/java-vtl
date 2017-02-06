@@ -21,16 +21,22 @@ public class JoinKeepClauseVisitor  extends VTLBaseVisitor<KeepOperator> {
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;
 
+    @Deprecated
     public JoinKeepClauseVisitor(WorkingDataset dataset) {
         this.dataset = checkNotNull(dataset);
         referenceVisitor = new JoinReferenceVisitor(dataset);
+    }
+
+    public JoinKeepClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
+        this.dataset = checkNotNull(dataset);
+        this.referenceVisitor = checkNotNull(referenceVisitor);
     }
 
     @Override
     public KeepOperator visitJoinKeepExpression(VTLParser.JoinKeepExpressionContext ctx) {
         Set<Component> components = ctx.componentRef().stream()
                 .map(referenceVisitor::visit)
-                .map(o -> (Component) o) //TODO: Safe?
+                .map(o -> (Component) o) //TODO: Safe? Yup!
                 .collect(Collectors.toSet());
         return new KeepOperator(dataset, components);
     }

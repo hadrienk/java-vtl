@@ -1,22 +1,25 @@
 package no.ssb.vtl.script.visitors.join;
 
-import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.FoldClause;
-import org.antlr.v4.runtime.tree.TerminalNode;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toSet;
 
 public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
 
     private final Dataset dataset;
+    private final ReferenceVisitor referenceVisitor;
 
-    public JoinFoldClauseVisitor(Dataset dataset) {
+    public JoinFoldClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
         this.dataset = checkNotNull(dataset);
+        this.referenceVisitor = checkNotNull(referenceVisitor);
     }
 
     @Override
@@ -25,11 +28,11 @@ public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
         String dimension = ctx.dimension.getText();
         String measure = ctx.measure.getText();
 
-        Set<String> elements = Sets.newLinkedHashSet();
-        for (TerminalNode element : ctx.elements.STRING_CONSTANT()) {
-            String constant = element.getText();
-            elements.add(constant.substring(1, constant.length()-1));
-        }
+        Set<Component> elements = ctx.elements.componentRef().stream()
+                .map(referenceVisitor::visitComponentRef)
+                .map(o -> (Component) o)
+                .collect(toSet());
+
         return new FoldClause(dataset, dimension, measure, elements);
     }
 }

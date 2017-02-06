@@ -4,6 +4,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.FilterOperator;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.Set;
 import java.util.function.Predicate;
@@ -19,7 +20,11 @@ public class JoinFilterClauseVisitor extends VTLBaseVisitor<FilterOperator> {
     JoinFilterClauseVisitor(Dataset dataset) {
         this.dataset = checkNotNull(dataset, "dataset was null");
     }
-    
+
+    public JoinFilterClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
+        this.dataset = checkNotNull(dataset, "dataset was null");
+    }
+
     @Override
     public FilterOperator visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
         Set<String> components = Stream.of("id1").collect(Collectors.toSet());
