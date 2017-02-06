@@ -11,6 +11,7 @@ import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
@@ -27,21 +28,7 @@ public class CheckOperationTest {
     public void testArgumentDataset() throws Exception {
         thrown.expect(NullPointerException.class);
         thrown.expect(hasProperty("message", containsString("dataset was null")));
-        new CheckOperation(null, "", "", null, null);
-    }
-
-    @Test
-    public void testArgumentRowsToReturn() throws Exception {
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expect(hasProperty("message", containsString("notInSpec")));
-        new CheckOperation(mock(Dataset.class), "notInSpec", "measures", null, null);
-    }
-
-    @Test
-    public void testArgumentComponentsToReturn() throws Exception {
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expect(hasProperty("message", containsString("notInSpec")));
-        new CheckOperation(mock(Dataset.class), "valid", "notInSpec", null, null);
+        new CheckOperation(null, null, null, null, null);
     }
 
     /**
@@ -53,7 +40,8 @@ public class CheckOperationTest {
     public void testArgumentAllAndMeasuresToReturn() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expect(hasProperty("message", containsString("cannot use 'all' with 'measures'")));
-        new CheckOperation(mock(Dataset.class), "all", "measures", null, null);
+        new CheckOperation(mock(Dataset.class), Optional.of(CheckOperation.RowsToReturn.ALL),
+                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
     }
 
     /**
@@ -77,7 +65,8 @@ public class CheckOperationTest {
 
         thrown.expect(IllegalArgumentException.class);
         thrown.expect(hasProperty("message", containsString("too many boolean")));
-        new CheckOperation(dataset, "valid", "measure", null, null);
+        new CheckOperation(dataset, Optional.of(CheckOperation.RowsToReturn.VALID),
+                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
     }
 
     @Test
@@ -107,7 +96,8 @@ public class CheckOperationTest {
                 )
         ));
 
-        CheckOperation checkOperation = new CheckOperation(ds, "not_valid", "measures", null, null);
+        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.NOT_VALID),
+                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -126,7 +116,7 @@ public class CheckOperationTest {
 
         assertThat(getDataPoint(collect, "kommune_nr").get()).isEqualTo("9990");
         assertThat(getDataPoint(collect, "code").get()).isNull(); //not in the code list, so a null value
-        assertThat(getDataPoint(collect, "CONDITION").get()).isEqualTo("false");
+        assertThat(getDataPoint(collect, "CONDITION").get()).isEqualTo(false);
         assertThat(getDataPoint(collect, "errorlevel").get()).isNull();
         assertThat(getDataPoint(collect, "errorcode").get()).isNull();
     }

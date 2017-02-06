@@ -7,10 +7,10 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -19,51 +19,57 @@ import static com.google.common.base.Preconditions.*;
 
 public class CheckOperation implements Dataset{
 
-    private static final List<String> ROWS_TO_RETURN_POSSIBLE_VALUES = Arrays.asList("not_valid", "valid", "all");
-    private static final List<String> COMPONENTS_TO_RETURN_POSSIBLE_VALUES = Arrays.asList("measures", "condition");
+    public enum RowsToReturn {
+        NOT_VALID,
+        VALID,
+        ALL
+    }
+
+    public enum ComponentsToReturn {
+        MEASURES,
+        CONDITION
+    }
 
     private final Dataset dataset;
-    private final String rowsToReturn;
-    private final String componentsToReturn;
+    private final RowsToReturn rowsToReturn;
+    private final ComponentsToReturn componentsToReturn;
     private final String errorCode;
     private final Integer errorLevel;
     private DataStructure cache;
 
-    public CheckOperation(Dataset dataset, String rowsToReturn, String componentsToReturn, String errorCode, Integer errorLevel) {
+    public CheckOperation(Dataset dataset, Optional<RowsToReturn> rowsToReturn, Optional<ComponentsToReturn> componentsToReturn,
+                          Optional<String> errorCode, Optional<Integer> errorLevel) {
         this.dataset = checkNotNull(dataset, "dataset was null");
 
-        if (rowsToReturn != null) {
-            checkArgument(!rowsToReturn.isEmpty(), "the rowsToReturn argument was empty");
-            checkArgument(ROWS_TO_RETURN_POSSIBLE_VALUES.contains(rowsToReturn),
-                    "the rowsToReturn argument has incorrect value: %s. Allowed values: %s",
-                    rowsToReturn, Arrays.toString(ROWS_TO_RETURN_POSSIBLE_VALUES.toArray()));
-            this.rowsToReturn = rowsToReturn;
+        if (rowsToReturn != null && rowsToReturn.isPresent()) {
+            this.rowsToReturn = rowsToReturn.get();
         } else {
-            this.rowsToReturn = "not_valid";
+            this.rowsToReturn = RowsToReturn.NOT_VALID;
         }
 
-        if (componentsToReturn != null) {
-            checkArgument(!componentsToReturn.isEmpty(), "the componentsToReturn argument was empty");
-            checkArgument(COMPONENTS_TO_RETURN_POSSIBLE_VALUES.contains(componentsToReturn),
-                    "the componentsToReturn argument has incorrect value: %s. Allowed values: %s",
-                    componentsToReturn, Arrays.toString(COMPONENTS_TO_RETURN_POSSIBLE_VALUES.toArray()));
-            this.componentsToReturn = componentsToReturn;
+        if (componentsToReturn != null && componentsToReturn.isPresent()) {
+            this.componentsToReturn = componentsToReturn.get();
         } else {
-            this.componentsToReturn = "measures";
+            this.componentsToReturn = ComponentsToReturn.MEASURES;
         }
 
-        checkArgument(!("measures".equals(componentsToReturn) && "all".equals(rowsToReturn)), "cannot use 'all' with 'measures' parameter");
+        checkArgument(!(this.componentsToReturn == ComponentsToReturn.MEASURES && this.rowsToReturn == RowsToReturn.ALL),
+                "cannot use 'all' with 'measures' parameter");
 
         checkDataStructure(this.dataset);
 
-        if (errorCode != null) {
-            checkArgument(!errorCode.isEmpty(), "the errorCode argument was empty");
-            this.errorCode = errorCode;
+        if (errorCode != null && errorCode.isPresent()) {
+            checkArgument(!errorCode.get().isEmpty(), "the errorCode argument was empty");
+            this.errorCode = errorCode.get();
         } else {
             this.errorCode = null;
         }
 
-        this.errorLevel = errorLevel;
+        if (errorLevel != null && errorLevel.isPresent()) {
+            this.errorLevel = errorLevel.get();
+        } else {
+            this.errorLevel = null;
+        }
     }
 
     private void checkDataStructure(Dataset dataset) {
@@ -83,9 +89,9 @@ public class CheckOperation implements Dataset{
             Map<String, Class<?>> newTypes = new HashMap<>(dataset.getDataStructure().getTypes());
             Set<String> oldNames = dataset.getDataStructure().keySet();
 
-            if (componentsToReturn == null || "measures".equals(componentsToReturn)) {
+            if (componentsToReturn == ComponentsToReturn.MEASURES) {
                 removeAllComponentsButIdentifiersAndMeasures(newRoles, newTypes, oldNames);
-            } else if ("condition".equals(componentsToReturn)) {
+            } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
                 removeAllComponentsButIdentifiers(newRoles, newTypes, oldNames);
                 addComponent("CONDITION", newRoles, newTypes, Component.Role.MEASURE, Boolean.class);
             }
@@ -133,24 +139,24 @@ public class CheckOperation implements Dataset{
         DataPoint errorCodeDataPoint = getDataStructure().wrap("errorcode", errorCode);
         DataPoint errorLevelDataPoint = getDataStructure().wrap("errorlevel", errorCode);
 
-        if (rowsToReturn == null || "not_valid".equals(rowsToReturn)) {
+        if (rowsToReturn == RowsToReturn.NOT_VALID) {
             tupleStream = tupleStream.filter(tuple -> tuple.values().stream()
                     .filter(dataPoint -> dataPoint.getComponent().isMeasure() && dataPoint.getType().equals(Boolean.class))
                     .anyMatch(dataPoint -> dataPoint.get().equals(false))).peek(e -> System.out.println("value: " + e));
-        } else if ("valid".equals(rowsToReturn)) {
+        } else if (rowsToReturn == RowsToReturn.VALID) {
             tupleStream = tupleStream.filter(tuple -> tuple.values().stream()
                     .filter(dataPoint -> dataPoint.getComponent().isMeasure() && dataPoint.getType().equals(Boolean.class))
                     .anyMatch(dataPoint -> dataPoint.get().equals(true))).peek(e -> System.out.println("value: " + e));
         } //else if ("all".equals(rowsToReturn)) //all is not filtered
 
-        if (componentsToReturn == null || "measures".equals(componentsToReturn)) {
+        if (componentsToReturn == ComponentsToReturn.MEASURES) {
             tupleStream = tupleStream.map(dataPoints -> {
                         List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
                         dataPointsNewList.add(errorCodeDataPoint);
                         dataPointsNewList.add(errorLevelDataPoint);
                         return Tuple.create(dataPointsNewList);
                     });
-        } else if ("condition".equals(componentsToReturn)) {
+        } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
             //TODO here
 //            new DataPoint(getDataStructure().get("CONDITION")) {
 //                @Override
