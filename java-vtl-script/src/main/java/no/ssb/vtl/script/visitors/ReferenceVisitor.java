@@ -8,6 +8,7 @@ import no.ssb.vtl.parser.VTLParser;
 
 import javax.script.Bindings;
 import java.util.Deque;
+import java.lang.String;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -23,6 +24,8 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
     public ReferenceVisitor(Bindings scope) {
         this.stack.push(checkNotNull(scope, "scope cannot be empty"));
     }
+
+    protected ReferenceVisitor(){}
 
     private static String removeQuoteIfNeeded(String key) {
         if (!key.isEmpty() && key.length() > 3) {
@@ -42,6 +45,7 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
 
     private static <T> T checkType(String expression, Object instance, Class<T> clazz) {
         if (clazz.isAssignableFrom(instance.getClass())) {
+            //noinspection unchecked
             return (T) instance;
         }
         throw new RuntimeException(format("wrong type for [%s], expected %s, got %s", expression, clazz, instance.getClass()));
