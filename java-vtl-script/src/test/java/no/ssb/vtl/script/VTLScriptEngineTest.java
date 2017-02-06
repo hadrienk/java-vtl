@@ -93,7 +93,7 @@ public class VTLScriptEngineTest {
         Dataset ds1 = mock(Dataset.class);
         Dataset ds2 = mock(Dataset.class);
 
-        DataStructure ds = DataStructure.of(
+        DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
@@ -101,18 +101,26 @@ public class VTLScriptEngineTest {
                 "m2", Role.MEASURE, Double.class,
                 "at1", Role.MEASURE, String.class
         );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds2.getDataStructure()).thenReturn(ds);
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "id2", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class,
+                "m2", Role.MEASURE, Double.class,
+                "at1", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(structure1);
+        when(ds2.getDataStructure()).thenReturn(structure2);
 
         when(ds1.get()).then(invocation -> Stream.of(
-                ds.wrap(ImmutableMap.of(
+                structure1.wrap(ImmutableMap.of(
                         "id1", "1",
                         "id2", "1",
                         "m1", 10,
                         "m2", 20,
                         "at1", "attr1"
                 )),
-                ds.wrap(ImmutableMap.of(
+                structure1.wrap(ImmutableMap.of(
                         "id1", "2",
                         "id2", "2",
                         "m1", 100,
@@ -122,14 +130,14 @@ public class VTLScriptEngineTest {
         ));
 
         when(ds2.get()).then(invocation -> Stream.of(
-                ds.wrap(ImmutableMap.of(
+                structure2.wrap(ImmutableMap.of(
                         "id1", "1",
                         "id2", "1",
                         "m1", 30,
                         "m2", 40,
                         "at1", "attr1"
                 )),
-                ds.wrap(ImmutableMap.of(
+                structure2.wrap(ImmutableMap.of(
                         "id1", "2",
                         "id2", "2",
                         "m1", 300,
@@ -143,7 +151,7 @@ public class VTLScriptEngineTest {
 
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +
-                "  filter id1=1," +
+                "  filter id1 = 1," +
                 "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +           // id1, id2, ident, ds1.m1, ds2.m1, ds2.m2
                 "  drop ds2.m1," +                                  // id1, id2, ident, ds1.m1, ds2.m2
@@ -156,7 +164,9 @@ public class VTLScriptEngineTest {
 
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
         Dataset ds3 = (Dataset) bindings.get("ds3");
-        assertThat(ds3.getDataStructure()).containsOnlyKeys(
+        assertThat(ds3.getDataStructure())
+                .describedAs("data structure of d3")
+                .containsOnlyKeys(
                 "renamedId1", "id2", "ds2.m2", "m1", "ident"
         );
         ListAssert<DataPoint> datapoints = assertThat(ds3.get())
@@ -199,7 +209,7 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
                 "  total = ds1.m1 + ds1.m2 + ds1.m3," +
-                "  fold \"ds1.m1\", \"ds1.m2\", \"ds1.m3\", \"total\" to type, value" +
+                "  fold ds1.m1, ds1.m2, ds1.m3, total to type, value" +
                 "}"
         );
 

@@ -28,8 +28,6 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
         referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
     }
 
-    
-
     @Override
     public AbstractJoinOperation visitJoinDefinitionInner(VTLParser.JoinDefinitionInnerContext ctx) {
         Map<String, Dataset> theDatasets = getDatasetParameters(ctx.joinParam());
@@ -55,7 +53,7 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
     
     private Dataset getDataset(VTLParser.DatasetRefContext ref) {
         Object referencedObject = referenceVisitor.visit(ref);
-        return (Dataset) referencedObject; //TODO: Is this always safe?
+        return (Dataset) referencedObject; //TODO: Is this always safe? Hadrien: Yes, DatasetRefContext and ComponentRefContext will return the correct type
     }
     
 }

@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Assignement visitor.
+ * Assignment visitor.
  */
 public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
 

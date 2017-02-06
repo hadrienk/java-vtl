@@ -21,11 +21,10 @@ package no.ssb.vtl.script.visitors;
  */
 
 import com.google.common.collect.ImmutableMap;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.RenameOperation;
-import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Component;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,6 +80,6 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
             }
         }
 
-        return dataset -> new RenameOperation(dataset, names.build(), roles.build());
+        return null; //dataset -> new RenameOperation(dataset, names.build(), roles.build());
     }
 }

@@ -58,6 +58,7 @@ public class ScopeTest {
     
     @Test
     public void testJoinScope() throws Exception {
+
         JoinDefinitionVisitor visitor = new JoinDefinitionVisitor(ctx);
         VTLParser.DatasetRefContext varIdDs1= mock(VTLParser.DatasetRefContext.class);
         when(varIdDs1.getText()).thenReturn("ds1");
