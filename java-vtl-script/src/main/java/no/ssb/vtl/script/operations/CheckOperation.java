@@ -89,9 +89,7 @@ public class CheckOperation implements Dataset{
             Map<String, Class<?>> newTypes = new HashMap<>(dataset.getDataStructure().getTypes());
             Set<String> oldNames = dataset.getDataStructure().keySet();
 
-            if (componentsToReturn == ComponentsToReturn.MEASURES) {
-                removeAllComponentsButIdentifiersAndMeasures(newRoles, newTypes, oldNames);
-            } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
+            if (componentsToReturn == ComponentsToReturn.CONDITION) {
                 removeAllComponentsButIdentifiers(newRoles, newTypes, oldNames);
                 addComponent("CONDITION", newRoles, newTypes, Component.Role.MEASURE, Boolean.class);
             }
@@ -116,16 +114,6 @@ public class CheckOperation implements Dataset{
                                                    Map<String, Class<?>> newTypes, Set<String> oldNames) {
         for (String oldName : oldNames) {
             if (newRoles.get(oldName) != Component.Role.IDENTIFIER) {
-                newRoles.remove(oldName);
-                newTypes.remove(oldName);
-            }
-        }
-    }
-
-    private void removeAllComponentsButIdentifiersAndMeasures(Map<String, Component.Role> newRoles,
-                                                   Map<String, Class<?>> newTypes, Set<String> oldNames) {
-        for (String oldName : oldNames) {
-            if (newRoles.get(oldName) != Component.Role.IDENTIFIER && newRoles.get(oldName) != Component.Role.MEASURE) {
                 newRoles.remove(oldName);
                 newTypes.remove(oldName);
             }

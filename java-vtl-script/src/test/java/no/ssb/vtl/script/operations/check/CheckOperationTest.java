@@ -74,6 +74,7 @@ public class CheckOperationTest {
         DataStructure dataStructure = DataStructure.of((s, o) -> s,
                 "kommune_nr", Component.Role.IDENTIFIER, String.class,
                 "code", Component.Role.IDENTIFIER, String.class, //from KLASS
+                "attr1", Component.Role.ATTRIBUTE, String.class,
                 "CONDITION", Component.Role.MEASURE, Boolean.class
         );
 
@@ -84,14 +85,17 @@ public class CheckOperationTest {
                 tuple(
                         dataStructure.wrap("kommune_nr", "0101"),
                         dataStructure.wrap("code", "0101"),
+                        dataStructure.wrap("attr1", "test"),
                         dataStructure.wrap("CONDITION", true)
                 ), tuple(
                         dataStructure.wrap("kommune_nr", "9990"),
                         dataStructure.wrap("code", null), //not in the code list, so a null value
+                        dataStructure.wrap("attr1", "-test-"),
                         dataStructure.wrap("CONDITION", false)
                 ), tuple(
                         dataStructure.wrap("kommune_nr", "0104"),
                         dataStructure.wrap("code", "0104"),
+                        dataStructure.wrap("attr1", "test"),
                         dataStructure.wrap("CONDITION", true)
                 )
         ));
@@ -102,6 +106,7 @@ public class CheckOperationTest {
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
+                entry("attr1", Component.Role.ATTRIBUTE),
                 entry("CONDITION", Component.Role.MEASURE),
                 entry("errorcode", Component.Role.ATTRIBUTE),
                 entry("errorlevel", Component.Role.ATTRIBUTE)
@@ -116,6 +121,7 @@ public class CheckOperationTest {
 
         assertThat(getDataPoint(collect, "kommune_nr").get()).isEqualTo("9990");
         assertThat(getDataPoint(collect, "code").get()).isNull(); //not in the code list, so a null value
+        assertThat(getDataPoint(collect, "attr1").get()).isEqualTo("-test-");
         assertThat(getDataPoint(collect, "CONDITION").get()).isEqualTo(false);
         assertThat(getDataPoint(collect, "errorlevel").get()).isNull();
         assertThat(getDataPoint(collect, "errorcode").get()).isNull();
