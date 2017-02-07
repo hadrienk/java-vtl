@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
 
-public class CheckOperation implements Dataset{
+public class CheckSingleRuleOperation implements Dataset{
 
     public enum RowsToReturn {
         NOT_VALID,
@@ -38,8 +38,8 @@ public class CheckOperation implements Dataset{
     private final Integer errorLevel;
     private DataStructure cache;
 
-    public CheckOperation(Dataset dataset, Optional<RowsToReturn> rowsToReturn, Optional<ComponentsToReturn> componentsToReturn,
-                          Optional<String> errorCode, Optional<Integer> errorLevel) {
+    public CheckSingleRuleOperation(Dataset dataset, Optional<RowsToReturn> rowsToReturn, Optional<ComponentsToReturn> componentsToReturn,
+                                    Optional<String> errorCode, Optional<Integer> errorLevel) {
         this.dataset = checkNotNull(dataset, "dataset was null");
 
         if (rowsToReturn != null && rowsToReturn.isPresent()) {

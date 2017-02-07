@@ -4,7 +4,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.CheckOperation;
+import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
-public class CheckOperationTest {
+public class CheckSingleRuleOperationTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -29,7 +29,7 @@ public class CheckOperationTest {
     public void testArgumentDataset() throws Exception {
         thrown.expect(NullPointerException.class);
         thrown.expect(hasProperty("message", containsString("dataset was null")));
-        new CheckOperation(null, null, null, null, null);
+        new CheckSingleRuleOperation(null, null, null, null, null);
     }
 
     /**
@@ -41,8 +41,8 @@ public class CheckOperationTest {
     public void testArgumentAllAndMeasuresToReturn() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expect(hasProperty("message", containsString("cannot use 'all' with 'measures'")));
-        new CheckOperation(mock(Dataset.class), Optional.of(CheckOperation.RowsToReturn.ALL),
-                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
+        new CheckSingleRuleOperation(mock(Dataset.class), Optional.of(CheckSingleRuleOperation.RowsToReturn.ALL),
+                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
     }
 
     /**
@@ -64,8 +64,8 @@ public class CheckOperationTest {
                 )
         );
 
-        new CheckOperation(dataset, Optional.of(CheckOperation.RowsToReturn.VALID),
-                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
+        new CheckSingleRuleOperation(dataset, Optional.of(CheckSingleRuleOperation.RowsToReturn.VALID),
+                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
     }
 
     @Test
@@ -97,8 +97,8 @@ public class CheckOperationTest {
                 )
         ));
 
-        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.NOT_VALID),
-                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.NOT_VALID),
+                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -151,8 +151,8 @@ public class CheckOperationTest {
                 )
         ));
 
-        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.VALID),
-                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.VALID),
+                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -214,8 +214,8 @@ public class CheckOperationTest {
                 )
         ));
 
-        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.NOT_VALID),
-                Optional.of(CheckOperation.ComponentsToReturn.CONDITION), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.NOT_VALID),
+                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.CONDITION), null, null);
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -281,8 +281,8 @@ public class CheckOperationTest {
                 )
         ));
 
-        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.VALID),
-                Optional.of(CheckOperation.ComponentsToReturn.CONDITION), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.VALID),
+                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.CONDITION), null, null);
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
