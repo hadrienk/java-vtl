@@ -24,7 +24,7 @@ public class JoinKeepClauseVisitor  extends VTLBaseVisitor<KeepOperator> {
     @Deprecated
     public JoinKeepClauseVisitor(WorkingDataset dataset) {
         this.dataset = checkNotNull(dataset);
-        referenceVisitor = new JoinReferenceVisitor(dataset);
+        referenceVisitor = null;
     }
 
     public JoinKeepClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {

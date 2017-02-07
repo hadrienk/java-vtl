@@ -21,7 +21,9 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.junit.Test;
@@ -129,14 +131,19 @@ public class RenameOperationTest {
         Dataset dataset = mock(Dataset.class);
 
         DataStructure structure = DataStructure.of((o, aClass) -> o,
-                "Identifier1", Role.IDENTIFIER, Object.class,
-                "Identifier2", Role.IDENTIFIER, Object.class,
-                "Measure1", Role.MEASURE, Object.class,
-                "Measure2", Role.MEASURE, Object.class,
-                "Attribute1", Role.ATTRIBUTE, Object.class,
-                "Attribute2", Role.ATTRIBUTE, Object.class
+                "Identifier1", Role.IDENTIFIER, String.class,
+                "Identifier2", Role.IDENTIFIER, String.class,
+                "Measure1", Role.MEASURE, String.class,
+                "Measure2", Role.MEASURE, String.class,
+                "Attribute1", Role.ATTRIBUTE, String.class,
+                "Attribute2", Role.ATTRIBUTE, String.class
         );
         when(dataset.getDataStructure()).thenReturn(structure);
+        when(dataset.get()).then(invocation -> {
+            return Stream.of(
+                    structure.wrap(Maps.asMap(structure.keySet(), input -> (Object) input))
+            );
+        });
 
         ImmutableMap<Component, String> newNames = new ImmutableMap.Builder<Component, String>()
                 .put(structure.get("Identifier1"), "Identifier1Measure")
@@ -168,5 +175,9 @@ public class RenameOperationTest {
                 entry("Attribute2Measure", Role.MEASURE)
         );
 
+        assertThat(rename.get()).flatExtracting(input -> input).extracting(DataPoint::get)
+                .containsExactlyElementsOf(
+                        structure.keySet()
+                );
     }
 }

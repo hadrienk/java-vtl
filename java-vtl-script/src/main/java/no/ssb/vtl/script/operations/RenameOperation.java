@@ -29,8 +29,9 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -43,13 +44,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RenameOperation implements Dataset {
 
     private final Dataset dataset;
-    //private final ImmutableMap<String, String> names;
-    //private final ImmutableMap<String, Component.Role> roles;
 
     private final ImmutableMap<Component, String> newNames;
     private final ImmutableMap<Component, Component.Role> newRoles;
+    private final Map<Component, Component> mapping = Maps.newIdentityHashMap();
 
-    //Map<String, String> mapping = HashBiMap.create();
     private DataStructure cache;
 
 //    @Deprecated
@@ -91,23 +90,37 @@ public class RenameOperation implements Dataset {
     }
 
     private DataStructure computeDataStructure() {
-        // Copy
-        Map<String, Component> structure = Maps.newLinkedHashMap();
-        BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
 
-        // Check identity
-        Map<Component, String> mapping = Maps.newIdentityHashMap();
-        mapping.putAll(newNames);
+        Map<Component, String> newNames = Maps.newIdentityHashMap();
+        Map<Component, Component.Role> newRoles = Maps.newIdentityHashMap();
+        newNames.putAll(this.newNames);
+        newRoles.putAll(this.newRoles);
+
+        Map<String, String> names = Maps.newLinkedHashMap();
+        Map<String, Class<?>> types = Maps.newLinkedHashMap();
+        Map<String, Component.Role> roles = Maps.newLinkedHashMap();
         for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
-            String name;
             Component component = componentEntry.getValue();
-            if (mapping.containsKey(component)) {
-                name = mapping.get(component);
-            } else {
-                name = componentEntry.getKey();
-            }
-            // TODO: Maybe throw exception if
-            structure.put(name, component);
+            String oldName = componentEntry.getKey();
+
+            String newName = newNames.getOrDefault(component, component.getName());
+            Component.Role newRole = newRoles.getOrDefault(component, component.getRole());
+            Class<?> newType = component.getType();
+
+            types.put(newName, newType);
+            roles.put(newName, newRole);
+            names.put(oldName, newName);
+        }
+
+        /*
+            Components are immutable so we need to create a "mapping" in order to
+            recreate new data points with the new Component.
+         */
+        DataStructure newDataStructure = DataStructure.of(dataset.getDataStructure().converter(), types, roles);
+        for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
+            Component oldComponent = componentEntry.getValue();
+            Component newComponent = newDataStructure.get(names.get(componentEntry.getKey()));
+            mapping.put(oldComponent, newComponent);
         }
 
 //        Set<String> oldNames = dataset.getDataStructure().keySet();
@@ -135,20 +148,19 @@ public class RenameOperation implements Dataset {
 //        }
 
 
-        return DataStructure.copyOf(converter, structure);
+        return newDataStructure;
     }
 
     @Override
     public Stream<Tuple> get() {
-        return dataset.get().map(components -> {
-
-            components.replaceAll(component -> new DataPoint(getDataStructure().get(newNames.get(component.getComponent()))) {
+        return dataset.get().map(points -> {
+            points.replaceAll(point -> new DataPoint(mapping.get(point.getComponent())) {
                 @Override
                 public Object get() {
-                    return component.get();
+                    return point.get();
                 }
             });
-            return components;
+            return points;
         });
     }
 
