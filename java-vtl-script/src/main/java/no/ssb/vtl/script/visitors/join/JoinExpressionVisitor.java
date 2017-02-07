@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.visitors.join;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -91,25 +92,32 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         Class<?> type = Number.class;
 
 
-        DataStructure structureCopy = DataStructure.copyOf(workingDataset.getDataStructure().converter(), workingDataset.getDataStructure());
-        structureCopy.addComponent(variableName, role, type);
+        DataStructure.Builder structureCopy = DataStructure.copyOf(workingDataset.getDataStructure());
+        structureCopy.put(variableName, role, type);
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor);
         Function<Dataset.Tuple, Object> componentExpression = visitor.visit(ctx);
 
         // TODO: Extract to its own visitor implementing dataset.
-        Dataset previousDataset = workingDataset;
+        Dataset dataset = workingDataset;
+        DataStructure dataStructure = structureCopy.build();
         return new Dataset() {
             @Override
             public DataStructure getDataStructure() {
-                return structureCopy;
+                return dataStructure;
             }
 
             @Override
             public Stream<Tuple> get() {
-                return previousDataset.get().map(tuple -> {
-                    tuple.add(structureCopy.wrap(variableName, componentExpression.apply(tuple)));
+                return dataset.get().map(tuple -> {
+                    tuple.add(dataStructure.wrap(variableName, componentExpression.apply(tuple)));
                     return tuple;
                 });
+            }
+
+            @Override
+            public String toString() {
+                MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper("Calc");
+                return helper.omitNullValues().toString();
             }
         };
     }

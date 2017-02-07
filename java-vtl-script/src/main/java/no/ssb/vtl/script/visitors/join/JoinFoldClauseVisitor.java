@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.visitors.join;
 
+import me.yanaga.guava.stream.MoreCollectors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
@@ -10,7 +11,6 @@ import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toSet;
 
 public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
 
@@ -31,7 +31,7 @@ public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
         Set<Component> elements = ctx.elements.componentRef().stream()
                 .map(referenceVisitor::visitComponentRef)
                 .map(o -> (Component) o)
-                .collect(toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         return new FoldClause(dataset, dimension, measure, elements);
     }

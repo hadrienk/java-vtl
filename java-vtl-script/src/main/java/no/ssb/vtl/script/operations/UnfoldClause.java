@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
@@ -11,7 +12,6 @@ import no.ssb.vtl.model.Dataset;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -80,27 +80,21 @@ public class UnfoldClause implements Dataset {
                  until further clarification, the later is implemented.
              */
 
-
-        BiFunction<Object, Class<?>, ?> converter = dataStructure.converter();
-        Map<String, Component> newDataStructure = Maps.newLinkedHashMap(dataStructure);
-
-        Iterator<Map.Entry<String, Component>> iterator = newDataStructure.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Component> componentEntry = iterator.next();
+        DataStructure.Builder newDataStructure = DataStructure.builder();
+        for (Map.Entry<String, Component> componentEntry : dataStructure.entrySet()) {;
             Component component = componentEntry.getValue();
-            if (component == dimension || component == measure) {
-                iterator.remove();
-            } else if (!component.isIdentifier()) {
-                iterator.remove();
+            if (component != dimension && component != measure) {
+                if (component.isIdentifier()) {
+                    newDataStructure.put(componentEntry);
+                }
             }
         }
 
-        dataStructure = DataStructure.copyOf(converter, newDataStructure);
         Class<?> type = measure.getType();
         for (String element : elements) {
-            dataStructure.addComponent(element, Role.MEASURE, type);
+            newDataStructure.put(element, Role.MEASURE, type);
         }
-        return dataStructure;
+        return newDataStructure.build();
     }
 
     @Override
@@ -157,5 +151,15 @@ public class UnfoldClause implements Dataset {
             }
             return dataStructure.wrap(map);
         });
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        helper.add("identifier", dimension);
+        helper.add("measure", measure);
+        helper.addValue(elements);
+        helper.add("structure", cache);
+        return helper.omitNullValues().toString();
     }
 }

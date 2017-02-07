@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.operations;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -111,5 +112,15 @@ public class FoldClause implements Dataset {
             }
             return tuples.stream();
         });
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        helper.addValue(elements);
+        helper.add("identifier", dimension);
+        helper.add("measure", measure);
+        helper.add("structure", cache);
+        return helper.omitNullValues().toString();
     }
 }

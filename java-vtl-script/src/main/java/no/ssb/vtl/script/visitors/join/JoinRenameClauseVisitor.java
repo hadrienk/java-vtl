@@ -2,7 +2,6 @@ package no.ssb.vtl.script.visitors.join;
 
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
@@ -31,8 +30,6 @@ public class JoinRenameClauseVisitor extends VTLBaseVisitor<RenameOperation> {
 
     @Override
     public RenameOperation visitJoinRenameExpression(VTLParser.JoinRenameExpressionContext ctx) {
-        DataStructure dataStructure = dataset.getDataStructure();
-
         ImmutableMap.Builder<Component, String> newNames = ImmutableMap.builder();
         for (VTLParser.JoinRenameParameterContext renameParam : ctx.joinRenameParameter()) {
             Component component = (Component) referenceVisitor.visit(renameParam.componentRef());

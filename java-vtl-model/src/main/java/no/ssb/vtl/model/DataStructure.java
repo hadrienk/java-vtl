@@ -20,15 +20,17 @@ package no.ssb.vtl.model;
  * #L%
  */
 
-import com.google.common.collect.BiMap;
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
+import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,30 +43,49 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DataStructure extends ForwardingMap<String, Component> {
 
-    private final BiMap<String, Component> delegate;
     private final BiFunction<Object, Class<?>, ?> converter;
 
-    protected DataStructure(BiFunction<Object, Class<?>, ?> converter) {
-        delegate = HashBiMap.create();
+    private final ImmutableMap<String, Component> delegate;
+
+    private final IdentityHashMap<Component, String> inverseCache;
+    private final ImmutableMap<String, Component.Role> roleCache;
+    private final ImmutableMap<String, Class<?>> typeCache;
+
+    protected DataStructure(BiFunction<Object, Class<?>, ?> converter, ImmutableMap<String, Component> map) {
         this.converter = checkNotNull(converter);
+        this.delegate = checkNotNull(map);
+        this.inverseCache = computeInverseCache(this.delegate);
+        this.roleCache = computeRoleCache(delegate);
+        this.typeCache = computeTypeCache(delegate);
     }
 
-    public static DataStructure copyOf(
-            BiFunction<Object, Class<?>, ?> converter,
-            Map<String, Component> newComponents
+    private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
+        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getRole));
+    }
+
+    private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
+        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
+    }
+
+    public static DataStructure.Builder builder() {
+        return new DataStructure.Builder();
+    }
+
+    public static DataStructure.Builder copyOf(
+            Map<String, Component> dataStructure
     ) {
-        DataStructure instance = new DataStructure(converter);
-        instance.putAll(newComponents);
-        return instance;
+        Builder builder = new Builder();
+        builder.putAll(dataStructure);
+        return builder;
     }
 
     public static DataStructure of(BiFunction<Object, Class<?>, ?> converter, Map<String, Class<?>> types, Map<String, Component.Role> roles) {
         checkArgument(types.keySet().equals(roles.keySet()));
-        DataStructure instance = new DataStructure(converter);
+        Builder builder = builder();
         for (String name : types.keySet()) {
-            instance.put(name, new Component(types.get(name), roles.get(name), name));
+            builder.put(name, roles.get(name), types.get(name));
         }
-        return instance;
+        return builder.build();
     }
 
     /**
@@ -72,9 +93,9 @@ public class DataStructure extends ForwardingMap<String, Component> {
      */
     public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Component.Role role1, Class<?> type1) {
-        DataStructure instance = new DataStructure(converter);
-        instance.put(name1, new Component(type1, role1, name1));
-        return instance;
+        Builder builder = builder();
+        builder.put(name1, role1, type1);
+        return builder.build();
     }
 
     /**
@@ -83,10 +104,10 @@ public class DataStructure extends ForwardingMap<String, Component> {
     public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
                                    String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2) {
-        DataStructure instance = new DataStructure(converter);
-        instance.put(name1, new Component(type1, role1, name1));
-        instance.put(name2, new Component(type2, role2, name2));
-        return instance;
+        return builder()
+                .put(name1, role1, type1).put(name2, role2, type2)
+                .build();
+
     }
 
     /**
@@ -96,11 +117,9 @@ public class DataStructure extends ForwardingMap<String, Component> {
                                    String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2,
                                    String name3, Component.Role role3, Class<?> type3) {
-        DataStructure instance = new DataStructure(converter);
-        instance.put(name1, new Component(type1, role1, name1));
-        instance.put(name2, new Component(type2, role2, name2));
-        instance.put(name3, new Component(type3, role3, name3));
-        return instance;
+        return builder()
+                .put(name1, role1, type1).put(name2, role2, type2).put(name3, role3, type3)
+                .build();
     }
 
     /**
@@ -111,12 +130,10 @@ public class DataStructure extends ForwardingMap<String, Component> {
                                    String name2, Component.Role role2, Class<?> type2,
                                    String name3, Component.Role role3, Class<?> type3,
                                    String name4, Component.Role role4, Class<?> type4) {
-        DataStructure instance = new DataStructure(converter);
-        instance.put(name1, new Component(type1, role1, name1));
-        instance.put(name2, new Component(type2, role2, name2));
-        instance.put(name3, new Component(type3, role3, name3));
-        instance.put(name4, new Component(type4, role4, name4));
-        return instance;
+        return builder()
+                .put(name1, role1, type1).put(name2, role2, type2).put(name3, role3, type3).put(name4, role4, type4)
+                .build();
+
     }
 
     /**
@@ -128,13 +145,10 @@ public class DataStructure extends ForwardingMap<String, Component> {
                                    String name3, Component.Role role3, Class<?> type3,
                                    String name4, Component.Role role4, Class<?> type4,
                                    String name5, Component.Role role5, Class<?> type5) {
-        DataStructure instance = new DataStructure(converter);
-        instance.put(name1, new Component(type1, role1, name1));
-        instance.put(name2, new Component(type2, role2, name2));
-        instance.put(name3, new Component(type3, role3, name3));
-        instance.put(name4, new Component(type4, role4, name4));
-        instance.put(name5, new Component(type5, role5, name5));
-        return instance;
+        return builder()
+                .put(name1, role1, type1).put(name2, role2, type2).put(name3, role3, type3).put(name4, role4, type4)
+                .put(name5, role5, type5)
+                .build();
     }
 
     /**
@@ -147,44 +161,31 @@ public class DataStructure extends ForwardingMap<String, Component> {
                                    String name4, Component.Role role4, Class<?> type4,
                                    String name5, Component.Role role5, Class<?> type5,
                                    String name6, Component.Role role6, Class<?> type6) {
-        DataStructure instance = new DataStructure(converter);
-        instance.put(name1, new Component(type1, role1, name1));
-        instance.put(name2, new Component(type2, role2, name2));
-        instance.put(name3, new Component(type3, role3, name3));
-        instance.put(name4, new Component(type4, role4, name4));
-        instance.put(name5, new Component(type5, role5, name5));
-        instance.put(name6, new Component(type6, role6, name6));
-        return instance;
+        return builder()
+                .put(name1, role1, type1).put(name2, role2, type2).put(name3, role3, type3).put(name4, role4, type4)
+                .put(name5, role5, type5).put(name6, role6, type6)
+                .build();
+    }
+
+    private static IdentityHashMap<Component, String> computeInverseCache(ImmutableMap<String, Component> delegate) {
+        IdentityHashMap<Component, String> map = Maps.newIdentityHashMap();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            map.put(entry.getValue(), entry.getKey());
+        }
+        return map;
     }
 
     public String getName(Component component) {
-        return delegate.inverse().get(component);
-    }
-
-    public Component addComponent(String name, Component.Role role, Class<?> type) {
-        Component component = new Component(type, role, name);
-        put(name, component);
-        return component;
+        return this.inverseCache.get(component);
     }
 
     public Map<String, Component.Role> getRoles() {
-        // TODO: Cache.
-        return this.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> entry.getValue().getRole()
-                ));
+        return this.roleCache;
     }
 
     public Map<String, Class<?>> getTypes() {
-        // TODO: Cache.
-        return this.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Entry::getKey,
-                        entry -> entry.getValue().getType()
-                ));
+        return this.typeCache;
     }
-
 
     public BiFunction<Object, Class<?>, ?> converter() {
         return this.converter;
@@ -237,5 +238,93 @@ public class DataStructure extends ForwardingMap<String, Component> {
     @Override
     protected Map<String, Component> delegate() {
         return delegate;
+    }
+
+    public static class Builder {
+
+        private final ImmutableMap.Builder<String, Component> builder = ImmutableMap.builder();
+        private final BiFunction<Object, Class<?>, ?> converter;
+
+        private Builder(BiFunction<Object, Class<?>, ?> converter) {
+            this.converter = checkNotNull(converter);
+        }
+
+        private Builder() {
+            this.converter = (o, aClass) -> o;
+        }
+
+        /**
+         * Associates {@code key} with {@code value} in the built map. Duplicate
+         * keys are not allowed, and will cause {@link #build} to fail.
+         *
+         * @param key
+         * @param value
+         */
+        public Builder put(String key, Component value) {
+            builder.put(key, value);
+            return this;
+        }
+
+        public Builder put(String key, Component.Role role, Class<?> type) {
+            return put(key, new Component(type, role, key));
+        }
+
+        /**
+         * Adds the given {@code entry} to the map, making it immutable if
+         * necessary. Duplicate keys are not allowed, and will cause {@link #build}
+         * to fail.
+         *
+         * @param entry
+         */
+        public Builder put(Entry<? extends String, ? extends Component> entry) {
+            builder.put(entry);
+            return this;
+        }
+
+        /**
+         * Associates all of the given map's keys and values in the built map.
+         * Duplicate keys are not allowed, and will cause {@link #build} to fail.
+         *
+         * @param map
+         * @throws NullPointerException if any key or value in {@code map} is null
+         */
+        public Builder putAll(Map<? extends String, ? extends Component> map) {
+            builder.putAll(map);
+            return this;
+        }
+
+        /**
+         * Adds all of the given entries to the built map.  Duplicate keys are not
+         * allowed, and will cause {@link #build} to fail.
+         *
+         * @param entries
+         * @throws NullPointerException if any key, value, or entry is null
+         */
+        @Beta
+        public Builder putAll(Iterable<? extends Entry<? extends String, ? extends Component>> entries) {
+            builder.putAll(entries);
+            return this;
+        }
+
+        /**
+         * Configures this {@code Builder} to order entries by value according to the specified
+         * comparator.
+         * <p>
+         * <p>The sort order is stable, that is, if two entries have values that compare
+         * as equivalent, the entry that was inserted first will be first in the built map's
+         * iteration order.
+         *
+         * @param valueComparator
+         * @throws IllegalStateException if this method was already called
+         */
+        @Beta
+        public Builder orderEntriesByValue(Comparator<? super Component> valueComparator) {
+            builder.orderEntriesByValue(valueComparator);
+            return this;
+        }
+
+        public DataStructure build() {
+            return new DataStructure(this.converter, this.builder.build());
+        }
     }
 }

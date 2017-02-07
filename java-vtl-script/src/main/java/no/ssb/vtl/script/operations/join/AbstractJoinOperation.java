@@ -19,10 +19,7 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multiset;
+import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
@@ -57,18 +54,21 @@ public abstract class AbstractJoinOperation {
 
         Multiset<Component> components = getComponents(namedDatasets);
 
-        Set<Component> commonIdentifiers = components.entrySet()
-                .stream()
-                .filter(entry -> entry.getCount() == namedDatasets.size())
-                .map(Multiset.Entry::getElement)
-                .filter(component -> component.getRole() == Role.IDENTIFIER)
-                .collect(Collectors.toSet());
+        Set<Map.Entry<String, Component>> commonEntries = Sets.newHashSet();
+        for (Dataset dataset : namedDatasets.values()) {
+            for (Map.Entry<String, Component> entry : dataset.getDataStructure().entrySet()) {
+                if (entry.getValue().isIdentifier()) {
+                    commonEntries.add(entry);
+                }
+            }
+        }
+        checkArgument(!commonEntries.isEmpty(), "could not find common identifiers in the datasets %s", namedDatasets);
 
-        commonIdentifierNames = commonIdentifiers.stream()
+        // TODO: Remove
+        commonIdentifierNames = commonEntries.stream()
+                .map(Map.Entry::getValue)
                 .map(Component::getName)
                 .collect(Collectors.toSet());
-
-        checkArgument(!commonIdentifierNames.isEmpty(), "could not find common identifiers in the datasets %s", namedDatasets);
 
         //joinScope = createJoinScope(namedDatasets, commonIdentifiers);
 
@@ -86,6 +86,9 @@ public abstract class AbstractJoinOperation {
         return HashMultiset.create(componentsList);
     }
 
+    /**
+     * Creates a map of datasets with identity equivalent identifier components.
+     */
     private Map<String, Dataset> createDataset(Map<String, Dataset> namedDatasets) {
         Map<String, Dataset> datasets = Maps.newHashMap();
         for (String datasetName : namedDatasets.keySet()) {

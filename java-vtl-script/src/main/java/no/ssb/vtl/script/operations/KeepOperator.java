@@ -1,13 +1,10 @@
 package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -39,25 +36,14 @@ public class KeepOperator implements Dataset {
      * Compute the new data structure.
      */
     private DataStructure computeDataStructure() {
-        DataStructure structure = dataset.getDataStructure();
-        Map<String, Component.Role> roles = Maps.newHashMap();
-        Map<String, Class<?>> types = Maps.newHashMap();
-        for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
-            // Must keep ID TODO: Should we fail here? Or should the failure come from the WorkingDataset?
-            // TODO: As it is now, the ids of the working dataset are immutable anyways.
+        DataStructure.Builder newDataStructure = DataStructure.builder();
+        for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
             Component component = componentEntry.getValue();
             if (components.contains(component) || component.isIdentifier()) {
-                Class<?> type = component.getType();
-                Component.Role role = component.getRole();
-                roles.put(componentEntry.getKey(), role);
-                types.put(componentEntry.getKey(), type);
+                newDataStructure.put(componentEntry);
             }
         }
-        return DataStructure.of(
-                structure.converter(),
-                types,
-                roles
-        );
+        return newDataStructure.build();
     }
 
     @Override
@@ -65,7 +51,7 @@ public class KeepOperator implements Dataset {
         DataStructure structure = getDataStructure();
         return dataset.get().map(
                 dataPoints -> {
-                    dataPoints.removeIf(dataPoint -> !structure.containsKey(dataPoint.getName()));
+                    dataPoints.removeIf(dataPoint -> !structure.containsValue(dataPoint.getComponent()));
                     return dataPoints;
                 }
         );
@@ -74,13 +60,8 @@ public class KeepOperator implements Dataset {
     @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        Integer limit = 5;
-        Iterables.limit(Iterables.concat(
-                components,
-                Collections.singletonList("and " + (components.size() - limit) + " more")
-        ), Math.min(limit, components.size())).forEach(
-                helper::addValue
-        );
-        return helper.toString();
+        helper.addValue(components);
+        helper.add("structure", cache);
+        return helper.omitNullValues().toString();
     }
 }

@@ -164,7 +164,7 @@ public class RenameOperationTest {
                 .build();
 
         RenameOperation rename;
-        rename = new RenameOperation(dataset,newNames, newRoles);
+        rename = new RenameOperation(dataset, newNames, newRoles);
 
         assertThat(rename.getDataStructure().getRoles()).contains(
                 entry("Identifier1Measure", Role.MEASURE),
@@ -176,7 +176,7 @@ public class RenameOperationTest {
         );
 
         assertThat(rename.get()).flatExtracting(input -> input).extracting(DataPoint::get)
-                .containsExactlyElementsOf(
+                .containsOnlyElementsOf(
                         structure.keySet()
                 );
     }

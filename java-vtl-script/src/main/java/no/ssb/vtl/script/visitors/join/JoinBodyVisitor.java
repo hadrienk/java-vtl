@@ -151,10 +151,9 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
         return workingDataset -> new WorkingDataset() {
             @Override
             public DataStructure getDataStructure() {
-                DataStructure structure = workingDataset.getDataStructure();
-                structure.addComponent(variableName, Component.Role.MEASURE, Number.class);
-                scope.put(variableName, structure.get(variableName));
-                return structure;
+                DataStructure.Builder newDataStructure = DataStructure.copyOf(workingDataset.getDataStructure());
+                newDataStructure.put(variableName, Component.Role.MEASURE, Number.class);
+                return newDataStructure.build();
             }
 
             @Override

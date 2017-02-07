@@ -19,19 +19,15 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Maps;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Represent an inner join on datasets.
@@ -54,19 +50,34 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     public WorkingDataset workDataset() {
 
         return new WorkingDataset() {
+
+            @Override
+            public String toString() {
+                MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+                return helper.toString();
+            }
+
             @Override
             public DataStructure getDataStructure() {
-                Map<String, Component> newComponents = Maps.newHashMap();
                 Map<String, Dataset> datasets = getDatasets();
 
+                Set<String> ids = Sets.newHashSet();
+
+                DataStructure.Builder newDataStructure = DataStructure.builder();
                 for (String datasetName : datasets.keySet()) {
                     DataStructure structure = datasets.get(datasetName).getDataStructure();
-                    for (String componentName : structure.keySet()) {
-                        newComponents.put(componentName, structure.get(componentName));
+                    for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
+                        if (!componentEntry.getValue().isIdentifier()) {
+                            newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                        } else {
+                            if (ids.add(componentEntry.getKey())) {
+                                newDataStructure.put(componentEntry);
+                            }
+                        }
                     }
                 }
 
-                return DataStructure.copyOf((o, aClass) -> o, newComponents);
+                return newDataStructure.build();
             }
 
             @Override

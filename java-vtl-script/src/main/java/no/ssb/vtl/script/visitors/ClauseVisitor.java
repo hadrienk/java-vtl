@@ -25,6 +25,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.operations.RenameOperation;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,36 +51,40 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
 
     @Override
     public Function<Dataset, Dataset> visitRenameClause(VTLParser.RenameClauseContext ctx) {
-        List<VTLParser.RenameParamContext> parameters = ctx.renameParam();
+        return dataset -> {
+            ReferenceVisitor visitor = new ReferenceVisitor(dataset.getDataStructure());
 
-        ImmutableMap.Builder<String, String> names = ImmutableMap.builder();
-        ImmutableMap.Builder<String, Component.Role> roles = ImmutableMap.builder();
+            List<VTLParser.RenameParamContext> parameters = ctx.renameParam();
 
-        for (VTLParser.RenameParamContext parameter : parameters) {
-            String from = parameter.from.getText();
-            String to = parameter.to.getText();
-            names.put(from, to);
+            ImmutableMap.Builder<Component, String> names = ImmutableMap.builder();
+            ImmutableMap.Builder<Component, Component.Role> roles = ImmutableMap.builder();
 
-            Optional<String> role = ofNullable(parameter.role()).map(VTLParser.RoleContext::getText);
-            if (role.isPresent()) {
-                Component.Role roleEnum;
-                switch (role.get()) {
-                    case "IDENTIFIER":
-                        roleEnum = Component.Role.IDENTIFIER;
-                        break;
-                    case "MEASURE":
-                        roleEnum = Component.Role.MEASURE;
-                        break;
-                    case "ATTRIBUTE":
-                        roleEnum = Component.Role.ATTRIBUTE;
-                        break;
-                    default:
-                        throw new RuntimeException("unknown component type " + role.get());
+            for (VTLParser.RenameParamContext parameter : parameters) {
+                Component from = (Component) visitor.visit(parameter.from);
+                String to = parameter.to.getText();
+                names.put(from, to);
+
+                Optional<String> role = ofNullable(parameter.role()).map(VTLParser.RoleContext::getText);
+                if (role.isPresent()) {
+                    Component.Role roleEnum;
+                    switch (role.get()) {
+                        case "IDENTIFIER":
+                            roleEnum = Component.Role.IDENTIFIER;
+                            break;
+                        case "MEASURE":
+                            roleEnum = Component.Role.MEASURE;
+                            break;
+                        case "ATTRIBUTE":
+                            roleEnum = Component.Role.ATTRIBUTE;
+                            break;
+                        default:
+                            throw new RuntimeException("unknown component type " + role.get());
+                    }
+                    roles.put(from, roleEnum);
                 }
-                roles.put(from, roleEnum);
             }
-        }
 
-        return null; //dataset -> new RenameOperation(dataset, names.build(), roles.build());
+            return new RenameOperation(dataset, names.build(), roles.build());
+        };
     }
 }
