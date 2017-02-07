@@ -35,7 +35,7 @@ public class DropClauseTest {
 
         // TODO: Check this.
         assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
-                "(joinDropExpression:1 drop (joinDropRef:2 (varID:1 varID 1)) , (joinDropRef:2 (varID:1 varID 2)) , (joinDropRef:1 (varID:1 varID 3) . (varID:1 varID 4)))"));
+                "(joinDropExpression:1drop(componentRef:2(variableRef:1(identifier:2varID1))),(componentRef:2(variableRef:1(identifier:2varID2))),(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID3))).(variableRef:1(identifier:2varID4))))"));
     }
 
 }

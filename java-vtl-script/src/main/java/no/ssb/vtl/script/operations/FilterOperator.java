@@ -40,6 +40,7 @@ public class FilterOperator implements Dataset{
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         Map<Boolean, List<Tuple>> predicateResultMap = dataset.stream().collect(Collectors.partitioningBy(predicate));
         helper.addValue(predicateResultMap);
-        return helper.toString();
+        helper.add("structure", cache);
+        return helper.omitNullValues().toString();
     }
 }

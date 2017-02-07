@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.operations;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -8,7 +9,6 @@ import no.ssb.vtl.model.Dataset;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -26,64 +26,64 @@ public class FoldClause implements Dataset {
 
     private final String dimension;
     private final String measure;
-    private final Set<String> elements;
-    private Optional<DataStructure> computedDatastructure = Optional.empty();
+    private final Set<Component> elements;
 
-    public FoldClause(Dataset dataset, String dimensionReference, String measureReference, Set<String> elements) {
+    private DataStructure cache = null;
+
+    public FoldClause(Dataset dataset, String dimensionReference, String measureReference, Set<Component> elements) {
+        // TODO: Introduce type here. Elements should be of the type of the Component.
+
         this.dataset = checkNotNull(dataset, "dataset cannot be null");
-
-        // Checks not null and not empty.
         checkArgument(!(this.dimension = checkNotNull(dimensionReference, "dimensionReference cannot be null")).isEmpty(),
                 "dimensionReference was empty");
         checkArgument(!(this.measure = checkNotNull(measureReference, "measureReference cannot be null")).isEmpty(),
                 "measureReference was empty");
         checkArgument(!(this.elements = checkNotNull(elements, "elements cannot be null")).isEmpty(),
                 "elements was empty");
-        // TODO: Introduce type here. Elements should be of the type of the Component.
+    }
+
+    private DataStructure computeDataStructure() {
+        DataStructure dataStructure = dataset.getDataStructure();
+
+        // TODO: Constraint error.
+        checkArgument(
+                dataStructure.values().containsAll(elements),
+                "the element(s) [%s] were not found in [%s]",
+                Sets.difference(elements, dataStructure.keySet()), dataStructure.keySet()
+        );
+
+        // Checks that elements are of the same type
+        ListMultimap<Class<?>, Component> classes = ArrayListMultimap.create();
+        for (Component element : elements) {
+            classes.put(element.getType(), element);
+        }
+        checkArgument(
+                classes.asMap().size() == 1,
+                "the element(s) [%s] must be of the same type, found [%s] in dataset [%s]",
+                elements, classes, dataStructure
+        );
+
+        Map<String, Component.Role> newRoles = Maps.newLinkedHashMap();
+        Map<String, Class<?>> newTypes = Maps.newLinkedHashMap();
+        for (Map.Entry<String, Component> componentEntry : dataStructure.entrySet()) {
+            if (!elements.contains(componentEntry.getValue())) {
+                newRoles.put(componentEntry.getKey(), componentEntry.getValue().getRole());
+                newTypes.put(componentEntry.getKey(), componentEntry.getValue().getType());
+            }
+        }
+
+        newRoles.put(dimension, Role.IDENTIFIER);
+        newTypes.put(dimension, String.class);
+
+        newRoles.put(measure, Role.MEASURE);
+        newTypes.put(measure, classes.keySet().iterator().next());
+
+        return DataStructure.of(dataStructure.converter(), newTypes, newRoles);
     }
 
     @Override
     public DataStructure getDataStructure() {
-        return computedDatastructure.orElseGet(() -> {
-            DataStructure dataStructure = dataset.getDataStructure();
-
-            // TODO: Constraint error.
-            checkArgument(
-                    dataStructure.keySet().containsAll(elements),
-                    "the element(s) [%s] were not found in [%s]",
-                    Sets.difference(elements, dataStructure.keySet()), dataStructure.keySet()
-            );
-
-            // Checks that elements are of the same type
-            ListMultimap<Class<?>, String> classes = ArrayListMultimap.create();
-            for (String element : elements) {
-                classes.put(dataStructure.get(element).getType(), element);
-            }
-            checkArgument(
-                    classes.asMap().size() == 1,
-                    "the element(s) [%s] must be of the same type, found [%s] in dataset [%s]",
-                    elements, classes, dataStructure
-            );
-
-            Map<String, Component.Role> newRoles = Maps.newLinkedHashMap();
-            Map<String, Class<?>> newTypes = Maps.newLinkedHashMap();
-            for (Map.Entry<String, Component> component : dataStructure.entrySet()) {
-                String name = component.getKey();
-                if (!elements.contains(name)) {
-                    newRoles.put(name, component.getValue().getRole());
-                    newTypes.put(name, component.getValue().getType());
-                }
-            }
-
-            newRoles.put(dimension, Role.IDENTIFIER);
-            newTypes.put(dimension, String.class);
-
-            newRoles.put(measure, Role.MEASURE);
-            newTypes.put(measure, classes.keySet().iterator().next());
-
-            computedDatastructure = Optional.of(DataStructure.of(dataStructure.converter(), newTypes, newRoles));
-            return computedDatastructure.get();
-        });
+        return cache = (cache == null ? computeDataStructure() : cache);
     }
 
     @Override
@@ -93,22 +93,34 @@ public class FoldClause implements Dataset {
             List<Tuple> tuples = Lists.newArrayList();
             Map<String, Object> commonValues = Maps.newLinkedHashMap();
             Map<String, Object> foldedValues = Maps.newLinkedHashMap();
+
             for (DataPoint point : tuple) {
-                if (elements.contains(point.getName())) {
+                if (elements.contains(point.getComponent())) {
                     foldedValues.put(point.getName(), point.get());
                 } else {
                     commonValues.put(point.getName(), point.get());
                 }
             }
-            for (String element : elements) {
-                if (foldedValues.containsKey(element) && foldedValues.get(element) != null) {
+
+            for (Component element : elements) {
+                if (foldedValues.containsKey(element.getName()) && foldedValues.get(element.getName()) != null) {
                     Map<String, Object> rowMap = Maps.newLinkedHashMap(commonValues);
-                    rowMap.put(dimension, element);
-                    rowMap.put(measure, foldedValues.get(element));
+                    rowMap.put(dimension, element.getName());
+                    rowMap.put(measure, foldedValues.get(element.getName()));
                     tuples.add(dataStructure.wrap(rowMap));
                 }
             }
             return tuples.stream();
         });
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        helper.addValue(elements);
+        helper.add("identifier", dimension);
+        helper.add("measure", measure);
+        helper.add("structure", cache);
+        return helper.omitNullValues().toString();
     }
 }

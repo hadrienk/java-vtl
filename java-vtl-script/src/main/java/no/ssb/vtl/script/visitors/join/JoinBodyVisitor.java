@@ -5,12 +5,19 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.*;
+import no.ssb.vtl.script.operations.DropOperator;
+import no.ssb.vtl.script.operations.FilterOperator;
+import no.ssb.vtl.script.operations.FoldClause;
+import no.ssb.vtl.script.operations.KeepOperator;
+import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.UnfoldClause;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.JoinClause;
 import no.ssb.vtl.script.operations.join.WorkingDataset;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import org.antlr.v4.runtime.RuleContext;
 
+import javax.script.Bindings;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -20,9 +27,15 @@ import java.util.stream.Stream;
  * <p>
  * The last join clause is returned.
  */
+@Deprecated
 public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, WorkingDataset>> {
 
-    public JoinBodyVisitor() {
+    private Bindings scope;
+    private ReferenceVisitor referenceVisitor;
+    
+    public JoinBodyVisitor(Bindings scope) {
+        this.scope = scope;
+        this.referenceVisitor = new ReferenceVisitor(scope);
     }
 
     @Override
@@ -49,7 +62,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
     @Override
     public Function<WorkingDataset, WorkingDataset> visitJoinFoldClause(VTLParser.JoinFoldClauseContext ctx) {
         return workingDataset -> {
-            JoinFoldClauseVisitor visitor = new JoinFoldClauseVisitor(workingDataset);
+            JoinFoldClauseVisitor visitor = new JoinFoldClauseVisitor(workingDataset, referenceVisitor);
             FoldClause foldClause = visitor.visit(ctx);
             return new WorkingDataset() {
                 @Override
@@ -68,7 +81,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
     @Override
     public Function<WorkingDataset, WorkingDataset> visitJoinUnfoldClause(VTLParser.JoinUnfoldClauseContext ctx) {
         return workingDataset -> {
-            JoinUnfoldClauseVisitor visitor = new JoinUnfoldClauseVisitor(workingDataset);
+            JoinUnfoldClauseVisitor visitor = new JoinUnfoldClauseVisitor(workingDataset, referenceVisitor);
             UnfoldClause unfoldClause = visitor.visit(ctx);
             return new WorkingDataset() {
                 @Override
@@ -126,20 +139,21 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Function<WorkingDataset, Wor
 
     @Override
     public JoinClause visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        String variableName = ctx.varID().getText();
+        String variableName = ctx.variableID().getText();
 
         // TODO: Spec does not specify what is the default role.
+        // TODO: Actually, it does, line 2335 of the user manual.
         String variableRole = Optional.ofNullable(ctx.role()).map(RuleContext::getText).orElse("MEASURE");
 
-        JoinCalcClauseVisitor joinCalcClauseVisitor = new JoinCalcClauseVisitor();
+        JoinCalcClauseVisitor joinCalcClauseVisitor = new JoinCalcClauseVisitor(referenceVisitor);
         Function<Dataset.Tuple, Object> clauseFunction = joinCalcClauseVisitor.visit(ctx);
 
         return workingDataset -> new WorkingDataset() {
             @Override
             public DataStructure getDataStructure() {
-                DataStructure structure = workingDataset.getDataStructure();
-                structure.addComponent(variableName, Component.Role.MEASURE, Number.class);
-                return structure;
+                DataStructure.Builder newDataStructure = DataStructure.copyOf(workingDataset.getDataStructure());
+                newDataStructure.put(variableName, Component.Role.MEASURE, Number.class);
+                return newDataStructure.build();
             }
 
             @Override

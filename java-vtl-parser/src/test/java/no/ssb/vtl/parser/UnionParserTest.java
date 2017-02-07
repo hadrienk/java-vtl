@@ -39,11 +39,7 @@ public class UnionParserTest {
 
         String parseResult = parse(expression);
         assertThat(filterWhiteSpaces(parseResult)).isEqualTo(filterWhiteSpaces(
-                "(unionExpression:1union(" +
-                        "(datasetExpression:5(exprAtom:1(variableRef:2(varID:1datasetExpr1))))," +
-                        "(datasetExpression:5(exprAtom:1(variableRef:2(varID:1datasetExpr2))))," +
-                        "(datasetExpression:5(exprAtom:1(variableRef:2(varID:1datasetExpr3))))" +
-            "))"
+                "(unionExpression:1union((datasetExpression:5(exprAtom:1(variableRef:1(identifier:2datasetExpr1)))),(datasetExpression:5(exprAtom:1(variableRef:1(identifier:2datasetExpr2)))),(datasetExpression:5(exprAtom:1(variableRef:1(identifier:2datasetExpr3))))))"
         ));
     }
 
@@ -54,9 +50,7 @@ public class UnionParserTest {
         String parseResult = parse(expression);
         // @formatter:off
         assertThat(filterWhiteSpaces(parseResult)).isEqualTo(filterWhiteSpaces(
-                "(unionExpression:1union(" +
-                        "(datasetExpression:5(exprAtom:1(variableRef:2(varID:1datasetExpr1))))" +
-                        "))"
+                "(unionExpression:1union((datasetExpression:5(exprAtom:1(variableRef:1(identifier:2datasetExpr1))))))"
         ));
         // @formatter:on
     }

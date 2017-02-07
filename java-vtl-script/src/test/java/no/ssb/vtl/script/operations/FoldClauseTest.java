@@ -3,6 +3,7 @@ package no.ssb.vtl.script.operations;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -38,7 +39,13 @@ public class FoldClauseTest {
 
         String validDimensionReference = "aDimension";
         String validMeasureReference = "aDimension";
-        Set<String> validElements = Sets.newHashSet("element1, element2");
+
+        DataStructure structure = DataStructure.of((o, aClass) -> o,
+                "element1", MEASURE, String.class,
+                "element2", MEASURE, String.class
+        );
+
+        Set<Component> validElements = Sets.newHashSet(structure.values());
         Dataset dataset = mock(Dataset.class);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
@@ -83,9 +90,6 @@ public class FoldClauseTest {
     @Test
     public void testConstraint() throws Exception {
 
-        Set<String> validElements = Sets.newHashSet("m1", "m2", "m3");
-        Set<String> invalidElements = Sets.newHashSet("m1", "m2", "m3", "m4");
-
         Dataset dataset = mock(Dataset.class);
         DataStructure structure = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
@@ -95,7 +99,7 @@ public class FoldClauseTest {
                 "m3", MEASURE, String.class
         );
         Dataset invalidDataset = mock(Dataset.class);
-        DataStructure invalidStructure = DataStructure.of((o, aClass) -> o,
+        DataStructure wrongTypesDataset = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "m1", MEASURE, Number.class,
@@ -103,8 +107,26 @@ public class FoldClauseTest {
                 "m3", MEASURE, Instant.class
         );
 
+        Set<Component> validElements = Sets.newHashSet(
+                structure.get("m1"),
+                structure.get("m2"),
+                structure.get("m3")
+        );
+
+        Set<Component> invalidElements = Sets.newHashSet(
+                structure.get("m1"),
+                structure.get("m2"),
+                structure.get("m3"),
+                wrongTypesDataset.get("m1")
+        );
+
+        Set<Component> wrongTypesElements = Sets.newHashSet(
+                wrongTypesDataset.values()
+        );
+
+
         when(dataset.getDataStructure()).thenReturn(structure);
-        when(invalidDataset.getDataStructure()).thenReturn(invalidStructure);
+        when(invalidDataset.getDataStructure()).thenReturn(wrongTypesDataset);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {
@@ -112,11 +134,11 @@ public class FoldClauseTest {
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("m4")
+                    .hasMessageContaining("m1")
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                FoldClause clause = new FoldClause(invalidDataset, "newDimension", "newMeasure", validElements);
+                FoldClause clause = new FoldClause(invalidDataset, "newDimension", "newMeasure", wrongTypesElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -129,10 +151,6 @@ public class FoldClauseTest {
 
     @Test
     public void testUnfold() throws Exception {
-
-        // TODO: Order should be irrelevant!
-        // Set<String> elements = Sets.newLinkedHashSet(Lists.newArrayList("measure2", "measure1", "attribute1"));
-        Set<String> elements = Sets.newLinkedHashSet(Lists.newArrayList("measure1", "measure2", "attribute1"));
 
         Dataset dataset = mock(Dataset.class);
         DataStructure structure = DataStructure.of((o, aClass) -> o,
@@ -151,6 +169,16 @@ public class FoldClauseTest {
                 tuple(structure, "id1-2", "id2-2", "measure1-4", "measure2-4", null),
                 tuple(structure, "id1-3", "id2-1", null, null, null)
         ));
+
+        // TODO: Order should be irrelevant!
+        // Set<String> elements = Sets.newLinkedHashSet(Lists.newArrayList("measure2", "measure1", "attribute1"));
+        Set<Component> elements = Sets.newLinkedHashSet(
+                Lists.newArrayList(
+                        structure.get("measure1"),
+                        structure.get("measure2"),
+                        structure.get("attribute1")
+                )
+        );
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             FoldClause clause = new FoldClause(dataset, "newId", "newMeasure", elements);

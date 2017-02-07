@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
@@ -10,7 +11,6 @@ import no.ssb.vtl.model.Dataset;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -25,19 +25,16 @@ public class UnfoldClause implements Dataset {
     // Source dataset.
     private final Dataset dataset;
 
-    private final String dimension;
-    private final String measure;
+    private final Component dimension;
+    private final Component measure;
     private final Set<String> elements;
-    private Optional<DataStructure> computedDatastructure = Optional.empty();
+    private DataStructure cache;
 
-    public UnfoldClause(Dataset dataset, String dimensionReference, String measureReference, Set<String> elements) {
+    public UnfoldClause(Dataset dataset, Component dimensionReference, Component measureReference, Set<String> elements) {
         this.dataset = checkNotNull(dataset, "dataset cannot be null");
 
-        // Checks not null and not empty.
-        checkArgument(!(this.dimension = checkNotNull(dimensionReference, "dimensionReference cannot be null")).isEmpty(),
-                "dimensionReference was empty");
-        checkArgument(!(this.measure = checkNotNull(measureReference, "measureReference cannot be null")).isEmpty(),
-                "measureReference was empty");
+        this.dimension = checkNotNull(dimensionReference, "dimensionReference cannot be null");
+        this.measure = checkNotNull(measureReference, "measureReference cannot be null");
         checkArgument(!(this.elements = checkNotNull(elements, "elements cannot be null")).isEmpty(),
                 "elements was empty");
         // TODO: Introduce type here. Elements should be of the type of the Component.
@@ -45,26 +42,30 @@ public class UnfoldClause implements Dataset {
 
     @Override
     public DataStructure getDataStructure() {
-        return computedDatastructure.orElseGet(() -> {
-            DataStructure dataStructure = dataset.getDataStructure();
+        return cache = (cache == null ? computeDataStructure() : cache);
+    }
 
-            // TODO: Constraint error.
-            checkArgument(
-                    dataStructure.containsKey(dimension),
-                    "the dimension [%s] was not found in %s", dimension, dataset
-            );
-            checkArgument(
-                    dataStructure.get(dimension).isIdentifier(),
-                    "[%s] in dataset [%s] was not a dimension", dimension, dataset
-            );
-            checkArgument(
-                    dataStructure.containsKey(measure),
-                    "the measure [%s] was not found in %s", measure, dataset
-            );
-            checkArgument(
-                    dataStructure.get(measure).isMeasure(),
-                    "[%s] in dataset [%s] was not a measure", measure, dataset
-            );
+    private DataStructure computeDataStructure() {
+        DataStructure dataStructure = dataset.getDataStructure();
+
+        // TODO: Does those check still make sense with the Reference visitor?
+        checkArgument(
+                dataStructure.containsValue(dimension),
+                "the dimension [%s] was not found in %s", dimension, dataset
+        );
+        checkArgument(
+                dataStructure.containsValue(measure),
+                "the measure [%s] was not found in %s", measure, dataset
+        );
+
+        checkArgument(
+                dimension.isIdentifier(),
+                "[%s] in dataset [%s] was not a dimension", dimension, dataset
+        );
+        checkArgument(
+                measure.isMeasure(),
+                "[%s] in dataset [%s] was not a measure", measure, dataset
+        );
 
             /*
                 The spec is a bit unclear here; it does not say how to handle the measure values
@@ -79,27 +80,21 @@ public class UnfoldClause implements Dataset {
                  until further clarification, the later is implemented.
              */
 
-            Map<String, Role> newRoles = Maps.newHashMap();
-            Map<String, Class<?>> newTypes = Maps.newHashMap();
-            for (Map.Entry<String, Component> component : dataStructure.entrySet()) {
-                String name = component.getKey();
-                if (!dimension.equals(name) && !measure.equals(name)) {
-                    if (component.getValue().isIdentifier()) {
-                        newRoles.put(name, Role.IDENTIFIER);
-                        newTypes.put(name, component.getValue().getType());
-                    }
+        DataStructure.Builder newDataStructure = DataStructure.builder();
+        for (Map.Entry<String, Component> componentEntry : dataStructure.entrySet()) {;
+            Component component = componentEntry.getValue();
+            if (component != dimension && component != measure) {
+                if (component.isIdentifier()) {
+                    newDataStructure.put(componentEntry);
                 }
             }
+        }
 
-            Class<?> type = dataStructure.get(measure).getType();
-            for (String element : elements) {
-                newRoles.put(element, Role.MEASURE);
-                newTypes.put(element, type);
-            }
-            computedDatastructure = Optional.of(DataStructure.of(dataStructure.converter(), newTypes, newRoles));
-            return computedDatastructure.get();
-
-        });
+        Class<?> type = measure.getType();
+        for (String element : elements) {
+            newDataStructure.put(element, Role.MEASURE, type);
+        }
+        return newDataStructure.build();
     }
 
     @Override
@@ -118,7 +113,7 @@ public class UnfoldClause implements Dataset {
                 if (!leftValue.getRole().equals(Role.IDENTIFIER)) {
                     continue;
                 }
-                if (dimension.equals(leftValue.getName())) {
+                if (dimension == leftValue.getComponent()) {
                     continue;
                 }
                 if (!leftValue.equals(rightValue)) {
@@ -133,14 +128,14 @@ public class UnfoldClause implements Dataset {
                 Object unfoldedValue = null;
                 String columnName = null;
                 for (DataPoint dataPoint : tuple) {
-                    if (dimension.equals(dataPoint.getName())) {
+                    if (dimension == dataPoint.getComponent()) {
                         // TODO: Check type of the elements. Can we use element that are not String??
                         if (elements.contains(dataPoint.get())) {
                             columnName = (String) dataPoint.get();
                             continue;
                         }
                     }
-                    if (measure.equals(dataPoint.getName())) {
+                    if (measure == dataPoint.getComponent()) {
                         unfoldedValue = dataPoint.get();
                         continue;
                     }
@@ -156,5 +151,15 @@ public class UnfoldClause implements Dataset {
             }
             return dataStructure.wrap(map);
         });
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        helper.add("identifier", dimension);
+        helper.add("measure", measure);
+        helper.addValue(elements);
+        helper.add("structure", cache);
+        return helper.omitNullValues().toString();
     }
 }

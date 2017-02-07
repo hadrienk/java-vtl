@@ -35,7 +35,7 @@ public class KeepClauseTest {
 
         // TODO: Check this.
         assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
-                "(joinKeepExpression:1 keep (joinKeepRef:2 (varID:1 varID 1)) , (joinKeepRef:2 (varID:1 varID 2)) , (joinKeepRef:1 (varID:1 varID 3) . (varID:1 varID 4)))"));
+                "(joinKeepExpression:1keep(componentRef:2(variableRef:1(identifier:2varID1))),(componentRef:2(variableRef:1(identifier:2varID2))),(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID3))).(variableRef:1(identifier:2varID4))))"));
     }
 
 }

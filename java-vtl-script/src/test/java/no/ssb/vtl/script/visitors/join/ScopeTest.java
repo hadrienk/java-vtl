@@ -5,12 +5,12 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLScriptContext;
+import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.script.Bindings;
-import javax.script.SimpleBindings;
+import javax.script.ScriptContext;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -56,23 +56,29 @@ public class ScopeTest {
         assertThat(ctx.getAttribute("ds0")).isNull();
     }
     
-    @Test
-    @Ignore //Not ready yet
+    //@Test
     public void testJoinScope() throws Exception {
+
         JoinDefinitionVisitor visitor = new JoinDefinitionVisitor(ctx);
-        VTLParser.VarIDContext varIdDs1= mock(VTLParser.VarIDContext.class);
+        VTLParser.DatasetRefContext varIdDs1= mock(VTLParser.DatasetRefContext.class);
         when(varIdDs1.getText()).thenReturn("ds1");
-        VTLParser.VarIDContext varIdDs2= mock(VTLParser.VarIDContext.class);
+        when(varIdDs1.accept(any())).thenCallRealMethod();
+        VTLParser.DatasetRefContext varIdDs2= mock(VTLParser.DatasetRefContext.class);
         when(varIdDs2.getText()).thenReturn("ds2");
+        when(varIdDs2.accept(any())).thenCallRealMethod();
+        VTLParser.JoinParamContext joinParamCtx = mock(VTLParser.JoinParamContext.class);
+        when(joinParamCtx.datasetRef()).thenReturn(Arrays.asList(varIdDs1, varIdDs2));
     
-        Map<String, Dataset> datasetMap = visitor.createJoinScope(Arrays.asList(varIdDs1, varIdDs2));
-        Bindings joinScope = new SimpleBindings();
-        joinScope.putAll(datasetMap);
-        int JOIN_SCOPE = 50;
-        ctx.setBindings(joinScope, JOIN_SCOPE);
     
-        assertThat(ctx.getAttribute("ds3", JOIN_SCOPE)).isNull();
-        assertThat(ctx.getAttribute("ds1.id1", JOIN_SCOPE)).isNotNull();
-        assertThat(ctx.getAttribute("id1", JOIN_SCOPE)).isEqualTo(ctx.getAttribute("ds2.id1"));
+        Map<String, Dataset> datasetMap = visitor.getDatasetParameters(joinParamCtx);
+        InnerJoinOperation joinOperation = new InnerJoinOperation(datasetMap);
+        Bindings joinScope = joinOperation.getJoinScope();
+    
+        JoinExpressionVisitor joinExpressionVisitor = new JoinExpressionVisitor(ctx);
+        ScriptContext joinContext = joinExpressionVisitor.createJoinContext(joinScope, ctx);
+    
+        assertThat(joinContext.getAttribute("ds3")).isNull();
+        assertThat(joinContext.getAttribute("ds1.id1")).isNotNull();
+        assertThat(joinContext.getAttribute("id1")).isEqualTo(joinContext.getAttribute("ds2.id1"));
     }
 }

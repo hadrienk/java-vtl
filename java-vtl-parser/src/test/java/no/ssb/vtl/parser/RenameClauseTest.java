@@ -36,28 +36,7 @@ public class RenameClauseTest {
 
         // TODO: Check this.
         // @formatter:off
-        assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces("" +
-                "(" +
-                    "joinRenameExpression:1 rename (" +
-                        "joinRenameParameter:1 (" +
-                            "joinComponentReference:2 (" +
-                                "varID:1 varID 1" +
-                            ")" +
-                        ") to (" +
-                            "varID:1 varID 2" +
-                        ")" +
-                    ") , (" +
-                        "joinRenameParameter:1 (" +
-                            "joinComponentReference:1 (" +
-                                "varID:1 varID 3" +
-                            ") . (" +
-                                "varID:1 varID 4" +
-                            ")" +
-                        ") to (" +
-                            "varID:1 varID 5" +
-                        ")" +
-                    ")" +
-                ")"));
+        assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces("(joinRenameExpression:1rename(joinRenameParameter:1(componentRef:2(variableRef:1(identifier:2varID1)))to(identifier:2varID2)),(joinRenameParameter:1(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID3))).(variableRef:1(identifier:2varID4)))to(identifier:2varID5)))"));
         // @formatter:on
 
     }

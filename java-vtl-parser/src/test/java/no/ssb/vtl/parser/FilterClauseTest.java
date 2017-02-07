@@ -34,7 +34,7 @@ public class FilterClauseTest {
         String parseTree = parse(expression, "joinFilterExpression", grammar);
     
         assertThat(filterWhiteSpaces(parseTree)).isEqualTo(
-                filterWhiteSpaces("(joinFilterExpression:1 filter (booleanExpression:3(booleanEquallity:1(datasetExpression:5(exprAtom:1(variableRef:2(varID:1true)))))))"));
+                filterWhiteSpaces("(joinFilterExpression:1filter(booleanExpression:3(booleanEquallity:3(constant:1true))))"));
     }
     
 }

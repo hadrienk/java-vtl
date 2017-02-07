@@ -44,10 +44,7 @@ public class JoinParserTest {
 
         // TODO: Check this.
         assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
-                "(joinExpression:1 [ " +
-                "(joinDefinition:1 (joinParam:1 (varID:1 varID 1) , (varID:1 varID 2))) " +
-                "] { " +
-                "(joinBody:1 (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 1)) * (joinCalcExpression:5 (constant:1 2))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 2)))) , (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) * (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })"
+                "(joinExpression:1[(joinDefinition:1(joinParam:1(datasetRef:1(variableRef:1(identifier:2varID1))),(datasetRef:1(variableRef:1(identifier:2varID2)))))]{(joinBody:1(joinClause:1(variableID:1varID2)=(joinCalcExpression:2(joinCalcExpression:2(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))+(joinCalcExpression:1(joinCalcExpression:1(joinCalcExpression:5(constant:11))*(joinCalcExpression:5(constant:12)))/(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))))-(joinCalcExpression:5(constant:12)))),(joinClause:1(variableID:1varID2)=(joinCalcExpression:2(joinCalcExpression:2(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))+(joinCalcExpression:1(joinCalcExpression:1(joinCalcExpression:5(constant:13))*(joinCalcExpression:5(constant:14)))/(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))))-(joinCalcExpression:5(constant:15)))))})"
         ));
     }
 
@@ -62,16 +59,7 @@ public class JoinParserTest {
 
         // TODO: Check this.
         assertThat(filterWhiteSpaces(parseTree)).isEqualTo(filterWhiteSpaces(
-                "(joinExpression:1 [ (joinDefinition:2 outer (joinParam:1 (varID:1 varID 1) ," +
-                " (varID:1 varID 2) on (dimensionExpression:1 dimensionExpr 1) , (dimensionExpression:1 dimensionExpr 2))) " +
-                "] { (joinBody:1 (joinClause:1 (varID:1 varID 2) = (joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 " +
-                "(joinCalcRef:1 (varID:1 varID 2) . (varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5" +
-                " (constant:1 1)) * (joinCalcExpression:5 (constant:1 2))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) ." +
-                " (varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 2)))) , (joinClause:1 (varID:1 varID 2) = " +
-                "(joinCalcExpression:2 (joinCalcExpression:2 (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . " +
-                "(varID:1 varID 2))) + (joinCalcExpression:1 (joinCalcExpression:1 (joinCalcExpression:5 (constant:1 3)) " +
-                "* (joinCalcExpression:5 (constant:1 4))) / (joinCalcExpression:4 (joinCalcRef:1 (varID:1 varID 2) . " +
-                "(varID:1 varID 2))))) - (joinCalcExpression:5 (constant:1 5))))) })"));
+                "(joinExpression:1[(joinDefinition:2outer(joinParam:1(datasetRef:1(variableRef:1(identifier:2varID1))),(datasetRef:1(variableRef:1(identifier:2varID2)))on(dimensionExpression:1dimensionExpr1),(dimensionExpression:1dimensionExpr2)))]{(joinBody:1(joinClause:1(variableID:1varID2)=(joinCalcExpression:2(joinCalcExpression:2(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))+(joinCalcExpression:1(joinCalcExpression:1(joinCalcExpression:5(constant:11))*(joinCalcExpression:5(constant:12)))/(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))))-(joinCalcExpression:5(constant:12)))),(joinClause:1(variableID:1varID2)=(joinCalcExpression:2(joinCalcExpression:2(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))+(joinCalcExpression:1(joinCalcExpression:1(joinCalcExpression:5(constant:13))*(joinCalcExpression:5(constant:14)))/(joinCalcExpression:4(componentRef:1(datasetRef:1(variableRef:1(identifier:2varID2))).(variableRef:1(identifier:2varID2))))))-(joinCalcExpression:5(constant:15)))))})"));
     }
 
     // TODO: Build a more robust way to test.
