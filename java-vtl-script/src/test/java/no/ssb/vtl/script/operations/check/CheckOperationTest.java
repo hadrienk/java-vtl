@@ -9,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +48,7 @@ public class CheckOperationTest {
     /**
      * The input Dataset must have all Boolean Measure Components.
      * NOTE: The spec is not consistent with regard to parameters and constraints sections (line 4925-4926 and 4949).
-     * We decided to require one and only one Boolean Measure Component.
+     * We decided to allow more than one Boolean Measure Component.
      * <p>
      * VTL 1.1 line 4949.
      */
@@ -63,18 +64,17 @@ public class CheckOperationTest {
                 )
         );
 
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expect(hasProperty("message", containsString("too many boolean")));
         new CheckOperation(dataset, Optional.of(CheckOperation.RowsToReturn.VALID),
                 Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
     }
 
     @Test
-    public void testCheck() throws Exception {
+    public void testCheckReturnMeasuresNotValidRows() throws Exception {
+        //This data structure is a result of a boolean operation, so it will either has one CONDITION component
+        //or more with "_CONDITION" suffix for each component.
         DataStructure dataStructure = DataStructure.of((s, o) -> s,
                 "kommune_nr", Component.Role.IDENTIFIER, String.class,
                 "code", Component.Role.IDENTIFIER, String.class, //from KLASS
-                "attr1", Component.Role.ATTRIBUTE, String.class,
                 "CONDITION", Component.Role.MEASURE, Boolean.class
         );
 
@@ -85,17 +85,14 @@ public class CheckOperationTest {
                 tuple(
                         dataStructure.wrap("kommune_nr", "0101"),
                         dataStructure.wrap("code", "0101"),
-                        dataStructure.wrap("attr1", "test"),
                         dataStructure.wrap("CONDITION", true)
                 ), tuple(
                         dataStructure.wrap("kommune_nr", "9990"),
                         dataStructure.wrap("code", null), //not in the code list, so a null value
-                        dataStructure.wrap("attr1", "-test-"),
                         dataStructure.wrap("CONDITION", false)
                 ), tuple(
                         dataStructure.wrap("kommune_nr", "0104"),
                         dataStructure.wrap("code", "0104"),
-                        dataStructure.wrap("attr1", "test"),
                         dataStructure.wrap("CONDITION", true)
                 )
         ));
@@ -106,7 +103,6 @@ public class CheckOperationTest {
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
-                entry("attr1", Component.Role.ATTRIBUTE),
                 entry("CONDITION", Component.Role.MEASURE),
                 entry("errorcode", Component.Role.ATTRIBUTE),
                 entry("errorlevel", Component.Role.ATTRIBUTE)
@@ -119,22 +115,216 @@ public class CheckOperationTest {
         assertThat(collect).
                 extractingResultOf("ids").isNotEmpty().hasSize(1);
 
-        assertThat(getDataPoint(collect, "kommune_nr").get()).isEqualTo("9990");
-        assertThat(getDataPoint(collect, "code").get()).isNull(); //not in the code list, so a null value
-        assertThat(getDataPoint(collect, "attr1").get()).isEqualTo("-test-");
-        assertThat(getDataPoint(collect, "CONDITION").get()).isEqualTo(false);
-        assertThat(getDataPoint(collect, "errorlevel").get()).isNull();
-        assertThat(getDataPoint(collect, "errorcode").get()).isNull();
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("9990");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(false);
+        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
     }
 
-    private DataPoint getDataPoint(List<Dataset.Tuple> tuple, String componentName) {
-        List<DataPoint> dpListOfOne = tuple.get(0).stream()
-                .filter(dp -> dp.getName().equals(componentName))
-                .collect(toList());
+    @Test
+    public void testCheckReturnMeasuresValidRows() throws Exception {
+        //This data structure is a result of a boolean operation, so it will either has one CONDITION component
+        //or more with "_CONDITION" suffix for each component.
+        DataStructure dataStructure = DataStructure.of((s, o) -> s,
+                "kommune_nr", Component.Role.IDENTIFIER, String.class,
+                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
+                "CONDITION", Component.Role.MEASURE, Boolean.class
+        );
 
-        assertThat(dpListOfOne).hasSize(1);
+        Dataset ds = mock(Dataset.class);
+        when(ds.getDataStructure()).thenReturn(dataStructure);
 
-        return dpListOfOne.get(0);
+        when(ds.get()).thenReturn(Stream.of(
+                tuple(
+                        dataStructure.wrap("kommune_nr", "0101"),
+                        dataStructure.wrap("code", "0101"),
+                        dataStructure.wrap("CONDITION", true)
+                ), tuple(
+                        dataStructure.wrap("kommune_nr", "9990"),
+                        dataStructure.wrap("code", null), //not in the code list, so a null value
+                        dataStructure.wrap("CONDITION", false)
+                ), tuple(
+                        dataStructure.wrap("kommune_nr", "0104"),
+                        dataStructure.wrap("code", "0104"),
+                        dataStructure.wrap("CONDITION", true)
+                )
+        ));
+
+        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.VALID),
+                Optional.of(CheckOperation.ComponentsToReturn.MEASURES), null, null);
+
+        assertThat(checkOperation.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("code", Component.Role.IDENTIFIER),
+                entry("CONDITION", Component.Role.MEASURE),
+                entry("errorcode", Component.Role.ATTRIBUTE),
+                entry("errorlevel", Component.Role.ATTRIBUTE)
+        );
+
+        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        assertThat(stream).isNotNull();
+
+        List<Dataset.Tuple> collect = stream.collect(toList());
+        assertThat(collect).
+                extractingResultOf("ids").isNotEmpty().hasSize(2);
+
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("0101", "0101");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsOnlyOnce("0101", "0101");
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+    }
+
+    @Test
+    public void testCheckReturnConditionNotValidRows() throws Exception {
+        //This data structure is a result of a boolean operation, so it will either has one CONDITION component
+        //or more with "_CONDITION" suffix for each component.
+        //No attribute components as the VTL 1.1 does not specify that.
+        DataStructure dataStructure = DataStructure.of((s, o) -> s,
+                "kommune_nr", Component.Role.IDENTIFIER, String.class,
+                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
+                "CONDITION_CONDITION", Component.Role.MEASURE, Boolean.class,
+                "booleanMeasure_CONDITION", Component.Role.MEASURE, Boolean.class,
+                "stringMeasure", Component.Role.MEASURE, String.class
+        );
+
+        Dataset ds = mock(Dataset.class);
+        when(ds.getDataStructure()).thenReturn(dataStructure);
+
+        when(ds.get()).thenReturn(Stream.of(
+                tuple(
+                        dataStructure.wrap("kommune_nr", "0101"),
+                        dataStructure.wrap("code", "0101"),
+                        dataStructure.wrap("CONDITION_CONDITION", true),
+                        dataStructure.wrap("booleanMeasure_CONDITION", true),
+                        dataStructure.wrap("stringMeasure", "t1")
+                ), tuple(
+                        dataStructure.wrap("kommune_nr", "9990"),
+                        dataStructure.wrap("code", null),
+                        dataStructure.wrap("CONDITION_CONDITION", true),
+                        dataStructure.wrap("booleanMeasure_CONDITION", false),
+                        dataStructure.wrap("stringMeasure", "t2")
+                ), tuple(
+                        dataStructure.wrap("kommune_nr", "0104"),
+                        dataStructure.wrap("code", null), //not in the code list, so a null value
+                        dataStructure.wrap("CONDITION_CONDITION", false),
+                        dataStructure.wrap("booleanMeasure_CONDITION", false),
+                        dataStructure.wrap("stringMeasure", "t3")
+                )
+        ));
+
+        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.NOT_VALID),
+                Optional.of(CheckOperation.ComponentsToReturn.CONDITION), null, null);
+
+        assertThat(checkOperation.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("code", Component.Role.IDENTIFIER),
+                entry("CONDITION_CONDITION", Component.Role.MEASURE),
+                entry("booleanMeasure_CONDITION", Component.Role.MEASURE),
+                entry("CONDITION", Component.Role.MEASURE),   //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
+                entry("errorcode", Component.Role.ATTRIBUTE), //new component
+                entry("errorlevel", Component.Role.ATTRIBUTE) //new component
+        );
+
+        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        assertThat(stream).isNotNull();
+
+        List<Dataset.Tuple> collect = stream.collect(toList());
+        assertThat(collect).
+                extractingResultOf("ids").isNotEmpty().hasSize(2);
+
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("9990", "0104");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(DataPoint::get).containsExactlyInAnyOrder(true, false);
+        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(DataPoint::get).containsOnly(false);
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(false);
+        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+    }
+
+    @Test
+    public void testCheckReturnConditionValidRows() throws Exception {
+        //This data structure is a result of a boolean operation, so it will either has one CONDITION component
+        //or more with "_CONDITION" suffix for each component.
+        //No attribute components as the VTL 1.1 does not specify that.
+        DataStructure dataStructure = DataStructure.of((s, o) -> s,
+                "kommune_nr", Component.Role.IDENTIFIER, String.class,
+                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
+                "CONDITION_CONDITION", Component.Role.MEASURE, Boolean.class,
+                "booleanMeasure_CONDITION", Component.Role.MEASURE, Boolean.class,
+                "stringMeasure", Component.Role.MEASURE, String.class
+        );
+
+        Dataset ds = mock(Dataset.class);
+        when(ds.getDataStructure()).thenReturn(dataStructure);
+
+        when(ds.get()).thenReturn(Stream.of(
+                tuple(
+                        dataStructure.wrap("kommune_nr", "0101"),
+                        dataStructure.wrap("code", "0101"),
+                        dataStructure.wrap("CONDITION_CONDITION", true),
+                        dataStructure.wrap("booleanMeasure_CONDITION", true),
+                        dataStructure.wrap("stringMeasure", "t1")
+                ), tuple(
+                        dataStructure.wrap("kommune_nr", "9990"),
+                        dataStructure.wrap("code", null),
+                        dataStructure.wrap("CONDITION_CONDITION", true),
+                        dataStructure.wrap("booleanMeasure_CONDITION", false),
+                        dataStructure.wrap("stringMeasure", "t2")
+                ), tuple(
+                        dataStructure.wrap("kommune_nr", "0104"),
+                        dataStructure.wrap("code", null), //not in the code list, so a null value
+                        dataStructure.wrap("CONDITION_CONDITION", false),
+                        dataStructure.wrap("booleanMeasure_CONDITION", false),
+                        dataStructure.wrap("stringMeasure", "t3")
+                )
+        ));
+
+        CheckOperation checkOperation = new CheckOperation(ds, Optional.of(CheckOperation.RowsToReturn.VALID),
+                Optional.of(CheckOperation.ComponentsToReturn.CONDITION), null, null);
+
+        assertThat(checkOperation.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("code", Component.Role.IDENTIFIER),
+                entry("CONDITION_CONDITION", Component.Role.MEASURE),
+                entry("booleanMeasure_CONDITION", Component.Role.MEASURE),
+                entry("CONDITION", Component.Role.MEASURE),   //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
+                entry("errorcode", Component.Role.ATTRIBUTE), //new component
+                entry("errorlevel", Component.Role.ATTRIBUTE) //new component
+        );
+
+        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        assertThat(stream).isNotNull();
+
+        List<Dataset.Tuple> collect = stream.collect(toList());
+        assertThat(collect).
+                extractingResultOf("ids").isNotEmpty().hasSize(1);
+
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("0101");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsOnlyOnce("0101");
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(DataPoint::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(DataPoint::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+    }
+
+    private ArrayList<DataPoint> getDataPointsWithComponentName(List<Dataset.Tuple> tuple, String componentName) {
+        ArrayList<DataPoint> dpsFound = new ArrayList<>();
+
+        for (Dataset.Tuple dataPoints : tuple) {
+            List<DataPoint> dpListOfOne = dataPoints.stream()
+                    .filter(dp -> dp.getName().equals(componentName))
+                    .collect(toList());
+            if (dpListOfOne.size() == 1) {
+                dpsFound.add(dpListOfOne.get(0));
+            } else {
+                throw new IllegalArgumentException("Should have found 1 DataPoint object, but found: " + Arrays.toString(dpListOfOne.toArray()));
+            }
+        }
+
+        return dpsFound;
     }
 
     private Dataset.Tuple tuple(DataPoint... components) {

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -76,10 +77,6 @@ public class CheckOperation implements Dataset{
         int noIdentifiers = Maps.filterValues(dataset.getDataStructure().getRoles(), role -> role == Component.Role.IDENTIFIER)
                 .size();
         checkArgument(noIdentifiers > 0, "dataset does not have identifier components");
-
-        long noBooleanMeasures = dataset.getDataStructure().values().stream().filter(c -> c.isMeasure() && c.getType().equals(Boolean.class)).count();
-        checkArgument(noBooleanMeasures < 2, "dataset has too many boolean measure components");
-        checkArgument(noBooleanMeasures > 0, "dataset has no boolean measure component");
     }
 
     @Override
@@ -90,7 +87,7 @@ public class CheckOperation implements Dataset{
             Set<String> oldNames = dataset.getDataStructure().keySet();
 
             if (componentsToReturn == ComponentsToReturn.CONDITION) {
-                removeAllComponentsButIdentifiers(newRoles, newTypes, oldNames);
+                removeAllComponentsButIdentifiersAndBooleanMeasures(newRoles, newTypes, oldNames);
                 addComponent("CONDITION", newRoles, newTypes, Component.Role.MEASURE, Boolean.class);
             }
 
@@ -110,10 +107,11 @@ public class CheckOperation implements Dataset{
         newTypes.put(componentName, aClass);
     }
 
-    private void removeAllComponentsButIdentifiers(Map<String, Component.Role> newRoles,
-                                                   Map<String, Class<?>> newTypes, Set<String> oldNames) {
+    private void removeAllComponentsButIdentifiersAndBooleanMeasures(Map<String, Component.Role> newRoles,
+                                                                     Map<String, Class<?>> newTypes, Set<String> oldNames) {
         for (String oldName : oldNames) {
-            if (newRoles.get(oldName) != Component.Role.IDENTIFIER) {
+            if (newRoles.get(oldName) != Component.Role.IDENTIFIER
+                    && newRoles.get(oldName) != Component.Role.MEASURE && newTypes.get(oldName) != Boolean.class) {
                 newRoles.remove(oldName);
                 newTypes.remove(oldName);
             }
@@ -125,18 +123,9 @@ public class CheckOperation implements Dataset{
         Stream<Tuple> tupleStream = dataset.get();
 
         DataPoint errorCodeDataPoint = getDataStructure().wrap("errorcode", errorCode);
-        DataPoint errorLevelDataPoint = getDataStructure().wrap("errorlevel", errorCode);
+        DataPoint errorLevelDataPoint = getDataStructure().wrap("errorlevel", errorLevel);
 
-        if (rowsToReturn == RowsToReturn.NOT_VALID) {
-            tupleStream = tupleStream.filter(tuple -> tuple.values().stream()
-                    .filter(dataPoint -> dataPoint.getComponent().isMeasure() && dataPoint.getType().equals(Boolean.class))
-                    .anyMatch(dataPoint -> dataPoint.get().equals(false))).peek(e -> System.out.println("value: " + e));
-        } else if (rowsToReturn == RowsToReturn.VALID) {
-            tupleStream = tupleStream.filter(tuple -> tuple.values().stream()
-                    .filter(dataPoint -> dataPoint.getComponent().isMeasure() && dataPoint.getType().equals(Boolean.class))
-                    .anyMatch(dataPoint -> dataPoint.get().equals(true))).peek(e -> System.out.println("value: " + e));
-        } //else if ("all".equals(rowsToReturn)) //all is not filtered
-
+        //first calculate the new data points...
         if (componentsToReturn == ComponentsToReturn.MEASURES) {
             tupleStream = tupleStream.map(dataPoints -> {
                         List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
@@ -145,17 +134,39 @@ public class CheckOperation implements Dataset{
                         return Tuple.create(dataPointsNewList);
                     });
         } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
-            //TODO here
-//            new DataPoint(getDataStructure().get("CONDITION")) {
-//                @Override
-//                public Object get() {
-//                    return dataPoints.values().stream()
-//                            .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
-//                            .findFirst().orElseThrow(() -> new IllegalArgumentException("DataPoint of type Boolean and role MEASURE not found in stream"));
-//                }
-//            });
+            tupleStream = tupleStream.map(dataPoints -> {
+                List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
+                dataPointsNewList.add(new DataPoint(getDataStructure().get("CONDITION")) {
+                    @Override
+                    public Object get() {
+                        return dataPoints.values().stream()
+                                .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
+                                .map(DataPoint::get)
+                                .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b));
+                    }
+                });
+                dataPointsNewList.add(errorCodeDataPoint);
+                dataPointsNewList.add(errorLevelDataPoint);
+                return Tuple.create(dataPointsNewList);
+            });
         }
 
+        //... then filter rows
+        if (rowsToReturn == RowsToReturn.NOT_VALID) {
+                        tupleStream = tupleStream.filter(tuple ->
+                    tuple.values().stream().filter(isConditionComponent())
+                            .anyMatch(dataPoint -> dataPoint.get().equals(false)));
+        } else if (rowsToReturn == RowsToReturn.VALID) {
+            tupleStream = tupleStream.filter(tuple ->
+                    //TODO should an exception be thrown if CONDITION not found?
+                    tuple.values().stream().filter(isConditionComponent())
+                            .anyMatch(dataPoint -> dataPoint.get().equals(true)));
+        } //else if ("all".equals(rowsToReturn)) //all is not filtered
+
         return tupleStream;
+    }
+
+    private static Predicate<DataPoint> isConditionComponent() {
+        return dataPoint -> dataPoint.getName().equals("CONDITION");
     }
 }
