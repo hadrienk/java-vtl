@@ -11,14 +11,34 @@
     </parent>
 
     <artifactId>java-vtl-parser</artifactId>
-    <version>1.0-SNAPSHOT</version>
+
+    <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-test</artifactId>
+        </dependency>
+
+    </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
                 <executions>
                     <execution>
                         <configuration>
@@ -47,31 +67,5 @@
             </resource>
         </resources>
     </build>
-
-
-    <dependencies>
-
-        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>4.6</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4</artifactId>
-            <version>4.5.3</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>no.ssb.vtl</groupId>
-            <artifactId>java-vtl-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-    </dependencies>
 
 </project>

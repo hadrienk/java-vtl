@@ -20,145 +20,28 @@ package no.ssb.vtl.parser;
  * #L%
  */
 
-import com.google.common.io.Resources;
-import no.ssb.vtl.test.junit.GrammarRule;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.LexerInterpreter;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.tool.Grammar;
-import org.antlr.v4.tool.GrammarParserInterpreter;
-import org.antlr.v4.tool.Rule;
-import org.assertj.core.api.SoftAssertions;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.rules.ExternalResource;
 
-import java.net.URL;
-import java.nio.charset.Charset;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.io.Resources.getResource;
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class ClausesParserTest {
-
-    private static Grammar grammar;
-    @ClassRule
-    public static ExternalResource grammarResource = new ExternalResource() {
-        @Override
-        protected void before() throws Throwable {
-            URL grammarURL = getResource(this.getClass(), "/imports/Clauses.g4");
-            String grammarString = Resources.toString(grammarURL, Charset.defaultCharset());
-            grammar = new Grammar(checkNotNull(grammarString));
-        }
-    };
-
-    @ClassRule
-    public static GrammarRule grammarRule = new GrammarRule();
-
-    @Test
-    public void testRenameWithRole2() throws Exception {
-        ParserRuleContext clause = grammarRule.parse("[rename varId as varId role = IDENTIFIER]", grammarRule.withRule("clause"));
-    }
+public class ClausesParserTest extends GrammarTest {
 
     @Test
     public void testRenameWithRole() throws Exception {
-
-        SoftAssertions softly = new SoftAssertions();
-
-        String expectedTree;
-        String actualTree;
-
-        String renameAsIdentifier = "[rename varId as varId role = IDENTIFIER]";
-        softly.assertThat(filterWhiteSpaces(parse(renameAsIdentifier)))
-                .isEqualTo(filterWhiteSpaces("" +
-                        "(  " +
-                        "   clauseExpression:1 [ (" +
-                        "       clause:1 rename (" +
-                        "           renameParam:1(varID:1varId)as(varID:1varId)role=(role:1IDENTIFIER))" +
-                        "                       ) ]" +
-                        ")"));
-
-        String renameAsMeasure = "[rename varId as varId role = MEASURE]";
-        softly.assertThat(filterWhiteSpaces(parse(renameAsMeasure)))
-                .isEqualTo(filterWhiteSpaces("" +
-                        "(  " +
-                        "   clauseExpression:1 [ (" +
-                        "       clause:1 rename (" +
-                        "           renameParam:1(varID:1varId)as(varID:1varId)role=(role:1 MEASURE))" +
-                        "                       ) ]" +
-                        ")"));
-
-        String renameAsAttribute = "[rename varId as varId role = ATTRIBUTE]";
-        softly.assertThat(filterWhiteSpaces(parse(renameAsAttribute)))
-                .isEqualTo(filterWhiteSpaces("" +
-                        "(  " +
-                        "   clauseExpression:1 [ (" +
-                        "       clause:1 rename (" +
-                        "           renameParam:1(varID:1varId)as(varID:1varId)role=(role:1 ATTRIBUTE))" +
-                        "                       ) ]" +
-                        ")"));
-
-        softly.assertAll();
+        parse("[rename varId as varId role = IDENTIFIER]", "clauseExpression");
+        parse("[rename varId as varId role = MEASURE]", "clauseExpression");
+        parse("[rename varId as varId role = ATTRIBUTE]", "clauseExpression");
     }
 
     @Test
     public void testMultipleRenames() throws Exception {
-        String expression = "[rename "
-                + "varId as varId, "
-                + "varId as varId, "
-                + "varId as varId"
-                + "]";
-
-        String actualTree = parse(expression);
-        String expectedTree = "" +
-                "  (" +
-                "    clauseExpression:1[(" +
-                "      clause:1rename (renameParam:1(varID:1varId)as(varID:1varId))," +
-                "                     (renameParam:1(varID:1varId)as(varID:1varId))," +
-                "                     (renameParam:1(varID:1varId)as(varID:1varId))" +
-                "    )]" +
-                "  )";
-        assertThat(filterWhiteSpaces(actualTree)).isEqualTo(
-                filterWhiteSpaces(expectedTree));
+        parse("[rename varId as varId, varId as varId, varId as varId]", "clauseExpression");
     }
 
     @Test
     public void testMultipleRenamesWithRoles() throws Exception {
-
-        String expression = "[rename "
-                + "varId as varId role = IDENTIFIER, "
-                + "varId as varId role = MEASURE, "
-                + "varId as varId role = ATTRIBUTE"
-                + "]";
-        assertThat(filterWhiteSpaces(parse(expression)))
-                .isEqualTo(filterWhiteSpaces("" +
-                        "   (" +
-                        "       clauseExpression:1 [(" +
-                        "           clause:1 rename (renameParam:1(varID:1varId)as(varID:1varId)role=(role:1IDENTIFIER))," +
-                        "                           (renameParam:1(varID:1varId)as(varID:1varId)role=(role:1MEASURE))," +
-                        "                           (renameParam:1(varID:1varId)as(varID:1varId)role=(role:1ATTRIBUTE))" +
-                        "                           )]" +
-                        "   )"));
+        parse("[rename varId as varId role = IDENTIFIER," +
+                        "    varId as varId role = MEASURE," +
+                        "    varId as varId role = ATTRIBUTE]",
+                "clauseExpression");
     }
 
-    // TODO: Build a more robust way to test.
-    private String parse(String expression) {
-        LexerInterpreter lexerInterpreter = grammar.createLexerInterpreter(
-                new ANTLRInputStream(expression)
-        );
-        GrammarParserInterpreter parserInterpreter = grammar.createGrammarParserInterpreter(
-                new CommonTokenStream(lexerInterpreter)
-        );
-
-        Rule clause = grammar.getRule("clauseExpression");
-        parserInterpreter.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
-        ParserRuleContext parse = parserInterpreter.parse(clause.index);
-        return parse.toStringTree(parserInterpreter);
-    }
-
-    String filterWhiteSpaces(String string) {
-        return string.replaceAll("\\s+", "");
-    }
 }
