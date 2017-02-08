@@ -31,6 +31,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | getExpression                                          #withGet
            | putExpression                                          #withPut
            | exprAtom                                               #withAtom
+           | checkExpression                                        #withCheck
            ;
 
 componentID : IDENTIFIER;
@@ -42,6 +43,10 @@ datasetId : STRING_CONSTANT ;
 
 /* Atom */
 exprAtom : variableRef;
+
+checkExpression : 'check' '(' checkParam ')';  //(',' renameParam)*     #renameClause
+
+checkParam : datasetExpression;
 
 variableRef : constant
             | varID
