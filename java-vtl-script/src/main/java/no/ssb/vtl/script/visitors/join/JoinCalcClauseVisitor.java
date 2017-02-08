@@ -1,9 +1,11 @@
 package no.ssb.vtl.script.visitors.join;
 
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.function.Function;
 
@@ -14,39 +16,32 @@ import static java.lang.String.format;
  */
 public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple, Object>> {
 
+    private final ReferenceVisitor referenceVisitor;
+
+    public JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
+        this.referenceVisitor = referenceVisitor;
+    }
+
     @Override
     public Function<Dataset.Tuple, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
-        String variableName = ctx.getText();
-        return new Function<Dataset.Tuple, Object>() {
-            @Override
-            public Object apply(Dataset.Tuple tuple) {
-                for (DataPoint dataPoint : tuple) {
-                    if (variableName.equals(dataPoint.getName())) {
-                        return dataPoint.get();
-                    }
+        Component component = (Component) referenceVisitor.visit(ctx.componentRef());
+        return tuple -> {
+            for (DataPoint dataPoint : tuple) {
+                if (component == dataPoint.getComponent()) {
+                    return dataPoint.get();
                 }
-                throw new RuntimeException(format("variable %s not found", variableName));
             }
+            throw new RuntimeException(format("component %s not found in %s", component, tuple));
         };
     }
-
-    @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcRef(VTLParser.JoinCalcRefContext ctx) {
-        return super.visitJoinCalcRef(ctx);
-    }
-
 
     @Override
     public Function<Dataset.Tuple, Object> visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
         VTLParser.ConstantContext constantValue = ctx.constant();
         if (constantValue.FLOAT_CONSTANT() != null)
-            return tuple -> {
-                return Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
-            };
+            return tuple -> Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
         if (constantValue.INTEGER_CONSTANT() != null)
-            return tuple -> {
-                return Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
-            };
+            return tuple -> Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
 
         throw new RuntimeException(
                 format("unsuported constant type %s", constantValue)

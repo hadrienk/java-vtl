@@ -19,12 +19,12 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Maps;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
@@ -47,22 +47,37 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
 
         return new WorkingDataset() {
+
+            @Override
+            public String toString() {
+                MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+                return helper.toString();
+            }
+
             @Override
             public DataStructure getDataStructure() {
-                Map<String, Component> newComponents = Maps.newHashMap();
                 Map<String, Dataset> datasets = getDatasets();
 
+                Set<String> ids = Sets.newHashSet();
+
+                DataStructure.Builder newDataStructure = DataStructure.builder();
                 for (String datasetName : datasets.keySet()) {
                     DataStructure structure = datasets.get(datasetName).getDataStructure();
-                    for (String componentName : structure.keySet()) {
-                        newComponents.put(componentName, structure.get(componentName));
+                    for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
+                        if (!componentEntry.getValue().isIdentifier()) {
+                            newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                        } else {
+                            if (ids.add(componentEntry.getKey())) {
+                                newDataStructure.put(componentEntry);
+                            }
+                        }
                     }
                 }
 
-                return DataStructure.copyOf((o, aClass) -> o, newComponents);
+                return newDataStructure.build();
             }
 
             @Override
@@ -105,17 +120,15 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 while (iterator.hasNext()) {
                     Function<Tuple, List<DataPoint>> keyExtractor = tuple -> {
                         // Filter by common ids.
-                        List<DataPoint> ids = tuple.stream().filter(dataPoint ->
+                        return tuple.stream().filter(dataPoint ->
                                 getCommonIdentifierNames().contains(dataPoint.getName())
                         ).collect(Collectors.toList());
-                        return ids;
                     };
                     Function<JoinTuple, List<DataPoint>> joinKeyExtractor = tuple -> {
                         // Filter by common ids.
-                        List<DataPoint> ids =  tuple.stream().filter(dataPoint ->
+                        return tuple.stream().filter(dataPoint ->
                                 getCommonIdentifierNames().contains(dataPoint.getName())
                         ).collect(Collectors.toList());
-                        return ids;
                     };
                     result = StreamSupport.stream(
                             new JoinSpliterator<>(
@@ -133,41 +146,34 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         };
     }
 
-    private BiFunction<JoinTuple, Tuple, JoinTuple> getMerger() {
-        return new BiFunction<JoinTuple, Tuple, JoinTuple>() {
-
-            @Override
-            public JoinTuple apply(JoinTuple joinTuple, Tuple components) {
-                joinTuple.addAll(components.values());
-                return joinTuple;
-            }
+    private BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> getMerger() {
+        return (joinTuple, components) -> {
+            joinTuple.addAll(components.values());
+            return joinTuple;
         };
     }
 
     private Comparator<List<DataPoint>> getKeyComparator(final Set<String> dimensions) {
-        return new Comparator<List<DataPoint>>() {
-            @Override
-            public int compare(List<DataPoint> l, List<DataPoint> r) {
-                // TODO: Tuple should expose method to handle this.
-                // TODO: Evaluate migrating to DataPoint.
-                // TODO: When using on, the left over identifiers should be transformed to measures.
-                Map<String, Comparable> lIds = l.stream()
-                        .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                t -> (Comparable) t.get()
-                        ));
-                Map<String, Object> rIds = r.stream()
-                        .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                Supplier::get
-                        ));
-                for (String key : dimensions) {
-                    int res = lIds.get(key).compareTo(rIds.get(key));
-                    if (res != 0)
-                        return res;
-                }
-                return 0;
+        return (l, r) -> {
+            // TODO: Tuple should expose method to handle this.
+            // TODO: Evaluate migrating to DataPoint.
+            // TODO: When using on, the left over identifiers should be transformed to measures.
+            Map<String, Comparable> lIds = l.stream()
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            t -> (Comparable) t.get()
+                    ));
+            Map<String, Object> rIds = r.stream()
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            Supplier::get
+                    ));
+            for (String key : dimensions) {
+                int res = lIds.get(key).compareTo(rIds.get(key));
+                if (res != 0)
+                    return res;
             }
+            return 0;
         };
     }
 }

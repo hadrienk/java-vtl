@@ -7,6 +7,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class JoinCalcClauseVisitorTest {
 
@@ -29,7 +31,7 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
         Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
 
@@ -45,7 +47,7 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
         Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
 
@@ -61,7 +63,7 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
         Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
 
@@ -92,7 +94,10 @@ public class JoinCalcClauseVisitorTest {
 
         Dataset.Tuple tuple = ds.wrap(variables);
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        Map<String, Component> scope = Maps.newHashMap();
+        scope.putAll(ds);
+
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope));
 
         Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
 
@@ -111,7 +116,7 @@ public class JoinCalcClauseVisitorTest {
 
         // Setup fake map.
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
         Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
 
@@ -126,11 +131,9 @@ public class JoinCalcClauseVisitorTest {
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(Collections.emptyMap()));
 
-
-        Throwable ex = null;
-        try {
+        assertThatThrownBy(() -> {
             // TODO: This should happen during execution (when data is computed).
             Function<Dataset.Tuple, Object> result = visitor.visit(parser.joinCalcExpression());
             result.apply(new Dataset.AbstractTuple() {
@@ -139,10 +142,7 @@ public class JoinCalcClauseVisitorTest {
                     return Collections.emptyList();
                 }
             });
-        } catch (Throwable t) {
-            ex = t;
-        }
-        assertThat(ex).hasMessageContaining("variable")
+        }).hasMessageContaining("variable")
                 .hasMessageContaining("notFoundVariable");
 
     }

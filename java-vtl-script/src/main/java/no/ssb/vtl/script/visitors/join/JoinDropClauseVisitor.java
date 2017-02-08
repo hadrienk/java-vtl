@@ -1,14 +1,17 @@
 package no.ssb.vtl.script.visitors.join;
 
-import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.DropOperator;
+import no.ssb.vtl.script.operations.join.WorkingDataset;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Visit the drop clauses.
@@ -16,17 +19,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class JoinDropClauseVisitor extends VTLBaseVisitor<DropOperator> {
 
     private final Dataset dataset;
+    private final ReferenceVisitor referenceVisitor;
 
-    public JoinDropClauseVisitor(Dataset dataset) {
+    @Deprecated
+    public JoinDropClauseVisitor(WorkingDataset dataset) {
         this.dataset = checkNotNull(dataset, "dataset was null");
+        this.referenceVisitor = null;
+    }
+
+    public JoinDropClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
+        this.dataset = checkNotNull(dataset);
+        this.referenceVisitor = checkNotNull(referenceVisitor);
     }
 
     @Override
     public DropOperator visitJoinDropExpression(VTLParser.JoinDropExpressionContext ctx) {
-        Set<String> components = Sets.newHashSet();
-        for (VTLParser.JoinDropRefContext joinDropRefContext : ctx.joinDropRef()) {
-            components.add(joinDropRefContext.getText());
-        }
+        Set<Component> components = ctx.componentRef().stream()
+                .map(referenceVisitor::visit)
+                .map(o -> (Component) o) //TODO: Safe?
+                .collect(Collectors.toSet());
         return new DropOperator(dataset, components);
     }
 }

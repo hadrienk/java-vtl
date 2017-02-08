@@ -24,9 +24,6 @@ import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 
 import java.util.Map;
 
-/**
- * Created by hadrien on 16/11/2016.
- */
 public class OuterJoinOperation extends AbstractJoinOperation {
 
     public OuterJoinOperation(Map<String, Dataset> namedDatasets) {
@@ -34,7 +31,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    WorkingDataset workDataset() {
+    public WorkingDataset workDataset() {
         return null;
     }
 
