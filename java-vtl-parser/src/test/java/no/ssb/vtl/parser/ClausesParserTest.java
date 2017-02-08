@@ -21,6 +21,7 @@ package no.ssb.vtl.parser;
  */
 
 import com.google.common.io.Resources;
+import no.ssb.vtl.test.junit.GrammarRule;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.LexerInterpreter;
@@ -52,6 +53,14 @@ public class ClausesParserTest {
             grammar = new Grammar(checkNotNull(grammarString));
         }
     };
+
+    @ClassRule
+    public static GrammarRule grammarRule = new GrammarRule();
+
+    @Test
+    public void testRenameWithRole2() throws Exception {
+        ParserRuleContext clause = grammarRule.parse("[rename varId as varId role = IDENTIFIER]", grammarRule.withRule("clause"));
+    }
 
     @Test
     public void testRenameWithRole() throws Exception {
