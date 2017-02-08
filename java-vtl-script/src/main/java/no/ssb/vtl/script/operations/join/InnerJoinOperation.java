@@ -20,7 +20,7 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Represent an inner join on datasets.
@@ -43,7 +44,44 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class InnerJoinOperation extends AbstractJoinOperation {
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets) {
+        this(namedDatasets, Collections.emptySet());
+    }
+
+    ImmutableSet<Component> identifiers;
+
+    public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(namedDatasets);
+
+        checkNotNull(identifiers);
+
+        // Optimization
+        if (namedDatasets.size() == 1) {
+            return;
+        }
+
+        ImmutableMultimap<Dataset, Component> possibleKeyComponentsByDataset = getPossibleKeyComponents();
+        Set<Component> allPossibleKeyComponents = Sets.newHashSet(possibleKeyComponentsByDataset.values());
+
+        // Checks that the datasets have at least on common identifier.
+        checkArgument(
+                !allPossibleKeyComponents.isEmpty(),
+                "could not find common identifiers in the datasets %s",
+                namedDatasets.keySet()
+        );
+
+        // Use all common identifiers if identifiers is empty
+        if (!identifiers.isEmpty()) {
+            this.identifiers = ImmutableSet.copyOf(
+                    Sets.intersection(
+                            identifiers,
+                            allPossibleKeyComponents
+                    )
+            );
+            checkArgument(!this.identifiers.isEmpty(), "cannot use %s as key",
+                    Sets.difference(identifiers, Sets.newHashSet(possibleKeyComponentsByDataset.values())));
+        } else {
+            this.identifiers = ImmutableSet.copyOf(allPossibleKeyComponents);
+        }
     }
 
     @Override
@@ -59,25 +97,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
             @Override
             public DataStructure getDataStructure() {
-                Map<String, Dataset> datasets = getDatasets();
-
-                Set<String> ids = Sets.newHashSet();
-
-                DataStructure.Builder newDataStructure = DataStructure.builder();
-                for (String datasetName : datasets.keySet()) {
-                    DataStructure structure = datasets.get(datasetName).getDataStructure();
-                    for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
-                        if (!componentEntry.getValue().isIdentifier()) {
-                            newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
-                        } else {
-                            if (ids.add(componentEntry.getKey())) {
-                                newDataStructure.put(componentEntry);
-                            }
-                        }
-                    }
-                }
-
-                return newDataStructure.build();
+                return InnerJoinOperation.this.getDataStructure();
             }
 
             @Override
@@ -90,11 +110,8 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                     return datasets.iterator().next().get();
                 }
 
-                // Simple algorithm for now.
-                final Set<String> dimensions = getIds();
-
                 // Get the key comparator.
-                Comparator<List<DataPoint>> keyComparator = getKeyComparator(dimensions);
+                Comparator<List<DataPoint>> keyComparator = getKeyComparator();
 
                 // How to merge the tuples.
                 BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> merger = getMerger();
@@ -121,13 +138,13 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                     Function<Tuple, List<DataPoint>> keyExtractor = tuple -> {
                         // Filter by common ids.
                         return tuple.stream().filter(dataPoint ->
-                                getCommonIdentifierNames().contains(dataPoint.getName())
+                                identifiers.contains(dataPoint.getComponent())
                         ).collect(Collectors.toList());
                     };
                     Function<JoinTuple, List<DataPoint>> joinKeyExtractor = tuple -> {
                         // Filter by common ids.
                         return tuple.stream().filter(dataPoint ->
-                                getCommonIdentifierNames().contains(dataPoint.getName())
+                                identifiers.contains(dataPoint.getComponent())
                         ).collect(Collectors.toList());
                     };
                     result = StreamSupport.stream(
@@ -153,22 +170,25 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         };
     }
 
-    private Comparator<List<DataPoint>> getKeyComparator(final Set<String> dimensions) {
+    private Comparator<List<DataPoint>> getKeyComparator() {
         return (l, r) -> {
             // TODO: Tuple should expose method to handle this.
             // TODO: Evaluate migrating to DataPoint.
             // TODO: When using on, the left over identifiers should be transformed to measures.
+
             Map<String, Comparable> lIds = l.stream()
+                    .filter(dataPoint -> identifiers.contains(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
                             DataPoint::getName,
                             t -> (Comparable) t.get()
                     ));
             Map<String, Object> rIds = r.stream()
+                    .filter(dataPoint -> identifiers.contains(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
                             DataPoint::getName,
                             Supplier::get
                     ));
-            for (String key : dimensions) {
+            for (String key : lIds.keySet()) {
                 int res = lIds.get(key).compareTo(rIds.get(key));
                 if (res != 0)
                     return res;
