@@ -5,25 +5,25 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.UnionOperation;
-import no.ssb.vtl.script.visitors.join.JoinDefinitionVisitor;
+import no.ssb.vtl.script.visitors.join.JoinExpressionVisitor;
 
 import javax.script.ScriptContext;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * A visitor that handles the relational operators.
  */
 public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
 
-    final AssignmentVisitor assignmentVisitor;
-    final JoinDefinitionVisitor joinVisitor;
+    private final AssignmentVisitor assignmentVisitor;
+    private final JoinExpressionVisitor joinVisitor;
 
     public RelationalVisitor(AssignmentVisitor assignmentVisitor, ScriptContext context) {
         this.assignmentVisitor = checkNotNull(assignmentVisitor);
-        this.joinVisitor = new JoinDefinitionVisitor(context);
+        this.joinVisitor = new JoinExpressionVisitor(context);
     }
 
 
@@ -43,8 +43,4 @@ public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
         return () -> visit;
     }
 
-    @Override
-    public Supplier<Dataset> visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        return super.visitRelationalExpression(ctx);
-    }
 }

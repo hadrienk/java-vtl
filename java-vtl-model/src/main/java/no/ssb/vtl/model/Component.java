@@ -22,8 +22,6 @@ package no.ssb.vtl.model;
 
 import com.google.common.base.MoreObjects;
 
-import java.util.Objects;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -68,18 +66,20 @@ public class Component {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Component component = (Component) o;
-        return Objects.equals(getType(), component.getType()) &&
-                Objects.equals(getName(), component.getName()) &&
-                getRole() == component.getRole();
+        return this == o;
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//        Component component = (Component) o;
+//        return Objects.equals(getType(), component.getType()) &&
+//                //Objects.equals(getName(), component.getName()) &&
+//                getRole() == component.getRole();
     }
 
 
     @Override
     public int hashCode() {
-        return Objects.hash(getType(), getName(), getRole());
+        return System.identityHashCode(this);
+        ///return Objects.hash(getType(), getName(), getRole());
     }
 
 

@@ -56,7 +56,7 @@ public class AbstractJoinOperationTest {
                 ) {
 
                     @Override
-                    WorkingDataset workDataset() {
+                    public WorkingDataset workDataset() {
                         return new WorkingDataset() {
                             @Override
                             public DataStructure getDataStructure() {
@@ -85,7 +85,7 @@ public class AbstractJoinOperationTest {
                 ) {
 
                     @Override
-                    WorkingDataset workDataset() {
+                    public WorkingDataset workDataset() {
                         return null;
                     }
                 };
@@ -110,7 +110,7 @@ public class AbstractJoinOperationTest {
         try {
             new AbstractJoinOperation(Collections.emptyMap()) {
                 @Override
-                WorkingDataset workDataset() {
+                public WorkingDataset workDataset() {
                     return null;
                 }
             };
@@ -148,7 +148,7 @@ public class AbstractJoinOperationTest {
         AbstractJoinOperation result = new AbstractJoinOperation(ImmutableMap.of("ds1", ds1)) {
 
             @Override
-            WorkingDataset workDataset() {
+            public WorkingDataset workDataset() {
                 return new WorkingDataset() {
                     @Override
                     public DataStructure getDataStructure() {
@@ -163,26 +163,7 @@ public class AbstractJoinOperationTest {
             }
         };
 
-        result.getClauses().add(new JoinClause() {
-
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return workingDataset.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return workingDataset.get();
-                    }
-                };
-            }
-
-        });
-
-        assertThat(result.get())
+        assertThat(result.workDataset().get())
                 .containsAll(ds1.get().collect(Collectors.toList()));
 
     }

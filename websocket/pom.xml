@@ -20,6 +20,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
             <groupId>no.ssb.vtl</groupId>
             <artifactId>java-vtl-ssb-api-connector</artifactId>
         </dependency>
@@ -66,11 +72,6 @@
             <groupId>io.termd</groupId>
             <artifactId>termd-core</artifactId>
             <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4</artifactId>
-            <version>RELEASE</version>
         </dependency>
 
     </dependencies>

@@ -51,7 +51,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
      */
     public VTLScriptEngine(Connector... connectors) {
         this.connectors = ImmutableList.copyOf(connectors);
-
+        context = new VTLScriptContext();
     }
 
     /**
@@ -63,6 +63,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
     public VTLScriptEngine(Bindings n, Connector... connectors) {
         super(n);
         this.connectors = ImmutableList.copyOf(connectors);
+        context = new VTLScriptContext();
     }
 
     @Override
