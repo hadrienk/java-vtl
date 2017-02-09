@@ -14,8 +14,9 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
     final private BiFunction<L, R, O> compute;
+    private boolean hadLeft = false;
+    private boolean hadRight = false;
     private Pair pair = null;
-    private boolean hasNext = false;
 
     public JoinSpliterator(Comparator<K> comparator, Spliterator<L> left, Spliterator<R> right, Function<L, K> leftKey, Function<R, K> rightKey, BiFunction<L, R, O> compute) {
         this.comparator = comparator;
@@ -39,22 +40,26 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
         if (pair == null) {
             pair = new Pair();
-            hasNext = advanceLeft() && advanceRight();
+            hadLeft = advanceLeft();
+            hadRight = advanceRight();
         }
 
-        while (hasNext) {
+        while (hadLeft || hadRight) {
             int compare = comparator.compare(
                     leftKey.apply(pair.left), rightKey.apply(pair.right)
             );
             if (compare == 0) {
                 // generate.
                 action.accept(compute.apply(pair.left, pair.right));
-                hasNext = advanceLeft() && advanceRight();
-                return hasNext;
+                hadLeft = advanceLeft();
+                hadRight = advanceRight();
+                return true;
             } else if (compare < 0) {
-                hasNext = advanceLeft();
+                hadLeft = advanceLeft();
+                hadRight = true;
             } else /* if (compare > 0) */ {
-                hasNext = advanceRight();
+                hadRight = advanceRight();
+                hadLeft = true;
             }
         }
         return false;
