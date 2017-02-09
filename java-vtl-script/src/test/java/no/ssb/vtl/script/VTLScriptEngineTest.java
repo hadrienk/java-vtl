@@ -23,6 +23,7 @@ package no.ssb.vtl.script;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -331,6 +332,34 @@ public class VTLScriptEngineTest {
                 entry("id1m", Role.MEASURE),
                 entry("me1a", Role.ATTRIBUTE),
                 entry("at1i", Role.IDENTIFIER)
+        );
+    }
+
+    @Test
+    public void testCheckSingleRule() throws Exception {
+
+        when(dataset.getDataStructure()).thenReturn(
+                DataStructure.of((s, o) -> null,
+                        "kommune_nr", Role.IDENTIFIER, String.class,
+                        "code", Role.IDENTIFIER, String.class, //from KLASS
+                        "CONDITION", Role.MEASURE, Boolean.class
+                )
+        );
+
+        bindings.put("ds1", dataset);
+        engine.eval("ds2 := check (ds1)"
+//                + "            [rename id3 as id1]"
+        );
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset result = (Dataset) bindings.get("ds2");
+
+        assertThat(result.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("code", Component.Role.IDENTIFIER),
+                entry("CONDITION", Component.Role.MEASURE),
+                entry("errorcode", Component.Role.ATTRIBUTE),
+                entry("errorlevel", Component.Role.ATTRIBUTE)
         );
     }
 
