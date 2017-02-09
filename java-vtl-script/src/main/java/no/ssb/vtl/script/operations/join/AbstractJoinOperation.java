@@ -56,7 +56,14 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
 
     }
 
-    protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger();
+    // TODO: Filtering in each ids() access is very expensive. Need to optimise.
+    private static JoinTuple createJoinTuple(Tuple tuple) {
+        JoinTuple joinTuple = new JoinTuple(tuple.ids());
+        joinTuple.addAll(tuple.values());
+        return joinTuple;
+    }
+
+    protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger();
 
     protected abstract Comparator<List<DataPoint>> getKeyComparator();
 
@@ -91,13 +98,6 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         }
 
         return ImmutableMultimap.copyOf(possibleKeyComponents);
-    }
-
-    // TODO: Filtering in each ids() access is very expensive. Need to optimise.
-    private static JoinTuple createJoinTuple(Tuple tuple) {
-        JoinTuple joinTuple = new JoinTuple(tuple.ids());
-        joinTuple.addAll(tuple.values());
-        return joinTuple;
     }
 
     @Override
