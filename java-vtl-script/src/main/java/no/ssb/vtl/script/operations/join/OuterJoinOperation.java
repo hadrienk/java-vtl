@@ -88,7 +88,11 @@ public class OuterJoinOperation extends InnerJoinOperation {
                     });
                 }
 
-                return Arrays.asList(leftPadded, rightPadded);
+                if (compare > 0) {
+                    return Arrays.asList(rightPadded, leftPadded);
+                } else {
+                    return Arrays.asList(leftPadded, rightPadded);
+                }
             }
         };
     }

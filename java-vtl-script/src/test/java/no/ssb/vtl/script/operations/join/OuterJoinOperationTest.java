@@ -145,17 +145,17 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         structure2.wrap("id1", "1"),
                         structure2.wrap("id2", "b"),
                         structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "left 1b")
+                        structure2.wrap("value", "right 1b")
                 ), tuple(
                         structure2.wrap("id1", "2"),
                         structure2.wrap("id2", "c"),
                         structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "left 2c")
+                        structure2.wrap("value", "right 2c")
                 ), tuple(
                         structure2.wrap("id1", "3"),
                         structure2.wrap("id2", "d"),
                         structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "left 3d")
+                        structure2.wrap("value", "right 3d")
                 )
         ));
 
