@@ -1,17 +1,28 @@
 package no.ssb.vtl.script.operations.join;
 
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.test.AsciiTable4j;
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.time.Instant;
 import java.time.Year;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.*;
@@ -19,8 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class InnerJoinOperationTest {
+public class InnerJoinOperationTest extends RandomizedTest {
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -36,8 +48,8 @@ public class InnerJoinOperationTest {
 
     @Test
     public void testDefaultJoin() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        Dataset ds2 = mock(Dataset.class);
+        Dataset ds1 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds1");
 
         DataStructure structure1 = DataStructure.of(
                 mapper::convertValue,
@@ -109,7 +121,7 @@ public class InnerJoinOperationTest {
                 .flatExtracting(tuple -> tuple)
                 .flatExtracting(dataPoint -> Arrays.asList(dataPoint.getRole(), dataPoint.getComponent(), dataPoint.get()))
 
-                .containsExactly(
+                .startsWith(
                         IDENTIFIER, structure1.get("time"), Year.of(2010),
                         IDENTIFIER, structure1.get("ref_area"), "EU25",
                         IDENTIFIER, structure1.get("partner"), "CA",
@@ -118,6 +130,135 @@ public class InnerJoinOperationTest {
                         MEASURE, structure2.get("obs_value"), "10",
                         ATTRIBUTE, structure2.get("obs_status"), "P"
                 );
+    }
+
+    @Test
+    @Repeat(iterations = 10)
+    public void testRandomDatasets() throws Exception {
+
+        Integer datasetAmount = scaledRandomIntBetween(1, 50);
+        Integer rowAmount = scaledRandomIntBetween(0, 500);
+        Set<Component> allComponents = Sets.newHashSet();
+
+        Map<String, Dataset> datasets = Maps.newLinkedHashMap();
+        for (int i = 0; i < datasetAmount; i++) {
+
+            DataStructure structure = DataStructure.of(
+                    mapper::convertValue,
+                    "id1", IDENTIFIER, Year.class,
+                    "id2", IDENTIFIER, String.class,
+                    "id3", IDENTIFIER, Instant.class,
+                    "measure", MEASURE, Integer.class,
+                    "attribute", ATTRIBUTE, String.class
+            );
+            Dataset dataset = mock(Dataset.class, "Mocked dataset" + i);
+            when(dataset.getDataStructure()).thenReturn(structure);
+            datasets.put("ds" + i, dataset);
+
+            allComponents.addAll(structure.values());
+
+            int j = i;
+            when(dataset.get()).then(invocation ->
+                    IntStream.rangeClosed(0, rowAmount)
+                            .boxed()
+                            .map(rowNum ->
+                                    tuple(
+                                            structure.wrap("id1", Year.of(2000)),
+                                            structure.wrap("id2", "id"),
+                                            structure.wrap("id3", Instant.ofEpochMilli(60 * 60 * 24 * 100)),
+                                            structure.wrap("measure", "measure-" + j + "-" + rowNum),
+                                            structure.wrap("attribute", "attribute-" + j + "-" + rowNum)
+                                    )
+                            )
+            );
+        }
+
+        InnerJoinOperation result = new InnerJoinOperation(datasets);
+
+        assertThat(result.getDataStructure())
+                .describedAs("data structure of the inner join")
+                .hasSize(datasetAmount * 2 + 3);
+
+        assertThat(allComponents)
+                .describedAs("all the components in the datasets")
+                .hasSize(datasetAmount * 5);
+
+        List<Object> data = datasets.values().stream()
+                .flatMap(Supplier::get)
+                .map(Dataset.Tuple::values)
+                .flatMap(Collection::stream)
+                .map(DataPoint::get)
+                .collect(Collectors.toList());
+
+        assertThat(result.get())
+                .describedAs("the data")
+                .flatExtracting(Dataset.Tuple::values)
+                .extracting(DataPoint::get)
+                .containsOnlyElementsOf(
+                        data
+                );
+
+
+//        assertThat(allComponents)
+//                .describedAs("all the components in the datasets")
+//                .
+//                .containsExactlyElementsOf(result.getDataStructure().values());
+
+        //showDataset(result);
+
+        //assertThat(result.get()).isEmpty();
+
+    }
+
+    private void showDataset(InnerJoinOperation result) {
+        AsciiTable4j structure = new AsciiTable4j();
+        structure.addRow(result.getDataStructure().keySet());
+        structure.addRow(result.getDataStructure().values().stream()
+                .map(Component::getName).collect(Collectors.toList())
+        );
+        structure.addRow(result.getDataStructure().values().stream()
+                .map(Component::getRole).map(Enum::toString).collect(Collectors.toList())
+        );
+        structure.addRow(result.getDataStructure().values().stream()
+                .map(Component::getType).map(Class::getSimpleName).collect(Collectors.toList())
+        );
+        structure.addRow(result.getDataStructure().values().stream()
+                .map(Component::hashCode)
+                .map(i -> Integer.toString(i))
+                .collect(Collectors.toList())
+        );
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(baos);
+        structure.showTable(out);
+
+        out.println();
+
+        AsciiTable4j table = new AsciiTable4j();
+        table.addRow(
+                result.getDataStructure().values().stream()
+                        .map(c ->
+                                String.format("%s (%d)",
+                                        c.getName(),
+                                        c.hashCode()
+                                        )
+                        )
+                        .collect(Collectors.toList())
+        );
+        result.get().forEach(tuple -> {
+            table.addRow(
+                    tuple.stream()
+                            .map(dataPoint ->
+                                    String.format("%s (%d)",
+                                            dataPoint.get(),
+                                            dataPoint.getComponent().hashCode()
+                                    )
+                            ).collect(Collectors.toList())
+            );
+        });
+        table.showTable(out);
+        out.flush();
+
+        System.out.print(baos.toString());
     }
 
     private Dataset.Tuple tuple(DataPoint... components) {
