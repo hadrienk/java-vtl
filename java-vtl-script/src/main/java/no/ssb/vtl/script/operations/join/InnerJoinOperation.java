@@ -25,9 +25,9 @@ import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -92,10 +92,14 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> getMerger() {
-        return (joinTuple, components) -> {
-            joinTuple.addAll(components.values());
-            return joinTuple;
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger() {
+        return (left, right, compare) -> {
+            if (compare == 0) {
+                left.addAll(right.values());
+                return left;
+            } else {
+                return null;
+            }
         };
     }
 

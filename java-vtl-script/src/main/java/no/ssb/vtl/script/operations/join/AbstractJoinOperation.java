@@ -28,7 +28,6 @@ import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,7 +56,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
 
     }
 
-    protected abstract BiFunction<JoinTuple, Tuple, JoinTuple> getMerger();
+    protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger();
 
     protected abstract Comparator<List<DataPoint>> getKeyComparator();
 
@@ -100,6 +99,13 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return ImmutableMultimap.copyOf(possibleKeyComponents);
     }
 
+    // TODO: Filtering in each ids() access is very expensive. Need to optimise.
+    private static JoinTuple createJoinTuple(Tuple tuple) {
+        JoinTuple joinTuple = new JoinTuple(tuple.ids());
+        joinTuple.addAll(tuple.values());
+        return joinTuple;
+    }
+
     @Override
     public Stream<Tuple> get() {
 
@@ -109,19 +115,18 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         }
 
         Iterator<Dataset> iterator = datasets.values().iterator();
-        Stream<JoinTuple> result = iterator.next().get().map(components -> {
-            JoinTuple joinTuple = new JoinTuple(components.ids());
-            joinTuple.addAll(components.values());
-            return joinTuple;
-        });
+        Stream<JoinTuple> result = iterator.next().get()
+                .map(AbstractJoinOperation::createJoinTuple);
 
         while (iterator.hasNext()) {
             result = StreamSupport.stream(
                     new JoinSpliterator<>(
                             getKeyComparator(),
                             result.spliterator(),
-                            iterator.next().get().spliterator(),
-                            getJoinExtractor(),
+                            iterator.next().get()
+                                    .map(AbstractJoinOperation::createJoinTuple)
+                                    .spliterator(),
+                            getKeyExtractor(),
                             getKeyExtractor(),
                             getMerger()
                     ), false
@@ -139,7 +144,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         };
     }
 
-    protected Function<Tuple, List<DataPoint>> getKeyExtractor() {
+    protected Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
         return tuple -> {
             // Filter by common ids.
             return tuple.stream().filter(dataPoint ->

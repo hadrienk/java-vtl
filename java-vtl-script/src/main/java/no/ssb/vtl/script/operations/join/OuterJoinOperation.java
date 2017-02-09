@@ -23,11 +23,11 @@ import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 public class OuterJoinOperation extends AbstractJoinOperation {
 
@@ -36,7 +36,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected BiFunction<JoinTuple, Tuple, JoinTuple> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer,JoinTuple> getMerger() {
         return null;
     }
 

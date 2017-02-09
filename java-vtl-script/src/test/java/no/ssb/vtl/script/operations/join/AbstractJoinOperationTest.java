@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
@@ -14,7 +15,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -150,7 +150,7 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected BiFunction<JoinTuple, Tuple, JoinTuple> getMerger() {
+        protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger() {
             return null;
         }
 
