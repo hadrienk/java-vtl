@@ -10,7 +10,6 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.VTLScriptContext;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
@@ -72,12 +71,6 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 //        WorkingDataset workingDataset = joinOperation.workDataset();
 //
 //        return joinClause.apply(workingDataset);
-    }
-
-    VTLScriptContext createJoinContext(Bindings joinScope, ScriptContext scriptContext) {
-        VTLScriptContext joinContext = new VTLScriptContext();
-        joinContext.setBindings(joinScope, 50);
-        return joinContext;
     }
 
     @Override

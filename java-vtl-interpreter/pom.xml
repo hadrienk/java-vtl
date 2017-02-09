@@ -64,6 +64,12 @@
             <version>2.14.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 

@@ -27,7 +27,6 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import org.assertj.core.api.ListAssert;
 import org.junit.Test;
 
 import javax.script.Bindings;
@@ -40,6 +39,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
+import static no.ssb.vtl.test.ComponentConditions.componentWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
@@ -161,26 +161,36 @@ public class VTLScriptEngineTest {
                 "");
 
         assertThat(bindings).containsKey("ds3");
-
-
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+
         Dataset ds3 = (Dataset) bindings.get("ds3");
         assertThat(ds3.getDataStructure())
                 .describedAs("data structure of d3")
                 .containsOnlyKeys(
-                "renamedId1", "id2", "m2", "m1", "ident"
-        );
+                        "renamedId1", "id2", "m2", "m1", "ident"
+                );
 
-        ListAssert<DataPoint> datapoints = assertThat(ds3.get())
-                .flatExtracting(input -> input);
+        assertThat(ds3.getDataStructure().values())
+                .haveAtLeastOne(componentWith("renamedId1", Role.IDENTIFIER))
+                .haveAtLeastOne(componentWith("id2", Role.IDENTIFIER))
+                .haveAtLeastOne(componentWith("ds2.m2", Role.MEASURE))
+                .haveAtLeastOne(componentWith("m1", Role.MEASURE))
+                .haveAtLeastOne(componentWith("ident", Role.MEASURE));
 
-        datapoints.extracting(DataPoint::getName).containsExactly(
-                "renamedId1", "id2", "m2", "m1", "ident"
-        );
 
-        datapoints.extracting(DataPoint::get).containsExactly(
-                "1", "1", 40, 10, 0
-        );
+        assertThat(ds3.get())
+                .flatExtracting(input -> input)
+                .extracting(DataPoint::getName)
+                .containsExactly(
+                        "renamedId1", "id2", "m2", "m1", "ident"
+                );
+
+        assertThat(ds3.get())
+                .flatExtracting(input -> input)
+                .extracting(DataPoint::get)
+                .containsExactly(
+                        "1", "1", 40, 10, 0
+                );
     }
 
     @Test
