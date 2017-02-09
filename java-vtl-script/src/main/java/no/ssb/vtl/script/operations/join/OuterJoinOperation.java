@@ -19,40 +19,31 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.ImmutableSet;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.Comparator;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class OuterJoinOperation extends AbstractJoinOperation {
+public class OuterJoinOperation extends InnerJoinOperation {
 
     public OuterJoinOperation(Map<String, Dataset> namedDatasets) {
         super(namedDatasets);
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer,JoinTuple> getMerger() {
-        return null;
-    }
-
-    @Override
-    protected Comparator<List<DataPoint>> getKeyComparator() {
-        return null;
-    }
-
-    @Override
-    protected ImmutableSet<Component> getIdentifiers() {
-        return null;
-    }
-
-    @Override
-    public WorkingDataset workDataset() {
-        return null;
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        return (left, right, compare) -> {
+            if (compare == 0) {
+                return Collections.emptyList();
+            } else {
+                JoinTuple rightWithLeftIds = new JoinTuple(left.ids());
+                rightWithLeftIds.addAll(left.values());
+                return Arrays.asList(left, right);
+            }
+        };
     }
 
 }
