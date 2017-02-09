@@ -19,21 +19,17 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -43,11 +39,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class InnerJoinOperation extends AbstractJoinOperation {
 
+    private ImmutableSet<Component> identifiers;
+
     public InnerJoinOperation(Map<String, Dataset> namedDatasets) {
         this(namedDatasets, Collections.emptySet());
     }
-
-    ImmutableSet<Component> identifiers;
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(namedDatasets);
@@ -85,105 +81,40 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public WorkingDataset workDataset() {
-
-        return new WorkingDataset() {
-
-            @Override
-            public String toString() {
-                MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-                return helper.toString();
-            }
-
-            @Override
-            public DataStructure getDataStructure() {
-                return InnerJoinOperation.this.getDataStructure();
-            }
-
-            @Override
-            public Stream<Tuple> get() {
-                Collection<Dataset> datasets = getDatasets().values();
-                checkArgument(!datasets.isEmpty(), "no dataset for the join %s", this);
-
-                // Optimization.
-                if (datasets.size() == 1) {
-                    return datasets.iterator().next().get();
-                }
-
-                // Get the key comparator.
-                Comparator<List<DataPoint>> keyComparator = getKeyComparator();
-
-                // How to merge the tuples.
-                BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> merger = getMerger();
-
-                DataStructure joinedDataStructure = getDataStructure();
-                Iterator<Dataset> iterator = datasets.iterator();
-                Stream<JoinTuple> result = iterator.next().get().map(components -> {
-                    components.replaceAll(dataPoint -> {
-                        // Get the new component.
-                        Component newComponent = joinedDataStructure.get(joinedDataStructure.getName(dataPoint.getComponent()));
-                        return new DataPoint(newComponent) {
-                            @Override
-                            public Object get() {
-                                return dataPoint.get();
-                            }
-                        };
-                    });
-                    JoinTuple joinTuple = new JoinTuple(components.ids());
-                    joinTuple.addAll(components.values());
-                    return joinTuple;
-                });
-
-                while (iterator.hasNext()) {
-                    Function<Tuple, List<DataPoint>> keyExtractor = tuple -> {
-                        // Filter by common ids.
-                        return tuple.stream().filter(dataPoint ->
-                                identifiers.contains(dataPoint.getComponent())
-                        ).collect(Collectors.toList());
-                    };
-                    Function<JoinTuple, List<DataPoint>> joinKeyExtractor = tuple -> {
-                        // Filter by common ids.
-                        return tuple.stream().filter(dataPoint ->
-                                identifiers.contains(dataPoint.getComponent())
-                        ).collect(Collectors.toList());
-                    };
-                    result = StreamSupport.stream(
-                            new JoinSpliterator<>(
-                                    keyComparator,
-                                    result.spliterator(),
-                                    iterator.next().get().spliterator(),
-                                    joinKeyExtractor,
-                                    keyExtractor,
-                                    merger
-                            ), false
-                    );
-                }
-                return result.map(tuple -> (Tuple) tuple);
-            }
-        };
+    public ImmutableSet<Component> getIdentifiers() {
+        return identifiers;
     }
 
-    private BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> getMerger() {
+    @Override
+    public WorkingDataset workDataset() {
+        // TODO: Remove
+        return this;
+    }
+
+    @Override
+    protected BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> getMerger() {
         return (joinTuple, components) -> {
             joinTuple.addAll(components.values());
             return joinTuple;
         };
     }
 
-    private Comparator<List<DataPoint>> getKeyComparator() {
+    @Override
+    protected Comparator<List<DataPoint>> getKeyComparator() {
+        ImmutableMultimap<Dataset, Component> keys = getPossibleKeyComponents();
         return (l, r) -> {
             // TODO: Tuple should expose method to handle this.
             // TODO: Evaluate migrating to DataPoint.
             // TODO: When using on, the left over identifiers should be transformed to measures.
 
             Map<String, Comparable> lIds = l.stream()
-                    .filter(dataPoint -> identifiers.contains(dataPoint.getComponent()))
+                    .filter(dataPoint -> keys.containsValue(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
                             DataPoint::getName,
                             t -> (Comparable) t.get()
                     ));
             Map<String, Object> rIds = r.stream()
-                    .filter(dataPoint -> identifiers.contains(dataPoint.getComponent()))
+                    .filter(dataPoint -> keys.containsValue(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
                             DataPoint::getName,
                             Supplier::get

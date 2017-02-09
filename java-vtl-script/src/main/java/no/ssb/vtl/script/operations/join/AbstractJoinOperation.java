@@ -24,19 +24,22 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
-import java.util.List;
-import java.util.Map;
-import java.util.RandomAccess;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Abstract join operation.
  */
-public abstract class AbstractJoinOperation {
+public abstract class AbstractJoinOperation implements WorkingDataset {
 
     // The datasets the join operates on.
     private final Map<String, Dataset> datasets;
@@ -54,6 +57,12 @@ public abstract class AbstractJoinOperation {
 
     }
 
+    protected abstract BiFunction<JoinTuple, Tuple, JoinTuple> getMerger();
+
+    protected abstract Comparator<List<DataPoint>> getKeyComparator();
+
+    protected abstract ImmutableSet<Component> getIdentifiers();
+
     /**
      * Compute a multimap with components eligible as keys.
      */
@@ -61,30 +70,110 @@ public abstract class AbstractJoinOperation {
         Set<String> names = Sets.newHashSet();
         Set<Class<?>> types = Sets.newHashSet();
 
-        Multimap<Dataset, Component> possibleKeyComponents = HashMultimap.create();
+        // Using a LinkedHashMultimap because we need to maintain the order.
+        Multimap<Dataset, Component> possibleKeyComponents = LinkedHashMultimap.create();
+
         for (Dataset dataset : datasets.values()) {
             for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
                 String name = componentEntry.getKey();
                 Component component = componentEntry.getValue();
-                if (component.isIdentifier() && names.contains(name) && types.contains(component.getType())) {
-                    checkArgument(
-                            possibleKeyComponents.put(dataset, component),
-                            "the component %s in the dataset %s was already seen",
-                            componentEntry, dataset
-                    );
+                if (component.isIdentifier()) {
+
+                    // Add if not present
+                    if (!names.contains(name) && !types.contains(component.getType())) {
+                        names.add(name);
+                        types.add(component.getType());
+                    }
+
+                    if (names.contains(name) && types.contains(component.getType())) {
+                        checkArgument(
+                                possibleKeyComponents.put(dataset, component),
+                                "the component %s in the dataset %s was already seen",
+                                componentEntry, dataset
+                        );
+                    }
                 }
-                names.add(name);
-                types.add(component.getType());
+
             }
         }
 
         return ImmutableMultimap.copyOf(possibleKeyComponents);
     }
 
+    @Override
+    public Stream<Tuple> get() {
+
+        // Optimization.
+        if (datasets.size() == 1) {
+            return datasets.values().iterator().next().get();
+        }
+
+        // Get the key comparator.
+        Comparator<List<DataPoint>> keyComparator = getKeyComparator();
+
+        // How to merge the tuples.
+        BiFunction<JoinTuple, Tuple, JoinTuple> merger = getMerger();
+
+        DataStructure joinedDataStructure = getDataStructure();
+
+        Iterator<Dataset> iterator = datasets.values().iterator();
+        Stream<JoinTuple> result = iterator.next().get().map(components -> {
+            // TODO: Remove this.
+//            components.replaceAll(dataPoint -> {
+//                // Get the new component.
+//
+//                Component newComponent = joinedDataStructure.get(joinedDataStructure.getName(dataPoint.getComponent()));
+//                return new DataPoint(newComponent) {
+//                    @Override
+//                    public Object get() {
+//                        return dataPoint.get();
+//                    }
+//                };
+//            });
+            JoinTuple joinTuple = new JoinTuple(components.ids());
+            joinTuple.addAll(components.values());
+            return joinTuple;
+        });
+
+        while (iterator.hasNext()) {
+            result = StreamSupport.stream(
+                    new JoinSpliterator<>(
+                            getKeyComparator(),
+                            result.spliterator(),
+                            iterator.next().get().spliterator(),
+                            getJoinExtractor(),
+                            getKeyExtractor(),
+                            getMerger()
+                    ), false
+            );
+        }
+        return result.map(tuple -> tuple);
+    }
+
+    protected Function<JoinTuple, List<DataPoint>> getJoinExtractor() {
+        final ImmutableMultimap<Dataset, Component> keys = getPossibleKeyComponents();
+        return tuple -> {
+            // Filter by common ids.
+            return tuple.stream().filter(dataPoint ->
+                    keys.containsValue(dataPoint.getComponent())
+            ).collect(Collectors.toList());
+        };
+    }
+
+    protected Function<Tuple, List<DataPoint>> getKeyExtractor() {
+        final ImmutableMultimap<Dataset, Component> keys = getPossibleKeyComponents();
+        return tuple -> {
+            // Filter by common ids.
+            return tuple.stream().filter(dataPoint ->
+                    keys.containsValue(dataPoint.getComponent())
+            ).collect(Collectors.toList());
+        };
+    }
+
     /**
      * Compute the DataStructure of the join dataset.
      */
-    protected DataStructure getDataStructure() {
+    public DataStructure getDataStructure() {
 
         // Optimization.
         if (datasets.size() == 1) {
@@ -113,10 +202,6 @@ public abstract class AbstractJoinOperation {
     }
 
     public abstract WorkingDataset workDataset();
-
-    Map<String, Dataset> getDatasets() {
-        return datasets;
-    }
 
     /**
      * Holds the "working dataset" tuples.
