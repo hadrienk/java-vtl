@@ -151,7 +151,7 @@ public class VTLScriptEngineTest {
 
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
-                "  filter id1 = 1," +                                       // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
+                //"  filter id1 = 1," +                                       // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
                 "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
                 "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
@@ -165,8 +165,12 @@ public class VTLScriptEngineTest {
         Dataset ds3 = (Dataset) bindings.get("ds3");
         assertThat(ds3.getDataStructure())
                 .describedAs("data structure of d3")
-                .containsOnlyKeys(
-                        "renamedId1", "id2", "m2", "m1", "ident"
+                .contains(
+                        entry("renamedId1", structure2.get("id1")),
+                        entry("id2", structure1.get("id1")),
+                        entry("m1", structure1.get("m1")),
+                        entry("m2", structure2.get("m2")),
+                        entry("ident", structure1.get("id1"))
                 );
 
         assertThat(ds3.getDataStructure().values())

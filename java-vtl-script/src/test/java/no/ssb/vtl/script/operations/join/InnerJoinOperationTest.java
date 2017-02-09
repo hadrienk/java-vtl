@@ -10,6 +10,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.VTLPrintStream;
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 
@@ -69,7 +70,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         given(ds1.getDataStructure()).willReturn(structure1);
         given(ds2.getDataStructure()).willReturn(structure2);
 
-        given(ds1.get()).willReturn(Stream.of(
+        given(ds1.get()).willAnswer(o -> Stream.of(
                 tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
@@ -91,7 +92,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 )
         ));
 
-        given(ds2.get()).willReturn(Stream.of(
+        given(ds2.get()).willAnswer(o -> Stream.of(
                 tuple(
                         structure2.wrap("time", Year.of(2010)),
                         structure2.wrap("ref_area", "EU25"),
@@ -102,6 +103,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
         ));
 
         AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+
+        new VTLPrintStream(System.out).println(result);
 
         assertThat(result.workDataset().getDataStructure())
                 .containsOnly(

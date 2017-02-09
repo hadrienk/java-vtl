@@ -54,13 +54,13 @@ public class CrossJoinOperationTest {
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
-                        structure1.wrap("partner", "BG"),
+                        structure1.wrap("partner", "LEFT"),
                         structure1.wrap("obs_value", "2"),
                         structure1.wrap("obs_status", "P")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
-                        structure1.wrap("partner", "RO"),
+                        structure1.wrap("partner", "NONELEFT"),
                         structure1.wrap("obs_value", "2"),
                         structure1.wrap("obs_status", "P")
                 )
@@ -68,11 +68,23 @@ public class CrossJoinOperationTest {
 
         given(ds2.get()).willReturn(Stream.of(
                 tuple(
-                        structure2.wrap("time", Year.of(2010)),
-                        structure2.wrap("ref_area", "EU25"),
-                        structure2.wrap("partner", "CA"),
-                        structure2.wrap("obs_value", "10"),
-                        structure2.wrap("obs_status", "P")
+                        structure1.wrap("time", Year.of(2010)),
+                        structure1.wrap("ref_area", "EU25"),
+                        structure1.wrap("partner", "CA"),
+                        structure1.wrap("obs_value", "20"),
+                        structure1.wrap("obs_status", "E")
+                ), tuple(
+                        structure1.wrap("time", Year.of(2010)),
+                        structure1.wrap("ref_area", "EU25"),
+                        structure1.wrap("partner", "RIGHT"),
+                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_status", "P")
+                ), tuple(
+                        structure1.wrap("time", Year.of(2010)),
+                        structure1.wrap("ref_area", "EU25"),
+                        structure1.wrap("partner", "NONERIGHT"),
+                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_status", "P")
                 )
         ));
 

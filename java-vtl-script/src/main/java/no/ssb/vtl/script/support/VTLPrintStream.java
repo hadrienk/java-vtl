@@ -44,6 +44,7 @@ public class VTLPrintStream extends PrintStream {
             table.addRow(
                     tuple.stream()
                             .map(DataPoint::get)
+                            .map(o -> o == null ? "[NULL]" : o)
                             .map(Object::toString)
                             .collect(Collectors.toList())
             );
