@@ -66,7 +66,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     /**
      * Compute a multimap with components eligible as keys.
      */
-    protected ImmutableMultimap<Dataset, Component> getPossibleKeyComponents() {
+    final ImmutableMultimap<Dataset, Component> getPossibleKeyComponents() {
         Set<String> names = Sets.newHashSet();
         Set<Class<?>> types = Sets.newHashSet();
 
@@ -108,28 +108,8 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
             return datasets.values().iterator().next().get();
         }
 
-        // Get the key comparator.
-        Comparator<List<DataPoint>> keyComparator = getKeyComparator();
-
-        // How to merge the tuples.
-        BiFunction<JoinTuple, Tuple, JoinTuple> merger = getMerger();
-
-        DataStructure joinedDataStructure = getDataStructure();
-
         Iterator<Dataset> iterator = datasets.values().iterator();
         Stream<JoinTuple> result = iterator.next().get().map(components -> {
-            // TODO: Remove this.
-//            components.replaceAll(dataPoint -> {
-//                // Get the new component.
-//
-//                Component newComponent = joinedDataStructure.get(joinedDataStructure.getName(dataPoint.getComponent()));
-//                return new DataPoint(newComponent) {
-//                    @Override
-//                    public Object get() {
-//                        return dataPoint.get();
-//                    }
-//                };
-//            });
             JoinTuple joinTuple = new JoinTuple(components.ids());
             joinTuple.addAll(components.values());
             return joinTuple;
@@ -151,21 +131,19 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     protected Function<JoinTuple, List<DataPoint>> getJoinExtractor() {
-        final ImmutableMultimap<Dataset, Component> keys = getPossibleKeyComponents();
         return tuple -> {
             // Filter by common ids.
             return tuple.stream().filter(dataPoint ->
-                    keys.containsValue(dataPoint.getComponent())
+                    getIdentifiers().contains(dataPoint.getComponent())
             ).collect(Collectors.toList());
         };
     }
 
     protected Function<Tuple, List<DataPoint>> getKeyExtractor() {
-        final ImmutableMultimap<Dataset, Component> keys = getPossibleKeyComponents();
         return tuple -> {
             // Filter by common ids.
             return tuple.stream().filter(dataPoint ->
-                    keys.containsValue(dataPoint.getComponent())
+                    getIdentifiers().contains(dataPoint.getComponent())
             ).collect(Collectors.toList());
         };
     }
