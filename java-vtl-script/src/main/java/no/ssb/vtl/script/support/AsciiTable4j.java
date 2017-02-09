@@ -1,4 +1,4 @@
-package no.ssb.vtl.test;
+package no.ssb.vtl.script.support;
 
 import java.io.PrintStream;
 import java.util.ArrayList;

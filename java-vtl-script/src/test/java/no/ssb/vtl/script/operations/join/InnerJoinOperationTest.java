@@ -10,12 +10,9 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.test.AsciiTable4j;
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.time.Instant;
 import java.time.Year;
 import java.util.*;
@@ -208,57 +205,6 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         //assertThat(result.get()).isEmpty();
 
-    }
-
-    private void showDataset(InnerJoinOperation result) {
-        AsciiTable4j structure = new AsciiTable4j();
-        structure.addRow(result.getDataStructure().keySet());
-        structure.addRow(result.getDataStructure().values().stream()
-                .map(Component::getName).collect(Collectors.toList())
-        );
-        structure.addRow(result.getDataStructure().values().stream()
-                .map(Component::getRole).map(Enum::toString).collect(Collectors.toList())
-        );
-        structure.addRow(result.getDataStructure().values().stream()
-                .map(Component::getType).map(Class::getSimpleName).collect(Collectors.toList())
-        );
-        structure.addRow(result.getDataStructure().values().stream()
-                .map(Component::hashCode)
-                .map(i -> Integer.toString(i))
-                .collect(Collectors.toList())
-        );
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(baos);
-        structure.showTable(out);
-
-        out.println();
-
-        AsciiTable4j table = new AsciiTable4j();
-        table.addRow(
-                result.getDataStructure().values().stream()
-                        .map(c ->
-                                String.format("%s (%d)",
-                                        c.getName(),
-                                        c.hashCode()
-                                        )
-                        )
-                        .collect(Collectors.toList())
-        );
-        result.get().forEach(tuple -> {
-            table.addRow(
-                    tuple.stream()
-                            .map(dataPoint ->
-                                    String.format("%s (%d)",
-                                            dataPoint.get(),
-                                            dataPoint.getComponent().hashCode()
-                                    )
-                            ).collect(Collectors.toList())
-            );
-        });
-        table.showTable(out);
-        out.flush();
-
-        System.out.print(baos.toString());
     }
 
     private Dataset.Tuple tuple(DataPoint... components) {
