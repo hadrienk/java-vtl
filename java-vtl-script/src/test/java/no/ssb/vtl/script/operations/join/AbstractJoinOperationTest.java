@@ -150,7 +150,7 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger() {
+        protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
             return null;
         }
 

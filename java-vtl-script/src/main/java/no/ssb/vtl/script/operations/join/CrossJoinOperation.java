@@ -23,6 +23,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class CrossJoinOperation extends InnerJoinOperation {
@@ -31,7 +32,7 @@ public class CrossJoinOperation extends InnerJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
         return (left, right, compare) -> {
             JoinTuple tuple = new JoinTuple(Collections.emptyList());
             if (compare == 0) {
@@ -42,7 +43,7 @@ public class CrossJoinOperation extends InnerJoinOperation {
             } else /* if (compare > 0) */ {
                 tuple.addAll(right);
             }
-            return tuple;
+            return Collections.singletonList(tuple);
         };
     }
 }

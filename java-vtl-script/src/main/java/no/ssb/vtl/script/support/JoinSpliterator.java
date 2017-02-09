@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.support;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -12,7 +13,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     final private Spliterator<R> right;
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
-    final private TriFunction<L, R, Integer, ? extends O> compute;
+    final private TriFunction<L, R, Integer,List<O>> compute;
     private boolean hadLeft = false;
     private boolean hadRight = false;
     private Pair pair = null;
@@ -23,7 +24,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Spliterator<R> right,
             Function<L, K> leftKey,
             Function<R, K> rightKey,
-            TriFunction<L, R , Integer, ? extends O> compute) {
+            TriFunction<L, R , Integer, List<O>> compute) {
         this.comparator = comparator;
         this.right = right;
         this.left = left;
@@ -54,21 +55,23 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
                     leftKey.apply(pair.left), rightKey.apply(pair.right)
             );
             // generate.
-            O apply = compute.apply(pair.left, pair.right, compare);
+            List<? extends O> apply = compute.apply(pair.left, pair.right, compare);
             if (apply != null) {
-                action.accept(apply);
+                for (O o : apply) {
+                    action.accept(o);
+                }
             }
             if (compare == 0) {
                 hadLeft = advanceLeft();
                 hadRight = advanceRight();
-                return true;
             } else if (compare < 0) {
                 hadLeft = advanceLeft();
-                hadRight = true;
+                hadRight = false;
             } else /* if (compare > 0) */ {
                 hadRight = advanceRight();
-                hadLeft = true;
+                hadLeft = false;
             }
+            return hadLeft || hadRight;
         }
         return false;
     }

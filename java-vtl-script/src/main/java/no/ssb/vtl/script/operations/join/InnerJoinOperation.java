@@ -92,11 +92,11 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, JoinTuple> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
         return (left, right, compare) -> {
             if (compare == 0) {
                 left.addAll(right.values());
-                return left;
+                return Collections.singletonList(left);
             } else {
                 return null;
             }
