@@ -66,8 +66,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
      * Compute a multimap with components eligible as keys.
      */
     final ImmutableMultimap<Dataset, Component> getPossibleKeyComponents() {
-        Set<String> names = Sets.newHashSet();
-        Set<Class<?>> types = Sets.newHashSet();
+        Map<String, Class<?>> seen = Maps.newHashMapWithExpectedSize(datasets.size());
 
         // Using a LinkedHashMultimap because we need to maintain the order.
         Multimap<Dataset, Component> possibleKeyComponents = LinkedHashMultimap.create();
@@ -77,14 +76,9 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
                 String name = componentEntry.getKey();
                 Component component = componentEntry.getValue();
                 if (component.isIdentifier()) {
-
                     // Add if not present
-                    if (!names.contains(name) && !types.contains(component.getType())) {
-                        names.add(name);
-                        types.add(component.getType());
-                    }
-
-                    if (names.contains(name) && types.contains(component.getType())) {
+                    seen.putIfAbsent(name, component.getType());
+                    if (seen.containsKey(name) && seen.get(name).isAssignableFrom(component.getType())) {
                         checkArgument(
                                 possibleKeyComponents.put(dataset, component),
                                 "the component %s in the dataset %s was already seen",
