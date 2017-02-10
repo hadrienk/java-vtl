@@ -19,16 +19,23 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CrossJoinOperation extends InnerJoinOperation {
-    public CrossJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets);
+
+    CrossJoinOperation(Map<String, Dataset> namedDatasets) {
+        super(namedDatasets, Collections.emptySet());
+    }
+
+    public CrossJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
+        super(namedDatasets, identifiers);
     }
 
     @Override

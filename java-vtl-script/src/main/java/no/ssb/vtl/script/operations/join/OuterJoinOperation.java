@@ -20,16 +20,21 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import com.google.common.collect.Lists;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
 
-public class OuterJoinOperation extends InnerJoinOperation {
+public class OuterJoinOperation extends AbstractJoinOperation {
 
-    public OuterJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets);
+    OuterJoinOperation(Map<String, Dataset> namedDatasets) {
+        super(namedDatasets, Collections.emptySet());
+    }
+
+    public OuterJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
+        super(namedDatasets, identifiers);
     }
 
     @Override
@@ -95,6 +100,12 @@ public class OuterJoinOperation extends InnerJoinOperation {
                 }
             }
         };
+    }
+
+    @Override
+    public WorkingDataset workDataset() {
+        // TODO: Remove this method.
+        return this;
     }
 
 }

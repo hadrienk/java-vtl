@@ -34,7 +34,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
     }
 
     @Test
-    @Repeat(iterations = 1000)
+    @Repeat(iterations = 50)
     public void testRandomDatasets() throws Exception {
 
         // Build random test data.

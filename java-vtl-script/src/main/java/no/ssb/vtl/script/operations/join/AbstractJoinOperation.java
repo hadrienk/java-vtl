@@ -30,11 +30,13 @@ import no.ssb.vtl.script.support.JoinSpliterator;
 import javax.script.Bindings;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Abstract join operation.
@@ -42,18 +44,23 @@ import static com.google.common.base.Preconditions.checkArgument;
 public abstract class AbstractJoinOperation implements WorkingDataset {
 
     // The datasets the join operates on.
-    private final Map<String, Dataset> datasets;
     private final Bindings joinScope;
+    private final ImmutableMap<String, Dataset> datasets;
+    private final ImmutableSet<Component> identifiers;
 
-    public AbstractJoinOperation(Map<String, Dataset> namedDatasets) {
+    AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
 
+        this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
+
+        checkNotNull(identifiers);
         checkArgument(
                 !namedDatasets.isEmpty(),
                 "join operation impossible on empty dataset list"
         );
 
-        this.datasets = namedDatasets;
         this.joinScope = new JoinScopeBindings(this.datasets);
+
+        this.identifiers = createIdentifierSet(identifiers);
 
     }
 
@@ -64,16 +71,45 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return joinTuple;
     }
 
+    private ImmutableSet<Component> createIdentifierSet(Set<Component> identifiers) {
+        ImmutableMultimap<String, Component> superSet = createCommonIdentifiers();
+
+        HashSet<Component> keySet = Sets.newHashSet(superSet.values());
+
+        // Checks that the datasets have at least one common identifier.
+        checkArgument(
+                !keySet.isEmpty(),
+                "could not find common identifiers in the datasets %s",
+                superSet.keySet()
+        );
+
+        // Use all common identifiers if identifiers is  empty
+        ImmutableSet<Component> result;
+        if (!identifiers.isEmpty()) {
+            result = ImmutableSet.copyOf(
+                    Sets.intersection(
+                            identifiers,
+                            keySet
+                    )
+            );
+            checkArgument(!result.isEmpty(), "cannot use %s as key",
+                    Sets.difference(identifiers, Sets.newHashSet(keySet)));
+        } else {
+            result = ImmutableSet.copyOf(keySet);
+        }
+        return result;
+    }
+
     protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger();
 
-    protected abstract Comparator<List<DataPoint>> getKeyComparator();
-
-    protected abstract ImmutableSet<Component> getIdentifiers();
+    protected ImmutableSet<Component> getIdentifiers() {
+        return this.identifiers;
+    }
 
     /**
      * Compute a multimap with components eligible as keys.
      */
-    final ImmutableMultimap<String, Component> getIdentifierSuperSet() {
+    private ImmutableMultimap<String, Component> createCommonIdentifiers() {
 
         Multimap<SuperSetWrapper, Component> superSet = LinkedListMultimap.create();
         for (Dataset dataset : datasets.values()) {
@@ -131,7 +167,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return result.map(tuple -> tuple);
     }
 
-    protected Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
+    private Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
         return tuple -> {
             // Filter by common ids.
             return tuple.stream().filter(dataPoint ->
@@ -172,6 +208,34 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     public abstract WorkingDataset workDataset();
+
+    protected Comparator<List<DataPoint>> getKeyComparator() {
+        ImmutableSet<Component> keys = getIdentifiers();
+        return (l, r) -> {
+            // TODO: Tuple should expose method to handle this.
+            // TODO: Evaluate migrating to DataPoint.
+            // TODO: When using on, the left over identifiers should be transformed to measures.
+
+            Map<String, Comparable> lIds = l.stream()
+                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            t -> (Comparable) t.get()
+                    ));
+            Map<String, Object> rIds = r.stream()
+                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            Supplier::get
+                    ));
+            for (String key : lIds.keySet()) {
+                int res = lIds.get(key).compareTo(rIds.get(key));
+                if (res != 0)
+                    return res;
+            }
+            return 0;
+        };
+    }
 
     /**
      * Wrapper that helps with superset calculation.

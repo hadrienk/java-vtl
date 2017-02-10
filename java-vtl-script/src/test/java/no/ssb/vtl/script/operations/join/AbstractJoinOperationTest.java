@@ -146,7 +146,7 @@ public class AbstractJoinOperationTest {
     private static class TestAbstractJoinOperation extends AbstractJoinOperation {
 
         public TestAbstractJoinOperation(Map<String, Dataset> namedDatasets) {
-            super(namedDatasets);
+            super(namedDatasets, Collections.emptySet());
         }
 
         @Override
