@@ -126,11 +126,8 @@ unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
 
 joinExpression : '[' joinDefinition ']' '{' joinBody '}';
 
-joinDefinition : INNER? joinParam  #joinDefinitionInner
-               | OUTER  joinParam  #joinDefinitionOuter
-               | CROSS  joinParam  #joinDefinitionCross ;
+joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* ( 'on' componentRef (',' componentRef )* )? ;
 
-joinParam : datasetRef (',' datasetRef )* ( 'on' componentRef (',' componentRef )* )? ;
 
 dimensionExpression : IDENTIFIER; //unimplemented
 
