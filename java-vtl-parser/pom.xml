@@ -26,6 +26,10 @@
             <artifactId>antlr4</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-test</artifactId>
+        </dependency>
 
     </dependencies>
 
@@ -34,7 +38,7 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
                 <executions>
                     <execution>
                         <configuration>
@@ -63,4 +67,5 @@
             </resource>
         </resources>
     </build>
+
 </project>

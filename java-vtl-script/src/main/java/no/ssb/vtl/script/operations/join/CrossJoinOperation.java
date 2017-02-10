@@ -19,18 +19,38 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class CrossJoinOperation extends AbstractJoinOperation {
-    public CrossJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets);
+public class CrossJoinOperation extends InnerJoinOperation {
+
+    CrossJoinOperation(Map<String, Dataset> namedDatasets) {
+        super(namedDatasets, Collections.emptySet());
+    }
+
+    public CrossJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
+        super(namedDatasets, identifiers);
     }
 
     @Override
-    public WorkingDataset workDataset() {
-        return null;
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        return (left, right, compare) -> {
+            JoinTuple tuple = new JoinTuple(Collections.emptyList());
+            if (compare == 0) {
+                tuple.addAll(left);
+                tuple.addAll(right);
+            } else if (compare < 0) {
+                tuple.addAll(left);
+            } else /* if (compare > 0) */ {
+                tuple.addAll(right);
+            }
+            return Collections.singletonList(tuple);
+        };
     }
-
 }
