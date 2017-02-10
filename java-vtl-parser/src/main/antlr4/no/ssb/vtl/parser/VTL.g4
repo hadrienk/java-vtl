@@ -130,12 +130,13 @@ joinDefinition : INNER? joinParam  #joinDefinitionInner
                | OUTER  joinParam  #joinDefinitionOuter
                | CROSS  joinParam  #joinDefinitionCross ;
 
-joinParam : datasetRef (',' datasetRef )* ( 'on' dimensionExpression (',' dimensionExpression )* )? ;
+joinParam : datasetRef (',' datasetRef )* ( 'on' componentRef (',' componentRef )* )? ;
 
 dimensionExpression : IDENTIFIER; //unimplemented
 
 joinBody : joinClause (',' joinClause)* ;
 
+// TODO: Implement role and implicit
 joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
@@ -150,15 +151,14 @@ componentRefs : componentRef (',' componentRef)* ;
 
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements=foldUnfoldElements ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
-// TODO: The spec is unclear regarding types of the elements, we support strings only for now.
-// TODO: Reuse component references
+// TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
 foldUnfoldElements      : STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
-                   | componentRef                                                                        #joinCalcReference
+                   | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    ;
 
