@@ -45,7 +45,7 @@ datasetId : STRING_CONSTANT ;
 /* Atom */
 exprAtom : variableRef;
 
-checkExpression : 'check' '(' checkParam ')';  //(',' renameParam)*     #renameClause
+checkExpression : 'check' '(' checkParam ')';
 
 checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
 
