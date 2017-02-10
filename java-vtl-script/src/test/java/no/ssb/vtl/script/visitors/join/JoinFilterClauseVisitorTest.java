@@ -52,7 +52,7 @@ public class JoinFilterClauseVisitorTest {
         
         engine.eval("" +
                 "ds3 := [ds1]{" +
-                "  filter id1 = \"1\" and m1 = 10" +
+                "  filter id1 = \"1\" and m1 > 9" +
                 "}" +
                 "");
     

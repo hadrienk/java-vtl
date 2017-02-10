@@ -99,7 +99,7 @@ booleanExpression
     | BOOLEAN_CONSTANT
     ;
 booleanEquality
-    : componentRef op=( EQ | NE | LE | GE ) constant
+    : componentRef op=( EQ | NE | LE | LT | GE | GT ) constant
     ;
 
 //datasetExpression
@@ -109,7 +109,9 @@ booleanEquality
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
+LT : '<'  ;
 GE : '>=' ;
+GT : '>'  ;
 
 AND : 'and' ;
 OR  : 'or' ;

@@ -9,6 +9,8 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.function.Predicate;
 
+import static java.lang.String.*;
+
 public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.Tuple>> {
     
     private final ReferenceVisitor referenceVisitor;
@@ -53,6 +55,21 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
             case VTLParser.EQ:
                 predicate = dataPoint -> dataPoint.get().equals(scalar);
                 break;
+            case VTLParser.NE:
+                predicate = dataPoint -> !dataPoint.get().equals(scalar);
+                break;
+            case VTLParser.LE:
+                predicate = dataPoint -> compare(dataPoint.get(), scalar) <= 0;
+                break;
+            case VTLParser.LT:
+                predicate = dataPoint -> compare(dataPoint.get(), scalar) < 0;
+                break;
+            case VTLParser.GE:
+                predicate = dataPoint -> compare(dataPoint.get(), scalar) >= 0;
+                break;
+            case VTLParser.GT:
+                predicate = dataPoint -> compare(dataPoint.get(), scalar) > 0;
+                break;
             default:
                 throw new ParseCancellationException("Unsupported boolean equality operator");
         }
@@ -60,6 +77,22 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
         return tuple -> tuple.stream()
                 .filter(dataPoint -> component.equals(dataPoint.getComponent()))
                 .anyMatch(predicate);
+    }
+    
+    private int compare(Object value, Object scalar) {
+        if (value instanceof Integer && scalar instanceof  Integer) {
+            return ((Integer) value).compareTo((Integer) scalar);
+        } else if (value instanceof Float && scalar instanceof Float) {
+            return ((Float) value).compareTo((Float) scalar);
+        } else if (value instanceof Boolean && scalar instanceof Boolean) {
+            return ((Boolean) value).compareTo((Boolean) scalar);
+        } else if (value instanceof String && scalar instanceof String) {
+            return ((String) value).compareTo((String) scalar);
+        }
+        throw new ParseCancellationException(
+                format("Cannot compare %s of type %s with %s of type %s",
+                        value, value.getClass(), scalar, scalar.getClass())
+        );
     }
     
     private Object getScalar(VTLParser.ConstantContext ctx) {
