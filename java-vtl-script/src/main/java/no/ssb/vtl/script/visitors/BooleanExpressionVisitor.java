@@ -1,13 +1,18 @@
 package no.ssb.vtl.script.visitors;
 
+import com.google.common.collect.Iterables;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+import java.lang.String;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.lang.String.*;
 
@@ -46,37 +51,58 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     
     @Override
     public Predicate<Dataset.Tuple> visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
-        Component component = (Component) referenceVisitor.visit(ctx.componentRef());
-        Object scalar = getScalar(ctx.constant());
+        ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
+        Object left = paramVisitor.visit(ctx.left);
+        Object right = paramVisitor.visit(ctx.right);
     
-        Predicate<DataPoint> predicate;
+        BiPredicate<Object, Object> booleanOperation = getBooleanOperation(ctx.op);
         
-        switch (ctx.op.getType()) {
-            case VTLParser.EQ:
-                predicate = dataPoint -> dataPoint.get().equals(scalar);
-                break;
-            case VTLParser.NE:
-                predicate = dataPoint -> !dataPoint.get().equals(scalar);
-                break;
-            case VTLParser.LE:
-                predicate = dataPoint -> compare(dataPoint.get(), scalar) <= 0;
-                break;
-            case VTLParser.LT:
-                predicate = dataPoint -> compare(dataPoint.get(), scalar) < 0;
-                break;
-            case VTLParser.GE:
-                predicate = dataPoint -> compare(dataPoint.get(), scalar) >= 0;
-                break;
-            case VTLParser.GT:
-                predicate = dataPoint -> compare(dataPoint.get(), scalar) > 0;
-                break;
-            default:
-                throw new ParseCancellationException("Unsupported boolean equality operator");
+        if (isComp(left) && !isComp(right)) {
+            return tuple -> tuple.stream()
+                    .filter(dataPoint -> left.equals(dataPoint.getComponent()))
+                    .anyMatch(dataPoint -> booleanOperation.test(dataPoint.get(), right));
+        } else if (!isComp(left) && isComp(right)){
+            return tuple -> tuple.stream()
+                    .filter(dataPoint -> right.equals(dataPoint.getComponent()))
+                    .anyMatch(dataPoint -> booleanOperation.test(left, dataPoint.get()));
+        } else if (isComp(left) && isComp(right)) {
+            return tuple -> {
+                DataPoint rightDataPoint = getOnlyElement(right, tuple);
+                DataPoint leftDataPoint = getOnlyElement(left, tuple);
+                return booleanOperation.test(leftDataPoint.get(), rightDataPoint.get());
+            };
+        } else {
+            return tuple -> booleanOperation.test(left, right);
         }
-        
-        return tuple -> tuple.stream()
+    }
+    
+    private BiPredicate<Object, Object> getBooleanOperation(Token op) {
+        switch (op.getType()) {
+            case VTLParser.EQ:
+                return Object::equals;
+            case VTLParser.NE:
+                return (l, r) -> !l.equals(r);
+            case VTLParser.LE:
+                return (l, r) -> compare(l, r) <= 0;
+            case VTLParser.LT:
+                return (l, r) -> compare(l, r) < 0;
+            case VTLParser.GE:
+                return (l, r) -> compare(l, r) >= 0;
+            case VTLParser.GT:
+                return (l, r) -> compare(l, r) > 0;
+            default:
+                throw new ParseCancellationException("Unsupported boolean equality operator " + op);
+        }
+    }
+    
+    private DataPoint getOnlyElement(Object component, Dataset.Tuple tuple) {
+        return Iterables.getOnlyElement(tuple.stream()
                 .filter(dataPoint -> component.equals(dataPoint.getComponent()))
-                .anyMatch(predicate);
+                .collect(Collectors.toList()));
+    }
+    
+    private boolean isComp(Object o) {
+        return o instanceof Component;
     }
     
     private int compare(Object value, Object scalar) {
@@ -93,21 +119,6 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
                 format("Cannot compare %s of type %s with %s of type %s",
                         value, value.getClass(), scalar, scalar.getClass())
         );
-    }
-    
-    private Object getScalar(VTLParser.ConstantContext ctx) {
-        String constant = ctx.getText();
-        if (ctx.BOOLEAN_CONSTANT() != null) {
-            return Boolean.valueOf(constant);
-        } else if (ctx.FLOAT_CONSTANT() != null) {
-            return Float.valueOf(constant);
-        } else if (ctx.INTEGER_CONSTANT() != null) {
-            return Integer.valueOf(constant);
-        } else if (ctx.NULL_CONSTANT() != null) {
-            return null;
-        } else { //String
-            return constant.replace("\"", "");
-        }
     }
     
 }

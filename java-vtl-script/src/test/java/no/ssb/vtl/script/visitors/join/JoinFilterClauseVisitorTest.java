@@ -7,6 +7,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.VTLScriptEngine;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.script.Bindings;
@@ -24,11 +25,12 @@ public class JoinFilterClauseVisitorTest {
     private Connector connector = mock(Connector.class);
     private ScriptEngine engine = new VTLScriptEngine(connector);
     private Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+    private Dataset ds1;
+    private Dataset ds2;
     
-    @Test
-    public void testSimpleBooleanFilter() throws Exception {
-    
-        Dataset ds1 = mock(Dataset.class);
+    @Before
+    public void setUp() throws Exception {
+        ds1 = mock(Dataset.class);
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
@@ -46,7 +48,36 @@ public class JoinFilterClauseVisitorTest {
                         "m1", 100
                 ))
         ));
+        
+        
+        ds2 = mock(Dataset.class);
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Component.Role.IDENTIFIER, String.class,
+                "m1", Component.Role.MEASURE, Integer.class,
+                "m2", Component.Role.MEASURE, Integer.class,
+                "a1", Component.Role.ATTRIBUTE, String.class
+        );
+        when(ds2.getDataStructure()).thenReturn(structure2);
     
+        when(ds2.get()).then(invocation -> Stream.of(
+                structure2.wrap(ImmutableMap.of(
+                        "id1", "1",
+                        "m1", 10,
+                        "m2", 10,
+                        "a1", "test"
+                )),
+                structure2.wrap(ImmutableMap.of(
+                        "id1", "2",
+                        "m1", 100,
+                        "m2", 10,
+                        "a1", "2"
+                ))
+        ));
+    }
+    
+    @Test
+    public void testSimpleBooleanFilter() throws Exception {
         bindings.put("ds1", ds1);
         
         
@@ -67,5 +98,31 @@ public class JoinFilterClauseVisitorTest {
                 .containsExactly(
                         "1", 10
                 );
+    }
+    
+    
+    @Test
+    public void testBooleanComponents() throws Exception {
+        bindings.put("ds2", ds2);
+    
+    
+        engine.eval("" +
+                "ds3 := [ds2]{" +
+                "  filter id1 = a1 or m1 > m2" +
+                "}" +
+                "");
+    
+    
+        assertThat(bindings).containsKey("ds3");
+        assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+        Dataset ds3 = (Dataset) bindings.get("ds3");
+    
+        assertThat(ds3.get())
+                .flatExtracting(input -> input)
+                .extracting(DataPoint::get)
+                .containsExactly(
+                        "2", 100, 10, "2"
+                );
+        
     }
 }

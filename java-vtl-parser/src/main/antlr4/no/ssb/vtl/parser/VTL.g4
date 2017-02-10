@@ -99,7 +99,11 @@ booleanExpression
     | BOOLEAN_CONSTANT
     ;
 booleanEquality
-    : componentRef op=( EQ | NE | LE | LT | GE | GT ) constant
+    : left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam
+    ;
+booleanParam
+    : componentRef
+    | constant
     ;
 
 //datasetExpression
