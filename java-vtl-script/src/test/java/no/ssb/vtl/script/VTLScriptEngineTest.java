@@ -357,12 +357,54 @@ public class VTLScriptEngineTest {
         );
 
         bindings.put("ds1", dataset);
-        engine.eval("ds2 := check (ds1)"
-//                + "            [rename id3 as id1]"
-        );
+        engine.eval("ds2 := check (ds1)");
 
         assertThat(bindings).containsKey("ds2");
         Dataset result = (Dataset) bindings.get("ds2");
+
+        assertThat(result.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("code", Component.Role.IDENTIFIER),
+                entry("CONDITION", Component.Role.MEASURE),
+                entry("errorcode", Component.Role.ATTRIBUTE),
+                entry("errorlevel", Component.Role.ATTRIBUTE)
+        );
+    }
+
+    @Test
+    public void testCheckSingleRuleWithJoin() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        Dataset dsCodeList2 = mock(Dataset.class);
+
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "kommune_nr", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class,
+                "temp", Role.MEASURE, Boolean.class //TODO pbu temporary until outer join & equal To are implemented
+        );
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "code", Role.IDENTIFIER, String.class,
+                "name", Role.IDENTIFIER, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(structure1);
+        when(dsCodeList2.getDataStructure()).thenReturn(structure2);
+
+
+        bindings.put("ds1", ds1);
+        bindings.put("ds2", dsCodeList2);
+        engine.eval("ds3 := check (" +
+                "[ds1, ds2]{" +                 // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code, ds2.name
+                "  drop ds2.name," +            // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code
+                "  rename temp to CONDITION" +  // ds1.kommune_nr, ds1.m1, ds1.CONDITION, ds2.code
+                "}" +
+                ", not_valid" +
+                ", measures" +
+                ")");
+
+        assertThat(bindings).containsKey("ds3");
+        Dataset result = (Dataset) bindings.get("ds3");
 
         assertThat(result.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),

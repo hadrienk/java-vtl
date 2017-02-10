@@ -47,8 +47,12 @@ exprAtom : variableRef;
 
 checkExpression : 'check' '(' checkParam ')';  //(',' renameParam)*     #renameClause
 
-checkParam : datasetExpression;
+checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
 
+checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
+checkColumns : ( 'measures' | 'condition' ) ;
+errorCode : STRING_CONSTANT ;
+errorLevel : INTEGER_CONSTANT ;
 
 datasetRef: variableRef ;
 

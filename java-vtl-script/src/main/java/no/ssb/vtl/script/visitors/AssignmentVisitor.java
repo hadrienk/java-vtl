@@ -48,7 +48,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
         relationalVisitor = new RelationalVisitor(this, context);
-        checkVisitor = new CheckVisitor(context);
+        checkVisitor = new CheckVisitor(context, relationalVisitor);
     }
 
     @Override
