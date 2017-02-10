@@ -55,12 +55,15 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             return;
         }
 
-        ImmutableMultimap<Dataset, Component> possibleKeyComponentsByDataset = getPossibleKeyComponents();
-        Set<Component> allPossibleKeyComponents = Sets.newHashSet(possibleKeyComponentsByDataset.values());
+        //ImmutableMultimap<Dataset, Component> possibleKeyComponentsByDataset = getIdentifierSuperSet();
+        //Set<Component> allPossibleKeyComponents = Sets.newHashSet(possibleKeyComponentsByDataset.values());
+
+        ImmutableMultimap<String, Component> identifierSuperSet = getIdentifierSuperSet();
+        HashSet<Component> keySet = Sets.newHashSet(identifierSuperSet.values());
 
         // Checks that the datasets have at least on common identifier.
         checkArgument(
-                !allPossibleKeyComponents.isEmpty(),
+                !keySet.isEmpty(),
                 "could not find common identifiers in the datasets %s",
                 namedDatasets.keySet()
         );
@@ -70,13 +73,13 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             this.identifiers = ImmutableSet.copyOf(
                     Sets.intersection(
                             identifiers,
-                            allPossibleKeyComponents
+                            keySet
                     )
             );
             checkArgument(!this.identifiers.isEmpty(), "cannot use %s as key",
-                    Sets.difference(identifiers, Sets.newHashSet(possibleKeyComponentsByDataset.values())));
+                    Sets.difference(identifiers, Sets.newHashSet(keySet)));
         } else {
-            this.identifiers = ImmutableSet.copyOf(allPossibleKeyComponents);
+            this.identifiers = ImmutableSet.copyOf(keySet);
         }
     }
 
@@ -105,20 +108,20 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
     @Override
     protected Comparator<List<DataPoint>> getKeyComparator() {
-        ImmutableMultimap<Dataset, Component> keys = getPossibleKeyComponents();
+        ImmutableSet<Component> keys = getIdentifiers();
         return (l, r) -> {
             // TODO: Tuple should expose method to handle this.
             // TODO: Evaluate migrating to DataPoint.
             // TODO: When using on, the left over identifiers should be transformed to measures.
 
             Map<String, Comparable> lIds = l.stream()
-                    .filter(dataPoint -> keys.containsValue(dataPoint.getComponent()))
+                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
                             DataPoint::getName,
                             t -> (Comparable) t.get()
                     ));
             Map<String, Object> rIds = r.stream()
-                    .filter(dataPoint -> keys.containsValue(dataPoint.getComponent()))
+                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
                             DataPoint::getName,
                             Supplier::get

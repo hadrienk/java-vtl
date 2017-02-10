@@ -19,6 +19,7 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.base.Objects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -72,32 +73,33 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     /**
      * Compute a multimap with components eligible as keys.
      */
-    final ImmutableMultimap<Dataset, Component> getPossibleKeyComponents() {
-        Map<String, Class<?>> seen = Maps.newHashMapWithExpectedSize(datasets.size());
+    final ImmutableMultimap<String, Component> getIdentifierSuperSet() {
 
-        // Using a LinkedHashMultimap because we need to maintain the order.
-        Multimap<Dataset, Component> possibleKeyComponents = LinkedHashMultimap.create();
-
+        Multimap<SuperSetWrapper, Component> superSet = LinkedListMultimap.create();
         for (Dataset dataset : datasets.values()) {
             for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
-                String name = componentEntry.getKey();
                 Component component = componentEntry.getValue();
                 if (component.isIdentifier()) {
-                    // Add if not present
-                    seen.putIfAbsent(name, component.getType());
-                    if (seen.containsKey(name) && seen.get(name).isAssignableFrom(component.getType())) {
-                        checkArgument(
-                                possibleKeyComponents.put(dataset, component),
-                                "the component %s in the dataset %s was already seen",
-                                componentEntry, dataset
-                        );
-                    }
+                    String name = componentEntry.getKey();
+                    Class<?> type = component.getType();
+                    superSet.put(
+                            new SuperSetWrapper(type, name),
+                            component
+                    );
                 }
-
             }
         }
 
-        return ImmutableMultimap.copyOf(possibleKeyComponents);
+        ImmutableMultimap.Builder<String, Component> builder = ImmutableMultimap.builder();
+        for (Map.Entry<SuperSetWrapper, Collection<Component>> entry : superSet.asMap().entrySet()) {
+            if (entry.getValue().size() >= datasets.size()) {
+                builder.putAll(
+                        entry.getKey().name,
+                        entry.getValue()
+                );
+            }
+        }
+        return builder.build();
     }
 
     @Override
@@ -127,15 +129,6 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
             );
         }
         return result.map(tuple -> tuple);
-    }
-
-    protected Function<JoinTuple, List<DataPoint>> getJoinExtractor() {
-        return tuple -> {
-            // Filter by common ids.
-            return tuple.stream().filter(dataPoint ->
-                    getIdentifiers().contains(dataPoint.getComponent())
-            ).collect(Collectors.toList());
-        };
     }
 
     protected Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
@@ -179,6 +172,34 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     public abstract WorkingDataset workDataset();
+
+    /**
+     * Wrapper that helps with superset calculation.
+     */
+    private final static class SuperSetWrapper {
+
+        private final Class<?> clazz;
+        private final String name;
+
+        private SuperSetWrapper(Class<?> clazz, String name) {
+            this.clazz = clazz;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SuperSetWrapper that = (SuperSetWrapper) o;
+            return Objects.equal(clazz, that.clazz) &&
+                    Objects.equal(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(clazz, name);
+        }
+    }
 
     /**
      * Holds the "working dataset" tuples.

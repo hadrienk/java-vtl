@@ -19,7 +19,6 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
@@ -36,7 +35,6 @@ public class OuterJoinOperation extends InnerJoinOperation {
     @Override
     protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
         return (left, right, compare) -> {
-            System.out.println("dropping " + Iterables.transform(Iterables.concat(left, right), DataPoint::get));
             if (compare == 0) {
                 return Collections.emptyList();
             } else {
@@ -58,10 +56,11 @@ public class OuterJoinOperation extends InnerJoinOperation {
                 Iterator<DataPoint> leftId = left.ids().iterator();
                 Iterator<DataPoint> idsIt = right.ids().iterator();
                 while (leftId.hasNext() && idsIt.hasNext()) {
+                    final Object value = idsIt.next().get();
                     rightIds.add(new DataPoint(leftId.next().getComponent()) {
                         @Override
                         public Object get() {
-                            return idsIt.next().get();
+                            return value;
                         }
                     });
                 }
@@ -80,10 +79,11 @@ public class OuterJoinOperation extends InnerJoinOperation {
                 leftId = left.values().iterator();
                 Iterator<DataPoint> valuesIt = right.values().iterator();
                 while (leftId.hasNext() && valuesIt.hasNext()) {
+                    final Object value = valuesIt.next().get();
                     rightPadded.add(new DataPoint(leftId.next().getComponent()) {
                         @Override
                         public Object get() {
-                            return valuesIt.next().get();
+                            return value;
                         }
                     });
                 }

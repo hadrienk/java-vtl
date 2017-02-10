@@ -2,6 +2,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -26,12 +27,19 @@ import static org.mockito.Mockito.when;
 public class OuterJoinOperationTest extends RandomizedTest {
 
     @Test
-    @Repeat(iterations = 10)
+    @Seed("8144D952C87F27F0")
+    public void testDebug() throws Exception {
+        // Regression
+        testRandomDatasets();
+    }
+
+    @Test
+    @Repeat(iterations = 1000)
     public void testRandomDatasets() throws Exception {
 
         // Build random test data.
 
-        Integer datasetAmount = randomIntBetween(1, 2);
+        Integer datasetAmount = randomIntBetween(1, 10);
         Integer rowAmount = randomIntBetween(0, 100);
         Integer identifierAmount = randomIntBetween(0, 5);
         Integer componentAmount = randomIntBetween(1, 5);
