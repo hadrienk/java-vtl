@@ -28,7 +28,7 @@ public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
         String dimension = ctx.dimension.getText();
         String measure = ctx.measure.getText();
 
-        Set<Component> elements = ctx.elements.componentRef().stream()
+        Set<Component> elements = ctx.componentRef().stream()
                 .map(referenceVisitor::visitComponentRef)
                 .map(o -> (Component) o)
                 .collect(MoreCollectors.toImmutableSet());

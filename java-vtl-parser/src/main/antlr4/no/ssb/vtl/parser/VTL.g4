@@ -144,8 +144,8 @@ joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
            ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
-joinFoldExpression      : 'fold' elements=componentRef (',' elements=componentRef)* 'to' dimension=identifier ',' measure=identifier ;
-joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements=STRING_CONSTANT (',' elements=STRING_CONSTANT)* ;
+joinFoldExpression      : 'fold' elements+=componentRef (',' elements+=componentRef)* 'to' dimension=identifier ',' measure=identifier ;
+joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements+=STRING_CONSTANT (',' elements+=STRING_CONSTANT)* ;
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
