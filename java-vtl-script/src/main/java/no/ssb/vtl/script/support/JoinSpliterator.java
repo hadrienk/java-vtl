@@ -1,8 +1,8 @@
 package no.ssb.vtl.script.support;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Spliterator;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -13,11 +13,18 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     final private Spliterator<R> right;
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
-    final private BiFunction<L, R, O> compute;
+    final private TriFunction<L, R, Integer,List<O>> compute;
+    private boolean hadLeft = false;
+    private boolean hadRight = false;
     private Pair pair = null;
-    private boolean hasNext = false;
 
-    public JoinSpliterator(Comparator<K> comparator, Spliterator<L> left, Spliterator<R> right, Function<L, K> leftKey, Function<R, K> rightKey, BiFunction<L, R, O> compute) {
+    public JoinSpliterator(
+            Comparator<K> comparator,
+            Spliterator<L> left,
+            Spliterator<R> right,
+            Function<L, K> leftKey,
+            Function<R, K> rightKey,
+            TriFunction<L, R , Integer, List<O>> compute) {
         this.comparator = comparator;
         this.right = right;
         this.left = left;
@@ -39,23 +46,32 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
         if (pair == null) {
             pair = new Pair();
-            hasNext = advanceLeft() && advanceRight();
+            hadLeft = advanceLeft();
+            hadRight = advanceRight();
         }
 
-        while (hasNext) {
+        while (hadLeft || hadRight) {
             int compare = comparator.compare(
                     leftKey.apply(pair.left), rightKey.apply(pair.right)
             );
-            if (compare == 0) {
-                // generate.
-                action.accept(compute.apply(pair.left, pair.right));
-                hasNext = advanceLeft() && advanceRight();
-                return hasNext;
-            } else if (compare < 0) {
-                hasNext = advanceLeft();
-            } else /* if (compare > 0) */ {
-                hasNext = advanceRight();
+            // generate.
+            List<? extends O> apply = compute.apply(pair.left, pair.right, compare);
+            if (apply != null) {
+                for (O o : apply) {
+                    action.accept(o);
+                }
             }
+            if (compare == 0) {
+                hadLeft = advanceLeft();
+                hadRight = advanceRight();
+            } else if (compare < 0) {
+                hadLeft = advanceLeft();
+                hadRight = false;
+            } else /* if (compare > 0) */ {
+                hadRight = advanceRight();
+                hadLeft = false;
+            }
+            return hadLeft || hadRight;
         }
         return false;
     }
@@ -73,6 +89,17 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     @Override
     public int characteristics() {
         return 0;
+    }
+
+    @FunctionalInterface
+    public interface TriFunction<A, B, C, R> {
+
+        R apply(A a, B b, C c);
+
+        default <V> TriFunction<A, B, C, V> andThen(
+                Function<? super R, ? extends V> after) {
+            return (A a, B b, C c) -> after.apply(apply(a, b, c));
+        }
     }
 
     private class Pair {

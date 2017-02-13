@@ -19,115 +19,188 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.base.Objects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
-import javax.script.SimpleBindings;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static no.ssb.vtl.model.Component.Role;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Abstract join operation.
  */
-public abstract class AbstractJoinOperation {
+public abstract class AbstractJoinOperation implements WorkingDataset {
 
     // The datasets the join operates on.
-    private final Map<String, Dataset> datasets;
-
-    // The identifiers that will be used to join the datasets.
-    private final Set<String> commonIdentifierNames;
-
     private final Bindings joinScope;
+    private final ImmutableMap<String, Dataset> datasets;
+    private final ImmutableSet<Component> identifiers;
 
-    public AbstractJoinOperation(Map<String, Dataset> namedDatasets) {
+    AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
 
+        this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
+
+        checkNotNull(identifiers);
         checkArgument(
                 !namedDatasets.isEmpty(),
                 "join operation impossible on empty dataset list"
         );
 
-        Multiset<Component> components = getComponents(namedDatasets);
-
-        Set<Map.Entry<String, Component>> commonEntries = Sets.newHashSet();
-        for (Dataset dataset : namedDatasets.values()) {
-            for (Map.Entry<String, Component> entry : dataset.getDataStructure().entrySet()) {
-                if (entry.getValue().isIdentifier()) {
-                    commonEntries.add(entry);
-                }
-            }
-        }
-        checkArgument(!commonEntries.isEmpty(), "could not find common identifiers in the datasets %s", namedDatasets);
-
-        // TODO: Remove
-        commonIdentifierNames = commonEntries.stream()
-                .map(Map.Entry::getValue)
-                .map(Component::getName)
-                .collect(Collectors.toSet());
-
-        //joinScope = createJoinScope(namedDatasets, commonIdentifiers);
-
-        // Rename all the components except the common identifiers.
-        //this.datasets = createDataset(namedDatasets);
-        this.datasets = namedDatasets;
         this.joinScope = new JoinScopeBindings(this.datasets);
+
+        this.identifiers = createIdentifierSet(identifiers);
 
     }
 
-    private Multiset<Component> getComponents(Map<String, Dataset> namedDatasets) {
-        List<Component> componentsList = namedDatasets.values().stream()
-                .flatMap(dataset -> dataset.getDataStructure().values().stream())
-                .collect(Collectors.toList());
-        return HashMultiset.create(componentsList);
+    // TODO: Filtering in each ids() access is very expensive. Need to optimise.
+    private static JoinTuple createJoinTuple(Tuple tuple) {
+        JoinTuple joinTuple = new JoinTuple(tuple.ids());
+        joinTuple.addAll(tuple.values());
+        return joinTuple;
+    }
+
+    private ImmutableSet<Component> createIdentifierSet(Set<Component> identifiers) {
+        ImmutableMultimap<String, Component> superSet = createCommonIdentifiers();
+
+        HashSet<Component> keySet = Sets.newHashSet(superSet.values());
+
+        // Checks that the datasets have at least one common identifier.
+        checkArgument(
+                !keySet.isEmpty(),
+                "could not find common identifiers in the datasets %s",
+                superSet.keySet()
+        );
+
+        // Use all common identifiers if identifiers is  empty
+        ImmutableSet<Component> result;
+        if (!identifiers.isEmpty()) {
+            result = ImmutableSet.copyOf(
+                    Sets.intersection(
+                            identifiers,
+                            keySet
+                    )
+            );
+            checkArgument(!result.isEmpty(), "cannot use %s as key",
+                    Sets.difference(identifiers, Sets.newHashSet(keySet)));
+        } else {
+            result = ImmutableSet.copyOf(keySet);
+        }
+        return result;
+    }
+
+    protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger();
+
+    protected ImmutableSet<Component> getIdentifiers() {
+        return this.identifiers;
     }
 
     /**
-     * Creates a map of datasets with identity equivalent identifier components.
+     * Compute a multimap with components eligible as keys.
      */
-    private Map<String, Dataset> createDataset(Map<String, Dataset> namedDatasets) {
-        Map<String, Dataset> datasets = Maps.newHashMap();
-        for (String datasetName : namedDatasets.keySet()) {
-            Dataset dataset = namedDatasets.get(datasetName);
+    private ImmutableMultimap<String, Component> createCommonIdentifiers() {
 
-            Map<String, String> newNames = Maps.newHashMap();
-            Map<String, Role> newRoles = Maps.newHashMap();
-
-            for (Component component : dataset.getDataStructure().values()) {
-                String newName;
-                if (commonIdentifierNames.contains(component.getName())) {
-                    newName = component.getName();
-                } else {
-                    newName = datasetName.concat(".").concat(component.getName());
+        Multimap<SuperSetWrapper, Component> superSet = LinkedListMultimap.create();
+        for (Dataset dataset : datasets.values()) {
+            for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
+                Component component = componentEntry.getValue();
+                if (component.isIdentifier()) {
+                    String name = componentEntry.getKey();
+                    Class<?> type = component.getType();
+                    superSet.put(
+                            new SuperSetWrapper(type, name),
+                            component
+                    );
                 }
-                newNames.put(component.getName(), newName);
-                newRoles.put(component.getName(), component.getRole());
-            }
-            //datasets.put(datasetName, new RenameOperation(dataset, newNames, newRoles));
-        }
-        return datasets;
-    }
-
-    private Bindings createJoinScope(Map<String, Dataset> namedDatasets, Set<Component> commonIdentifiers) {
-        Bindings bindings = new SimpleBindings();
-        namedDatasets.forEach(bindings::put);
-        for (Map.Entry<String, Dataset> dataset : namedDatasets.entrySet()) {
-
-            Collection<Component> datasetComponents = dataset.getValue().getDataStructure().values();
-            for (Component component : datasetComponents) {
-                bindings.put(component.getName(), component);
             }
         }
-        commonIdentifiers.forEach(component -> bindings.put(component.getName(), component));
-        return bindings;
+
+        ImmutableMultimap.Builder<String, Component> builder = ImmutableMultimap.builder();
+        for (Map.Entry<SuperSetWrapper, Collection<Component>> entry : superSet.asMap().entrySet()) {
+            if (entry.getValue().size() >= datasets.size()) {
+                builder.putAll(
+                        entry.getKey().name,
+                        entry.getValue()
+                );
+            }
+        }
+        return builder.build();
     }
 
-    public Set<String> getCommonIdentifierNames() {
-        return commonIdentifierNames;
+    @Override
+    public Stream<Tuple> get() {
+
+        // Optimization.
+        if (datasets.size() == 1) {
+            return datasets.values().iterator().next().get();
+        }
+
+        Iterator<Dataset> iterator = datasets.values().iterator();
+        Stream<JoinTuple> result = iterator.next().get()
+                .map(AbstractJoinOperation::createJoinTuple);
+
+        while (iterator.hasNext()) {
+            result = StreamSupport.stream(
+                    new JoinSpliterator<>(
+                            getKeyComparator(),
+                            result.spliterator(),
+                            iterator.next().get()
+                                    .map(AbstractJoinOperation::createJoinTuple)
+                                    .spliterator(),
+                            getKeyExtractor(),
+                            getKeyExtractor(),
+                            getMerger()
+                    ), false
+            );
+        }
+        return result.map(tuple -> tuple);
+    }
+
+    private Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
+        return tuple -> {
+            // Filter by common ids.
+            return tuple.stream().filter(dataPoint ->
+                    getIdentifiers().contains(dataPoint.getComponent())
+            ).collect(Collectors.toList());
+        };
+    }
+
+    /**
+     * Compute the DataStructure of the join dataset.
+     */
+    public DataStructure getDataStructure() {
+
+        // Optimization.
+        if (datasets.size() == 1) {
+            return datasets.values().iterator().next().getDataStructure();
+        }
+
+        Set<String> ids = Sets.newHashSet();
+        DataStructure.Builder newDataStructure = DataStructure.builder();
+        for (String datasetName : datasets.keySet()) {
+            DataStructure structure = datasets.get(datasetName).getDataStructure();
+            for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
+                if (!componentEntry.getValue().isIdentifier()) {
+                    newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                } else {
+                    if (ids.add(componentEntry.getKey())) {
+                        newDataStructure.put(componentEntry);
+                    }
+                }
+            }
+        }
+        return newDataStructure.build();
     }
 
     public Bindings getJoinScope() {
@@ -136,12 +209,60 @@ public abstract class AbstractJoinOperation {
 
     public abstract WorkingDataset workDataset();
 
-    Map<String, Dataset> getDatasets() {
-        return datasets;
+    protected Comparator<List<DataPoint>> getKeyComparator() {
+        ImmutableSet<Component> keys = getIdentifiers();
+        return (l, r) -> {
+            // TODO: Tuple should expose method to handle this.
+            // TODO: Evaluate migrating to DataPoint.
+            // TODO: When using on, the left over identifiers should be transformed to measures.
+
+            Map<String, Comparable> lIds = l.stream()
+                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            t -> (Comparable) t.get()
+                    ));
+            Map<String, Object> rIds = r.stream()
+                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
+                    .collect(Collectors.toMap(
+                            DataPoint::getName,
+                            Supplier::get
+                    ));
+            for (String key : lIds.keySet()) {
+                int res = lIds.get(key).compareTo(rIds.get(key));
+                if (res != 0)
+                    return res;
+            }
+            return 0;
+        };
     }
 
-    Set<String> getIds() {
-        return commonIdentifierNames;
+    /**
+     * Wrapper that helps with superset calculation.
+     */
+    private final static class SuperSetWrapper {
+
+        private final Class<?> clazz;
+        private final String name;
+
+        private SuperSetWrapper(Class<?> clazz, String name) {
+            this.clazz = clazz;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SuperSetWrapper that = (SuperSetWrapper) o;
+            return Objects.equal(clazz, that.clazz) &&
+                    Objects.equal(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(clazz, name);
+        }
     }
 
     /**

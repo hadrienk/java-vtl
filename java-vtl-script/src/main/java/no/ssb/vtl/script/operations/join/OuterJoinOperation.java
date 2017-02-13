@@ -19,20 +19,93 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.collect.Lists;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
+import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.Map;
+import java.util.*;
 
 public class OuterJoinOperation extends AbstractJoinOperation {
 
-    public OuterJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets);
+    OuterJoinOperation(Map<String, Dataset> namedDatasets) {
+        super(namedDatasets, Collections.emptySet());
+    }
+
+    public OuterJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
+        super(namedDatasets, identifiers);
+    }
+
+    @Override
+    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        return (left, right, compare) -> {
+            if (compare == 0) {
+                return Collections.emptyList();
+            } else {
+
+                // Pad left with nulls.
+                JoinTuple leftPadded = new JoinTuple(left.ids());
+                leftPadded.addAll(left.values());
+                for (DataPoint point : left.values()) {
+                    leftPadded.add(new DataPoint(point.getComponent()) {
+                        @Override
+                        public Object get() {
+                            return null;
+                        }
+                    });
+                }
+
+                // Update id reference.
+                List<DataPoint> rightIds = Lists.newArrayList();
+                Iterator<DataPoint> leftId = left.ids().iterator();
+                Iterator<DataPoint> idsIt = right.ids().iterator();
+                while (leftId.hasNext() && idsIt.hasNext()) {
+                    final Object value = idsIt.next().get();
+                    rightIds.add(new DataPoint(leftId.next().getComponent()) {
+                        @Override
+                        public Object get() {
+                            return value;
+                        }
+                    });
+                }
+
+                JoinTuple rightPadded = new JoinTuple(rightIds);
+                for (DataPoint point : right.values()) {
+                    rightPadded.add(new DataPoint(point.getComponent()) {
+                        @Override
+                        public Object get() {
+                            return null;
+                        }
+                    });
+                }
+
+                // Update reference.
+                leftId = left.values().iterator();
+                Iterator<DataPoint> valuesIt = right.values().iterator();
+                while (leftId.hasNext() && valuesIt.hasNext()) {
+                    final Object value = valuesIt.next().get();
+                    rightPadded.add(new DataPoint(leftId.next().getComponent()) {
+                        @Override
+                        public Object get() {
+                            return value;
+                        }
+                    });
+                }
+
+                if (compare > 0) {
+                    return Arrays.asList(rightPadded, leftPadded);
+                } else {
+                    return Arrays.asList(leftPadded, rightPadded);
+                }
+            }
+        };
     }
 
     @Override
     public WorkingDataset workDataset() {
-        return null;
+        // TODO: Remove this method.
+        return this;
     }
 
 }

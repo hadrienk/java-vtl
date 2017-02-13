@@ -33,9 +33,18 @@ public class JoinRenameClauseVisitor extends VTLBaseVisitor<RenameOperation> {
         ImmutableMap.Builder<Component, String> newNames = ImmutableMap.builder();
         for (VTLParser.JoinRenameParameterContext renameParam : ctx.joinRenameParameter()) {
             Component component = (Component) referenceVisitor.visit(renameParam.componentRef());
-            String to = renameParam.to.getText();
+            String to = removeQuoteIfNeeded(renameParam.to.getText());
             newNames.put(component, to);
         }
         return new RenameOperation(dataset, newNames.build());
+    }
+
+    private static String removeQuoteIfNeeded(String key) {
+        if (!key.isEmpty() && key.length() > 3) {
+            if (key.charAt(0) == '\'' && key.charAt(key.length() - 1) == '\'') {
+                return key.substring(1, key.length() - 1);
+            }
+        }
+        return key;
     }
 }

@@ -21,8 +21,8 @@ grammar VTL;
 start : statement+ EOF;
 
 /* Assignment */
-statement : variableID ':=' datasetExpression
-          | variableID ':=' block
+statement : identifier ':=' datasetExpression
+          | identifier ':=' block
           ;
 
 block : '{' statement+ '}' ;
@@ -59,10 +59,7 @@ datasetRef: variableRef ;
 componentRef : ( datasetRef '.')? variableRef ;
 variableRef : identifier;
 
-identifier : '\'' STRING_CONSTANT '\'' | IDENTIFIER ;
-
-variableID : IDENTIFIER ;
-
+identifier : IDENTIFIER ;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
@@ -103,16 +100,17 @@ aggregate   : 'aggregate' ;
 //WS          : [ \t\n\t] -> skip ;
 
 booleanExpression
-    : booleanExpression AND booleanExpression
-    | booleanExpression ( OR booleanExpression | XOR booleanExpression )
-    | booleanEquallity
+    : booleanExpression op=AND booleanExpression
+    | booleanExpression op=(OR|XOR) booleanExpression
+    | booleanEquality
     | BOOLEAN_CONSTANT
     ;
-booleanEquallity
-    : booleanEquallity ( ( EQ | NE | LE | GE ) booleanEquallity )
-    | datasetExpression
+booleanEquality
+    : left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam
+    ;
+booleanParam
+    : componentRef
     | constant
-    // typed constant?
     ;
 
 //datasetExpression
@@ -122,7 +120,9 @@ booleanEquallity
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
+LT : '<'  ;
 GE : '>=' ;
+GT : '>'  ;
 
 AND : 'and' ;
 OR  : 'or' ;
@@ -136,17 +136,12 @@ unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
 
 joinExpression : '[' joinDefinition ']' '{' joinBody '}';
 
-joinDefinition : INNER? joinParam  #joinDefinitionInner
-               | OUTER  joinParam  #joinDefinitionOuter
-               | CROSS  joinParam  #joinDefinitionCross ;
-
-joinParam : datasetRef (',' datasetRef )* ( 'on' dimensionExpression (',' dimensionExpression )* )? ;
-
-dimensionExpression : IDENTIFIER; //unimplemented
+joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* ( 'on' componentRef (',' componentRef )* )? ;
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
+// TODO: Implement role and implicit
+joinClause : role? identifier '=' joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -154,21 +149,16 @@ joinClause : role? variableID '=' joinCalcExpression # joinCalcClause
            | joinFoldExpression                 # joinFoldClause
            | joinUnfoldExpression               # joinUnfoldClause
            ;
-
-joinFoldExpression      : 'fold' elements=componentRefs 'to' dimension=identifier ',' measure=identifier ;
-componentRefs : componentRef (',' componentRef)* ;
-
-joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' elements=foldUnfoldElements ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
-// TODO: The spec is unclear regarding types of the elements, we support strings only for now.
-// TODO: Reuse component references
-foldUnfoldElements      : STRING_CONSTANT (',' STRING_CONSTANT)* ;
+// TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
+joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=identifier ',' measure=identifier ;
+joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
-                   | componentRef                                                                        #joinCalcReference
+                   | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    ;
 
@@ -211,7 +201,7 @@ IDENTIFIER : REG_IDENTIFIER | ESCAPED_IDENTIFIER ;
 //regular identifiers start with a (lowercase or uppercase) English alphabet letter, followed by zero or more letters, decimal digits, or underscores
 REG_IDENTIFIER: LETTER(LETTER|'_'|DIGIT)* ; //TODO: Case insensitive??
 //VTL 1.1 allows us to escape the limitations imposed on regular identifiers by enclosing them in single quotes (apostrophes).
-fragment ESCAPED_IDENTIFIER:  QUOTE (~'\'' | '\'\'')+ QUOTE;
+fragment ESCAPED_IDENTIFIER:  QUOTE (~['\r\n] | '\'\'')+ QUOTE;
 fragment QUOTE : '\'';
 
 PLUS : '+';
