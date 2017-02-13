@@ -58,7 +58,7 @@
                         <param>no.ssb.vtl.model</param>
                     </packages>
                     <entryPointClassPackage>no.ssb.vtl.test.assertj</entryPointClassPackage>
-                    <targetDir>target/generated-sources/assertj-assertions</targetDir>
+                    <targetDir>${pom.baseUri}/target/generated-sources/assertj-assertions</targetDir>
                     <hierarchical>false</hierarchical>
                     <generateJUnitSoftAssertions>false</generateJUnitSoftAssertions>
                 </configuration>
