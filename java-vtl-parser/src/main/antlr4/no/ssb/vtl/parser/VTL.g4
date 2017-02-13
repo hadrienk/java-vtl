@@ -93,16 +93,17 @@ aggregate   : 'aggregate' ;
 //WS          : [ \t\n\t] -> skip ;
 
 booleanExpression
-    : booleanExpression AND booleanExpression
-    | booleanExpression ( OR booleanExpression | XOR booleanExpression )
-    | booleanEquallity
+    : booleanExpression op=AND booleanExpression
+    | booleanExpression op=(OR|XOR) booleanExpression
+    | booleanEquality
     | BOOLEAN_CONSTANT
     ;
-booleanEquallity
-    : booleanEquallity ( ( EQ | NE | LE | GE ) booleanEquallity )
-    | datasetExpression
+booleanEquality
+    : left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam
+    ;
+booleanParam
+    : componentRef
     | constant
-    // typed constant?
     ;
 
 //datasetExpression
@@ -112,7 +113,9 @@ booleanEquallity
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
+LT : '<'  ;
 GE : '>=' ;
+GT : '>'  ;
 
 AND : 'and' ;
 OR  : 'or' ;

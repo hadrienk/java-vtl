@@ -151,7 +151,7 @@ public class VTLScriptEngineTest {
 
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
-                "  filter id1 = 1," +                                       // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
+                "  filter id1 = \"1\" and m1 = 30 or m1 = 10," +            //TODO: precedence
                 "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
                 "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
@@ -172,7 +172,7 @@ public class VTLScriptEngineTest {
         assertThat(ds3.getDataStructure().values())
                 .haveAtLeastOne(componentWith("renamedId1", Role.IDENTIFIER))
                 .haveAtLeastOne(componentWith("id2", Role.IDENTIFIER))
-                .haveAtLeastOne(componentWith("ds2.m2", Role.MEASURE))
+                .haveAtLeastOne(componentWith("m2", Role.MEASURE))
                 .haveAtLeastOne(componentWith("m1", Role.MEASURE))
                 .haveAtLeastOne(componentWith("ident", Role.MEASURE));
 
