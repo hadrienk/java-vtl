@@ -77,8 +77,8 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
                 case "measures":
                     componentsToReturnEnum = CheckSingleRuleOperation.ComponentsToReturn.MEASURES;
                     break;
-                case "MEASURE":
-                    componentsToReturnEnum = CheckSingleRuleOperation.ComponentsToReturn.MEASURES;
+                case "condition":
+                    componentsToReturnEnum = CheckSingleRuleOperation.ComponentsToReturn.CONDITION;
                     break;
                 default:
                     throw new RuntimeException("unknown parameter value 'checkColumns' " + componentsToReturn.get());
