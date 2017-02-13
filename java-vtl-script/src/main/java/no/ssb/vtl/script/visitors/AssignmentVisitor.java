@@ -58,7 +58,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitStatement(VTLParser.StatementContext ctx) {
-        String name = ctx.variableID().getText();
+        String name = ctx.identifier().getText();
         Dataset dataset = visit(ctx.datasetExpression());
         context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
         return (Dataset) context.getAttribute(name, ScriptContext.ENGINE_SCOPE);

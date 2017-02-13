@@ -72,6 +72,30 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 //
 //        return joinClause.apply(workingDataset);
     }
+    
+    @Override
+    protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
+        // Compute the new scope.
+        Dataset currentDataset = firstNonNull(nextResult, aggregate);
+        
+        Set<String> previous = Optional.ofNullable(aggregate)
+                .map(Dataset::getDataStructure)
+                .map(ForwardingMap::keySet)
+                .orElse(Collections.emptySet());
+        Set<String> current = currentDataset.getDataStructure().keySet();
+        
+        Set<String> referencesToRemove = Sets.difference(previous, current);
+        Set<String> referencesToAdd = Sets.difference(current, previous);
+        
+        for (String key : referencesToRemove) {
+            joinScope.remove(key);
+        }
+        for (String key : referencesToAdd) {
+            joinScope.put(key, currentDataset.getDataStructure().get(key));
+        }
+        
+        return workingDataset = currentDataset;
+    }
 
     @Override
     public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
@@ -80,10 +104,9 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
             Need to parse the role
             If implicit, error if already defined.
          */
-        String variableName = ctx.variableID().getText();
+        String variableName = removeQuoteIfNeeded(ctx.identifier().getText());
         Component.Role role = Component.Role.MEASURE;
         Class<?> type = Number.class;
-
 
         DataStructure.Builder structureCopy = DataStructure.copyOf(workingDataset.getDataStructure());
         structureCopy.put(variableName, role, type);
@@ -113,30 +136,6 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
                 return helper.omitNullValues().toString();
             }
         };
-    }
-
-    @Override
-    protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
-        // Compute the new scope.
-        Dataset currentDataset = firstNonNull(nextResult, aggregate);
-
-        Set<String> previous = Optional.ofNullable(aggregate)
-                .map(Dataset::getDataStructure)
-                .map(ForwardingMap::keySet)
-                .orElse(Collections.emptySet());
-        Set<String> current = currentDataset.getDataStructure().keySet();
-
-        Set<String> referencesToRemove = Sets.difference(previous, current);
-        Set<String> referencesToAdd = Sets.difference(current, previous);
-
-        for (String key : referencesToRemove) {
-            joinScope.remove(key);
-        }
-        for (String key : referencesToAdd) {
-            joinScope.put(key, currentDataset.getDataStructure().get(key));
-        }
-
-        return workingDataset = currentDataset;
     }
 
     @Override
@@ -173,5 +172,14 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     public Dataset visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
         JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset, referenceVisitor);
         return visitor.visit(ctx);
+    }
+
+    private static String removeQuoteIfNeeded(String key) {
+        if (!key.isEmpty() && key.length() > 3) {
+            if (key.charAt(0) == '\'' && key.charAt(key.length() - 1) == '\'') {
+                return key.substring(1, key.length() - 1);
+            }
+        }
+        return key;
     }
 }

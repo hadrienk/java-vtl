@@ -2,13 +2,19 @@ package no.ssb.vtl.script.operations.join;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.JoinSpliterator;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -50,26 +56,7 @@ public class AbstractJoinOperationTest {
 
             ex = null;
             try {
-
-                new AbstractJoinOperation(
-                        ImmutableMap.of("ds1", ds1, "ds2", ds2)
-                ) {
-
-                    @Override
-                    public WorkingDataset workDataset() {
-                        return new WorkingDataset() {
-                            @Override
-                            public DataStructure getDataStructure() {
-                                return ds1.getDataStructure();
-                            }
-
-                            @Override
-                            public Stream<Tuple> get() {
-                                return ds1.get();
-                            }
-                        };
-                    }
-                };
+                new TestAbstractJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
             } catch (Throwable t) {
                 ex = t;
             }
@@ -80,15 +67,7 @@ public class AbstractJoinOperationTest {
 
             ex = null;
             try {
-                new AbstractJoinOperation(
-                        ImmutableMap.of("ds1", ds1, "ds12", ds1)
-                ) {
-
-                    @Override
-                    public WorkingDataset workDataset() {
-                        return null;
-                    }
-                };
+                new TestAbstractJoinOperation(ImmutableMap.of("ds1", ds1, "ds12", ds1));
             } catch (Throwable t) {
                 ex = t;
             }
@@ -108,12 +87,7 @@ public class AbstractJoinOperationTest {
     public void testEmptyFails() throws Exception {
         Throwable ex = null;
         try {
-            new AbstractJoinOperation(Collections.emptyMap()) {
-                @Override
-                public WorkingDataset workDataset() {
-                    return null;
-                }
-            };
+            new TestAbstractJoinOperation(Collections.emptyMap());
         } catch (Throwable t) {
             ex = t;
         }
@@ -145,7 +119,7 @@ public class AbstractJoinOperationTest {
                     )
             );
         });
-        AbstractJoinOperation result = new AbstractJoinOperation(ImmutableMap.of("ds1", ds1)) {
+        AbstractJoinOperation result = new TestAbstractJoinOperation(ImmutableMap.of("ds1", ds1)) {
 
             @Override
             public WorkingDataset workDataset() {
@@ -161,10 +135,38 @@ public class AbstractJoinOperationTest {
                     }
                 };
             }
+
         };
 
         assertThat(result.workDataset().get())
                 .containsAll(ds1.get().collect(Collectors.toList()));
 
+    }
+
+    private static class TestAbstractJoinOperation extends AbstractJoinOperation {
+
+        public TestAbstractJoinOperation(Map<String, Dataset> namedDatasets) {
+            super(namedDatasets, Collections.emptySet());
+        }
+
+        @Override
+        protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+            return null;
+        }
+
+        @Override
+        protected Comparator<List<DataPoint>> getKeyComparator() {
+            return null;
+        }
+
+        @Override
+        protected ImmutableSet<Component> getIdentifiers() {
+            return null;
+        }
+
+        @Override
+        public WorkingDataset workDataset() {
+            return null;
+        }
     }
 }
