@@ -30,9 +30,9 @@ public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldClause> {
         Component measure = (Component) referenceVisitor.visit(ctx.measure);
 
         Set<String> elements = Sets.newLinkedHashSet();
-        for (TerminalNode element : ctx.elements.STRING_CONSTANT()) {
+        for (TerminalNode element : ctx.STRING_CONSTANT()) {
             String constant = element.getText();
-            elements.add(constant.substring(1, constant.length()-1));
+            elements.add(constant.substring(1, constant.length() - 1));
         }
         return new UnfoldClause(dataset, dimension, measure, elements);
     }

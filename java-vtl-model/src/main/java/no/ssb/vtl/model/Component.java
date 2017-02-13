@@ -85,7 +85,7 @@ public class Component {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(name)
+        return MoreObjects.toStringHelper(name.concat("@").concat(String.valueOf(hashCode())))
                 .addValue(type)
                 .addValue(role)
                 .toString();
