@@ -12,6 +12,7 @@ import no.ssb.vtl.script.operations.join.CrossJoinOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import no.ssb.vtl.script.operations.join.OuterJoinOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import org.antlr.v4.runtime.Token;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -56,11 +57,11 @@ public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation>
     @Override
     public AbstractJoinOperation visitJoinDefinition(VTLParser.JoinDefinitionContext ctx) {
 
-        Integer joinType = Optional.ofNullable(ctx.type.getType()).orElse(VTLParser.INNER);
         ImmutableMap<String, Dataset> datasets = extractDatasets(ctx.datasetRef());
         ImmutableSet<Component> identifiers = extractIdentifierComponents(ctx.componentRef());
 
-        switch (ctx.type.getType()) {
+        Integer joinType = Optional.ofNullable(ctx.type).map(Token::getType).orElse(VTLParser.INNER);
+        switch (joinType) {
             case VTLParser.INNER:
                 return new InnerJoinOperation(datasets, identifiers);
             case VTLParser.OUTER:
