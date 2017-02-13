@@ -80,10 +80,9 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
             Need to parse the role
             If implicit, error if already defined.
          */
-        String variableName = ctx.variableID().getText();
+        String variableName = removeQuoteIfNeeded(ctx.identifier().getText());
         Component.Role role = Component.Role.MEASURE;
         Class<?> type = Number.class;
-
 
         DataStructure.Builder structureCopy = DataStructure.copyOf(workingDataset.getDataStructure());
         structureCopy.put(variableName, role, type);
@@ -173,5 +172,14 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     public Dataset visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
         JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset, referenceVisitor);
         return visitor.visit(ctx);
+    }
+
+    private static String removeQuoteIfNeeded(String key) {
+        if (!key.isEmpty() && key.length() > 3) {
+            if (key.charAt(0) == '\'' && key.charAt(key.length() - 1) == '\'') {
+                return key.substring(1, key.length() - 1);
+            }
+        }
+        return key;
     }
 }
