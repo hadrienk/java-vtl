@@ -141,13 +141,13 @@
             <div class="inner cover row">
                 <div class="col-md-12 dataset">
                     <!-- display the dataset. -->
-                    <div class="table-responsive" ng-repeat="(name, dataset) in datasets">
-                        <table ng-if="!dataset.error" class="table-responsive table-bordered table-condensed">
+                    <div class="table-responsive" ng-repeat="name in variables">
+                        <table ng-if="!datasets[name].error" class="table-responsive table-bordered table-condensed">
                             <caption>{{ name }}, <a ng-click="remove(name)">delete</a></caption>
                             <thead>
                             <tr>
                                 <th ng-class="variable.role | lowercase"
-                                    ng-repeat="variable in dataset.variables | toArray | orderBy: [roleOrder, 'name']">
+                                    ng-repeat="variable in datasets[name].variables | toArray | orderBy: [roleOrder, 'name']">
                                     {{ variable.name }}
                                 </th>
                             </tr>
@@ -155,22 +155,23 @@
 
                             <tbody>
 
-                            <tr ng-if="!dataset.data">
-                                <td colspan="{{ (dataset.variables | toArray).length }}">
+                            <tr ng-if="!datasets[name].data">
+                                <td colspan="{{ (datasets[name].variables | toArray).length }}">
                                     <a ng-click="fetchData(name)">load data for {{ name }}</a>
                                 </td>
                             </tr>
 
-                            <tr ng-if="dataset.data" ng-repeat="row in dataset.data | limitTo: options.limitTuple">
-                                <td ng-repeat="variable in dataset.variables | toArray | orderBy: [roleOrder, 'name']">
+                            <tr ng-if="datasets[name].data" ng-repeat="row in datasets[name].data | limitTo: options.limitTuple">
+                                <td ng-repeat="variable in datasets[name].variables | toArray | orderBy: [roleOrder, 'name']">
                                     {{ row[variable.name] }}
                                 </td>
                             </tr>
 
                             <tr>
-                                <td ng-if="dataset.data.length >= limitTuple"
-                                    colspan="{{ (dataset.variables | toArray).length }}">
-                                    and {{ dataset.data.length - options.limitTuple }} more.
+                                <td ng-if="datasets[name].data.length >= limitTuple"
+                                    colspan="{{ (datasets[name].variables | toArray).length }}">
+                                    and {{ datasets[name].data.length - options.limitTuple }} more.
+                                    and {{ datasets[name].data.length - options.limitTuple }} more.
                                 </td>
                             </tr>
 
@@ -178,13 +179,13 @@
 
                         </table>
 
-                        <div ng-if="dataset.error" class="text-left">
+                        <div ng-if="datasets[name].error" class="text-left">
                             <h2>Error!</h2>
                             <blockquote>
-                                <p>{{ dataset.error.message }} </p>
+                                <p>{{ datasets[name].error.message }} </p>
                                 <footer>
                                             <pre class="pre-scrollable">
-                                                {{ dataset.error.stackTrace}}
+                                                {{ datasets[name].error.stackTrace}}
                                             </pre>
                                 </footer>
                             </blockquote>

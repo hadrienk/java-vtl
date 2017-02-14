@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Simple execution service that allows executions of a VTL expression
@@ -71,7 +71,7 @@ public class ExecutorController {
             path = "/execute",
             method = RequestMethod.POST
     )
-    public Set<String> execute(Reader script) throws IOException, ScriptException {
+    public Collection<String> execute(Reader script) throws IOException, ScriptException {
         vtlEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         vtlEngine.eval(script);
         return bindings.keySet();
