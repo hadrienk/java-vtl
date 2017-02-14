@@ -6,12 +6,23 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
         $scope.editorOptions = {
             lineWrapping: true,
             lineNumbers: true,
+            indentUnit: 4,
+            tabSize: 4,
             mode: "vtl",
             gutters: ["CodeMirror-lint-markers"],
             lint: {
                 async: true
+            },
+            extraKeys: {
+                "F11": function(cm) {
+                    cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+                },
+                "Esc": function(cm) {
+                    if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+                }
             }
         };
+
 
         $scope.options = {
             limitTuple: 5
