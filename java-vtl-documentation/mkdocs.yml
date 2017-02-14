@@ -1,0 +1,16 @@
+site_name: Java VTL
+theme_dir: cinder
+pages:
+- Home: index.md
+- Reference: reference.md
+- Playground: playground.md
+
+extra_css:
+    - 'https://unpkg.com/codemirror@5.23.0/lib/codemirror.css'
+    - css/railroad-diagrams.css
+    - css/railroad-vtl.css
+
+extra_javascript:
+    - js/main.js
+    - js/vtl-mode.js
+
