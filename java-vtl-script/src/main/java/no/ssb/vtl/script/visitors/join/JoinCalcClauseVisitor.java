@@ -44,7 +44,7 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
             return tuple -> Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
 
         throw new RuntimeException(
-                format("unsuported constant type %s", constantValue)
+                format("unsupported constant type %s", constantValue)
         );
     }
 
