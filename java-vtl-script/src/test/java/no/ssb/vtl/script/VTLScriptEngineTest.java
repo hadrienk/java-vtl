@@ -32,6 +32,7 @@ import org.junit.Test;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -384,13 +385,16 @@ public class VTLScriptEngineTest {
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
                 "kommune_nr", Role.IDENTIFIER, String.class,
+                "periode", Role.IDENTIFIER, String.class, //TODO String?
                 "m1", Role.MEASURE, Integer.class,
                 "temp", Role.MEASURE, Boolean.class //TODO pbu temporary until outer join & equal To are implemented
         );
         DataStructure structure2 = DataStructure.of(
                 (o, aClass) -> o,
                 "code", Role.IDENTIFIER, String.class,
-                "name", Role.IDENTIFIER, String.class
+                "name", Role.MEASURE, String.class,
+                "validFrom", Role.IDENTIFIER, Instant.class,
+                "validTo", Role.IDENTIFIER, Instant.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
         when(dsCodeList2.getDataStructure()).thenReturn(structure2);
@@ -398,9 +402,11 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", dsCodeList2);
-        engine.eval("dsBoolean := [ds1, ds2]{" + // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code, ds2.name
-                "  drop ds2.name," +                  // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code
-                "  rename temp to CONDITION" +        // ds1.kommune_nr, ds1.m1, ds1.CONDITION, ds2.code
+        engine.eval("" +
+                "ds2renamed := ds2[rename code as kommune_nr]" +
+                "dsBoolean := [ds1, ds2renamed]{" +                  // kommune_nr, ds1.periode, ds1.m1, ds1.temp, ds2.name, ds2.validFrom, ds2.validTo
+                "  drop ds2renamed.name," +                          // kommune_nr, ds1.periode, ds1.m1, ds1.temp, ds2.validFrom, ds2.validTo
+                "  rename temp to CONDITION" +                       // kommune_nr, ds1.periode, ds1.m1, ds2.validFrom, ds2.validTo, CONDITION
                 "}" +
                 "ds3 := check(dsBoolean, not_valid, measures)");
 
@@ -409,7 +415,9 @@ public class VTLScriptEngineTest {
 
         assertThat(result.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
-                entry("code", Component.Role.IDENTIFIER),
+                entry("periode", Component.Role.IDENTIFIER),
+                entry("validFrom", Component.Role.IDENTIFIER),
+                entry("validTo", Component.Role.IDENTIFIER),
                 entry("CONDITION", Component.Role.MEASURE),
                 entry("errorcode", Component.Role.ATTRIBUTE),
                 entry("errorlevel", Component.Role.ATTRIBUTE)
