@@ -398,8 +398,10 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", dsCodeList2);
-        engine.eval("dsBoolean := [ds1, ds2]{" + // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code, ds2.name
-                "  drop ds2.name," +                  // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code
+        engine.eval("" +
+                "ds2renamed := ds2[rename code as kommune_nr]" +
+                "dsBoolean := [ds1, ds2renamed]{" + // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code, ds2.name
+                "  drop ds2renamed.name," +                  // ds1.kommune_nr, ds1.m1, ds1.temp, ds2.code
                 "  rename temp to CONDITION" +        // ds1.kommune_nr, ds1.m1, ds1.CONDITION, ds2.code
                 "}" +
                 "ds3 := check(dsBoolean, not_valid, measures)");
