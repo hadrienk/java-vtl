@@ -37,6 +37,18 @@ public class SsbKlassApiConnectorTest {
         mockServer = MockRestServiceServer.createServer(ssbConnector.getRestTemplate());
     }
 
+
+    @Test
+    public void testCanHandle() throws Exception {
+
+        String testUri = "http://data.ssb.no/api/klass/v1/classifications/131/codes?from=2013-01-01";
+        assertThat(this.connector.canHandle(testUri));
+
+        testUri = "http://data.ssb.no/api/v0/dataset/1106.json?lang=en";
+        assertThat(!this.connector.canHandle(testUri));
+
+    }
+
     @Test
     public void testGetDataset() throws Exception {
 
