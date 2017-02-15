@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.connectors.SsbApiConnector;
+import no.ssb.vtl.connectors.SsbKlassApiConnector;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -29,6 +30,7 @@ public class Application {
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
         return Lists.newArrayList(
+                new SsbKlassApiConnector(mapper),
                 new SsbApiConnector(mapper)
         );
     }
