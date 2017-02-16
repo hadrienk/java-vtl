@@ -89,12 +89,10 @@ public class SsbKlassApiConnector implements Connector {
         module.addDeserializer(Map.class, new KlassDeserializer());
         this.mapper.registerModule(module);
 
-        ResourceHttpMessageConverter resourceConverter = new ResourceHttpMessageConverter();
         MappingJackson2HttpMessageConverter jacksonConverter;
         jacksonConverter = new MappingJackson2HttpMessageConverter(this.mapper);
 
         this.restTemplate = new RestTemplate(asList(
-                resourceConverter,
                 jacksonConverter
         ));
 
