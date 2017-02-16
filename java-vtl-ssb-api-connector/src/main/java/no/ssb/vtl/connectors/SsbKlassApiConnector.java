@@ -2,6 +2,7 @@ package no.ssb.vtl.connectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +24,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 import static com.google.common.base.Preconditions.*;
 import static java.lang.String.format;
 import static java.util.Arrays.*;
+
 
 /**
  * A VTL connector that gets data from KLASS part of api.ssb.no.
@@ -220,14 +221,15 @@ public class SsbKlassApiConnector implements Connector {
         }
     }
 
-    public static Instant parseKlassDate(String input) {
+    public static Instant parseKlassDate(String input) throws JsonParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat(KLASS_DATE_PATTERN);
         if (input != null && !input.isEmpty() && !input.toLowerCase().equals("null")) {
             try {
                 Date date = dateFormat.parse(input);
                 return (date != null) ? date.toInstant() : null;
             } catch (ParseException e) {
-                throw new RuntimeException("Could not parse data content to date", e);
+                throw new JsonParseException(null, "Could not parse input to date. Data: "
+                        + input + ", required format: " + KLASS_DATE_PATTERN);
             }
         }
         return null;
