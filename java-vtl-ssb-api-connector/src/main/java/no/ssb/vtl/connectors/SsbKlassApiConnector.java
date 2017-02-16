@@ -192,7 +192,7 @@ public class SsbKlassApiConnector implements Connector {
         }
     }
 
-    private class KlassDeserializer extends StdDeserializer<Map<String, Object>> {
+    private static class KlassDeserializer extends StdDeserializer<Map<String, Object>> {
 
         public KlassDeserializer() {
             this(null);
