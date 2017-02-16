@@ -163,6 +163,7 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
                    | componentRef                                                                        #joinCalcReference
                    | constant                                                                           #joinCalcAtom
+                   | booleanExpression                                                                  #joinCalcBoolean
                    ;
 
 
