@@ -60,6 +60,14 @@ public class SsbKlassApiConnector implements Connector {
     private static final String FIELD_VALID_TO = "validTo";
     private static final String FIELD_NAME = "name";
 
+    private static final DataStructure DATA_STRUCTURE =
+            DataStructure.builder()
+                    .put(FIELD_CODE, Component.Role.IDENTIFIER, String.class)
+                    .put(FIELD_VALID_FROM, Component.Role.IDENTIFIER, Instant.class)
+                    .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
+                    .put(FIELD_NAME, Component.Role.MEASURE, String.class)
+                    .build();
+
     private final UriTemplate dataTemplate;
     private final ObjectMapper mapper;
     private final RestTemplate restTemplate;
@@ -132,7 +140,7 @@ public class SsbKlassApiConnector implements Connector {
             return new Dataset() {
                 @Override
                 public DataStructure getDataStructure() {
-                    return generateStructure();
+                    return DATA_STRUCTURE;
                 }
 
                 @Override
@@ -156,20 +164,11 @@ public class SsbKlassApiConnector implements Connector {
 
     private Map<String, Object> convertType(Map<String, Object> d) {
         Map<String, Object> copy = Maps.newLinkedHashMap(d);
-        Map<String, Class<?>> types = generateStructure().getTypes();
+        Map<String, Class<?>> types = DATA_STRUCTURE.getTypes();
 
         d.forEach((k, v) -> copy.put(k, mapper.convertValue(v, types.get(k))));
 
         return copy;
-    }
-
-    private DataStructure generateStructure() {
-        return DataStructure.builder()
-                .put(FIELD_CODE, Component.Role.IDENTIFIER, String.class)
-                .put(FIELD_VALID_FROM, Component.Role.IDENTIFIER, Instant.class)
-                .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
-                .put(FIELD_NAME, Component.Role.MEASURE, String.class)
-                .build();
     }
 
     public Dataset putDataset(String identifier, Dataset dataset) throws ConnectorException {
