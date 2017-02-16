@@ -80,14 +80,93 @@ the unfolded Dataset does not recreate exactly the original Dataset
 
 <div id="foldClause">
 </div>
-<vtl>
 
-</vtl>
 <div class="vtl-example">
-    <div class="vtl-data">
+    <div class="vtl-block">
+        Some content
+    </div>
+    <div class="vtl-block">
+        Some content
+    </div>
+    <div class="vtl-block">
+        Some content
+    </div>
+</div>
+
+<div class="vtl-example">
+    <div class="vtl-block vtl-data">
+        <uib-tabset active="activeForm">
+            <uib-tab heading="ds1">
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Identifier 1</th>
+                            <th>Measure 1</th>
+                            <th>Attribute 1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>1</th>
+                            <td>Mark</td>
+                            <td>Otto</td>
+                            <td>@mdo</td>
+                        </tr>
+                        <tr>
+                            <th>2</th>
+                            <td>Jacob</td>
+                            <td>Thornton</td>
+                            <td>@fat</td>
+                        </tr>
+                            <tr>
+                            <th>3</th>
+                            <td colspan="2">Larry the Bird</td>
+                            <td>@twitter</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </uib-tab>
+            <uib-tab heading="ds2">
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Identifier 2</th>
+                            <th>Measure 2</th>
+                            <th>Attribute 3</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>1</th>
+                            <td>Mark</td>
+                            <td>Otto</td>
+                            <td>@mdo</td>
+                        </tr>
+                        <tr>
+                            <th>2</th>
+                            <td>Jacob</td>
+                            <td>Thornton</td>
+                            <td>@fat</td>
+                        </tr>
+                            <tr>
+                            <th>3</th>
+                            <td colspan="2">Larry the Bird</td>
+                            <td>@twitter</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </uib-tab>
+        </uib-tabset>
+    </div>
+</div>
+
+<div class="vtl-example">
+    <div class="vtl-block vtl-data">
         Some data
     </div>
-    <div class="vtl-code">
+    <div class="vtl-block vtl-code">
         <div class="vtl-toolbar">
             <div class="btn-group btn-group-xs" role="group" aria-label="...">
                 <button type="button" class="btn btn-default">
@@ -109,6 +188,8 @@ ds3 := [ds1] {
         </textarea>
     </div>
 </div>
+
+
 
 | Identifier | Measure | Attribute |
 |:--------------------|:--------|:----------|

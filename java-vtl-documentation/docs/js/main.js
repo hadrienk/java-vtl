@@ -12,8 +12,21 @@ require.config({
         'codemirror': '//unpkg.com/codemirror@5.23.0/lib/codemirror',
         'codemirror-simple': '//unpkg.com/codemirror@5.23.0/addon/mode/simple',
         'rd': base_url + '/../js/railroad-diagrams',
+        'angular': '//unpkg.com/angular@1.6.1/angular',
+        'smart-table': 'https://unpkg.com/angular-smart-table@2.1.8/dist/smart-table',
+        'ui.bootstrap': 'https://unpkg.com/angular-ui-bootstrap@2.5.0/dist/ui-bootstrap-tpls'
     },
-    shim: {},
+    shim: {
+        angular: {
+            exports: 'angular'
+        },
+        'smart-table': {
+            deps: ['angular']
+        },
+        'ui.bootstrap': {
+            deps: ['angular']
+        }
+    },
     map: {
         'codemirror-simple': {
             '../../lib/codemirror': 'codemirror'
@@ -21,7 +34,8 @@ require.config({
     }
 });
 
-require(['codemirror', 'rd', 'codemirror-simple'], function (CodeMirror, rd) {
+require(['codemirror', 'rd', 'angular', 'codemirror-simple', 'smart-table', 'ui.bootstrap'], function (CodeMirror, rd, angular, sm) {
+
     rd.Diagram.VERTICAL_SEPARATION = 20;
     rd.Diagram.INTERNAL_ALIGNMENT = "left";
     rd.Diagram(
@@ -101,6 +115,10 @@ require(['codemirror', 'rd', 'codemirror-simple'], function (CodeMirror, rd) {
         lineNumbers: true,
         mode: "vtl",
     });
+
+    angular.module('documentation', ['smart-table', 'ui.bootstrap']);
+    angular.bootstrap(angular.element('#content')[0], ['documentation']);
+
 });
 
 // Gave up.
