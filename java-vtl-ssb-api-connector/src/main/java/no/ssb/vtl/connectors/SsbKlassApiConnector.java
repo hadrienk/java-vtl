@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.connector.ConnectorException;
@@ -39,6 +40,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -53,7 +55,10 @@ import static java.util.Arrays.*;
 public class SsbKlassApiConnector implements Connector {
 
     private static final String SERVICE_URL = "http://data.ssb.no/api/klass/v1";
-    private static final String DATA_PATH = "/classifications/{classificationId}/codes?from={codesFrom}";
+    private static final String[] DATA_PATHS = new String[]{
+            "/classifications/{classificationId}/codes?from={codesFrom}"
+            //for example "/classifications/{classificationId}/codes?from={codesFrom}&to={codesTo}"
+    };
     private static final String KLASS_DATE_PATTERN = "yyyy-MM-dd";
     private static final String FIELD_CODE = "code";
     private static final String FIELD_VALID_FROM = "validFrom";
@@ -68,7 +73,7 @@ public class SsbKlassApiConnector implements Connector {
                     .put(FIELD_NAME, Component.Role.MEASURE, String.class)
                     .build();
 
-    private final UriTemplate dataTemplate;
+    private final List<UriTemplate> dataTemplates;
     private final ObjectMapper mapper;
     private final RestTemplate restTemplate;
 
@@ -83,7 +88,10 @@ public class SsbKlassApiConnector implements Connector {
 
     public SsbKlassApiConnector(ObjectMapper mapper) {
 
-        this.dataTemplate = new UriTemplate(SERVICE_URL + DATA_PATH);
+        this.dataTemplates = Lists.newArrayList();
+        for (String path : DATA_PATHS) {
+            this.dataTemplates.add(new UriTemplate(SERVICE_URL + path));
+        }
 
         this.mapper = checkNotNull(mapper, "the mapper was null").copy();
 
@@ -114,11 +122,18 @@ public class SsbKlassApiConnector implements Connector {
         return restTemplate;
     }
 
-    public boolean canHandle(String identifier) {
-        return dataTemplate.matches(identifier);
+    public boolean canHandle(String url) {
+        UriTemplate matchFound = findFirstMatchingUriTemplate(url).orElse(null);
+        return matchFound != null;
     }
 
-    public Dataset getDataset(String identifier) throws ConnectorException {
+    private Optional<UriTemplate> findFirstMatchingUriTemplate(String url) {
+        return dataTemplates.stream()
+                .filter(t -> t.matches(url))
+                .findFirst();
+    }
+
+    public Dataset getDataset(String url) throws ConnectorException {
 
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -127,12 +142,12 @@ public class SsbKlassApiConnector implements Connector {
 
             //http://data.ssb.no/api/klass/v1/classifications/131/codes?from=2016-01-01
             ResponseEntity<DatasetWrapper> exchange = restTemplate.exchange(
-                    identifier,
+                    url,
                     HttpMethod.GET,
                     entity, DatasetWrapper.class);
 
             if (exchange.getBody() == null || exchange.getBody().getCodes().size() == 0) {
-                throw new NotFoundException(format("empty dataset returned for the identifier %s", identifier));
+                throw new NotFoundException(format("empty dataset returned for the identifier %s", url));
             }
 
             List<Map<String, Object>> datasets = exchange.getBody().getCodes();
@@ -156,7 +171,7 @@ public class SsbKlassApiConnector implements Connector {
 
         } catch (RestClientException rce) {
             throw new ConnectorException(
-                    format("error when accessing the dataset with ids %s", identifier),
+                    format("error when accessing the dataset with ids %s", url),
                     rce
             );
         }
