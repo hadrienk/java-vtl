@@ -110,7 +110,7 @@ final class JoinScopeBindings implements Bindings {
 
     @Override
     public Object put(String name, Object value) {
-        checkArgument(!datasetNames.contains(name), "could not add [%s] to the scope", name);
+        checkArgument(!datasetNames.contains(name), "dataset with name [%s] exists in the join scope", name);
         return scope.put(name, value);
     }
 
@@ -141,7 +141,7 @@ final class JoinScopeBindings implements Bindings {
 
     @Override
     public Object remove(Object key) {
-        checkArgument(!datasetNames.contains(key), "could not remove [%s] from the scope", key);
+        checkArgument(!datasetNames.contains(key), "tried to remove the dataset [%s] from the join scope", key);
         return scope.remove(key);
     }
 }

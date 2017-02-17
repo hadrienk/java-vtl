@@ -116,7 +116,9 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     }
     
     private int compare(Object value, Object scalar) {
-        if (value instanceof Integer && scalar instanceof  Integer) {
+        if (value == null) {
+            return (scalar == null) ? 0 : -1;
+        } else if (value instanceof Integer && scalar instanceof  Integer) {
             return ((Integer) value).compareTo((Integer) scalar);
         } else if (value instanceof Float && scalar instanceof Float) {
             return ((Float) value).compareTo((Float) scalar);
@@ -127,7 +129,7 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
         }
         throw new ParseCancellationException(
                 format("Cannot compare %s of type %s with %s of type %s",
-                        value, value.getClass(), scalar, scalar.getClass())
+                        value, value.getClass(), scalar, scalar==null?"<null>":scalar.getClass())
         );
     }
     

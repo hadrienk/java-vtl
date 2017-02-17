@@ -145,7 +145,11 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                 }
 
             } else {
-                throw new ScriptException((Exception) pce.getCause());
+                if (pce.getCause() != null) {
+                    throw new ScriptException(pce.getCause().getMessage());
+                } else {
+                    throw new ScriptException(pce.getMessage());
+                }
             }
         } catch (IOException | RuntimeException ioe) {
             throw new ScriptException(ioe);

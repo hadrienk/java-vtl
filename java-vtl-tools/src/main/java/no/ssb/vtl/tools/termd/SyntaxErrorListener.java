@@ -1,4 +1,4 @@
-package no.ssb.console.tty.parsing;
+package no.ssb.vtl.tools.termd;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;

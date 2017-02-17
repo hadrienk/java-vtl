@@ -60,7 +60,7 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
         Function<Dataset.Tuple, Object> leftResult = visit(ctx.leftOperand);
         Function<Dataset.Tuple, Object> rightResult = visit(ctx.rightOperand);
 
-        // Check types?
+        // TODO: Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 

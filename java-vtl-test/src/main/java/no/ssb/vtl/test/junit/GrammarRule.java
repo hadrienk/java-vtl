@@ -18,6 +18,7 @@ import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -125,11 +126,12 @@ public class GrammarRule implements TestRule {
                         stopColumn = startColumn + (stop - start) + 1;
                     }
                 }
+
                 messages.put(stopLine,
                         String.format("at [%4s:%6s]:\t%s (%s)\n",
                                 String.format("%d,%d", startLine, stopLine),
                                 String.format("%d,%d", startColumn, stopColumn),
-                                msg, e.getClass().getSimpleName())
+                                msg, Optional.ofNullable(e).map(ex -> ex.getClass().getSimpleName()).orElse("null"))
                 );
             }
         };

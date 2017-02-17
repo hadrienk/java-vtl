@@ -1,6 +1,7 @@
-package no.ssb.console.server;
+package no.ssb.vtl.tools.webconsole;
 
 import com.codepoetics.protonpack.Streamable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
@@ -9,15 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,12 +40,40 @@ public class ExecutorController {
     @Qualifier("vtlBindings")
     public Bindings bindings;
 
+    static class ErrorRepresentation {
+
+        @JsonIgnore
+        private Throwable t;
+
+        public ErrorRepresentation(Throwable t) {
+            this.t = t;
+        }
+
+        public String getMessage() {
+            return t.getMessage();
+        }
+
+        public String getStackTrace() {
+            StringWriter sw = new StringWriter();
+            t.printStackTrace(new PrintWriter(sw));
+            return sw.toString();
+        }
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus()
+    public Object handleError(Throwable t) {
+        return new ErrorRepresentation(t);
+    }
+
     @RequestMapping(
             path = "/execute",
             method = RequestMethod.POST
     )
     public Set<String> execute(Reader script) throws IOException, ScriptException {
-        vtlEngine.eval(script, bindings);
+        vtlEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        vtlEngine.eval(script);
         return bindings.keySet();
     }
 
