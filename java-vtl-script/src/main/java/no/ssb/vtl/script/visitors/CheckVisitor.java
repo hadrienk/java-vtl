@@ -5,21 +5,19 @@ import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
 
-import javax.script.ScriptContext;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.*;
 import static java.util.Optional.*;
 
 public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final ScriptContext context;
     private final RelationalVisitor relationalVisitor;
+    private final ReferenceVisitor referenceVisitor;
 
-    public CheckVisitor(ScriptContext context, RelationalVisitor relationalVisitor) {
-        this.context = checkNotNull(context, "the context was null");
+    public CheckVisitor(RelationalVisitor relationalVisitor, ReferenceVisitor referenceVisitor) {
         this.relationalVisitor = relationalVisitor;
+        this.referenceVisitor = referenceVisitor;
     }
 
     @Override
@@ -42,7 +40,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitVariableRef(VTLParser.VariableRefContext ctx) {
-        return (Dataset) context.getAttribute(ctx.getText());
+        return (Dataset) referenceVisitor.visit(ctx);
     }
 
     @Override
