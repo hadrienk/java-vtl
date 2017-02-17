@@ -10,6 +10,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.lang.String;
+import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -102,9 +103,14 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     }
     
     private Object getOnlyElement(Object component, Dataset.Tuple tuple) {
-        DataPoint element = Iterables.getOnlyElement(tuple.stream()
+        List<DataPoint> collected = tuple.stream()
                 .filter(dataPoint -> component.equals(dataPoint.getComponent()))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+
+        if (collected.size() == 0)
+            return null;
+
+        DataPoint element = Iterables.getOnlyElement(collected);
         if (element == null) {
             return null;
         }
