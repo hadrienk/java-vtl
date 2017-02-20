@@ -1,6 +1,6 @@
 package no.ssb.vtl.script.visitors;
 
-import com.google.common.collect.Iterables;
+import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
@@ -11,9 +11,9 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.lang.String;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.lang.String.*;
 
@@ -103,18 +103,10 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     }
     
     private Object getOnlyElement(Object component, Dataset.Tuple tuple) {
-        List<DataPoint> collected = tuple.stream()
+        Optional<DataPoint> element = tuple.stream()
                 .filter(dataPoint -> component.equals(dataPoint.getComponent()))
-                .collect(Collectors.toList());
-
-        if (collected.size() == 0)
-            return null;
-
-        DataPoint element = Iterables.getOnlyElement(collected);
-        if (element == null) {
-            return null;
-        }
-        return element.get();
+                .collect(MoreCollectors.toOptional());
+        return element.map(DataPoint::get).orElse(null);
     }
     
     private boolean isComp(Object o) {

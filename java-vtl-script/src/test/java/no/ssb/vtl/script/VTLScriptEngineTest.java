@@ -169,8 +169,13 @@ public class VTLScriptEngineTest {
         assertThat(ds3.getDataStructure())
                 .describedAs("data structure of d3")
                 .containsOnlyKeys(
-                        "renamedId1", "id2", "m2", "m1", "ident", "boolTest"
-                );
+                "renamedId1",
+                "id2",
+                "m2",
+                "m1",
+                "ident",
+                "boolTest"
+        );
 
         assertThat(ds3.getDataStructure().values())
                 .haveAtLeastOne(componentWith("renamedId1", Role.IDENTIFIER))
@@ -192,7 +197,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(DataPoint::get)
                 .containsExactly(
-                        "1", "1", 40, 10, 0, true
+                        "1", "1", 10, 40, 0, true
                 );
     }
 
