@@ -188,7 +188,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(DataPoint::getName)
                 .containsExactly(
-                        "renamedId1", "id2", "m2", "m1", "ident", "boolTest"
+                        "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
                 );
 
         assertThat(ds3.get())
