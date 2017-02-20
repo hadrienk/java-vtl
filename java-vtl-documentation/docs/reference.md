@@ -78,22 +78,45 @@ symmetric operations, i.e. in some cases the fold operation applied to
 the unfolded Dataset does not recreate exactly the original Dataset
 (before unfolding).
 
-<div id="foldClause">
+<div class="vtl-example" vtl-example>
+    <div class="vtl-block">Hva som helst</div>
+
+    <vtl-code expression="expression" output="output" input="input">test := get("1104")</vtl-code>
+    <div class="vtl-block">Data</div>
+
+    <vtl-data datasets="output" />
 </div>
 
-<div class="vtl-example">
-    <div class="vtl-block">
-        Some content
-    </div>
-    <div class="vtl-block">
-        Some content
-    </div>
-    <div class="vtl-block">
-        Some content
-    </div>
-</div>
+
+
+
+
 
 <div class="vtl-example">
+    <div class="vtl-block vtl-data">
+        <p>Any html</p>
+    </div>
+    <div class="vtl-block vtl-code">
+        <div class="vtl-toolbar">
+            <div class="btn-group btn-group-xs" role="group" aria-label="...">
+                <button type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span> expand
+                </button>
+                <button type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span> edit
+                </button>
+                <button type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-play" aria-hidden="true"></span> run
+                </button>
+            </div>
+        </div>
+        <ui-codemirror2>
+ds1 := get("ds1")
+ds3 := [ds1] {
+    fold ds1.value1, value2, 'value3' to type, value
+}
+        </ui-codemirror2>
+    </div>
     <div class="vtl-block vtl-data">
         <uib-tabset active="activeForm">
             <uib-tab heading="ds1">
@@ -159,33 +182,6 @@ the unfolded Dataset does not recreate exactly the original Dataset
                 </table>
             </uib-tab>
         </uib-tabset>
-    </div>
-</div>
-
-<div class="vtl-example">
-    <div class="vtl-block vtl-data">
-        Some data
-    </div>
-    <div class="vtl-block vtl-code">
-        <div class="vtl-toolbar">
-            <div class="btn-group btn-group-xs" role="group" aria-label="...">
-                <button type="button" class="btn btn-default">
-                    <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span> expand
-                </button>
-                <button type="button" class="btn btn-default">
-                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span> edit
-                </button>
-                <button type="button" class="btn btn-default">
-                    <span class="glyphicon glyphicon-play" aria-hidden="true"></span> run
-                </button>
-            </div>
-        </div>
-        <textarea id="codemirror">
-ds1 := get("ds1")
-ds3 := [ds1] {
-    fold ds1.value1, value2, 'value3' to type, value
-}
-        </textarea>
     </div>
 </div>
 

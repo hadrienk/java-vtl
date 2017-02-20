@@ -23,25 +23,26 @@ svg.railroad-diagram {
 .vtl-example {
     margin-bottom: 15px;
 }
-.vtl-example > .vtl-block {
+.vtl-example .vtl-block {
     border: solid 1px #ddd;
     border-radius: 4px;
     margin-bottom: -1px;
     padding: 10px;
+    position: relative;
 }
 
 /* radius only on top */
-.vtl-example > .vtl-block:first-child:not(:last-child) {
+.vtl-example .vtl-block:first-child:not(:last-child) {
     border-radius: 4px 4px 0 0;
     border-bottom: 0px;
 }
 /* borders in between */
-.vtl-example > .vtl-block:not(:first-child):not(:last-child) {
+.vtl-example .vtl-block:not(:first-child):not(:last-child) {
     border-radius: 0;
 }
 
 /* radius only on top */
-.vtl-example > .vtl-block:last-child:not(:first-child) {
+.vtl-example .vtl-block:last-child:not(:first-child) {
     border-radius: 0 0 4px 4px;
 }
 
@@ -56,6 +57,25 @@ svg.railroad-diagram {
     padding: 0;
 }
 
+/* Loader */
+.vtl-block .loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    background-color: rgba(147, 153, 160, 0.12);
+    cursor: wait;
+}
+
+.vtl-block .loader div {
+    position: relative;
+    top: 50%;
+    left: 50%;
+}
+
+
 /*
   VTL block toolbar
 */
@@ -67,7 +87,7 @@ svg.railroad-diagram {
 .vtl-block .vtl-toolbar .btn-group {
     position: absolute;
     top: -1px;
-    right: 15px;
+    right: 20px;
     z-index: 10;
 }
 
@@ -79,6 +99,7 @@ svg.railroad-diagram {
 .vtl-data {
     position: relative;
     padding-bottom: 22px; /* account for the nav bars */
+    padding-right: 0;
 }
 
 .vtl-data ul.nav.nav-tabs {
@@ -90,4 +111,9 @@ svg.railroad-diagram {
     padding: 1px 5px;
     font-size: 12px;
     line-height: 1.5;
+}
+
+.vtl-data .tab-content {
+    overflow: scroll;
+    max-height: 300px;
 }
