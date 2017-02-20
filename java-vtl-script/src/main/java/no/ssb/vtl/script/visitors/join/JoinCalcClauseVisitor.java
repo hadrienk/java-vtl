@@ -5,9 +5,11 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.lang.String.format;
 
@@ -162,5 +164,11 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
 
         };
     }
-
+    
+    @Override
+    public Function<Dataset.Tuple, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
+        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor);
+        Predicate<Dataset.Tuple> predicate = booleanVisitor.visit(ctx.booleanExpression());
+        return predicate::test;
+    }
 }
