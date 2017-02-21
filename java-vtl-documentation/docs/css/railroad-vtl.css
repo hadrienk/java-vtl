@@ -96,24 +96,31 @@ svg.railroad-diagram {
 }
 
 /* VTL data block */
-.vtl-data {
+.vtl-block.vtl-data {
     position: relative;
-    padding-bottom: 22px; /* account for the nav bars */
-    padding-right: 0;
+    padding: 22px 0 0; /* account for the nav bars */
 }
 
 .vtl-data ul.nav.nav-tabs {
     position: absolute;
-    bottom: 0;
+    top: 0;
+    width: 100%;
+    background-color: #f7f7f7;
+    padding: 0 15px 0 30px ;
+}
+
+.vtl-data .nav>li {
+    float: right; /* we want tabs to be on the right side */
 }
 
 .vtl-data .nav>li>a {
     padding: 1px 5px;
     font-size: 12px;
     line-height: 1.5;
+    border-top: 0;
 }
 
 .vtl-data .tab-content {
-    overflow: scroll;
+    overflow: auto;
     max-height: 300px;
 }

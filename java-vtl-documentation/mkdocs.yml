@@ -12,5 +12,4 @@ extra_css:
 
 extra_javascript:
     - js/main.js
-    - js/vtl-mode.js
 

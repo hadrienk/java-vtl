@@ -78,14 +78,30 @@ symmetric operations, i.e. in some cases the fold operation applied to
 the unfolded Dataset does not recreate exactly the original Dataset
 (before unfolding).
 
-<div class="vtl-example" vtl-example>
-    <div class="vtl-block">Hva som helst</div>
 
-    <vtl-code expression="expression" output="output" input="input">test := get("1104")</vtl-code>
-    <div class="vtl-block">Data</div>
 
-    <vtl-data datasets="output" />
+<div class="vtl-example" data-vtl-example>
+    <div class="vtl-block">
+Given the following dataset Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+    </div>
+    <vtl-code expression="expression" output="datasets" input="datasets">test := get("1104")</vtl-code>
+    <vtl-data datasets="datasets">
+        <vtl-dataset>
+            Identifier1[I,String],Measure[M,String],Attribute[A,String]
+            1,2,3
+            4,5,6
+            7,8,9
+            7,8,9
+        </vtl-dataset>
+    </vtl-data>
+
+
 </div>
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla porttitor nec neque placerat tincidunt. Etiam volutpat pharetra libero id imperdiet. In non orci quam. Duis viverra velit est, nec sodales sapien vulputate sed. Sed ullamcorper neque lorem, vitae tempor diam laoreet sed. Integer est lacus, vulputate at libero id, eleifend vestibulum erat. Maecenas non porttitor odio. Aliquam auctor luctus massa, in congue ante tincidunt eget. Donec vel hendrerit lacus. Duis sit amet tristique purus. Nam cursus placerat mi, non tristique nunc consectetur in. Sed porta augue id sapien hendrerit vestibulum. Phasellus ut erat quis diam vestibulum facilisis a gravida leo. Etiam porttitor eget justo aliquet iaculis.
+
+
 
 
 
