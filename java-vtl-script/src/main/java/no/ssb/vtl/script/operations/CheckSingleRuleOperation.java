@@ -38,7 +38,7 @@ public class CheckSingleRuleOperation implements Dataset{
     private final Integer errorLevel;
     private DataStructure cache;
 
-    public CheckSingleRuleOperation(Builder builder) {
+    private CheckSingleRuleOperation(Builder builder) {
         this.dataset = checkNotNull(builder.dataset, "dataset was null");
         this.rowsToReturn = builder.rowsToReturn;
         this.componentsToReturn = builder.componentsToReturn;
