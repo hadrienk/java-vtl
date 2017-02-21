@@ -19,13 +19,15 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class OuterJoinOperation extends AbstractJoinOperation {
 
@@ -39,65 +41,60 @@ public class OuterJoinOperation extends AbstractJoinOperation {
 
     @Override
     protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        Set<Component> identifiers = getIdentifiers();
         return (left, right, compare) -> {
-            if (compare == 0) {
-                return Collections.emptyList();
+
+            JoinTuple merged;
+            if (compare <= 0) {
+                merged = new JoinTuple(left.ids());
             } else {
+                merged = new JoinTuple(right.ids());
+            }
 
-                // Pad left with nulls.
-                JoinTuple leftPadded = new JoinTuple(left.ids());
-                leftPadded.addAll(left.values());
-                for (DataPoint point : left.values()) {
-                    leftPadded.add(new DataPoint(point.getComponent()) {
-                        @Override
-                        public Object get() {
-                            return null;
+            if (compare == 0) {
+                for (DataPoint point : left) {
+                    if (!identifiers.contains(point.getComponent())) {
+                        merged.add(point);
+                    }
+                }
+                for (DataPoint point : right) {
+                    if (!identifiers.contains(point.getComponent()))
+                        merged.add(point);
+                }
+            } else {
+                if (compare < 0) {
+                    for (DataPoint point : left) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(point);
                         }
-                    });
-                }
-
-                // Update id reference.
-                List<DataPoint> rightIds = Lists.newArrayList();
-                Iterator<DataPoint> leftId = left.ids().iterator();
-                Iterator<DataPoint> idsIt = right.ids().iterator();
-                while (leftId.hasNext() && idsIt.hasNext()) {
-                    final Object value = idsIt.next().get();
-                    rightIds.add(new DataPoint(leftId.next().getComponent()) {
-                        @Override
-                        public Object get() {
-                            return value;
+                    }
+                    for (DataPoint point : right) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(createNull(point));
                         }
-                    });
-                }
-
-                JoinTuple rightPadded = new JoinTuple(rightIds);
-                for (DataPoint point : right.values()) {
-                    rightPadded.add(new DataPoint(point.getComponent()) {
-                        @Override
-                        public Object get() {
-                            return null;
+                    }
+                } else { // (compare > 0) {
+                    for (DataPoint point : left) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(createNull(point));
                         }
-                    });
-                }
-
-                // Update reference.
-                leftId = left.values().iterator();
-                Iterator<DataPoint> valuesIt = right.values().iterator();
-                while (leftId.hasNext() && valuesIt.hasNext()) {
-                    final Object value = valuesIt.next().get();
-                    rightPadded.add(new DataPoint(leftId.next().getComponent()) {
-                        @Override
-                        public Object get() {
-                            return value;
+                    }
+                    for (DataPoint point : right) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(point);
                         }
-                    });
+                    }
                 }
+            }
+            return Collections.singletonList(merged);
+        };
+    }
 
-                if (compare > 0) {
-                    return Arrays.asList(rightPadded, leftPadded);
-                } else {
-                    return Arrays.asList(leftPadded, rightPadded);
-                }
+    private DataPoint createNull(final DataPoint point) {
+        return new DataPoint(point.getComponent()) {
+            @Override
+            public Object get() {
+                return null;
             }
         };
     }
