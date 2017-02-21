@@ -25,17 +25,18 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         VTLParser.CheckParamContext checkParamContext = ctx.checkParam();
         Dataset dataset = visit(checkParamContext.datasetExpression());
 
-        Optional<CheckSingleRuleOperation.ComponentsToReturn> componentsToReturnEnum = getComponentsToReturn(checkParamContext.checkColumns());
-        Optional<CheckSingleRuleOperation.RowsToReturn> rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
+        CheckSingleRuleOperation.ComponentsToReturn componentsToReturn = getComponentsToReturn(checkParamContext.checkColumns());
+        CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
 
-        Optional<String> errorCode = getErrorCode(checkParamContext);
-        Optional<Integer> errorLevel = getErrorLevel(checkParamContext);
+        String errorCode = getErrorCode(checkParamContext);
+        Integer errorLevel = getErrorLevel(checkParamContext);
 
-        return new CheckSingleRuleOperation(dataset,
-                rowsToReturn,
-                componentsToReturnEnum,
-                errorCode,
-                errorLevel);
+        return new CheckSingleRuleOperation.Builder(dataset)
+                .rowsToReturn(rowsToReturn)
+                .componentsToReturn(componentsToReturn)
+                .errorCode(errorCode)
+                .errorLevel(errorLevel)
+                .build();
     }
 
     @Override
@@ -50,59 +51,37 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
     }
 
 
-    private Optional<Integer> getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
-        Integer errorLevel = null;
+    private Integer getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorLevel() != null) {
-            errorLevel = Integer.valueOf(checkParamContext.errorLevel().getText());
+            return Integer.valueOf(checkParamContext.errorLevel().getText());
         }
-        return Optional.ofNullable(errorLevel);
+        return null;
     }
 
-    private Optional<String> getErrorCode(VTLParser.CheckParamContext checkParamContext) {
-        String errorCode = null;
+    private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorCode() != null) {
-             errorCode = checkParamContext.errorCode().getText();
+             return checkParamContext.errorCode().getText();
         }
-        return Optional.ofNullable(errorCode);
+        return null;
     }
 
-
-    private Optional<CheckSingleRuleOperation.ComponentsToReturn> getComponentsToReturn(VTLParser.CheckColumnsContext checkColumnsContext) {
+    private CheckSingleRuleOperation.ComponentsToReturn getComponentsToReturn(VTLParser.CheckColumnsContext checkColumnsContext) {
         Optional<String> componentsToReturn = ofNullable(checkColumnsContext).map(VTLParser.CheckColumnsContext::getText);
-        CheckSingleRuleOperation.ComponentsToReturn componentsToReturnEnum = null;
-        if (componentsToReturn.isPresent()) {
-            switch (componentsToReturn.get()) {
-                case "measures":
-                    componentsToReturnEnum = CheckSingleRuleOperation.ComponentsToReturn.MEASURES;
-                    break;
-                case "condition":
-                    componentsToReturnEnum = CheckSingleRuleOperation.ComponentsToReturn.CONDITION;
-                    break;
-                default:
-                    throw new RuntimeException("unknown parameter value 'checkColumns' " + componentsToReturn.get());
-            }
+
+        if (componentsToReturn.isPresent() && !componentsToReturn.get().isEmpty()) {
+            return CheckSingleRuleOperation.ComponentsToReturn.valueOf(componentsToReturn.get().toUpperCase());
         }
-        return Optional.ofNullable(componentsToReturnEnum);
+
+        return null;
     }
 
-    private Optional<CheckSingleRuleOperation.RowsToReturn> getRowsToReturn(VTLParser.CheckRowsContext checkColumnsContext) {
+    private CheckSingleRuleOperation.RowsToReturn getRowsToReturn(VTLParser.CheckRowsContext checkColumnsContext) {
         Optional<String> rowsToReturn = ofNullable(checkColumnsContext).map(VTLParser.CheckRowsContext::getText);
-        CheckSingleRuleOperation.RowsToReturn rowsToReturnEnum = null;
-        if (rowsToReturn.isPresent()) {
-            switch (rowsToReturn.get()) {
-                case "not_valid":
-                    rowsToReturnEnum = CheckSingleRuleOperation.RowsToReturn.NOT_VALID;
-                    break;
-                case "valid":
-                    rowsToReturnEnum = CheckSingleRuleOperation.RowsToReturn.VALID;
-                    break;
-                case "all":
-                    rowsToReturnEnum = CheckSingleRuleOperation.RowsToReturn.ALL;
-                    break;
-                default:
-                    throw new RuntimeException("unknown parameter value 'checkColumns' " + rowsToReturn.get());
-            }
+
+        if (rowsToReturn.isPresent() && !rowsToReturn.get().isEmpty()) {
+            return CheckSingleRuleOperation.RowsToReturn.valueOf(rowsToReturn.get().toUpperCase());
         }
-        return Optional.ofNullable(rowsToReturnEnum);
+
+        return null;
     }
 }

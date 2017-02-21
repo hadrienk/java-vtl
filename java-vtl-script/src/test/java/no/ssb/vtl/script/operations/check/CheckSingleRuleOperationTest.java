@@ -29,7 +29,7 @@ public class CheckSingleRuleOperationTest {
     public void testArgumentDataset() throws Exception {
         thrown.expect(NullPointerException.class);
         thrown.expect(hasProperty("message", containsString("dataset was null")));
-        new CheckSingleRuleOperation(null, null, null, null, null);
+        new CheckSingleRuleOperation.Builder(null).build();
     }
 
     /**
@@ -41,8 +41,10 @@ public class CheckSingleRuleOperationTest {
     public void testArgumentAllAndMeasuresToReturn() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expect(hasProperty("message", containsString("cannot use 'all' with 'measures'")));
-        new CheckSingleRuleOperation(mock(Dataset.class), Optional.of(CheckSingleRuleOperation.RowsToReturn.ALL),
-                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
+        new CheckSingleRuleOperation.Builder(mock(Dataset.class))
+                .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.ALL)
+                .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.MEASURES)
+                .build();
     }
 
     /**
@@ -64,8 +66,10 @@ public class CheckSingleRuleOperationTest {
                 )
         );
 
-        new CheckSingleRuleOperation(dataset, Optional.of(CheckSingleRuleOperation.RowsToReturn.VALID),
-                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
+        new CheckSingleRuleOperation.Builder(dataset)
+                .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
+                .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.MEASURES)
+                .build();
     }
 
     @Test
@@ -97,8 +101,10 @@ public class CheckSingleRuleOperationTest {
                 )
         ));
 
-        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.NOT_VALID),
-                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
+                .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.NOT_VALID)
+                .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.MEASURES)
+                .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -151,8 +157,10 @@ public class CheckSingleRuleOperationTest {
                 )
         ));
 
-        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.VALID),
-                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.MEASURES), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
+                .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
+                .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.MEASURES)
+                .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -214,8 +222,10 @@ public class CheckSingleRuleOperationTest {
                 )
         ));
 
-        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.NOT_VALID),
-                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.CONDITION), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
+                .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.NOT_VALID)
+                .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.CONDITION)
+                .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
@@ -281,8 +291,10 @@ public class CheckSingleRuleOperationTest {
                 )
         ));
 
-        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation(ds, Optional.of(CheckSingleRuleOperation.RowsToReturn.VALID),
-                Optional.of(CheckSingleRuleOperation.ComponentsToReturn.CONDITION), null, null);
+        CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
+                .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
+                .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.CONDITION)
+                .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),

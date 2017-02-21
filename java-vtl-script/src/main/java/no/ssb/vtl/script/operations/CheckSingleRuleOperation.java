@@ -38,39 +38,17 @@ public class CheckSingleRuleOperation implements Dataset{
     private final Integer errorLevel;
     private DataStructure cache;
 
-    public CheckSingleRuleOperation(Dataset dataset, Optional<RowsToReturn> rowsToReturn, Optional<ComponentsToReturn> componentsToReturn,
-                                    Optional<String> errorCode, Optional<Integer> errorLevel) {
-        this.dataset = checkNotNull(dataset, "dataset was null");
-
-        if (rowsToReturn != null && rowsToReturn.isPresent()) {
-            this.rowsToReturn = rowsToReturn.get();
-        } else {
-            this.rowsToReturn = RowsToReturn.NOT_VALID;
-        }
-
-        if (componentsToReturn != null && componentsToReturn.isPresent()) {
-            this.componentsToReturn = componentsToReturn.get();
-        } else {
-            this.componentsToReturn = ComponentsToReturn.MEASURES;
-        }
+    public CheckSingleRuleOperation(Builder builder) {
+        this.dataset = checkNotNull(builder.dataset, "dataset was null");
+        this.rowsToReturn = builder.rowsToReturn;
+        this.componentsToReturn = builder.componentsToReturn;
+        this.errorCode = builder.errorCode;
+        this.errorLevel = builder.errorLevel;
 
         checkArgument(!(this.componentsToReturn == ComponentsToReturn.MEASURES && this.rowsToReturn == RowsToReturn.ALL),
                 "cannot use 'all' with 'measures' parameter");
 
         checkDataStructure(this.dataset);
-
-        if (errorCode != null && errorCode.isPresent()) {
-            checkArgument(!errorCode.get().isEmpty(), "the errorCode argument was empty");
-            this.errorCode = errorCode.get();
-        } else {
-            this.errorCode = null;
-        }
-
-        if (errorLevel != null && errorLevel.isPresent()) {
-            this.errorLevel = errorLevel.get();
-        } else {
-            this.errorLevel = null;
-        }
     }
 
     private void checkDataStructure(Dataset dataset) {
@@ -168,5 +146,42 @@ public class CheckSingleRuleOperation implements Dataset{
 
     private static Predicate<DataPoint> isConditionComponent() {
         return dataPoint -> dataPoint.getName().equals("CONDITION");
+    }
+
+    public static class Builder {
+
+        private Dataset dataset;
+        private RowsToReturn rowsToReturn = RowsToReturn.NOT_VALID;
+        private ComponentsToReturn componentsToReturn = ComponentsToReturn.MEASURES;
+        private String errorCode;
+        private Integer errorLevel;
+
+        public Builder(Dataset dataset) {
+            this.dataset = dataset;
+        }
+
+        public Builder rowsToReturn(RowsToReturn rowsToReturn) {
+            this.rowsToReturn = rowsToReturn;
+            return this;
+        }
+
+        public Builder componentsToReturn(ComponentsToReturn componentsToReturn) {
+            this.componentsToReturn = componentsToReturn;
+            return this;
+        }
+
+        public Builder errorCode(String errorCode) {
+            this.errorCode = errorCode;
+            return this;
+        }
+
+        public Builder errorLevel(Integer errorLevel) {
+            this.errorLevel = errorLevel;
+            return this;
+        }
+
+        public CheckSingleRuleOperation build() {
+            return new CheckSingleRuleOperation(this);
+        }
     }
 }
