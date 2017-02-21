@@ -26,6 +26,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represent an inner join on datasets.
@@ -52,7 +53,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
         return (left, right, compare) -> {
             if (compare == 0) {
-                addToLeftAllRightButCommon(commonIdentifiers, left, right);
+                left.addAll(getNonCommon(commonIdentifiers, right));
                 return Collections.singletonList(left);
             } else {
                 return null;
@@ -60,11 +61,9 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         };
     }
 
-    private void addToLeftAllRightButCommon(ImmutableSet<Component> commonIdentifiers, JoinTuple left, JoinTuple right) {
-        for (DataPoint dp : right) {
-            if (!commonIdentifiers.contains(dp.getComponent())) {
-                left.add(dp);
-            }
-        }
+    private Collection<? extends DataPoint> getNonCommon(ImmutableSet<Component> commonIdentifiers, JoinTuple right) {
+        return right.stream()
+                .filter(dataPoint -> !commonIdentifiers.contains(dataPoint.getComponent()))
+                .collect(Collectors.toList());
     }
 }
