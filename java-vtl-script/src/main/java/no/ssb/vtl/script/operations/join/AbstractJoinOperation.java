@@ -66,8 +66,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
 
     // TODO: Filtering in each ids() access is very expensive. Need to optimise.
     private static JoinTuple createJoinTuple(Tuple tuple) {
-        JoinTuple joinTuple = new JoinTuple(tuple.ids());
-        joinTuple.addAll(tuple.values());
+        JoinTuple joinTuple = new JoinTuple(tuple);
         return joinTuple;
     }
 

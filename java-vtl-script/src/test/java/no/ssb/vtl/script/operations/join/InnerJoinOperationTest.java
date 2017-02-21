@@ -224,7 +224,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
         when(ds1.get()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
+                 (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
                         "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
                         "m1", 100,
@@ -251,27 +251,28 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 "validFrom", Component.Role.IDENTIFIER, Instant.class,
                 "validTo", Component.Role.IDENTIFIER, Instant.class
         );
+
         when(dsCodeList2.getDataStructure()).thenReturn(structure2);
         when(dsCodeList2.get()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "kommune_nr", "0101",
-                        "name", "Halden",
-                        "validFrom", Instant.parse("2013-01-01T00:00:00.00Z")
-//                        "validTo", null
+                tuple(
+                        structure2.wrap("kommune_nr", "0101"),
+                        structure2.wrap("name", "Halden"),
+                        structure2.wrap("validFrom",  Instant.parse("2013-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", null)
                 ),
-                ImmutableMap.of(
-                        "kommune_nr", "0111",
-                        "name", "Hvaler",
-                        "validFrom", Instant.parse("2015-01-01T00:00:00.00Z")
-//                        "validTo", null
+                tuple(
+                        structure2.wrap("kommune_nr", "0111"),
+                        structure2.wrap("name", "Hvaler"),
+                        structure2.wrap("validFrom", Instant.parse("2015-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", null)
                 ),
-                ImmutableMap.of(
-                        "kommune_nr", "1001",
-                        "name", "Kristiansand",
-                        "validFrom", Instant.parse("2013-01-01T00:00:00.00Z"),
-                        "validTo", Instant.parse("2015-01-01T00:00:00.00Z")
+                tuple(
+                        structure2.wrap("kommune_nr", "1001"),
+                        structure2.wrap("name", "Kristiansand"),
+                        structure2.wrap("validFrom", Instant.parse("2013-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
                 )
-        ).map(structure2::wrap));
+        ));
 
 
         AbstractJoinOperation ds3 = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "dsCodeList2", dsCodeList2));
@@ -282,6 +283,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("periode", Component.Role.IDENTIFIER),
                 entry("ds1_m1", Component.Role.MEASURE),
+                entry("ds1_at1", Component.Role.ATTRIBUTE),
                 entry("dsCodeList2_name", Component.Role.MEASURE),
                 entry("validFrom", Component.Role.IDENTIFIER),
                 entry("validTo", Component.Role.IDENTIFIER)
@@ -290,8 +292,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
         assertThat(ds3.get()).flatExtracting(input -> input)
                 .extracting(DataPoint::get)
                 .containsExactly(
-                        "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
-                        "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101, "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
+                        "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
+                        "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
                 );
     }
 
