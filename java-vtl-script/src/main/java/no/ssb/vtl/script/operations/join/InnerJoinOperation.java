@@ -26,7 +26,6 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -50,13 +49,21 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
     @Override
     protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        ImmutableSet<Component> commonIdentifiers = getIdentifiers();
+
         return (left, right, compare) -> {
             if (compare == 0) {
-                left.addAll(right.values());
+                left.addAll(getNonCommon(commonIdentifiers, right));
                 return Collections.singletonList(left);
             } else {
                 return null;
             }
         };
+    }
+
+    private Collection<? extends DataPoint> getNonCommon(ImmutableSet<Component> commonIdentifiers, JoinTuple right) {
+        return right.stream()
+                .filter(dataPoint -> !commonIdentifiers.contains(dataPoint.getComponent()))
+                .collect(Collectors.toList());
     }
 }

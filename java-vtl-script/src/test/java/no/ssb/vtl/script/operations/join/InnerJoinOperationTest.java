@@ -210,6 +210,93 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
     }
 
+    @Test
+    public void testInnerJoinWithCodeListDataset() throws Exception {
+        Dataset ds1 = mock(Dataset.class);
+        Dataset dsCodeList2 = mock(Dataset.class);
+
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "kommune_nr", Component.Role.IDENTIFIER, String.class,
+                "periode", Component.Role.IDENTIFIER, Instant.class, //TODO String?
+                "m1", Component.Role.MEASURE, Integer.class,
+                "at1", Component.Role.ATTRIBUTE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(structure1);
+        when(ds1.get()).then(invocation -> Stream.of(
+                 (Map) ImmutableMap.of(
+                        "kommune_nr", "0101",
+                        "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
+                        "m1", 100,
+                        "at1", "attr1"
+                ),
+                ImmutableMap.of(
+                        "kommune_nr", "0111",
+                        "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
+                        "m1", 101,
+                        "at1", "attr2"
+                ),
+                ImmutableMap.of(
+                        "kommune_nr", "9000",
+                        "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
+                        "m1", 102,
+                        "at1", "attr3"
+                )
+        ).map(structure1::wrap));
+
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "kommune_nr", Component.Role.IDENTIFIER, String.class, //code
+                "name", Component.Role.MEASURE, String.class,
+                "validFrom", Component.Role.IDENTIFIER, Instant.class,
+                "validTo", Component.Role.IDENTIFIER, Instant.class
+        );
+
+        when(dsCodeList2.getDataStructure()).thenReturn(structure2);
+        when(dsCodeList2.get()).then(invocation -> Stream.of(
+                tuple(
+                        structure2.wrap("kommune_nr", "0101"),
+                        structure2.wrap("name", "Halden"),
+                        structure2.wrap("validFrom",  Instant.parse("2013-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", null)
+                ),
+                tuple(
+                        structure2.wrap("kommune_nr", "0111"),
+                        structure2.wrap("name", "Hvaler"),
+                        structure2.wrap("validFrom", Instant.parse("2015-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", null)
+                ),
+                tuple(
+                        structure2.wrap("kommune_nr", "1001"),
+                        structure2.wrap("name", "Kristiansand"),
+                        structure2.wrap("validFrom", Instant.parse("2013-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
+                )
+        ));
+
+
+        AbstractJoinOperation ds3 = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "dsCodeList2", dsCodeList2));
+
+        new VTLPrintStream(System.out).println(ds3);
+
+        assertThat(ds3.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("periode", Component.Role.IDENTIFIER),
+                entry("ds1_m1", Component.Role.MEASURE),
+                entry("ds1_at1", Component.Role.ATTRIBUTE),
+                entry("dsCodeList2_name", Component.Role.MEASURE),
+                entry("validFrom", Component.Role.IDENTIFIER),
+                entry("validTo", Component.Role.IDENTIFIER)
+        );
+
+        assertThat(ds3.get()).flatExtracting(input -> input)
+                .extracting(DataPoint::get)
+                .containsExactly(
+                        "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
+                        "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
+                );
+    }
+
     private Dataset.Tuple tuple(DataPoint... components) {
         return new Dataset.AbstractTuple() {
             @Override
