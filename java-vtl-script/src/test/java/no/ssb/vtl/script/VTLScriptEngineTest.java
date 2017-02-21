@@ -154,6 +154,7 @@ public class VTLScriptEngineTest {
                 "  filter id1 = \"1\" and m1 = 30 or m1 = 10," +            //TODO: precedence
                 "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
+                "  boolTest = (ds1.m1 = 10)," +
                 "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
                 "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +  // renamedId1, id2, m1, m2, ident
                 "}" +
@@ -170,7 +171,8 @@ public class VTLScriptEngineTest {
                 "id2",
                 "m2",
                 "m1",
-                "ident"
+                "ident",
+                "boolTest"
         );
 
         assertThat(ds3.getDataStructure().values())
@@ -178,21 +180,22 @@ public class VTLScriptEngineTest {
                 .haveAtLeastOne(componentWith("id2", Role.IDENTIFIER))
                 .haveAtLeastOne(componentWith("m2", Role.MEASURE))
                 .haveAtLeastOne(componentWith("m1", Role.MEASURE))
-                .haveAtLeastOne(componentWith("ident", Role.MEASURE));
+                .haveAtLeastOne(componentWith("ident", Role.MEASURE))
+                .haveAtLeastOne(componentWith("boolTest", Role.MEASURE));
 
 
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
                 .extracting(DataPoint::getName)
                 .containsExactly(
-                        "renamedId1", "id2", "m1", "m2", "ident"
+                        "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
                 );
 
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
                 .extracting(DataPoint::get)
                 .containsExactly(
-                        "1", "1", 10, 40, 0
+                        "1", "1", 10, 40, 0, true
                 );
     }
 
