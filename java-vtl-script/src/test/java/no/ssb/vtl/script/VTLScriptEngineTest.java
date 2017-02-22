@@ -23,14 +23,17 @@ package no.ssb.vtl.script;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -349,6 +352,157 @@ public class VTLScriptEngineTest {
                 entry("me1a", Role.ATTRIBUTE),
                 entry("at1i", Role.IDENTIFIER)
         );
+    }
+
+    //TODO temporary
+//    @Test
+    public void testCheckSingleRule() throws Exception {
+
+        when(dataset.getDataStructure()).thenReturn(
+                DataStructure.of((s, o) -> null,
+                        "kommune_nr", Role.IDENTIFIER, String.class,
+                        "code", Role.IDENTIFIER, String.class, //from KLASS
+                        "CONDITION", Role.MEASURE, Boolean.class
+                )
+        );
+
+        bindings.put("ds1", dataset);
+        engine.eval("ds2 := check (ds1)");
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset result = (Dataset) bindings.get("ds2");
+
+        assertThat(result.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("code", Component.Role.IDENTIFIER),
+                entry("CONDITION", Component.Role.MEASURE),
+                entry("errorcode", Component.Role.ATTRIBUTE),
+                entry("errorlevel", Component.Role.ATTRIBUTE)
+        );
+    }
+
+    //TODO temporary
+//    @Test
+    public void testCheckSingleRuleWithJoin() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        Dataset dsCodeList2 = mock(Dataset.class);
+
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "kommune_nr", Role.IDENTIFIER, String.class,
+                "periode", Role.IDENTIFIER, Instant.class, //TODO String?
+                "m1", Role.MEASURE, Integer.class,
+                "at1", Role.ATTRIBUTE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(structure1);
+        when(ds1.get()).then(invocation -> Stream.of(
+                (Map) ImmutableMap.of(
+                        "kommune_nr", "0101",
+                        "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
+                        "m1", 100,
+                        "at1", "attr1"
+                ),
+                ImmutableMap.of(
+                        "kommune_nr", "0111",
+                        "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
+                        "m1", 101,
+                        "at1", "attr2"
+                ),
+                ImmutableMap.of(
+                        "kommune_nr", "9000",
+                        "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
+                        "m1", 102,
+                        "at1", "attr3"
+                )
+        ).map(structure1::wrap));
+
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "code", Role.IDENTIFIER, String.class,
+                "name", Role.MEASURE, String.class,
+                "validFrom", Role.IDENTIFIER, Instant.class,
+                "validTo", Role.IDENTIFIER, Instant.class
+        );
+        when(dsCodeList2.getDataStructure()).thenReturn(structure2);
+        when(dsCodeList2.get()).then(invocation -> Stream.of(
+                tuple(
+                        structure2.wrap("code", "0101"),
+                        structure2.wrap("name", "Halden"),
+                        structure2.wrap("validFrom",  Instant.parse("2013-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", null)
+                ),
+                tuple(
+                        structure2.wrap("code", "0111"),
+                        structure2.wrap("name", "Hvaler"),
+                        structure2.wrap("validFrom", Instant.parse("2015-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", null)
+                ),
+                tuple(
+                        structure2.wrap("code", "1001"),
+                        structure2.wrap("name", "Kristiansand"),
+                        structure2.wrap("validFrom", Instant.parse("2013-01-01T00:00:00.00Z")),
+                        structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
+                )
+        ));
+
+        bindings.put("ds1", ds1);
+        bindings.put("ds2", dsCodeList2);
+
+        VTLPrintStream out = new VTLPrintStream(System.out);
+        engine.eval("" +
+                        "ds2r := ds2[rename code as kommune_nr]" +
+//                        "'inner' := [ds1, ds2r] {" +
+//                        "   type = 1" +
+//                        "}" +
+                        "dsBoolean := [outer ds1, ds2r]{" +
+                        "   filter periode <> null," +
+                        "   CONDITION = (validFrom <> null " +
+                        "       and validFrom <= periode " +
+                        "       and validTo > periode)" +
+                        "}"+
+                        "ds3 := check(dsBoolean, not_valid, measures)"
+        );
+//        out.println(bindings.get("ds2r"));
+//        out.println(bindings.get("'inner'"));
+
+//        engine.eval("" +
+//                "ds2r := ds2[rename code as kommune_nr]" +
+//                "dsBoolean := [outer ds1, ds2r]{" +           // kommune_nr, periode, ds1_m1, ds2r_name, validFrom, validTo
+//                "    filter periode <> null, " +              // same structure, filter out codes that exist only in code list, but not in ds1
+//                "    CONDITION = (ds2r_name <> null " +       // kommune_nr, periode, ds1_m1, ds2r_name, validFrom, validTo, CONDITION
+//                "       and validFrom <= periode " +
+//                "       and validTo > periode)" +
+//                "       and validFrom <= date_from_string(periode, \"YYYY\") " +
+//                "       and validTo > date_from_string(periode, \"YYYY\"))" +
+//                "}" +
+//                "ds3 := check(dsBoolean, not_valid, measures)");
+
+
+        assertThat(bindings).containsKey("ds3");
+        out.println(bindings.get("dsBoolean"));
+        out.println(bindings.get("ds3"));
+        Dataset ds3 = (Dataset) bindings.get("ds3");
+
+        assertThat(ds3.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("periode", Component.Role.IDENTIFIER),
+                entry("ds1_m1", Component.Role.MEASURE),
+                entry("ds1_at1", Component.Role.ATTRIBUTE),
+                entry("ds2r_name", Component.Role.MEASURE),
+                entry("validFrom", Component.Role.IDENTIFIER),
+                entry("validTo", Component.Role.IDENTIFIER),
+                entry("CONDITION", Component.Role.MEASURE),
+                entry("errorcode", Component.Role.ATTRIBUTE)
+        );
+
+        assertThat(ds3.get()).flatExtracting(input -> input)
+                .extracting(DataPoint::get)
+                .containsExactly(
+                        "0101", "2015", 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null, true,
+                        "0111", "2014", 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null, false,
+                        "9000", "2014", 102, "attr3", null,     null                                    , null, false
+                );
     }
 
     private Dataset.Tuple tuple(DataPoint... components) {

@@ -41,12 +41,16 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final ConnectorVisitor connectorVisitor;
     private final ClauseVisitor clausesVisitor;
     private final RelationalVisitor relationalVisitor;
+    private final CheckVisitor checkVisitor;
+    private final ReferenceVisitor referenceVisitor;
 
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this.context = checkNotNull(context, "the context was null");
+        referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
         relationalVisitor = new RelationalVisitor(this, context);
+        checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
     }
 
     @Override
@@ -88,6 +92,11 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         Dataset dataset = visit(ctx.datasetExpression());
         Function<Dataset, Dataset> clause = clausesVisitor.visit(ctx.clauseExpression());
         return clause.apply(dataset);
+    }
+
+    @Override
+    public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
+        return checkVisitor.visit(ctx.checkExpression());
     }
 
 }
