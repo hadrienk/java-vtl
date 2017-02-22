@@ -74,7 +74,7 @@ public class CheckSingleRuleOperationTest {
 
     @Test
     public void testCheckReturnMeasuresNotValidRows() throws Exception {
-        //This data structure is a result of a boolean operation, so it will either has one CONDITION component
+        //This data structure is a result of a boolean operation, so it will either have one CONDITION component
         //or more with "_CONDITION" suffix for each component.
         DataStructure dataStructure = DataStructure.of((s, o) -> s,
                 "kommune_nr", Component.Role.IDENTIFIER, String.class,
@@ -110,8 +110,7 @@ public class CheckSingleRuleOperationTest {
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
                 entry("CONDITION", Component.Role.MEASURE),
-                entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("errorlevel", Component.Role.ATTRIBUTE)
+                entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
         Stream<Dataset.Tuple> stream = checkOperation.stream();
@@ -124,7 +123,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("9990");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsNull();
         assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(false);
-        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
         assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
     }
 
@@ -166,8 +164,7 @@ public class CheckSingleRuleOperationTest {
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
                 entry("CONDITION", Component.Role.MEASURE),
-                entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("errorlevel", Component.Role.ATTRIBUTE)
+                entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
         Stream<Dataset.Tuple> stream = checkOperation.stream();
@@ -180,7 +177,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("0101", "0101");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsOnlyOnce("0101", "0101");
         assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(true);
-        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
         assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
     }
 
@@ -233,8 +229,7 @@ public class CheckSingleRuleOperationTest {
                 entry("CONDITION_CONDITION", Component.Role.MEASURE),
                 entry("booleanMeasure_CONDITION", Component.Role.MEASURE),
                 entry("CONDITION", Component.Role.MEASURE),   //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
-                entry("errorcode", Component.Role.ATTRIBUTE), //new component
-                entry("errorlevel", Component.Role.ATTRIBUTE) //new component
+                entry("errorcode", Component.Role.ATTRIBUTE)  //new component
         );
 
         Stream<Dataset.Tuple> stream = checkOperation.stream();
@@ -249,7 +244,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(DataPoint::get).containsExactlyInAnyOrder(true, false);
         assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(DataPoint::get).containsOnly(false);
         assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(false);
-        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
         assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
     }
 
@@ -294,6 +288,8 @@ public class CheckSingleRuleOperationTest {
         CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
                 .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
                 .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.CONDITION)
+                .errorCode("error001")
+                .errorLevel(10)
                 .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
@@ -318,8 +314,8 @@ public class CheckSingleRuleOperationTest {
         assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(DataPoint::get).containsOnly(true);
         assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(DataPoint::get).containsOnly(true);
         assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(true);
-        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsNull();
-        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsOnlyOnce(10);
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsOnlyOnce("error001");
     }
 
     private ArrayList<DataPoint> getDataPointsWithComponentName(List<Dataset.Tuple> tuple, String componentName) {

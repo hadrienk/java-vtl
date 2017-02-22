@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -70,7 +69,10 @@ public class CheckSingleRuleOperation implements Dataset{
             }
 
             addComponent("errorcode", newRoles, newTypes, Component.Role.ATTRIBUTE, String.class);
-            addComponent("errorlevel", newRoles, newTypes, Component.Role.ATTRIBUTE, Integer.class);
+
+            if (errorLevel != null) {
+                addComponent("errorlevel", newRoles, newTypes, Component.Role.ATTRIBUTE, Integer.class);
+            }
 
             BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
             cache = DataStructure.of(converter, newTypes, newRoles);
@@ -100,17 +102,16 @@ public class CheckSingleRuleOperation implements Dataset{
     public Stream<Tuple> get() {
         Stream<Tuple> tupleStream = dataset.get();
 
-        DataPoint errorCodeDataPoint = getDataStructure().wrap("errorcode", errorCode);
-        DataPoint errorLevelDataPoint = getDataStructure().wrap("errorlevel", errorLevel);
-
         //first calculate the new data points...
         if (componentsToReturn == ComponentsToReturn.MEASURES) {
             tupleStream = tupleStream.map(dataPoints -> {
-                        List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
-                        dataPointsNewList.add(errorCodeDataPoint);
-                        dataPointsNewList.add(errorLevelDataPoint);
-                        return Tuple.create(dataPointsNewList);
-                    });
+                List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
+                dataPointsNewList.add(getErrorCodeAsDataPoint());
+                if (errorLevel != null) {
+                    dataPointsNewList.add(getErrorCodeAsDataPoint());
+                }
+                return Tuple.create(dataPointsNewList);
+            });
         } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
             tupleStream = tupleStream.map(dataPoints -> {
                 List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
@@ -123,8 +124,10 @@ public class CheckSingleRuleOperation implements Dataset{
                                 .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b));
                     }
                 });
-                dataPointsNewList.add(errorCodeDataPoint);
-                dataPointsNewList.add(errorLevelDataPoint);
+                dataPointsNewList.add(getErrorCodeAsDataPoint());
+                if (errorLevel != null) {
+                    dataPointsNewList.add(getErrorLevelAsDataPoint());
+                }
                 return Tuple.create(dataPointsNewList);
             });
         }
@@ -142,6 +145,14 @@ public class CheckSingleRuleOperation implements Dataset{
         } //else if ("all".equals(rowsToReturn)) //all is not filtered
 
         return tupleStream;
+    }
+
+    private DataPoint getErrorLevelAsDataPoint() {
+        return getDataStructure().wrap("errorlevel", errorLevel);
+    }
+
+    private DataPoint getErrorCodeAsDataPoint() {
+        return getDataStructure().wrap("errorcode", errorCode);
     }
 
     private static Predicate<DataPoint> isConditionComponent() {
