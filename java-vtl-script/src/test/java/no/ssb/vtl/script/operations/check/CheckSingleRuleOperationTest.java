@@ -1,7 +1,7 @@
 package no.ssb.vtl.script.operations.check;
 
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
@@ -12,7 +12,6 @@ import org.junit.rules.ExpectedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
@@ -113,17 +112,17 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        Stream<Dataset.DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.Tuple> collect = stream.collect(toList());
+        List<Dataset.DataPoint> collect = stream.collect(toList());
         assertThat(collect).
                 extractingResultOf("ids").isNotEmpty().hasSize(1);
 
-        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("9990");
-        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsNull();
-        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(false);
-        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(false);
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsNull();
     }
 
     @Test
@@ -167,17 +166,17 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        Stream<Dataset.DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.Tuple> collect = stream.collect(toList());
+        List<Dataset.DataPoint> collect = stream.collect(toList());
         assertThat(collect).
                 extractingResultOf("ids").isNotEmpty().hasSize(2);
 
-        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("0101", "0101");
-        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsOnlyOnce("0101", "0101");
-        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(true);
-        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101", "0101");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101", "0101");
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsNull();
     }
 
     @Test
@@ -232,19 +231,19 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)  //new component
         );
 
-        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        Stream<Dataset.DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.Tuple> collect = stream.collect(toList());
+        List<Dataset.DataPoint> collect = stream.collect(toList());
         assertThat(collect).
                 extractingResultOf("ids").isNotEmpty().hasSize(2);
 
-        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("9990", "0104");
-        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsNull();
-        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(DataPoint::get).containsExactlyInAnyOrder(true, false);
-        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(DataPoint::get).containsOnly(false);
-        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(false);
-        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990", "0104");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(VTLObject::get).containsExactlyInAnyOrder(true, false);
+        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(VTLObject::get).containsOnly(false);
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(false);
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsNull();
     }
 
     @Test
@@ -302,43 +301,43 @@ public class CheckSingleRuleOperationTest {
                 entry("errorlevel", Component.Role.ATTRIBUTE) //new component
         );
 
-        Stream<Dataset.Tuple> stream = checkOperation.stream();
+        Stream<Dataset.DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.Tuple> collect = stream.collect(toList());
+        List<Dataset.DataPoint> collect = stream.collect(toList());
         assertThat(collect).
                 extractingResultOf("ids").isNotEmpty().hasSize(1);
 
-        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(DataPoint::get).containsOnlyOnce("0101");
-        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(DataPoint::get).containsOnlyOnce("0101");
-        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(DataPoint::get).containsOnly(true);
-        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(DataPoint::get).containsOnly(true);
-        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(DataPoint::get).containsOnly(true);
-        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(DataPoint::get).containsOnlyOnce(10);
-        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(DataPoint::get).containsOnlyOnce("error001");
+        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101");
+        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101");
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(VTLObject::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(VTLObject::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(true);
+        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(VTLObject::get).containsOnlyOnce(10);
+        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsOnlyOnce("error001");
     }
 
-    private ArrayList<DataPoint> getDataPointsWithComponentName(List<Dataset.Tuple> tuple, String componentName) {
-        ArrayList<DataPoint> dpsFound = new ArrayList<>();
+    private ArrayList<VTLObject> getDataPointsWithComponentName(List<Dataset.DataPoint> dataPoint, String componentName) {
+        ArrayList<VTLObject> dpsFound = new ArrayList<>();
 
-        for (Dataset.Tuple dataPoints : tuple) {
-            List<DataPoint> dpListOfOne = dataPoints.stream()
+        for (Dataset.DataPoint dataPoints : dataPoint) {
+            List<VTLObject> dpListOfOne = dataPoints.stream()
                     .filter(dp -> dp.getName().equals(componentName))
                     .collect(toList());
             if (dpListOfOne.size() == 1) {
                 dpsFound.add(dpListOfOne.get(0));
             } else {
-                throw new IllegalArgumentException("Should have found 1 DataPoint object, but found: " + Arrays.toString(dpListOfOne.toArray()));
+                throw new IllegalArgumentException("Should have found 1 VTLObject object, but found: " + Arrays.toString(dpListOfOne.toArray()));
             }
         }
 
         return dpsFound;
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
+    private Dataset.DataPoint tuple(VTLObject... components) {
+        return new Dataset.AbstractDataPoint() {
             @Override
-            protected List<DataPoint> delegate() {
+            protected List<VTLObject> delegate() {
                 return Arrays.asList(components);
             }
         };

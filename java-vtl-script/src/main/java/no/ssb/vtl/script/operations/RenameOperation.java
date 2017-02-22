@@ -24,7 +24,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
@@ -131,12 +131,12 @@ public class RenameOperation implements Dataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
+    public Stream<DataPoint> get() {
         return dataset.get().map(points -> {
             points.replaceAll(point -> {
                 Component component = point.getComponent();
                 if (mapping.containsKey(component)) {
-                    return new DataPoint(mapping.get(component)) {
+                    return new VTLObject(mapping.get(component)) {
                         @Override
                         public Object get() {
                             return point.get();

@@ -3,7 +3,7 @@ package no.ssb.vtl.script.visitors.join;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.VTLScriptEngine;
@@ -94,7 +94,7 @@ public class JoinFilterClauseVisitorTest {
         
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "1", 10
                 );
@@ -119,7 +119,7 @@ public class JoinFilterClauseVisitorTest {
     
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "2", 100, 10, "2"
                 );

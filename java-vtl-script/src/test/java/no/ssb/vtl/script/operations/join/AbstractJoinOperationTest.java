@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
@@ -130,7 +130,7 @@ public class AbstractJoinOperationTest {
                     }
 
                     @Override
-                    public Stream<Tuple> get() {
+                    public Stream<DataPoint> get() {
                         return ds1.get();
                     }
                 };
@@ -150,12 +150,12 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
             return null;
         }
 
         @Override
-        protected Comparator<List<DataPoint>> getKeyComparator() {
+        protected Comparator<List<VTLObject>> getKeyComparator() {
             return null;
         }
 

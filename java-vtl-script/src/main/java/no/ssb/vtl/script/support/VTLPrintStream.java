@@ -1,7 +1,7 @@
 package no.ssb.vtl.script.support;
 
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
@@ -43,7 +43,7 @@ public class VTLPrintStream extends PrintStream {
         dataset.get().forEach(tuple -> {
             table.addRow(
                     tuple.stream()
-                            .map(DataPoint::get)
+                            .map(VTLObject::get)
                             .map(o -> o == null ? "[NULL]" : o)
                             .map(Object::toString)
                             .collect(Collectors.toList())

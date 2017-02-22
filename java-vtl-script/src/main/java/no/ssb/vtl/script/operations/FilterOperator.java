@@ -16,11 +16,11 @@ public class FilterOperator implements Dataset{
     
     // The dataset we are applying the FilterOperator on.
     private final Dataset dataset;
-    private final Predicate<Tuple> predicate;
+    private final Predicate<DataPoint> predicate;
     
     private DataStructure cache;
     
-    public FilterOperator(Dataset dataset, Predicate<Tuple> predicate) {
+    public FilterOperator(Dataset dataset, Predicate<DataPoint> predicate) {
         this.dataset = checkNotNull(dataset, "the dataset was null");
         this.predicate = checkNotNull(predicate, "the predicate was null");
     }
@@ -31,14 +31,14 @@ public class FilterOperator implements Dataset{
     }
     
     @Override
-    public Stream<Tuple> get() {
+    public Stream<DataPoint> get() {
         return this.dataset.filter(predicate).stream();
     }
     
     @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        Map<Boolean, List<Tuple>> predicateResultMap = dataset.stream().collect(Collectors.partitioningBy(predicate));
+        Map<Boolean, List<DataPoint>> predicateResultMap = dataset.stream().collect(Collectors.partitioningBy(predicate));
         helper.addValue(predicateResultMap);
         helper.add("structure", cache);
         return helper.omitNullValues().toString();

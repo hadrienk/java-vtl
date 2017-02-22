@@ -62,7 +62,7 @@ final class JoinScopeBindings implements Bindings {
                 }
 
                 @Override
-                public Stream<Tuple> get() {
+                public Stream<DataPoint> get() {
                     throw new UnsupportedOperationException("TODO");
                 }
             });

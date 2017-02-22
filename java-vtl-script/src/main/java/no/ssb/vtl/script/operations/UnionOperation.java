@@ -102,10 +102,10 @@ public class UnionOperation implements Supplier<Dataset> {
             }
 
             @Override
-            public Stream<Tuple> get() {
+            public Stream<DataPoint> get() {
                 // TODO: Attribute propagation.
-                Set<Tuple> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
-                Set<Tuple> seen = Collections.synchronizedSet(bucket);
+                Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
+                Set<DataPoint> seen = Collections.synchronizedSet(bucket);
                 return datasets.stream().flatMap(Supplier::get)
                         .filter((o) -> !seen.contains(o))
                         .peek(bucket::add);

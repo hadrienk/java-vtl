@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -35,12 +35,12 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
     private ObjectMapper mapper = new ObjectMapper();
 
-    private static Condition<DataPoint> dataPointWith(String name, Object value) {
-        return new Condition<DataPoint>(new Predicate<DataPoint>() {
+    private static Condition<VTLObject> dataPointWith(String name, Object value) {
+        return new Condition<VTLObject>(new Predicate<VTLObject>() {
             @Override
-            public boolean test(DataPoint dataPoint) {
-                return name.equals(dataPoint.getName()) &&
-                        value.equals(dataPoint.get());
+            public boolean test(VTLObject value) {
+                return name.equals(value.getName()) &&
+                        value.equals(value.get());
             }
         }, "data point with name %s and value %s", name, value);
     }
@@ -193,15 +193,15 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         List<Object> data = datasets.values().stream()
                 .flatMap(Supplier::get)
-                .map(Dataset.Tuple::values)
+                .map(Dataset.DataPoint::values)
                 .flatMap(Collection::stream)
-                .map(DataPoint::get)
+                .map(VTLObject::get)
                 .collect(Collectors.toList());
 
         assertThat(result.get())
                 .describedAs("the data")
-                .flatExtracting(Dataset.Tuple::values)
-                .extracting(DataPoint::get)
+                .flatExtracting(Dataset.DataPoint::values)
+                .extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         data
                 );
@@ -298,17 +298,17 @@ public class InnerJoinOperationTest extends RandomizedTest {
         );
 
         assertThat(ds3.get()).flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
                         "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
                 );
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
+    private Dataset.DataPoint tuple(VTLObject... components) {
+        return new Dataset.AbstractDataPoint() {
             @Override
-            protected List<DataPoint> delegate() {
+            protected List<VTLObject> delegate() {
                 return Arrays.asList(components);
             }
         };

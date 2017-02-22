@@ -23,7 +23,7 @@ package no.ssb.vtl.script.operations;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class RenameOperationTest {
         }
 
         @Override
-        public Stream<Tuple> get() {
+        public Stream<DataPoint> get() {
             return null;
         }
     };
@@ -175,7 +175,7 @@ public class RenameOperationTest {
                 entry("Attribute2Measure", Role.MEASURE)
         );
 
-        assertThat(rename.get()).flatExtracting(input -> input).extracting(DataPoint::get)
+        assertThat(rename.get()).flatExtracting(input -> input).extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         structure.keySet()
                 );

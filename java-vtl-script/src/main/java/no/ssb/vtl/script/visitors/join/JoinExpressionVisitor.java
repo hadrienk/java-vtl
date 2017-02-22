@@ -111,7 +111,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         DataStructure.Builder structureCopy = DataStructure.copyOf(workingDataset.getDataStructure());
         structureCopy.put(variableName, role, type);
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor);
-        Function<Dataset.Tuple, Object> componentExpression = visitor.visit(ctx);
+        Function<Dataset.DataPoint, Object> componentExpression = visitor.visit(ctx);
 
         // TODO: Extract to its own visitor implementing dataset.
         Dataset dataset = workingDataset;
@@ -123,7 +123,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
             }
 
             @Override
-            public Stream<Tuple> get() {
+            public Stream<DataPoint> get() {
                 return dataset.get().map(tuple -> {
                     tuple.add(dataStructure.wrap(variableName, componentExpression.apply(tuple)));
                     return tuple;

@@ -2,7 +2,7 @@ package no.ssb.vtl.script.visitors;
 
 import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 import static java.lang.String.*;
 
-public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.Tuple>> {
+public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.DataPoint>> {
     
     private final ReferenceVisitor referenceVisitor;
     
@@ -26,13 +26,13 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     }
     
     @Override
-    public Predicate<Dataset.Tuple> visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
+    public Predicate<Dataset.DataPoint> visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
         if (ctx.BOOLEAN_CONSTANT() != null) {
             Boolean booleanConstant = Boolean.valueOf(ctx.BOOLEAN_CONSTANT().getText());
             return dataPoints -> booleanConstant;
         }else if (ctx.op != null) {
-            Predicate<Dataset.Tuple> left = visit(ctx.booleanExpression(0));
-            Predicate<Dataset.Tuple> right = visit(ctx.booleanExpression(1));
+            Predicate<Dataset.DataPoint> left = visit(ctx.booleanExpression(0));
+            Predicate<Dataset.DataPoint> right = visit(ctx.booleanExpression(1));
             switch (ctx.op.getType()) {
                 case VTLParser.AND:
                     return left.and(right);
@@ -51,7 +51,7 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     }
     
     @Override
-    public Predicate<Dataset.Tuple> visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
+    public Predicate<Dataset.DataPoint> visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Object left = paramVisitor.visit(ctx.left);
         Object right = paramVisitor.visit(ctx.right);
@@ -102,11 +102,11 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
         }
     }
     
-    private Object getOnlyElement(Object component, Dataset.Tuple tuple) {
-        Optional<DataPoint> element = tuple.stream()
+    private Object getOnlyElement(Object component, Dataset.DataPoint dataPoint) {
+        Optional<VTLObject> element = dataPoint.stream()
                 .filter(dataPoint -> component.equals(dataPoint.getComponent()))
                 .collect(MoreCollectors.toOptional());
-        return element.map(DataPoint::get).orElse(null);
+        return element.map(VTLObject::get).orElse(null);
     }
     
     private boolean isComp(Object o) {

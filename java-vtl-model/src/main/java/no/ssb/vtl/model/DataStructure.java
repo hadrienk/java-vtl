@@ -40,7 +40,7 @@ import static com.google.common.base.Preconditions.*;
  * Data structure of a {@link Dataset}.
  * <p>
  * The data structure defines the role and type of the columns of a data set and
- * serves as a {@link DataPoint}s and {@link no.ssb.vtl.model.Dataset.Tuple}s factory.
+ * serves as a {@link VTLObject}s and {@link Dataset.DataPoint}s factory.
  */
 public class DataStructure extends ForwardingMap<String, Component> {
 
@@ -199,10 +199,10 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return this.converter;
     }
     
-    public Map<Component, Object> asMap(Dataset.Tuple tuple) {
+    public Map<Component, Object> asMap(Dataset.DataPoint dataPoint) {
         Map<Component, Object> map = new HashMap<>();
         for (int i = 0; i< indexListCache.size(); i++) {
-            map.put(indexListCache.get(i), tuple.get(i));
+            map.put(indexListCache.get(i), dataPoint.get(i));
         }
         return map;
     }
@@ -215,7 +215,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
      * @param value the value of the resulting component.
      * @return a component
      */
-    public DataPoint wrap(String name, Object value) {
+    public VTLObject wrap(String name, Object value) {
         checkArgument(
                 containsKey(name),
                 "could not find %s in data structure %s",
@@ -223,7 +223,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         );
 
         Component component = get(name);
-        return new DataPoint(component) {
+        return new VTLObject(component) {
             @Override
             public Object get() {
                 return converter().apply(value, component.getType());
@@ -232,21 +232,21 @@ public class DataStructure extends ForwardingMap<String, Component> {
     }
 
     /**
-     * Creates a new {@link Dataset.Tuple} for the given names and values.
+     * Creates a new {@link Dataset.DataPoint} for the given names and values.
      * <p>
      * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
-     * a {@link Dataset.Tuple}.
+     * a {@link Dataset.DataPoint}.
      *
      * @param map a map of name and values
      * @return the corresponding tuple (row)
      */
-    public Dataset.Tuple wrap(Map<String, Object> map) {
+    public Dataset.DataPoint wrap(Map<String, Object> map) {
 
-        List<DataPoint> components = Lists.newArrayList();
+        List<VTLObject> components = Lists.newArrayList();
         for (Map.Entry<String, Object> entry : map.entrySet())
             components.add(wrap(entry.getKey(), entry.getValue()));
 
-        return Dataset.Tuple.create(components);
+        return Dataset.DataPoint.create(components);
 
     }
 

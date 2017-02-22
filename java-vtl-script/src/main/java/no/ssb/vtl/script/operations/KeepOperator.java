@@ -47,7 +47,7 @@ public class KeepOperator implements Dataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
+    public Stream<DataPoint> get() {
         DataStructure structure = getDataStructure();
         return dataset.get().map(
                 dataPoints -> {

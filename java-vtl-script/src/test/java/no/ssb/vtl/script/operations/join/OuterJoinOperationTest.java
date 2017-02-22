@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -48,7 +48,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Integer componentAmount = randomIntBetween(1, 5);
 
         Map<String, Dataset> datasets = Maps.newLinkedHashMap();
-        Map<String, List<Dataset.Tuple>> data = Maps.newLinkedHashMap();
+        Map<String, List<Dataset.DataPoint>> data = Maps.newLinkedHashMap();
         Map<String, DataStructure> dataStructures = Maps.newLinkedHashMap();
 
         // Creates random values.
@@ -77,9 +77,9 @@ public class OuterJoinOperationTest extends RandomizedTest {
             }
             DataStructure currentStructure = dataStructureBuilder.build();
 
-            List<Dataset.Tuple> currentData = Lists.newArrayList();
+            List<Dataset.DataPoint> currentData = Lists.newArrayList();
             for (int j = 0; j < rowAmount; j++) {
-                List<DataPoint> points = Lists.newArrayList();
+                List<VTLObject> points = Lists.newArrayList();
                 for (Component component : currentStructure.values()) {
                     Object value;
                     if (component.getName().equals("rowNum")) {
@@ -191,7 +191,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 );
 
         assertThat(result.get())
-                .extracting(input -> input.stream().map(DataPoint::get).collect(Collectors.toList()))
+                .extracting(input -> input.stream().map(VTLObject::get).collect(Collectors.toList()))
                 .containsExactly(
                         asList("1", "a", "id", "left 1a", null),
                         asList("2", "b", "id", "left 2b", "right 2b"),
@@ -272,7 +272,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 );
 
         assertThat(result.get())
-                .extracting(input -> input.stream().map(DataPoint::get).collect(Collectors.toList()))
+                .extracting(input -> input.stream().map(VTLObject::get).collect(Collectors.toList()))
                 .containsExactly(
                         asList("1", "left 1", null, null),
                         asList("2", "left 2", "right 2", "b"),
@@ -281,19 +281,19 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 );
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
+    private Dataset.DataPoint tuple(VTLObject... components) {
+        return new Dataset.AbstractDataPoint() {
             @Override
-            protected List<DataPoint> delegate() {
+            protected List<VTLObject> delegate() {
                 return asList(components);
             }
         };
     }
 
-    private Dataset.Tuple tuple(List<DataPoint> components) {
-        return new Dataset.AbstractTuple() {
+    private Dataset.DataPoint tuple(List<VTLObject> components) {
+        return new Dataset.AbstractDataPoint() {
             @Override
-            protected List<DataPoint> delegate() {
+            protected List<VTLObject> delegate() {
                 return components;
             }
         };

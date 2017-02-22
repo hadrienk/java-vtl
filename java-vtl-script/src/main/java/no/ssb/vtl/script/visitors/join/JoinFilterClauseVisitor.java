@@ -24,7 +24,7 @@ public class JoinFilterClauseVisitor extends VTLBaseVisitor<FilterOperator> {
     @Override
     public FilterOperator visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
         BooleanExpressionVisitor booleanExpressionVisitor = new BooleanExpressionVisitor(referenceVisitor);
-        Predicate<Dataset.Tuple> predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
+        Predicate<Dataset.DataPoint> predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
         return new FilterOperator(dataset, predicate);
     }
 }

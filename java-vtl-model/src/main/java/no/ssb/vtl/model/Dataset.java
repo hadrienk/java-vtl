@@ -35,25 +35,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A data structure that allows relational operations.
  */
-public interface Dataset extends Streamable<Dataset.Tuple> {
+public interface Dataset extends Streamable<Dataset.DataPoint> {
 
-    static Comparator<Tuple> comparatorFor(Component.Role... roles) {
+    static Comparator<DataPoint> comparatorFor(Component.Role... roles) {
         ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
-        return new Comparator<Tuple>() {
+        return new Comparator<DataPoint>() {
             @Override
-            public int compare(Tuple li, Tuple ri) {
+            public int compare(DataPoint li, DataPoint ri) {
                 Comparator comparator = Comparator.naturalOrder();
 
                 Map<String, Object> lm = li.stream().filter(dataPoint -> roleSet.contains(dataPoint.getRole()))
                         .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                DataPoint::get
+                                VTLObject::getName,
+                                VTLObject::get
                         ));
 
                 Map<String, Object> rm = ri.stream().filter(dataPoint -> roleSet.contains(dataPoint.getRole()))
                         .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                DataPoint::get
+                                VTLObject::getName,
+                                VTLObject::get
                         ));
 
                 checkArgument(lm.keySet().equals(rm.keySet()));
@@ -74,46 +74,46 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
      */
     DataStructure getDataStructure();
 
-    interface Tuple extends List<DataPoint>, Comparable<Tuple> {
+    interface DataPoint extends List<VTLObject>, Comparable<DataPoint> {
 
-        static Tuple create(List<DataPoint> components) {
-            return new AbstractTuple() {
+        static DataPoint create(List<VTLObject> components) {
+            return new AbstractDataPoint() {
                 @Override
-                protected List<DataPoint> delegate() {
+                protected List<VTLObject> delegate() {
                     return components;
                 }
             };
         }
 
-        List<DataPoint> ids();
+        List<VTLObject> ids();
 
-        List<DataPoint> values();
+        List<VTLObject> values();
 
     }
 
-    abstract class AbstractTuple extends ForwardingList<DataPoint> implements Tuple {
+    abstract class AbstractDataPoint extends ForwardingList<VTLObject> implements DataPoint {
 
         @Override
-        public List<DataPoint> ids() {
+        public List<VTLObject> ids() {
             return stream()
                     .filter(dataPoint -> dataPoint.getComponent().getRole().equals(Component.Role.IDENTIFIER))
                     .collect(Collectors.toList());
         }
 
         @Override
-        public List<DataPoint> values() {
+        public List<VTLObject> values() {
             return stream()
                     .filter(dataPoint -> !dataPoint.getComponent().getRole().equals(Component.Role.IDENTIFIER))
                     .collect(Collectors.toList());
         }
 
         @Override
-        public int compareTo(Tuple o) {
+        public int compareTo(DataPoint o) {
             checkNotNull(o);
 
             Comparator comparator = Comparator.naturalOrder();
-            Iterator<DataPoint> li = this.ids().iterator();
-            Iterator<DataPoint> ri = o.ids().iterator();
+            Iterator<VTLObject> li = this.ids().iterator();
+            Iterator<VTLObject> ri = o.ids().iterator();
             int i = 0;
             while (li.hasNext() && ri.hasNext()) {
                 i = comparator.compare(li.next().get(), ri.next().get());
@@ -125,7 +125,7 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(Tuple.class)
+            return MoreObjects.toStringHelper(DataPoint.class)
                     .add("id", ids())
                     .add("values", values())
                     .toString();

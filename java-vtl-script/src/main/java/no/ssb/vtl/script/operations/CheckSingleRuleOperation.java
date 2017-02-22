@@ -2,7 +2,7 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
@@ -99,28 +99,28 @@ public class CheckSingleRuleOperation implements Dataset{
     }
 
     @Override
-    public Stream<Tuple> get() {
-        Stream<Tuple> tupleStream = dataset.get();
+    public Stream<DataPoint> get() {
+        Stream<DataPoint> tupleStream = dataset.get();
 
         //first calculate the new data points...
         if (componentsToReturn == ComponentsToReturn.MEASURES) {
             tupleStream = tupleStream.map(dataPoints -> {
-                List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
+                List<VTLObject> dataPointsNewList = new ArrayList<>(dataPoints);
                 dataPointsNewList.add(getErrorCodeAsDataPoint());
                 if (errorLevel != null) {
                     dataPointsNewList.add(getErrorCodeAsDataPoint());
                 }
-                return Tuple.create(dataPointsNewList);
+                return DataPoint.create(dataPointsNewList);
             });
         } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
             tupleStream = tupleStream.map(dataPoints -> {
-                List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
-                dataPointsNewList.add(new DataPoint(getDataStructure().get("CONDITION")) {
+                List<VTLObject> dataPointsNewList = new ArrayList<>(dataPoints);
+                dataPointsNewList.add(new VTLObject(getDataStructure().get("CONDITION")) {
                     @Override
                     public Object get() {
                         return dataPoints.values().stream()
                                 .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
-                                .map(DataPoint::get)
+                                .map(VTLObject::get)
                                 .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b));
                     }
                 });
@@ -128,7 +128,7 @@ public class CheckSingleRuleOperation implements Dataset{
                 if (errorLevel != null) {
                     dataPointsNewList.add(getErrorLevelAsDataPoint());
                 }
-                return Tuple.create(dataPointsNewList);
+                return DataPoint.create(dataPointsNewList);
             });
         }
 
@@ -147,15 +147,15 @@ public class CheckSingleRuleOperation implements Dataset{
         return tupleStream;
     }
 
-    private DataPoint getErrorLevelAsDataPoint() {
+    private VTLObject getErrorLevelAsDataPoint() {
         return getDataStructure().wrap("errorlevel", errorLevel);
     }
 
-    private DataPoint getErrorCodeAsDataPoint() {
+    private VTLObject getErrorCodeAsDataPoint() {
         return getDataStructure().wrap("errorcode", errorCode);
     }
 
-    private static Predicate<DataPoint> isConditionComponent() {
+    private static Predicate<VTLObject> isConditionComponent() {
         return dataPoint -> dataPoint.getName().equals("CONDITION");
     }
 

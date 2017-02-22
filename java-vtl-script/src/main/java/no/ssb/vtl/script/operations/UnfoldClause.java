@@ -5,7 +5,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
@@ -98,18 +98,18 @@ public class UnfoldClause implements Dataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
+    public Stream<DataPoint> get() {
         // TODO: Handle sorting. Need to request sorting by dimension happens after all others.
         // TODO: Maybe put a filter before.
         // TODO: Expose more powerful methods in Datapoint.
         DataStructure dataStructure = getDataStructure();
         return StreamUtils.aggregate(dataset.get(), (left, right) -> {
             // Checks if the previous ids (except the one with unfold on) where different.
-            Iterator<DataPoint> leftIt = left.iterator();
-            Iterator<DataPoint> rightIt = right.iterator();
+            Iterator<VTLObject> leftIt = left.iterator();
+            Iterator<VTLObject> rightIt = right.iterator();
             while (leftIt.hasNext() && rightIt.hasNext()) {
-                DataPoint leftValue = leftIt.next();
-                DataPoint rightValue = rightIt.next();
+                VTLObject leftValue = leftIt.next();
+                VTLObject rightValue = rightIt.next();
                 if (!leftValue.getRole().equals(Role.IDENTIFIER)) {
                     continue;
                 }
@@ -124,23 +124,23 @@ public class UnfoldClause implements Dataset {
         }).map(tuples -> {
             // TODO: Naive implementation for now.
             Map<String, Object> map = Maps.newLinkedHashMap();
-            for (Tuple tuple : tuples) {
+            for (DataPoint dataPoint : tuples) {
                 Object unfoldedValue = null;
                 String columnName = null;
-                for (DataPoint dataPoint : tuple) {
-                    if (dimension == dataPoint.getComponent()) {
+                for (VTLObject value : dataPoint) {
+                    if (dimension == value.getComponent()) {
                         // TODO: Check type of the elements. Can we use element that are not String??
-                        if (elements.contains(dataPoint.get())) {
-                            columnName = (String) dataPoint.get();
+                        if (elements.contains(value.get())) {
+                            columnName = (String) value.get();
                             continue;
                         }
                     }
-                    if (measure == dataPoint.getComponent()) {
-                        unfoldedValue = dataPoint.get();
+                    if (measure == value.getComponent()) {
+                        unfoldedValue = value.get();
                         continue;
                     }
-                    if (dataPoint.getRole().equals(Role.IDENTIFIER)) {
-                        map.put(dataPoint.getName(), dataPoint.get());
+                    if (value.getRole().equals(Role.IDENTIFIER)) {
+                        map.put(value.getName(), value.get());
                     }
                 }
                 map.put(columnName, unfoldedValue);
