@@ -60,13 +60,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * Data stream:
  * <p>
- * The observations (data points) can be requested by calling the {@link #getData()} functions.
- * The returned value is a new, independent and immutable stream of information.
+ * The observations (data points) can be requested by calling the {@link #getData()} functions. The returned value is a
+ * new, independent and immutable stream of information.
  * <p>
  * Sorting and filtering:
  * <p>
  * Independent sorting and filtering of the data points for a stream can be requested with the
- * {@link #getData(String...)} methods. This allows optimized implementations of operations like
+ * {@link Dataset#getData(Order, Filtering, Set)} methods. This allows optimized implementations of operations like
  * join or union.
  */
 public interface Dataset extends Streamable<Dataset.Tuple> {
@@ -141,31 +141,36 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
     /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>
-     * Calling this method is the same as calling getData(ordering, Filtering.ALL)
+     * Calling this method is equivalent to
+     * <code>getData(ordering, Filtering.ALL, getDataStructure.keySet())</code>
      *
-     * @see Filtering#getData(Order, Filtering)
+     * @see Filtering#getData(Order, Filtering, Set)
      */
     default Optional<Stream<? extends DataPoint>> getData(Order order) {
-        return getData(order, Filtering.ALL, getDataStructure().keySet());
+        DataStructure dataStructure = getDataStructure();
+        return getData(order, Filtering.ALL, dataStructure.keySet());
     }
 
     /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>
-     * Calling this method is the same as calling getData(Ordering.DEFAULT, filtering)
+     * Calling this method is equivalent to
+     * <code>getData(Ordering.DEFAULT, filtering, getDataStructure.keySet())</code>
      *
-     * @see Filtering#getData(Order, Filtering)
+     * @see Filtering#getData(Order, Filtering, Set)
      */
     default Optional<Stream<? extends DataPoint>> getData(Filtering filtering) {
-        return getData(Order.DEFAULT, filtering, getDataStructure().keySet());
+        DataStructure dataStructure = getDataStructure();
+        return getData(Order.getDefault(dataStructure), filtering, dataStructure.keySet());
     }
 
     /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>
-     * Calling this method is the same as calling getData(Ordering.DEFAULT, filtering)
+     * Calling this method is equivalent to
+     * <code>getData(Ordering.DEFAULT, filtering, getDataStructure.keySet())</code>
      *
-     * @see Filtering#getData(Order, Filtering)
+     * @see Filtering#getData(Order, Filtering, Set)
      */
     default Optional<Stream<? extends DataPoint>> getData(Set<String> components) {
         DataStructure dataStructure = getDataStructure();
