@@ -22,10 +22,8 @@ package no.ssb.vtl.model;
 
 import com.codepoetics.protonpack.Streamable;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ForwardingList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import com.google.common.base.Predicate;
+import com.google.common.collect.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -130,23 +128,25 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
      * Implementations can decide not to allow sorting by returning {@link Optional#empty()}.
      * <p>
      * If supported, the {@link Spliterator} of the returned {@link Stream} <b>must</b> be {@link Spliterator#SORTED}
-     * using the given {@link Ordering}.
+     * using the given {@link Order}.
      *
      * @param orders    the order in which the {@link DataPoint}s should be returned.
      * @param filtering the filtering on the {@link Component}s of the {@link DataPoint}s
      * @return a <b>sorted</b> stream of {@link DataPoint}s if sorting is supported.
      */
-    Optional<Stream<? extends DataPoint>> getData(Ordering orders, Filtering filtering);
+    default Optional<Stream<? extends DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+        return Optional.of(getData().sorted(orders));
+    }
 
     /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>
      * Calling this method is the same as calling getData(ordering, Filtering.ALL)
      *
-     * @see Filtering#getData(Ordering, Filtering)
+     * @see Filtering#getData(Order, Filtering)
      */
-    default Optional<Stream<? extends DataPoint>> getData(Ordering ordering) {
-        return getData(ordering, Filtering.ALL);
+    default Optional<Stream<? extends DataPoint>> getData(Order order) {
+        return getData(order, Filtering.ALL, getDataStructure().keySet());
     }
 
     /**
@@ -154,10 +154,22 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
      * <p>
      * Calling this method is the same as calling getData(Ordering.DEFAULT, filtering)
      *
-     * @see Filtering#getData(Ordering, Filtering)
+     * @see Filtering#getData(Order, Filtering)
      */
     default Optional<Stream<? extends DataPoint>> getData(Filtering filtering) {
-        return getData(Ordering.DEFAULT, filtering);
+        return getData(Order.DEFAULT, filtering, getDataStructure().keySet());
+    }
+
+    /**
+     * Creates a new independent, immutable stream of DataPoints.
+     * <p>
+     * Calling this method is the same as calling getData(Ordering.DEFAULT, filtering)
+     *
+     * @see Filtering#getData(Order, Filtering)
+     */
+    default Optional<Stream<? extends DataPoint>> getData(Set<String> components) {
+        DataStructure dataStructure = getDataStructure();
+        return getData(Order.getDefault(dataStructure), Filtering.ALL, dataStructure.keySet());
     }
 
     /**
@@ -165,22 +177,11 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
      */
     DataStructure getDataStructure();
 
-    enum Order {
-        ASC, DESC
-    }
-
     /**
-     * Represent the ordering the {@link DataPoint}s in a Dataset.
+     * Represent the filtering of the {@link DataPoint}s in a Dataset.
      */
-    interface Ordering extends Comparator<DataPoint>, Map<String, Order> {
-        Ordering DEFAULT = null;
-    }
-
-    /**
-     * Represent the filtering of the {@link Component}s in a Dataset.
-     */
-    interface Filtering extends List<String> {
-        Filtering ALL = null;
+    interface Filtering extends Predicate<DataPoint> {
+        Filtering ALL = dataPoint -> true;
     }
 
     interface Tuple extends List<DataPoint>, Comparable<Tuple> {
@@ -198,6 +199,66 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
         List<DataPoint> values();
 
+    }
+
+    /**
+     * Represent the ordering the {@link DataPoint}s in a Dataset.
+     */
+    class Order extends ForwardingMap<String, Order.Direction> implements Comparator<DataPoint>, Map<String, Order.Direction> {
+
+        static final Comparator<Map.Entry<String, Component>> BY_ROLE = Comparator.comparing(
+                entry -> entry.getValue().getRole(),
+                Ordering.explicit(
+                        Component.Role.IDENTIFIER,
+                        Component.Role.MEASURE,
+                        Component.Role.ATTRIBUTE
+                )
+        );
+
+        static final Comparator<Map.Entry<String, Component>> BY_NAME = Comparator.comparing(Map.Entry::getKey);
+
+        private final ImmutableMap<String, Direction> delegate;
+
+        private Order(Map<String, Direction> orders) {
+            this.delegate = ImmutableMap.copyOf(orders);
+        }
+
+        /**
+         * Return a default Order for the given datastructure.
+         *
+         * @param structure
+         * @return
+         */
+        static Order getDefault(DataStructure structure) {
+            Set<Entry<String, Component>> sortedEntrySet = Sets.newTreeSet(BY_ROLE.thenComparing(BY_NAME));
+            sortedEntrySet.addAll(structure.entrySet());
+
+            ImmutableMap.Builder<String, Order.Direction> order = ImmutableMap.builder();
+            for (Entry<String, Component> entry : sortedEntrySet) {
+                order.put(entry.getKey(), Direction.ASC);
+            }
+            return new Order(order.build());
+        }
+
+        @Override
+        protected Map<String, Direction> delegate() {
+            return delegate;
+        }
+
+        @Override
+        public int compare(DataPoint o1, DataPoint o2) {
+            // TODO
+            // 1 - Wrap the DataPoint with the structure.
+            // 2 - Loop through the map
+            // 3 - Compare the points of o1 and o2.
+            // 4 - If 0, continue
+            // 5 - If not, return value * ACS? 1 : -1
+            return 0;
+        }
+
+        enum Direction {
+            ASC, DESC
+        }
     }
 
     abstract class AbstractTuple extends ForwardingList<DataPoint> implements Tuple {
