@@ -22,18 +22,19 @@ package no.ssb.vtl.model;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Data structure of a {@link Dataset}.
@@ -50,6 +51,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     private final IdentityHashMap<Component, String> inverseCache;
     private final ImmutableMap<String, Component.Role> roleCache;
     private final ImmutableMap<String, Class<?>> typeCache;
+    private final ImmutableList<Component> indexListCache;
 
     protected DataStructure(BiFunction<Object, Class<?>, ?> converter, ImmutableMap<String, Component> map) {
         this.converter = checkNotNull(converter);
@@ -57,6 +59,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         this.inverseCache = computeInverseCache(this.delegate);
         this.roleCache = computeRoleCache(delegate);
         this.typeCache = computeTypeCache(delegate);
+        this.indexListCache = computeIndexCache(delegate);
     }
 
     private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
@@ -65,6 +68,11 @@ public class DataStructure extends ForwardingMap<String, Component> {
 
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
         return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
+    }
+    
+    private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {
+        return ImmutableList.copyOf(delegate.values());
+        
     }
 
     public static DataStructure.Builder builder() {
@@ -190,9 +198,16 @@ public class DataStructure extends ForwardingMap<String, Component> {
     public BiFunction<Object, Class<?>, ?> converter() {
         return this.converter;
     }
-
-    ;
-
+    
+    public Map<Component, Object> asMap(Dataset.Tuple tuple) {
+        Map<Component, Object> map = new HashMap<>();
+        for (int i = 0; i< indexListCache.size(); i++) {
+            map.put(indexListCache.get(i), tuple.get(i));
+        }
+        return map;
+    }
+    
+    
     /**
      * Creates a new {@link Component} for the given column and value.
      *
