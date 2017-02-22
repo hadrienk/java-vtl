@@ -13,13 +13,16 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
 import static no.ssb.vtl.model.Component.Role.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,7 +43,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         // Build random test data.
 
         Integer datasetAmount = randomIntBetween(1, 10);
-        Integer rowAmount = randomIntBetween(0, 100);
+        Integer rowAmount = randomIntBetween(0, 20);
         Integer identifierAmount = randomIntBetween(0, 5);
         Integer componentAmount = randomIntBetween(1, 5);
 
@@ -115,7 +118,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "id3", IDENTIFIER, String.class,
-                "value", MEASURE, Integer.class
+                "value", MEASURE, String.class
         );
 
         DataStructure structure2 = DataStructure.of(
@@ -123,7 +126,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "id3", IDENTIFIER, String.class,
-                "value", MEASURE, Integer.class
+                "value", MEASURE, String.class
         );
 
         given(ds1.getDataStructure()).willReturn(structure1);
@@ -150,41 +153,139 @@ public class OuterJoinOperationTest extends RandomizedTest {
 
         given(ds2.get()).willAnswer(o -> Stream.of(
                 tuple(
-                        structure2.wrap("id1", "1"),
+                        structure2.wrap("id1", "2"),
                         structure2.wrap("id2", "b"),
                         structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "right 1b")
-                ), tuple(
-                        structure2.wrap("id1", "2"),
-                        structure2.wrap("id2", "c"),
-                        structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "right 2c")
+                        structure2.wrap("value", "right 2b")
                 ), tuple(
                         structure2.wrap("id1", "3"),
+                        structure2.wrap("id2", "c"),
+                        structure2.wrap("id3", "id"),
+                        structure2.wrap("value", "right 3c")
+                ), tuple(
+                        structure2.wrap("id1", "4"),
                         structure2.wrap("id2", "d"),
                         structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "right 3d")
+                        structure2.wrap("value", "right 4d")
                 )
         ));
 
         AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
         VTLPrintStream vtlPrintStream = new VTLPrintStream(System.out);
-
-        vtlPrintStream.println(result.getDataStructure());
-
+        //vtlPrintStream.println(result.getDataStructure());
         vtlPrintStream.println(ds1);
         vtlPrintStream.println(ds2);
-
-        vtlPrintStream.println(result.getDataStructure());
+        //vtlPrintStream.println(result.getDataStructure());
         vtlPrintStream.println(result);
+
+        // Check that the structure is correct. We expect:
+        // common identifiers () + left and right.
+        assertThat(result.getDataStructure())
+                .containsOnly(
+                        entry("id1", structure1.get("id1")),
+                        entry("id2", structure1.get("id2")),
+                        entry("id3", structure1.get("id3")),
+                        entry("ds1_value", structure1.get("value")),
+                        entry("ds2_value", structure2.get("value"))
+                );
+
+        assertThat(result.get())
+                .extracting(input -> input.stream().map(DataPoint::get).collect(Collectors.toList()))
+                .containsExactly(
+                        asList("1", "a", "id", "left 1a", null),
+                        asList("2", "b", "id", "left 2b", "right 2b"),
+                        asList("3", "c", "id", "left 3c", "right 3c"),
+                        asList("4", "d", "id", null, "right 4d")
+                );
+    }
+
+    @Test
+    public void testOuterJoinWithUnequalIds() throws Exception {
+
+
+        Dataset ds1 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds1");
+
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", IDENTIFIER, String.class,
+                "value", MEASURE, String.class
+        );
+
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", IDENTIFIER, String.class,
+                "value", MEASURE, String.class,
+                "id2", IDENTIFIER, String.class
+        );
+
+        given(ds1.getDataStructure()).willReturn(structure1);
+        given(ds2.getDataStructure()).willReturn(structure2);
+
+        given(ds1.get()).willAnswer(o -> Stream.of(
+                tuple(
+                        structure1.wrap("id1", "1"),
+                        structure1.wrap("value", "left 1")
+                ), tuple(
+                        structure1.wrap("id1", "2"),
+                        structure1.wrap("value", "left 2")
+                ), tuple(
+                        structure1.wrap("id1", "3"),
+                        structure1.wrap("value", "left 3")
+                )
+        ));
+
+        given(ds2.get()).willAnswer(o -> Stream.of(
+                tuple(
+                        structure2.wrap("id1", "2"),
+                        structure2.wrap("value", "right 2"),
+                        structure2.wrap("id2", "b")
+                ), tuple(
+                        structure2.wrap("id1", "3"),
+                        structure2.wrap("value", "right 3"),
+                        structure2.wrap("id2", "c")
+                ), tuple(
+                        structure2.wrap("id1", "4"),
+                        structure2.wrap("value", "right 4"),
+                        structure2.wrap("id2", "d")
+                )
+        ));
+
+        AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+
+        VTLPrintStream vtlPrintStream = new VTLPrintStream(System.out);
+        //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(ds1);
+        vtlPrintStream.println(ds2);
+        //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(result);
+
+        // Check that the structure is correct. We expect:
+        // common identifiers () + left and right.
+        assertThat(result.getDataStructure())
+                .containsOnly(
+                        entry("id1", structure1.get("id1")),
+                        entry("ds1_value", structure1.get("value")),
+                        entry("ds2_value", structure2.get("value")),
+                        entry("id2", structure2.get("id2"))
+                );
+
+        assertThat(result.get())
+                .extracting(input -> input.stream().map(DataPoint::get).collect(Collectors.toList()))
+                .containsExactly(
+                        asList("1", "left 1", null, null),
+                        asList("2", "left 2", "right 2", "b"),
+                        asList("3", "left 3", "right 3", "c"),
+                        asList("4", null, "right 4", "d")
+                );
     }
 
     private Dataset.Tuple tuple(DataPoint... components) {
         return new Dataset.AbstractTuple() {
             @Override
             protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
+                return asList(components);
             }
         };
     }
