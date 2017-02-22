@@ -19,15 +19,13 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class OuterJoinOperation extends AbstractJoinOperation {
 
@@ -44,12 +42,37 @@ public class OuterJoinOperation extends AbstractJoinOperation {
         Set<Component> identifiers = getIdentifiers();
         return (left, right, compare) -> {
 
+            // TODO: Rewrite this method after implementing the tuple "Map View"
+
             JoinTuple merged;
-            if (compare <= 0) {
-                merged = new JoinTuple(left.ids());
-            } else {
-                merged = new JoinTuple(right.ids());
+            ArrayList<DataPoint> ids = Lists.newArrayList();
+            for (DataPoint point : left) {
+                if (identifiers.contains(point.getComponent())) {
+                    ids.add(point);
+                }
             }
+            if (compare <= 0) {
+                merged = new JoinTuple(ids);
+            } else {
+                // Use left components with right values.
+                Iterator<DataPoint> idsIterator = ids.iterator();
+                List<DataPoint> rightIds = Lists.newArrayList();
+                for (DataPoint point : right) {
+                    if (identifiers.contains(point.getComponent())) {
+                        Component leftComponent = idsIterator.next().getComponent();
+                        rightIds.add(new DataPoint(leftComponent) {
+                            Object value = point.get();
+
+                            @Override
+                            public Object get() {
+                                return value;
+                            }
+                        });
+                    }
+                }
+                merged = new JoinTuple(rightIds);
+            }
+
 
             if (compare == 0) {
                 for (DataPoint point : left) {
