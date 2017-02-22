@@ -10,6 +10,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.lang.String;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -121,6 +122,8 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
             return ((Boolean) value).compareTo((Boolean) scalar);
         } else if (value instanceof String && scalar instanceof String) {
             return ((String) value).compareTo((String) scalar);
+        } else if (value instanceof Instant && scalar instanceof Instant) {
+            return ((Instant) value).compareTo((Instant) scalar);
         }
         throw new ParseCancellationException(
                 format("Cannot compare %s of type %s with %s of type %s",
