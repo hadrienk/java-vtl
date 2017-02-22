@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.Dataset.Order.Direction.ASC;
 
 /**
  * A dataset represents a list of observations.
@@ -209,8 +210,9 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
     /**
      * Represent the ordering the {@link DataPoint}s in a Dataset.
      */
-    class Order extends ForwardingMap<String, Order.Direction> implements Comparator<DataPoint>, Map<String, Order.Direction> {
+    final class Order extends ForwardingMap<String, Order.Direction> implements Comparator<DataPoint>, Map<String, Order.Direction> {
 
+        public static final Comparator<Comparable> NULLS_FIRST = Comparator.<Comparable>nullsFirst(Comparator.naturalOrder());
         static final Comparator<Map.Entry<String, Component>> BY_ROLE = Comparator.comparing(
                 entry -> entry.getValue().getRole(),
                 Ordering.explicit(
@@ -219,9 +221,7 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
                         Component.Role.ATTRIBUTE
                 )
         );
-
         static final Comparator<Map.Entry<String, Component>> BY_NAME = Comparator.comparing(Map.Entry::getKey);
-
         private final ImmutableMap<String, Direction> delegate;
 
         private Order(Map<String, Direction> orders) {
@@ -240,7 +240,7 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
             ImmutableMap.Builder<String, Order.Direction> order = ImmutableMap.builder();
             for (Entry<String, Component> entry : sortedEntrySet) {
-                order.put(entry.getKey(), Direction.ASC);
+                order.put(entry.getKey(), ASC);
             }
             return new Order(order.build());
         }
@@ -252,12 +252,28 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
 
         @Override
         public int compare(DataPoint o1, DataPoint o2) {
-            // TODO
-            // 1 - Wrap the DataPoint with the structure.
-            // 2 - Loop through the map
-            // 3 - Compare the points of o1 and o2.
-            // 4 - If 0, continue
-            // 5 - If not, return value * ACS? 1 : -1
+            int result;
+
+            // TODO dataStructure.asMap(o1) ?
+            Map<String, Comparable> m1 = Maps.newHashMap(), m2 = Maps.newHashMap();
+            for (Entry<String, Direction> order : delegate.entrySet()) {
+                String key = order.getKey();
+                result = NULLS_FIRST.compare(m1.get(key), m2.get(key));
+                if (result != 0) {
+                    return order.getValue() == ASC ? result : -result;
+                }
+            }
+
+            // TODO build an index?
+            Comparable[] c1 = new Comparable[1], c2 = new Comparable[1];
+            ImmutableMap<Integer, Order.Direction> index = ImmutableMap.copyOf(Collections.emptyMap());
+            for (Entry<Integer, Direction> order : index.entrySet()) {
+                Integer i = order.getKey();
+                result = NULLS_FIRST.compare(c1[i], c2[i]);
+                if (result != 0) {
+                    return order.getValue() == ASC ? result : -result;
+                }
+            }
             return 0;
         }
 
