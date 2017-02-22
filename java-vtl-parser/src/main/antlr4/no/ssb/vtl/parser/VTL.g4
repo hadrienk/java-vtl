@@ -33,6 +33,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | getExpression                                          #withGet
            | putExpression                                          #withPut
            | exprAtom                                               #withAtom
+           | checkExpression                                        #withCheck
            ;
 
 
@@ -43,6 +44,15 @@ datasetId : STRING_CONSTANT ;
 
 /* Atom */
 exprAtom : variableRef;
+
+checkExpression : 'check' '(' checkParam ')';
+
+checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
+
+checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
+checkColumns : ( 'measures' | 'condition' ) ;
+errorCode : STRING_CONSTANT ;
+errorLevel : INTEGER_CONSTANT ;
 
 datasetRef: variableRef ;
 

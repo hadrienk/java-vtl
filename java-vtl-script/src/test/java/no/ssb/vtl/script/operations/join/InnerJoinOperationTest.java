@@ -2,6 +2,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -130,6 +131,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         MEASURE, structure2.get("obs_value"), "10",
                         ATTRIBUTE, structure2.get("obs_status"), "P"
                 );
+    }
+
+    @Test
+    @Seed("9DC9B02FF9A216E4")
+    public void testRegression() throws Exception {
+        //D0E9B354FC19C5A:9DC9B02FF9A216E4
+        testRandomDatasets();
     }
 
     @Test
