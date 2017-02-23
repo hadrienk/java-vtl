@@ -207,6 +207,17 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return map;
     }
     
+    public Map<VTLObject, Component> asInverseMap(Dataset.DataPoint dataPoint) {
+        Map<VTLObject, Component> map = new HashMap<>();
+        for (int i = 0; i< indexListCache.size(); i++) {
+            map.put(dataPoint.get(i), indexListCache.get(i));
+        }
+        return map;
+    }
+    
+    public int indexOf(Component component) {
+        return indexListCache.indexOf(component);
+    }
     
     /**
      * Creates a new {@link Component} for the given column and value.

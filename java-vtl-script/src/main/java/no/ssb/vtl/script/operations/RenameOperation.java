@@ -22,18 +22,20 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Rename operation.
@@ -124,21 +126,19 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> get() {
-        return getChild().get().map(points -> {
-            points.replaceAll(point -> {
-                Component component = point.getComponent();
-                if (mapping.containsKey(component)) {
-                    return new VTLObject(mapping.get(component)) {
-                        @Override
-                        public Object get() {
-                            return point.get();
-                        }
-                    };
-                } else {
-                    return point;
-                }
+        return getChild().get().map(dataPoint -> {
+            LinkedList<Component> list = Lists.newLinkedList(getDataStructure().values());
+            Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);
+            dataPoint.replaceAll(vtlObject -> {
+                Component component = componentMap.get(vtlObject);
+                return  new VTLObject(component) {
+                    @Override
+                    public Object get() {
+                        return vtlObject.get();
+                    }
+                };
             });
-            return points;
+            return dataPoint;
         });
     }
 

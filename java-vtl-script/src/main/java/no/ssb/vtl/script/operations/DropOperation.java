@@ -1,17 +1,21 @@
 package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * TODO: Implement "operator" and  "function" interfaces.
@@ -44,10 +48,18 @@ public class DropOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> get() {
-        DataStructure structure = getDataStructure();
+        DataStructure oldStructure = getChild().getDataStructure();
+        HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
+        HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
+        LinkedList<Component> componentsToRemove = Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
         return getChild().get().map(
                 dataPoints -> {
-                    dataPoints.removeIf(dataPoint -> !structure.containsValue(dataPoint.getComponent()));
+                    Iterator<Component> descendingIterator = componentsToRemove.descendingIterator();
+                    while (descendingIterator.hasNext()) {
+                        Component component = descendingIterator.next();
+                        int index = oldStructure.indexOf(component);
+                        dataPoints.remove(index);
+                    }
                     return dataPoints;
                 }
         );
