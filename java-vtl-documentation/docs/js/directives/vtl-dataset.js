@@ -7,24 +7,22 @@ define(['angular'], function (angular) {
         .directive('vtlDataset', function () {
             return {
                 restrict: 'E',
-                require:"^vtlData",
+                //require:"^^vtlData",
                 scope: {
                     name: '@?',
-                    dataset: '=?',
+                    addTo:"=",
                     // TODO: src: '&',
                 },
-                //transclude: true,
-                replace: true,
-                templateUrl: '../../js/directives/vtl-dataset.html',
+                template:'<!-- directive: ng-transclude -->',
+                transclude: true,
                 link: linkFunction
             };
 
             function linkFunction(scope, element, attrs, dataController, transcludeFn) {
                 // Check URL or content or dataset.
                 // If url, use vtl controller
-
-                if (scope.dataset !== undefined) {
-                    return;
+                if (!angular.isDefined(scope.addTo)) {
+                    scope.addTo = [];
                 }
 
                 var text = transcludeFn().text();
@@ -38,7 +36,7 @@ define(['angular'], function (angular) {
                     line = lines.splice(0, 1)[0];
 
                     dataset = {
-                        name: "todo", // TODO: Use dataset attribute name.
+                        name: scope.name, // TODO: Use dataset attribute name.
                         structure: [], // {name: "Folketallet11", role: "MEASURE", type: "java.lang.Number", classType: "java.lang.Number"}
                         data: []
                     };
@@ -82,8 +80,11 @@ define(['angular'], function (angular) {
                         //for (var len = dataset.structure.length, j = 0; j<len; ++i) {
                         //}
                     }
+
+                    scope.addTo.push(dataset);
+
+                    //scope.$destroy();
                 }
-                scope.dataset = dataset;
             }
         });
     return moduleName;

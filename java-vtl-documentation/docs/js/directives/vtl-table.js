@@ -2,20 +2,17 @@
 'use strict';
 
 define(['angular',], function (angular) {
-    var moduleName = 'vtl.data';
+    var moduleName = 'vtl.table';
     angular.module(moduleName, [])
-        .directive('vtlData', function () {
+        .directive('vtlTable', function () {
             return {
                 restrict: 'E',
                 scope: {
-                    datasets: '&',
+                    dataset: '=',
                 },
-                transclude: true,
                 replace: true,
-                templateUrl: '../../js/directives/vtl-data.html'
+                templateUrl: '../../js/directives/vtl-table.html',
             };
-
         });
-
     return moduleName;
 });

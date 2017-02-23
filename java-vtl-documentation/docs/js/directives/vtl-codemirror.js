@@ -47,7 +47,7 @@ define(['angular', 'ui.codemirror'], function (angular) {
             return {
                 scope: {
                     expression: '=',
-                    input: "=",
+                    input: "<",
                     output: "="
                 },
                 restrict: 'E',

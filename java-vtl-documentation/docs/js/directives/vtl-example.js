@@ -10,7 +10,11 @@ define(['angular',], function (angular) {
                 scope: {},
                 transclude: true,
                 replace: true,
-                template: '<div class="vtl-example" ng-transclude></div>'
+                template: '<div class="vtl-example" ng-transclude></div>',
+                controller: function ($scope) {
+                    $scope.datasets = [];
+                    $scope.inputs = [];
+                }
             };
         });
     return moduleName;

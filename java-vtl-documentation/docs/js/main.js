@@ -105,7 +105,8 @@ require([
     '../../js/directives/vtl-codemirror',
     '../../js/directives/vtl-dataset',
     '../../js/directives/vtl-data',
-    '../../js/directives/vtl-example'], function (rd, angular, sm) {
+    '../../js/directives/vtl-example',
+    '../../js/directives/vtl-table'], function (rd, angular, sm) {
 
     rd.Diagram.VERTICAL_SEPARATION = 20;
     rd.Diagram.INTERNAL_ALIGNMENT = "left";
@@ -126,7 +127,7 @@ require([
     ).addTo(document.getElementById("foldClause"));
 
     angular.module('documentation', ['smart-table', 'ui.bootstrap', 'ui.codemirror',
-        'vtl.code', 'vtl.data', 'vtl.dataset', 'vtl']);
+        'vtl.code', 'vtl.data', 'vtl.dataset', 'vtl.table', 'vtl']);
     angular.bootstrap(angular.element('#content')[0], ['documentation']);
 
 });
