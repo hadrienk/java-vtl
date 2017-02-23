@@ -124,6 +124,17 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
     Stream<? extends DataPoint> getData();
 
     /**
+     * Returns the count of unique values by column.
+     */
+    Optional<Map<String, Integer>> getDistinctValuesCount();
+
+    /**
+     * Return the amount of {@link DataPoint} the stream obtained by the
+     * method {@link Dataset#getData()} will return.
+     */
+    Optional<Long> getSize();
+
+    /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>
      * Implementations can decide not to allow sorting by returning {@link Optional#empty()}.
@@ -136,7 +147,10 @@ public interface Dataset extends Streamable<Dataset.Tuple> {
      * @return a <b>sorted</b> stream of {@link DataPoint}s if sorting is supported.
      */
     default Optional<Stream<? extends DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
-        return Optional.of(getData().sorted(orders));
+        return Optional.of(getData().sorted(orders).filter(filtering).map(o -> {
+            // TODO
+            return o;
+        }));
     }
 
     /**
