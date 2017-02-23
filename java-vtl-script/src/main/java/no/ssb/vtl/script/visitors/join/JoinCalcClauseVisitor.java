@@ -1,8 +1,9 @@
 package no.ssb.vtl.script.visitors.join;
 
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
@@ -11,7 +12,7 @@ import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static java.lang.String.format;
+import static java.lang.String.*;
 
 /**
  * Visitor for join calc clauses.
@@ -19,9 +20,18 @@ import static java.lang.String.format;
 public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataPoint, Object>> {
 
     private final ReferenceVisitor referenceVisitor;
-
-    public JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
+    private final DataStructure dataStructure;
+    
+    public JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
+        this.dataStructure = dataStructure;
+    }
+    
+    /**
+     * Temporary hack for tests //TODO: Remove
+     */
+    JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
+        this(referenceVisitor, null);
     }
 
     @Override
@@ -167,7 +177,7 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     
     @Override
     public Function<Dataset.DataPoint, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
-        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor, dataset);
+        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor, dataStructure);
         Predicate<Dataset.DataPoint> predicate = booleanVisitor.visit(ctx.booleanExpression());
         return predicate::test;
     }

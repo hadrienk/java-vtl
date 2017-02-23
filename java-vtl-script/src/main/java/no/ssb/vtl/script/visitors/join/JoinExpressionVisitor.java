@@ -110,7 +110,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
         DataStructure.Builder structureCopy = DataStructure.copyOf(workingDataset.getDataStructure());
         structureCopy.put(variableName, role, type);
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor);
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
         Function<Dataset.DataPoint, Object> componentExpression = visitor.visit(ctx);
 
         // TODO: Extract to its own visitor implementing dataset.

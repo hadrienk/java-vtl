@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.lang.String;
 import java.time.Instant;
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -103,8 +104,10 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.D
         }
     }
     
-    private VTLObject getValue(Component component, Dataset.DataPoint dataPoint) {
-        return dataStructure.asMap(dataPoint).get(component);
+    private Object getValue(Component component, Dataset.DataPoint dataPoint) {
+        Map<Component, VTLObject> componentVTLObjectMap = dataStructure.asMap(dataPoint);
+        VTLObject vtlObject = componentVTLObjectMap.get(component);
+        return vtlObject.get();
     }
     
     private boolean isComp(Object o) {
