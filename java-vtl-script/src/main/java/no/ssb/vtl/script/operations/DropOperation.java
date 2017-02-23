@@ -13,15 +13,18 @@ import java.util.stream.Stream;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class KeepOperator extends AbstractUnaryDatasetOperation {
+/**
+ * TODO: Implement "operator" and  "function" interfaces.
+ */
+public class DropOperation extends AbstractUnaryDatasetOperation {
 
     private final Set<Component> components;
 
-    public KeepOperator(Dataset dataset, Set<Component> names) {
+    public DropOperation(Dataset dataset, Set<Component> components) {
         super(checkNotNull(dataset, "the dataset was null"));
-        this.components = checkNotNull(names, "the component list was null");
+        this.components = checkNotNull(components, "the component list was null");
 
-        checkArgument(!names.isEmpty(), "the list of component to keep was null");
+        checkArgument(!components.isEmpty(), "the list of component to drop was null");
     }
 
     /**
@@ -32,7 +35,7 @@ public class KeepOperator extends AbstractUnaryDatasetOperation {
         DataStructure.Builder newDataStructure = DataStructure.builder();
         for (Map.Entry<String, Component> componentEntry : getChild().getDataStructure().entrySet()) {
             Component component = componentEntry.getValue();
-            if (components.contains(component) || component.isIdentifier()) {
+            if (!components.contains(component) || component.isIdentifier()) {
                 newDataStructure.put(componentEntry);
             }
         }

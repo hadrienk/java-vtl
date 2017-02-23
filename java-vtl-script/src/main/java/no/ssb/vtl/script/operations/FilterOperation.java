@@ -13,11 +13,11 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class FilterOperator extends AbstractUnaryDatasetOperation {
+public class FilterOperation extends AbstractUnaryDatasetOperation {
 
     private final Predicate<DataPoint> predicate;
 
-    public FilterOperator(Dataset dataset, Predicate<DataPoint> predicate) {
+    public FilterOperation(Dataset dataset, Predicate<DataPoint> predicate) {
         super(checkNotNull(dataset, "the dataset was null"));
         this.predicate = checkNotNull(predicate, "the predicate was null");
     }
