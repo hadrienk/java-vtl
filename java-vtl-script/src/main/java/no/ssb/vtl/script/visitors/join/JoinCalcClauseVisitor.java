@@ -167,7 +167,7 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     
     @Override
     public Function<Dataset.DataPoint, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
-        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor);
+        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor, dataset);
         Predicate<Dataset.DataPoint> predicate = booleanVisitor.visit(ctx.booleanExpression());
         return predicate::test;
     }

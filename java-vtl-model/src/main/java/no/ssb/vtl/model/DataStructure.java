@@ -199,8 +199,8 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return this.converter;
     }
     
-    public Map<Component, Object> asMap(Dataset.DataPoint dataPoint) {
-        Map<Component, Object> map = new HashMap<>();
+    public Map<Component, VTLObject> asMap(Dataset.DataPoint dataPoint) {
+        Map<Component, VTLObject> map = new HashMap<>();
         for (int i = 0; i< indexListCache.size(); i++) {
             map.put(indexListCache.get(i), dataPoint.get(i));
         }

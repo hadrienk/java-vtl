@@ -1,9 +1,9 @@
 package no.ssb.vtl.script.visitors;
 
-import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.Token;
@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.lang.String;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -20,9 +19,11 @@ import static java.lang.String.*;
 public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.DataPoint>> {
     
     private final ReferenceVisitor referenceVisitor;
+    private final DataStructure dataStructure;
     
-    public BooleanExpressionVisitor(ReferenceVisitor referenceVisitor) {
+    public BooleanExpressionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
+        this.dataStructure = dataStructure;
     }
     
     @Override
@@ -59,19 +60,19 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.D
         BiPredicate<Object, Object> booleanOperation = getBooleanOperation(ctx.op);
         
         if (isComp(left) && !isComp(right)) {
-            return tuple -> {
-                Object leftValue = getOnlyElement(left, tuple);
+            return dataPoint -> {
+                Object leftValue = getValue((Component) left, dataPoint);
                 return booleanOperation.test(leftValue, right);
             };
         } else if (!isComp(left) && isComp(right)){
-            return tuple -> {
-                Object rightValue = getOnlyElement(right, tuple);
+            return dataPoint -> {
+                Object rightValue = getValue((Component) right, dataPoint);
                 return booleanOperation.test(left, rightValue);
             };
         } else if (isComp(left) && isComp(right)) {
-            return tuple -> {
-                Object rightValue = getOnlyElement(right, tuple);
-                Object leftValue = getOnlyElement(left, tuple);
+            return dataPoint -> {
+                Object rightValue = getValue((Component) right, dataPoint);
+                Object leftValue = getValue((Component) left, dataPoint);
                 return booleanOperation.test(leftValue, rightValue);
             };
         } else {
@@ -102,11 +103,8 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.D
         }
     }
     
-    private Object getOnlyElement(Object component, Dataset.DataPoint dataPoint) {
-        Optional<VTLObject> element = dataPoint.stream()
-                .filter(dataPoint -> component.equals(dataPoint.getComponent()))
-                .collect(MoreCollectors.toOptional());
-        return element.map(VTLObject::get).orElse(null);
+    private VTLObject getValue(Component component, Dataset.DataPoint dataPoint) {
+        return dataStructure.asMap(dataPoint).get(component);
     }
     
     private boolean isComp(Object o) {
