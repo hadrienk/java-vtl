@@ -9,6 +9,8 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -37,13 +39,10 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     @Override
     public Function<Dataset.DataPoint, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
         Component component = (Component) referenceVisitor.visit(ctx.componentRef());
-        return tuple -> {
-            for (VTLObject value : tuple) {
-                if (component == value.getComponent()) {
-                    return value.get();
-                }
-            }
-            throw new RuntimeException(format("component %s not found in %s", component, tuple));
+        return dataPoint -> {
+            Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
+            Optional<VTLObject> vtlObject = Optional.ofNullable(map.get(component));
+            return vtlObject.map(VTLObject::get).orElseThrow(() -> new RuntimeException(format("component %s not found in %s", component, dataPoint)));
         };
     }
 
@@ -74,10 +73,10 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return tuple -> {
+        return dataPoint -> {
 
-            Number leftNumber = (Number) leftResult.apply(tuple);
-            Number rightNumber = (Number) rightResult.apply(tuple);
+            Number leftNumber = (Number) leftResult.apply(dataPoint);
+            Number rightNumber = (Number) rightResult.apply(dataPoint);
 
             // TODO: Write test
             if (leftNumber == null || rightNumber == null) {
@@ -130,9 +129,9 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return tuple -> {
-            Number leftNumber = (Number) leftResult.apply(tuple);
-            Number rightNumber = (Number) rightResult.apply(tuple);
+        return dataPoint -> {
+            Number leftNumber = (Number) leftResult.apply(dataPoint);
+            Number rightNumber = (Number) rightResult.apply(dataPoint);
 
             if (leftNumber == null ^ rightNumber == null) {
                 return null;

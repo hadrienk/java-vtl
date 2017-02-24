@@ -259,7 +259,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     /**
-     * Holds the "working dataset" tuples.
+     * Holds the "working dataset" dataPoint.
      */
     static final class JoinDataPoint extends AbstractDataPoint implements RandomAccess {
 

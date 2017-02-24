@@ -97,7 +97,7 @@ public class JoinCalcClauseVisitorTest {
         Map<String, Component> scope = Maps.newHashMap();
         scope.putAll(ds);
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope));
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope), ds);
 
         Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
 
