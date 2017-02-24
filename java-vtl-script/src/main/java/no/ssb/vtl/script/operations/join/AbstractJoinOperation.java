@@ -21,10 +21,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.*;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.*;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
@@ -41,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Abstract join operation.
  */
-public abstract class AbstractJoinOperation implements WorkingDataset {
+public abstract class AbstractJoinOperation extends AbstractDatasetOperation implements WorkingDataset {
 
     // The datasets the join operates on.
     private final Bindings joinScope;
@@ -49,7 +46,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     private final ImmutableSet<Component> identifiers;
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
-
+        super(Lists.newArrayList(namedDatasets.values()));
         this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
 
         checkNotNull(identifiers);
@@ -132,8 +129,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     @Override
-    public Stream<DataPoint> get() {
-
+    public Stream<? extends DataPoint> getData() {
         // Optimization.
         if (datasets.size() == 1) {
             return datasets.values().iterator().next().get();
@@ -160,6 +156,12 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return result.map(tuple -> tuple);
     }
 
+    @Override
+    @Deprecated
+    public Stream<DataPoint> get() {
+        return getData().map(o -> o);
+    }
+
     private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor() {
         return tuple -> {
             // Filter by common ids.
@@ -169,11 +171,8 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         };
     }
 
-    /**
-     * Compute the DataStructure of the join dataset.
-     */
-    public DataStructure getDataStructure() {
-
+    @Override
+    protected DataStructure computeDataStructure() {
         // Optimization.
         if (datasets.size() == 1) {
             return datasets.values().iterator().next().getDataStructure();
@@ -200,6 +199,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return joinScope;
     }
 
+    @Deprecated
     public abstract WorkingDataset workDataset();
 
     protected Comparator<List<VTLObject>> getKeyComparator() {

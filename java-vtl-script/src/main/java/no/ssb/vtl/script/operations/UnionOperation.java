@@ -93,7 +93,7 @@ public class UnionOperation implements Supplier<Dataset> {
                 return datasets.get(0);
 
         return new AbstractDatasetOperation(datasets) {
-            
+
             @Override
             public Stream<DataPoint> get() {
                 return getData().map(o -> o);
@@ -111,7 +111,7 @@ public class UnionOperation implements Supplier<Dataset> {
                 Set<DataPoint> seen = Collections.synchronizedSet(bucket);
                 return datasets.stream().flatMap(Supplier::get)
                         .filter((o) -> !seen.contains(o))
-                        .peek(bucket::add);;
+                        .peek(bucket::add);
             }
 
             @Override

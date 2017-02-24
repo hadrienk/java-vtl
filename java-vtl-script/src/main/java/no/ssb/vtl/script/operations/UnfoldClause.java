@@ -3,14 +3,12 @@ package no.ssb.vtl.script.operations;
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.*;
 import no.ssb.vtl.model.Component.Role;
-import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -20,18 +18,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Unfold clause.
  */
-public class UnfoldClause implements Dataset {
-
-    // Source dataset.
-    private final Dataset dataset;
+public class UnfoldClause extends AbstractUnaryDatasetOperation {
 
     private final Component dimension;
     private final Component measure;
     private final Set<String> elements;
-    private DataStructure cache;
 
     public UnfoldClause(Dataset dataset, Component dimensionReference, Component measureReference, Set<String> elements) {
-        this.dataset = checkNotNull(dataset, "dataset cannot be null");
+        super(checkNotNull(dataset, "dataset cannot be null"));
 
         this.dimension = checkNotNull(dimensionReference, "dimensionReference cannot be null");
         this.measure = checkNotNull(measureReference, "measureReference cannot be null");
@@ -41,11 +35,74 @@ public class UnfoldClause implements Dataset {
     }
 
     @Override
-    public DataStructure getDataStructure() {
-        return cache = (cache == null ? computeDataStructure() : cache);
+    public Stream<? extends DataPoint> getData() {
+        // TODO: Handle sorting. Need to request sorting by dimension happens after all others.
+        // TODO: Maybe put a filter before.
+        // TODO: Expose more powerful methods in Datapoint.
+        DataStructure dataStructure = getDataStructure();
+        return StreamUtils.aggregate(getChild().getData(), (left, right) -> {
+            // Checks if the previous ids (except the one with unfold on) where different.
+            Iterator<VTLObject> leftIt = left.iterator();
+            Iterator<VTLObject> rightIt = right.iterator();
+            while (leftIt.hasNext() && rightIt.hasNext()) {
+                VTLObject leftValue = leftIt.next();
+                VTLObject rightValue = rightIt.next();
+                if (!leftValue.getRole().equals(Role.IDENTIFIER)) {
+                    continue;
+                }
+                if (dimension == leftValue.getComponent()) {
+                    continue;
+                }
+                if (!leftValue.equals(rightValue)) {
+                    return false;
+                }
+            }
+            return true;
+        }).map(tuples -> {
+            // TODO: Naive implementation for now.
+            Map<String, Object> map = Maps.newLinkedHashMap();
+            for (DataPoint dataPoint : tuples) {
+                Object unfoldedValue = null;
+                String columnName = null;
+                for (VTLObject value : dataPoint) {
+                    if (dimension == value.getComponent()) {
+                        // TODO: Check type of the elements. Can we use element that are not String??
+                        if (elements.contains(value.get())) {
+                            columnName = (String) value.get();
+                            continue;
+                        }
+                    }
+                    if (measure == value.getComponent()) {
+                        unfoldedValue = value.get();
+                        continue;
+                    }
+                    if (value.getRole().equals(Role.IDENTIFIER)) {
+                        map.put(value.getName(), value.get());
+                    }
+                }
+                map.put(columnName, unfoldedValue);
+            }
+            // TODO: >_<' ...
+            for (String element : elements) {
+                map.putIfAbsent(element, null);
+            }
+            return dataStructure.wrap(map);
+        });
     }
 
-    private DataStructure computeDataStructure() {
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        return null;
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return null;
+    }
+
+    @Override
+    public DataStructure computeDataStructure() {
+        Dataset dataset = getChild();
         DataStructure dataStructure = dataset.getDataStructure();
 
         // TODO: Does those check still make sense with the Reference visitor?
@@ -98,59 +155,9 @@ public class UnfoldClause implements Dataset {
     }
 
     @Override
+    @Deprecated
     public Stream<DataPoint> get() {
-        // TODO: Handle sorting. Need to request sorting by dimension happens after all others.
-        // TODO: Maybe put a filter before.
-        // TODO: Expose more powerful methods in Datapoint.
-        DataStructure dataStructure = getDataStructure();
-        return StreamUtils.aggregate(dataset.get(), (left, right) -> {
-            // Checks if the previous ids (except the one with unfold on) where different.
-            Iterator<VTLObject> leftIt = left.iterator();
-            Iterator<VTLObject> rightIt = right.iterator();
-            while (leftIt.hasNext() && rightIt.hasNext()) {
-                VTLObject leftValue = leftIt.next();
-                VTLObject rightValue = rightIt.next();
-                if (!leftValue.getRole().equals(Role.IDENTIFIER)) {
-                    continue;
-                }
-                if (dimension == leftValue.getComponent()) {
-                    continue;
-                }
-                if (!leftValue.equals(rightValue)) {
-                    return false;
-                }
-            }
-            return true;
-        }).map(tuples -> {
-            // TODO: Naive implementation for now.
-            Map<String, Object> map = Maps.newLinkedHashMap();
-            for (DataPoint dataPoint : tuples) {
-                Object unfoldedValue = null;
-                String columnName = null;
-                for (VTLObject value : dataPoint) {
-                    if (dimension == value.getComponent()) {
-                        // TODO: Check type of the elements. Can we use element that are not String??
-                        if (elements.contains(value.get())) {
-                            columnName = (String) value.get();
-                            continue;
-                        }
-                    }
-                    if (measure == value.getComponent()) {
-                        unfoldedValue = value.get();
-                        continue;
-                    }
-                    if (value.getRole().equals(Role.IDENTIFIER)) {
-                        map.put(value.getName(), value.get());
-                    }
-                }
-                map.put(columnName, unfoldedValue);
-            }
-            // TODO: >_<' ...
-            for (String element : elements) {
-                map.putIfAbsent(element, null);
-            }
-            return dataStructure.wrap(map);
-        });
+        return getData().map(o -> o);
     }
 
     @Override
@@ -159,7 +166,7 @@ public class UnfoldClause implements Dataset {
         helper.add("identifier", dimension);
         helper.add("measure", measure);
         helper.addValue(elements);
-        helper.add("structure", cache);
+        helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
     }
 }

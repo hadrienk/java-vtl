@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Dataset;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,8 +28,9 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
+    @Deprecated
     public Stream<DataPoint> get() {
-        return getChild().filter(predicate).stream();
+        return getData().map(o -> o);
     }
 
     @Override
@@ -38,5 +40,20 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
         helper.addValue(predicateResultMap);
         helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
+    }
+
+    @Override
+    public Stream<? extends DataPoint> getData() {
+        return getChild().filter(predicate).stream();
+    }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return Optional.empty();
     }
 }

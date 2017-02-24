@@ -8,10 +8,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
 import javax.script.Bindings;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -56,6 +53,21 @@ final class JoinScopeBindings implements Bindings {
                     newStructure
             ).build();
             cleanedDatasets.put(datasetEntry.getKey(), new Dataset() {
+                @Override
+                public Stream<? extends DataPoint> getData() {
+                    return get();
+                }
+
+                @Override
+                public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public Optional<Long> getSize() {
+                    return Optional.empty();
+                }
+
                 @Override
                 public DataStructure getDataStructure() {
                     return finalStructure;

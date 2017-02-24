@@ -66,4 +66,24 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 .filter(dataPoint -> !commonIdentifiers.contains(dataPoint.getComponent()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
 }

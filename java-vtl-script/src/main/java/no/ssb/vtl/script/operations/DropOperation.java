@@ -8,11 +8,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -47,7 +43,21 @@ public class DropOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
+    @Deprecated
     public Stream<DataPoint> get() {
+        return getData().map(o -> o);
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        helper.addValue(components);
+        helper.add("structure", getDataStructure());
+        return helper.omitNullValues().toString();
+    }
+
+    @Override
+    public Stream<? extends DataPoint> getData() {
         DataStructure oldStructure = getChild().getDataStructure();
         HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
         HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
@@ -66,10 +76,12 @@ public class DropOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public String toString() {
-        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        helper.addValue(components);
-        helper.add("structure", getDataStructure());
-        return helper.omitNullValues().toString();
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        return getChild().getDistinctValuesCount();
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return getChild().getSize();
     }
 }

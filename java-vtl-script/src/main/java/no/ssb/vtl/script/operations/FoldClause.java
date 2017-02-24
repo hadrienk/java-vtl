@@ -2,13 +2,11 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.*;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -19,21 +17,16 @@ import static no.ssb.vtl.model.Component.Role;
 /**
  * Fold clause.
  */
-public class FoldClause implements Dataset {
-
-    // Source dataset.
-    private final Dataset dataset;
+public class FoldClause extends AbstractUnaryDatasetOperation {
 
     private final String dimension;
     private final String measure;
     private final Set<Component> elements;
 
-    private DataStructure cache = null;
-
     public FoldClause(Dataset dataset, String dimensionReference, String measureReference, Set<Component> elements) {
         // TODO: Introduce type here. Elements should be of the type of the Component.
 
-        this.dataset = checkNotNull(dataset, "dataset cannot be null");
+        super(checkNotNull(dataset, "dataset cannot be null"));
         checkArgument(!(this.dimension = checkNotNull(dimensionReference, "dimensionReference cannot be null")).isEmpty(),
                 "dimensionReference was empty");
         checkArgument(!(this.measure = checkNotNull(measureReference, "measureReference cannot be null")).isEmpty(),
@@ -42,8 +35,9 @@ public class FoldClause implements Dataset {
                 "elements was empty");
     }
 
-    private DataStructure computeDataStructure() {
-        DataStructure dataStructure = dataset.getDataStructure();
+    @Override
+    public DataStructure computeDataStructure() {
+        DataStructure dataStructure = getChild().getDataStructure();
 
         // TODO: Constraint error.
         checkArgument(
@@ -82,14 +76,9 @@ public class FoldClause implements Dataset {
     }
 
     @Override
-    public DataStructure getDataStructure() {
-        return cache = (cache == null ? computeDataStructure() : cache);
-    }
-
-    @Override
-    public Stream<DataPoint> get() {
+    public Stream<? extends DataPoint> getData() {
         DataStructure dataStructure = getDataStructure();
-        return dataset.get().flatMap(tuple -> {
+        return getChild().getData().flatMap(tuple -> {
             List<DataPoint> dataPoints = Lists.newArrayList();
             Map<String, Object> commonValues = Maps.newLinkedHashMap();
             Map<String, Object> foldedValues = Maps.newLinkedHashMap();
@@ -115,12 +104,28 @@ public class FoldClause implements Dataset {
     }
 
     @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        return getChild().getDistinctValuesCount();
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return getChild().getSize().map(size -> size * elements.size());
+    }
+
+    @Override
+    @Deprecated
+    public Stream<DataPoint> get() {
+        return getData().map(o -> o);
+    }
+
+    @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         helper.addValue(elements);
         helper.add("identifier", dimension);
         helper.add("measure", measure);
-        helper.add("structure", cache);
+        helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
     }
 }

@@ -11,10 +11,7 @@ import no.ssb.vtl.script.support.JoinSpliterator;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -125,13 +122,29 @@ public class AbstractJoinOperationTest {
             public WorkingDataset workDataset() {
                 return new WorkingDataset() {
                     @Override
+                    public Stream<? extends DataPoint> getData() {
+                        return ds1.get();
+                    }
+
+                    @Override
+                    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                        return null;
+                    }
+
+                    @Override
+                    public Optional<Long> getSize() {
+                        return null;
+                    }
+
+                    @Override
                     public DataStructure getDataStructure() {
                         return ds1.getDataStructure();
                     }
 
                     @Override
+                    @Deprecated
                     public Stream<DataPoint> get() {
-                        return ds1.get();
+                        return getData().map(o -> o);
                     }
                 };
             }
@@ -167,6 +180,16 @@ public class AbstractJoinOperationTest {
         @Override
         public WorkingDataset workDataset() {
             return null;
+        }
+
+        @Override
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Long> getSize() {
+            return Optional.empty();
         }
     }
 }

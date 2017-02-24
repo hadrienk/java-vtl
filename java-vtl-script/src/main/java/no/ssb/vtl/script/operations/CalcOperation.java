@@ -5,6 +5,8 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -47,18 +49,11 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
         structureCopy.put(variableName, role, type);
         return structureCopy.build();
     }
-    
-    /**
-     * Gets a result.
-     * @return a result
-     */
+
     @Override
+    @Deprecated
     public Stream<DataPoint> get() {
-        return getChild().get().map(dataPoint -> {
-            dataPoint.add(getDataStructure().wrap(variableName, componentExpression.apply(dataPoint)));
-            System.out.println(format("Adding value for %s to datapoint %s", variableName, dataPoint));
-            return dataPoint;
-        });
+       return getData().map(o -> o);
     }
     
     private static String removeQuoteIfNeeded(String key) {
@@ -68,5 +63,24 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
             }
         }
         return key;
+    }
+
+    @Override
+    public Stream<? extends DataPoint> getData() {
+        return getChild().get().map(dataPoint -> {
+            dataPoint.add(getDataStructure().wrap(variableName, componentExpression.apply(dataPoint)));
+            System.out.println(format("Adding value for %s to datapoint %s", variableName, dataPoint));
+            return dataPoint;
+        });
+    }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        return getChild().getDistinctValuesCount();
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return getChild().getSize();
     }
 }

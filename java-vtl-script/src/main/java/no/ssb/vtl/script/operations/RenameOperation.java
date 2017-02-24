@@ -30,9 +30,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -125,7 +123,22 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
+    @Deprecated
     public Stream<DataPoint> get() {
+        return getData().map(o -> o);
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        helper.addValue(newNames);
+        helper.addValue(newRoles);
+        helper.add("structure", getDataStructure());
+        return helper.omitNullValues().toString();
+    }
+
+    @Override
+    public Stream<? extends DataPoint> getData() {
         return getChild().get().map(dataPoint -> {
             LinkedList<Component> list = Lists.newLinkedList(getDataStructure().values());
             Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);
@@ -143,11 +156,13 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public String toString() {
-        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        helper.addValue(newNames);
-        helper.addValue(newRoles);
-        helper.add("structure", getDataStructure());
-        return helper.omitNullValues().toString();
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        // TODO: Adjust the names.
+        return getChild().getDistinctValuesCount();
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return null;
     }
 }
