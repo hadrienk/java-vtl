@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 public class UnfoldClauseTest {
 
-    private static Dataset.DataPoint tuple(DataStructure structure, Object... values) {
+    private static DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
         Map<String, Object> map = Maps.newHashMap();
         Iterator<Object> iterator = Lists.newArrayList(values).iterator();

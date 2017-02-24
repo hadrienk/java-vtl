@@ -2,6 +2,7 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 

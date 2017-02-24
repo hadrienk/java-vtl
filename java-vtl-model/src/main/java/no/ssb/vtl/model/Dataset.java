@@ -21,9 +21,7 @@ package no.ssb.vtl.model;
  */
 
 import com.codepoetics.protonpack.Streamable;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Predicate;
-import com.google.common.collect.ForwardingList;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -34,7 +32,6 @@ import com.google.common.collect.Sets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -82,7 +79,7 @@ import static no.ssb.vtl.model.Dataset.Order.Direction.*;
  * {@link Dataset#getData(Order, Filtering, Set)} methods. This allows optimized implementations of operations like
  * join or union.
  */
-public interface Dataset extends Streamable<Dataset.DataPoint> {
+public interface Dataset extends Streamable<DataPoint> {
 
     /**
      * Deprecated, we are moving toward a Map view of the tuples.
@@ -215,20 +212,7 @@ public interface Dataset extends Streamable<Dataset.DataPoint> {
     interface Filtering extends Predicate<DataPoint> {
         Filtering ALL = dataPoint -> true;
     }
-
-    interface DataPoint extends List<VTLObject> {
-
-        static DataPoint create(List<VTLObject> components) {
-            return new AbstractDataPoint() {
-                @Override
-                protected List<VTLObject> delegate() {
-                    return components;
-                }
-            };
-        }
-
-    }
-
+    
     /**
      * Represent the ordering the {@link DataPoint}s in a Dataset.
      */
@@ -303,16 +287,5 @@ public interface Dataset extends Streamable<Dataset.DataPoint> {
             ASC, DESC
         }
     }
-
-    abstract class AbstractDataPoint extends ForwardingList<VTLObject> implements DataPoint {
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(DataPoint.class)
-                    .add("values", delegate())
-                    .toString();
-        }
-
-    }
-
+    
 }

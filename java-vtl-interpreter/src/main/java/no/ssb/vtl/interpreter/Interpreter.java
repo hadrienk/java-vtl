@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.VTLScriptEngine;
@@ -86,7 +87,7 @@ public class Interpreter implements Runnable {
             output.print("]");
         }
         output.println();
-        for (Dataset.DataPoint dataPoint : (Iterable<Dataset.DataPoint>) dataset.stream()::iterator) {
+        for (DataPoint dataPoint : (Iterable<DataPoint>) dataset.stream()::iterator) {
             for (VTLObject component : dataPoint) {
                 output.print(component.get());
                 output.print(",");
@@ -202,10 +203,10 @@ public class Interpreter implements Runnable {
         console.println(columns.stream().collect(Collectors.joining(",")));
 
         // Rows
-        Iterator<Dataset.DataPoint> iterator = dataset.stream().iterator();
+        Iterator<DataPoint> iterator = dataset.stream().iterator();
         while (iterator.hasNext()) {
             columns.clear();
-            Dataset.DataPoint row = iterator.next();
+            DataPoint row = iterator.next();
             //Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
             //        VTLObject::getName, VTLObject::get
             //));

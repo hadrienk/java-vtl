@@ -40,7 +40,7 @@ public abstract class VTLObject<V> implements Supplier<V> {
 
     /**
      * Returns the componentReference (type and role) of this data point.
-     * @deprecated Use {@link DataStructure#asMap(Dataset.DataPoint)} instead
+     * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
      */
     public Component getComponent() {
         return componentReference;

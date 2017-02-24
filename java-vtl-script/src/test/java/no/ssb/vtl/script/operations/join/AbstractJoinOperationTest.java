@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;

@@ -2,9 +2,9 @@ package no.ssb.vtl.script.visitors.join;
 
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
@@ -33,7 +33,7 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
-        Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
 
         assertThat(result.apply(null)).isEqualTo(1 + 2 + 3 + 4 + 5 - 6 - 7 - 8 - 9);
 
@@ -49,7 +49,7 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
-        Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
 
         assertThat(result.apply(null)).isEqualTo(1 + 2 + (3 + 4 + 5 - 6 - 7) - 8 - 9);
 
@@ -65,7 +65,7 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
-        Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
 
         assertThat(result.apply(null)).isEqualTo(1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9);
 
@@ -92,14 +92,14 @@ public class JoinCalcClauseVisitorTest {
         variables.put("c", 10);
         variables.put("d", 5);
 
-        Dataset.DataPoint dataPoint = ds.wrap(variables);
+        DataPoint dataPoint = ds.wrap(variables);
 
         Map<String, Component> scope = Maps.newHashMap();
         scope.putAll(ds);
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope), ds);
 
-        Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
 
         // TODO: Set variables.
         assertThat(result.apply(dataPoint)).isEqualTo(1 * 2 + 20 * (15 - 10) / 5 - 10);
@@ -118,7 +118,7 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
 
-        Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
 
         assertThat(result.apply(null)).isEqualTo(1 * 2 * (3 * 4 * 5 / 6 / 7) / 8 / 9);
 
@@ -135,8 +135,8 @@ public class JoinCalcClauseVisitorTest {
 
         assertThatThrownBy(() -> {
             // TODO: This should happen during execution (when data is computed).
-            Function<Dataset.DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
-            result.apply(new Dataset.AbstractDataPoint() {
+            Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+            result.apply(new DataPoint.AbstractDataPoint() {
                 @Override
                 protected List<VTLObject> delegate() {
                     return Collections.emptyList();

@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.visitors.join;
 
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
@@ -25,7 +26,7 @@ public class JoinFilterClauseVisitor extends VTLBaseVisitor<FilterOperation> {
     public FilterOperation visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
         BooleanExpressionVisitor booleanExpressionVisitor = new BooleanExpressionVisitor(referenceVisitor,
                 dataset.getDataStructure());
-        Predicate<Dataset.DataPoint> predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
+        Predicate<DataPoint> predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
         return new FilterOperation(dataset, predicate);
     }
 }

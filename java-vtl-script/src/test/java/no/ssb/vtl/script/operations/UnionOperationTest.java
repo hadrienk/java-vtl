@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -148,7 +149,7 @@ public class UnionOperationTest {
         Dataset resultDataset = unionOperation.get();
         assertThat(resultDataset).isNotNull();
 
-        Stream<Dataset.DataPoint> stream = resultDataset.stream();
+        Stream<DataPoint> stream = resultDataset.stream();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
@@ -270,7 +271,7 @@ public class UnionOperationTest {
         Dataset resultDataset = unionOperation.get();
         assertThat(resultDataset).isNotNull();
 
-        Stream<Dataset.DataPoint> stream = resultDataset.stream();
+        Stream<DataPoint> stream = resultDataset.stream();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
@@ -329,8 +330,8 @@ public class UnionOperationTest {
 
     }
 
-    private Dataset.DataPoint tuple(VTLObject... components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(VTLObject... components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return Arrays.asList(components);

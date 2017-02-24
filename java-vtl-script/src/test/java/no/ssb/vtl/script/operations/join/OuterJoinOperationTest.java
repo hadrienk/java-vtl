@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -48,7 +49,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Integer componentAmount = randomIntBetween(1, 5);
 
         Map<String, Dataset> datasets = Maps.newLinkedHashMap();
-        Map<String, List<Dataset.DataPoint>> data = Maps.newLinkedHashMap();
+        Map<String, List<DataPoint>> data = Maps.newLinkedHashMap();
         Map<String, DataStructure> dataStructures = Maps.newLinkedHashMap();
 
         // Creates random values.
@@ -77,7 +78,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
             }
             DataStructure currentStructure = dataStructureBuilder.build();
 
-            List<Dataset.DataPoint> currentData = Lists.newArrayList();
+            List<DataPoint> currentData = Lists.newArrayList();
             for (int j = 0; j < rowAmount; j++) {
                 List<VTLObject> points = Lists.newArrayList();
                 for (Component component : currentStructure.values()) {
@@ -281,8 +282,8 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 );
     }
 
-    private Dataset.DataPoint tuple(VTLObject... components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(VTLObject... components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return asList(components);
@@ -290,8 +291,8 @@ public class OuterJoinOperationTest extends RandomizedTest {
         };
     }
 
-    private Dataset.DataPoint tuple(List<VTLObject> components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(List<VTLObject> components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return components;

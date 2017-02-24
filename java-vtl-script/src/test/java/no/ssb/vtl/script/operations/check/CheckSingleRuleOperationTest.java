@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations.check;
 
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -112,10 +113,10 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        Stream<Dataset.DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.DataPoint> collect = stream.collect(toList());
+        List<DataPoint> collect = stream.collect(toList());
 
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
@@ -164,10 +165,10 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        Stream<Dataset.DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.DataPoint> collect = stream.collect(toList());
+        List<DataPoint> collect = stream.collect(toList());
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101", "0101");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101", "0101");
         assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(true);
@@ -226,10 +227,10 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)  //new component
         );
 
-        Stream<Dataset.DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.DataPoint> collect = stream.collect(toList());
+        List<DataPoint> collect = stream.collect(toList());
 
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990", "0104");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
@@ -294,10 +295,10 @@ public class CheckSingleRuleOperationTest {
                 entry("errorlevel", Component.Role.ATTRIBUTE) //new component
         );
 
-        Stream<Dataset.DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.stream();
         assertThat(stream).isNotNull();
 
-        List<Dataset.DataPoint> collect = stream.collect(toList());
+        List<DataPoint> collect = stream.collect(toList());
 
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101");
@@ -308,10 +309,10 @@ public class CheckSingleRuleOperationTest {
         assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsOnlyOnce("error001");
     }
 
-    private ArrayList<VTLObject> getDataPointsWithComponentName(List<Dataset.DataPoint> dataPoint, String componentName) {
+    private ArrayList<VTLObject> getDataPointsWithComponentName(List<DataPoint> dataPoint, String componentName) {
         ArrayList<VTLObject> dpsFound = new ArrayList<>();
 
-        for (Dataset.DataPoint dataPoints : dataPoint) {
+        for (DataPoint dataPoints : dataPoint) {
             List<VTLObject> dpListOfOne = dataPoints.stream()
                     .filter(dp -> dp.getName().equals(componentName))
                     .collect(toList());
@@ -325,8 +326,8 @@ public class CheckSingleRuleOperationTest {
         return dpsFound;
     }
 
-    private Dataset.DataPoint tuple(VTLObject... components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(VTLObject... components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return Arrays.asList(components);

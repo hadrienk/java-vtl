@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -224,7 +225,7 @@ public class VTLScriptEngineTest {
                 Object value = it.hasNext() ? it.next() : null;
                 points.add(ds.wrap(name, value));
             }
-            return Dataset.DataPoint.create(points);
+            return DataPoint.create(points);
         }));
 
         bindings.put("ds1", ds1);
@@ -505,8 +506,8 @@ public class VTLScriptEngineTest {
                 );
     }
 
-    private Dataset.DataPoint tuple(VTLObject... components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(VTLObject... components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return Arrays.asList(components);

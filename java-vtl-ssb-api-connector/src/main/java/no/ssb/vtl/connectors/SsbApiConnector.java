@@ -12,6 +12,7 @@ import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.connector.ConnectorException;
 import no.ssb.vtl.connector.NotFoundException;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.jsonstat.JsonStatModule;

@@ -1,7 +1,7 @@
 package no.ssb.vtl.script.operations.join;
 
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset.DataPoint;
+import no.ssb.vtl.model.DataPoint;
 
 import java.util.function.UnaryOperator;
 

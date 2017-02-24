@@ -1,8 +1,8 @@
 package no.ssb.vtl.script.visitors.join;
 
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
@@ -19,7 +19,7 @@ import static java.lang.String.*;
 /**
  * Visitor for join calc clauses.
  */
-public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataPoint, Object>> {
+public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<DataPoint, Object>> {
 
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
@@ -37,7 +37,7 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     }
 
     @Override
-    public Function<Dataset.DataPoint, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
+    public Function<DataPoint, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
         Component component = (Component) referenceVisitor.visit(ctx.componentRef());
         return dataPoint -> {
             Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
@@ -47,7 +47,7 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     }
 
     @Override
-    public Function<Dataset.DataPoint, Object> visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
+    public Function<DataPoint, Object> visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
         VTLParser.ConstantContext constantValue = ctx.constant();
         if (constantValue.FLOAT_CONSTANT() != null)
             return tuple -> Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
@@ -60,14 +60,14 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     }
 
     @Override
-    public Function<Dataset.DataPoint, Object> visitJoinCalcPrecedence(VTLParser.JoinCalcPrecedenceContext ctx) {
+    public Function<DataPoint, Object> visitJoinCalcPrecedence(VTLParser.JoinCalcPrecedenceContext ctx) {
         return visit(ctx.joinCalcExpression());
     }
 
     @Override
-    public Function<Dataset.DataPoint, Object> visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
-        Function<Dataset.DataPoint, Object> leftResult = visit(ctx.leftOperand);
-        Function<Dataset.DataPoint, Object> rightResult = visit(ctx.rightOperand);
+    public Function<DataPoint, Object> visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
+        Function<DataPoint, Object> leftResult = visit(ctx.leftOperand);
+        Function<DataPoint, Object> rightResult = visit(ctx.rightOperand);
 
         // TODO: Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
@@ -121,9 +121,9 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
 
 
     @Override
-    public Function<Dataset.DataPoint, Object> visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
-        Function<Dataset.DataPoint, Object> leftResult = visit(ctx.leftOperand);
-        Function<Dataset.DataPoint, Object> rightResult = visit(ctx.rightOperand);
+    public Function<DataPoint, Object> visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
+        Function<DataPoint, Object> leftResult = visit(ctx.leftOperand);
+        Function<DataPoint, Object> rightResult = visit(ctx.rightOperand);
 
         // Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
@@ -175,9 +175,9 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataP
     }
     
     @Override
-    public Function<Dataset.DataPoint, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
+    public Function<DataPoint, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
         BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor, dataStructure);
-        Predicate<Dataset.DataPoint> predicate = booleanVisitor.visit(ctx.booleanExpression());
+        Predicate<DataPoint> predicate = booleanVisitor.visit(ctx.booleanExpression());
         return predicate::test;
     }
 }

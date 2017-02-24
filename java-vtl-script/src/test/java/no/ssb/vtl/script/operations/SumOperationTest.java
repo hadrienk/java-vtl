@@ -3,6 +3,7 @@ package no.ssb.vtl.script.operations;
 import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -447,8 +448,8 @@ public class SumOperationTest {
         }
     }
 
-    private Dataset.DataPoint tuple(VTLObject... components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(VTLObject... components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return Arrays.asList(components);

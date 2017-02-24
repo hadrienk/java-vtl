@@ -1,8 +1,8 @@
 package no.ssb.vtl.script.operations;
 
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
 
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -14,17 +14,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Addition and subtraction operation
  * TODO: Use join.
  */
-public class SumOperation implements BinaryOperator<Dataset.DataPoint>, Supplier<DataStructure> {
+public class SumOperation implements BinaryOperator<DataPoint>, Supplier<DataStructure> {
 
-    private final Function<Dataset.DataPoint, VTLObject> leftExtractor;
+    private final Function<DataPoint, VTLObject> leftExtractor;
     private final DataStructure leftDataStructure;
-    private final Function<Dataset.DataPoint, VTLObject> rightExtractor;
+    private final Function<DataPoint, VTLObject> rightExtractor;
     private final DataStructure rightDataStructure;
     private final Number scalar;
 
-    public SumOperation(Function<Dataset.DataPoint, VTLObject> leftExtractor,
+    public SumOperation(Function<DataPoint, VTLObject> leftExtractor,
                         DataStructure leftDataStructure,
-                        Function<Dataset.DataPoint, VTLObject> rightExtractor,
+                        Function<DataPoint, VTLObject> rightExtractor,
                         DataStructure rightDataStructure
     ) {
         this.leftExtractor = checkNotNull(leftExtractor);
@@ -34,7 +34,7 @@ public class SumOperation implements BinaryOperator<Dataset.DataPoint>, Supplier
         this.scalar = null;
     }
 
-    public SumOperation(Function<Dataset.DataPoint, VTLObject> extractor, DataStructure dataStructure, Number scalar) {
+    public SumOperation(Function<DataPoint, VTLObject> extractor, DataStructure dataStructure, Number scalar) {
         this.leftExtractor = checkNotNull(extractor);
         this.leftDataStructure = checkNotNull(dataStructure);
         this.rightExtractor = null;
@@ -48,10 +48,10 @@ public class SumOperation implements BinaryOperator<Dataset.DataPoint>, Supplier
     }
 
     // TODO: Candidate for abstraction?
-    BinaryOperator<Dataset.DataPoint> getTupleOperator() {
-        return new BinaryOperator<Dataset.DataPoint>() {
+    BinaryOperator<DataPoint> getTupleOperator() {
+        return new BinaryOperator<DataPoint>() {
             @Override
-            public Dataset.DataPoint apply(Dataset.DataPoint dataPoints, Dataset.DataPoint dataPoints2) {
+            public DataPoint apply(DataPoint dataPoints, DataPoint dataPoints2) {
                 return null;
             }
         };
@@ -66,7 +66,7 @@ public class SumOperation implements BinaryOperator<Dataset.DataPoint>, Supplier
 
 
     @Override
-    public Dataset.DataPoint apply(Dataset.DataPoint left, Dataset.DataPoint right) {
+    public DataPoint apply(DataPoint left, DataPoint right) {
         VTLObject leftValue = leftExtractor.apply(left);
         if (scalar != null) {
             return left;

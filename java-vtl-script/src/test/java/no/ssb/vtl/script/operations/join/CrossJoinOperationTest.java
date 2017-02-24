@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.ImmutableMap;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -97,8 +98,8 @@ public class CrossJoinOperationTest {
         vtlPrintStream.println(result);
     }
 
-    private Dataset.DataPoint tuple(VTLObject... components) {
-        return new Dataset.AbstractDataPoint() {
+    private DataPoint tuple(VTLObject... components) {
+        return new DataPoint.AbstractDataPoint() {
             @Override
             protected List<VTLObject> delegate() {
                 return Arrays.asList(components);

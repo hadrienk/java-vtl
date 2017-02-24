@@ -40,7 +40,7 @@ import static com.google.common.base.Preconditions.*;
  * Data structure of a {@link Dataset}.
  * <p>
  * The data structure defines the role and type of the columns of a data set and
- * serves as a {@link VTLObject}s and {@link Dataset.DataPoint}s factory.
+ * serves as a {@link VTLObject}s and {@link DataPoint}s factory.
  */
 public class DataStructure extends ForwardingMap<String, Component> {
 
@@ -199,7 +199,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return this.converter;
     }
     
-    public Map<Component, VTLObject> asMap(Dataset.DataPoint dataPoint) {
+    public Map<Component, VTLObject> asMap(DataPoint dataPoint) {
         Map<Component, VTLObject> map = new HashMap<>();
         for (int i = 0; i< indexListCache.size(); i++) {
             map.put(indexListCache.get(i), dataPoint.get(i));
@@ -207,7 +207,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return map;
     }
     
-    public Map<VTLObject, Component> asInverseMap(Dataset.DataPoint dataPoint) {
+    public Map<VTLObject, Component> asInverseMap(DataPoint dataPoint) {
         Map<VTLObject, Component> map = new HashMap<>();
         for (int i = 0; i< indexListCache.size(); i++) {
             map.put(dataPoint.get(i), indexListCache.get(i));
@@ -243,21 +243,21 @@ public class DataStructure extends ForwardingMap<String, Component> {
     }
 
     /**
-     * Creates a new {@link Dataset.DataPoint} for the given names and values.
+     * Creates a new {@link DataPoint} for the given names and values.
      * <p>
      * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
-     * a {@link Dataset.DataPoint}.
+     * a {@link DataPoint}.
      *
      * @param map a map of name and values
      * @return the corresponding tuple (row)
      */
-    public Dataset.DataPoint wrap(Map<String, Object> map) {
+    public DataPoint wrap(Map<String, Object> map) {
 
         List<VTLObject> components = Lists.newArrayList();
         for (Map.Entry<String, Object> entry : map.entrySet())
             components.add(wrap(entry.getKey(), entry.getValue()));
 
-        return Dataset.DataPoint.create(components);
+        return DataPoint.create(components);
 
     }
 
