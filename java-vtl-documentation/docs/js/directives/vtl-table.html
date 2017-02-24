@@ -9,7 +9,7 @@
         <tbody>
         <tr ng-repeat="row in dataset.data | limitTo : 100">
             <th>{{ $index }}</th>
-            <td ng-repeat="component in dataset.structure">{{ row[$index] }}</td>
+            <td ng-repeat="component in dataset.structure">{{ row[$index] == null ? '[NULL]' : row[$index] }}</td>
         </tr>
         </tbody>
     </table>

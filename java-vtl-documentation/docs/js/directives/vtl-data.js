@@ -8,10 +8,9 @@ define(['angular',], function (angular) {
             return {
                 restrict: 'E',
                 scope: {
-                    datasets: '&',
+                    datasets: '=',
+                    errors: '='
                 },
-                transclude: true,
-                replace: true,
                 templateUrl: '../../js/directives/vtl-data.html'
             };
 
