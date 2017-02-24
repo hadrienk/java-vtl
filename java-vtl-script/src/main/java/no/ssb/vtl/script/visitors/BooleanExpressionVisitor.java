@@ -9,13 +9,10 @@ import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import java.lang.String;
-import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-
-import static java.lang.String.*;
 
 public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint>> {
     
@@ -58,78 +55,80 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
         Object left = paramVisitor.visit(ctx.left);
         Object right = paramVisitor.visit(ctx.right);
     
-        BiPredicate<Object, Object> booleanOperation = getBooleanOperation(ctx.op);
+        BiPredicate<VTLObject, VTLObject> booleanOperation = getBooleanOperation(ctx.op);
         
         if (isComp(left) && !isComp(right)) {
             return dataPoint -> {
-                Object leftValue = getValue((Component) left, dataPoint);
-                return booleanOperation.test(leftValue, right);
+                VTLObject leftValue = getValue((Component) left, dataPoint);
+                
+                return booleanOperation.test(leftValue, getVTLObject(right));
             };
         } else if (!isComp(left) && isComp(right)){
             return dataPoint -> {
-                Object rightValue = getValue((Component) right, dataPoint);
-                return booleanOperation.test(left, rightValue);
+                VTLObject rightValue = getValue((Component) right, dataPoint);
+                return booleanOperation.test(getVTLObject(left), rightValue);
             };
         } else if (isComp(left) && isComp(right)) {
             return dataPoint -> {
-                Object rightValue = getValue((Component) right, dataPoint);
-                Object leftValue = getValue((Component) left, dataPoint);
+                VTLObject rightValue = getValue((Component) right, dataPoint);
+                VTLObject leftValue = getValue((Component) left, dataPoint);
                 return booleanOperation.test(leftValue, rightValue);
             };
         } else {
-            return tuple -> booleanOperation.test(left, right);
+            return tuple -> booleanOperation.test(getVTLObject(left), getVTLObject(right));
         }
     }
     
-    private BiPredicate<Object, Object> getBooleanOperation(Token op) {
-        BiPredicate<Object, Object> neitherIsNull = (l, r) -> !(l == null || r == null);
-        BiPredicate<Object, Object> bothIsNull = (l, r) -> (l == null && r == null);
-        BiPredicate<Object, Object> leftNotNull = (l, r) -> l != null;
-        BiPredicate<Object, Object> equals = (leftNotNull.and(Object::equals)).or(bothIsNull);
+    private BiPredicate<VTLObject, VTLObject> getBooleanOperation(Token op) {
+        BiPredicate<VTLObject, VTLObject> neitherIsNull = (l, r) -> !(l == null || r == null);
+        BiPredicate<VTLObject, VTLObject> bothIsNull = (l, r) -> (l == null && r == null);
+        BiPredicate<VTLObject, VTLObject> leftNotNull = (l, r) -> l != null;
+        BiPredicate<VTLObject, VTLObject> equals = (leftNotNull.and((l, r) -> l.compareTo(r) == 0)).or(bothIsNull);
         switch (op.getType()) {
             case VTLParser.EQ:
                 return equals;
             case VTLParser.NE:
                 return equals.negate();
             case VTLParser.LE:
-                return neitherIsNull.and((l, r) -> compare(l, r) <= 0);
+                return neitherIsNull.and((l, r) ->  l.compareTo(r) <= 0);
             case VTLParser.LT:
-                return neitherIsNull.and((l, r) -> compare(l, r) < 0);
+                return neitherIsNull.and((l, r) -> l.compareTo(r) < 0);
             case VTLParser.GE:
-                return neitherIsNull.and((l, r) -> compare(l, r) >= 0);
+                return neitherIsNull.and((l, r) -> l.compareTo(r) >= 0);
             case VTLParser.GT:
-                return neitherIsNull.and((l, r) -> compare(l, r) > 0);
+                return neitherIsNull.and((l, r) -> l.compareTo(r) > 0);
             default:
                 throw new ParseCancellationException("Unsupported boolean equality operator " + op);
         }
     }
     
-    private Object getValue(Component component, DataPoint dataPoint) {
+    private VTLObject getValue(Component component, DataPoint dataPoint) {
         Map<Component, VTLObject> componentVTLObjectMap = dataStructure.asMap(dataPoint);
-        VTLObject vtlObject = componentVTLObjectMap.get(component);
-        return vtlObject.get();
+        Optional<VTLObject> vtlObjectOptional = Optional.ofNullable(componentVTLObjectMap.get(component));
+        if (vtlObjectOptional.isPresent() && vtlObjectOptional.get().get() != null) {
+            return vtlObjectOptional.get();
+        } else {
+            return null;
+        }
+    }
+    
+    //TODO: Make ParamVisitor return VTLObject?
+    private VTLObject getVTLObject(Object o) {
+        if (o == null) {
+            return null;
+        }else {
+            return new VTLObject() {
+                @Override
+                public Object get() {
+                    return o;
+                }
+            };
+        }
     }
     
     private boolean isComp(Object o) {
         return o instanceof Component;
     }
     
-    private int compare(Object value, Object scalar) {
-        if (value instanceof Integer && scalar instanceof  Integer) {
-            return ((Integer) value).compareTo((Integer) scalar);
-        } else if (value instanceof Float && scalar instanceof Float) {
-            return ((Float) value).compareTo((Float) scalar);
-        } else if (value instanceof Boolean && scalar instanceof Boolean) {
-            return ((Boolean) value).compareTo((Boolean) scalar);
-        } else if (value instanceof String && scalar instanceof String) {
-            return ((String) value).compareTo((String) scalar);
-        } else if (value instanceof Instant && scalar instanceof Instant) {
-            return ((Instant) value).compareTo((Instant) scalar);
-        }
-        throw new ParseCancellationException(
-                format("Cannot compare %s of type %s with %s of type %s",
-                        value, value.getClass(), scalar, scalar.getClass())
-        );
-    }
     
 }
