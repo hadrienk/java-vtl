@@ -193,14 +193,12 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         List<Object> data = datasets.values().stream()
                 .flatMap(Supplier::get)
-                .map(Dataset.DataPoint::values)
                 .flatMap(Collection::stream)
                 .map(VTLObject::get)
                 .collect(Collectors.toList());
-
-        assertThat(result.get())
+    
+        assertThat(result.get().flatMap(Collection::stream))
                 .describedAs("the data")
-                .flatExtracting(Dataset.DataPoint::values)
                 .extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         data

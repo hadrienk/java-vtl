@@ -118,7 +118,7 @@ public class CheckSingleRuleOperation implements Dataset{
                 dataPointsNewList.add(new VTLObject(getDataStructure().get("CONDITION")) {
                     @Override
                     public Object get() {
-                        return dataPoints.values().stream()
+                        return dataPoints.stream()
                                 .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
                                 .map(VTLObject::get)
                                 .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b));
@@ -134,14 +134,14 @@ public class CheckSingleRuleOperation implements Dataset{
 
         //... then filter rows
         if (rowsToReturn == RowsToReturn.NOT_VALID) {
-                        tupleStream = tupleStream.filter(tuple ->
-                    tuple.values().stream().filter(isConditionComponent())
-                            .anyMatch(dataPoint -> dataPoint.get().equals(false)));
+                        tupleStream = tupleStream.filter(dataPoint ->
+                    dataPoint.stream().filter(isConditionComponent())
+                            .anyMatch(vtlObject -> vtlObject.get().equals(false)));
         } else if (rowsToReturn == RowsToReturn.VALID) {
-            tupleStream = tupleStream.filter(tuple ->
+            tupleStream = tupleStream.filter(dataPoint ->
                     //TODO should an exception be thrown if CONDITION not found?
-                    tuple.values().stream().filter(isConditionComponent())
-                            .anyMatch(dataPoint -> dataPoint.get().equals(true)));
+                    dataPoint.stream().filter(isConditionComponent())
+                            .anyMatch(vtlObject -> vtlObject.get().equals(true)));
         } //else if ("all".equals(rowsToReturn)) //all is not filtered
 
         return tupleStream;

@@ -26,11 +26,13 @@ import com.google.common.collect.ForwardingList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * A data structure that allows relational operations.
@@ -74,7 +76,7 @@ public interface Dataset extends Streamable<Dataset.DataPoint> {
      */
     DataStructure getDataStructure();
 
-    interface DataPoint extends List<VTLObject>, Comparable<DataPoint> {
+    interface DataPoint extends List<VTLObject> {
 
         static DataPoint create(List<VTLObject> components) {
             return new AbstractDataPoint() {
@@ -85,49 +87,14 @@ public interface Dataset extends Streamable<Dataset.DataPoint> {
             };
         }
 
-        List<VTLObject> ids();
-
-        List<VTLObject> values();
-
     }
 
     abstract class AbstractDataPoint extends ForwardingList<VTLObject> implements DataPoint {
 
         @Override
-        public List<VTLObject> ids() {
-            return stream()
-                    .filter(dataPoint -> dataPoint.getComponent().getRole().equals(Component.Role.IDENTIFIER))
-                    .collect(Collectors.toList());
-        }
-
-        @Override
-        public List<VTLObject> values() {
-            return stream()
-                    .filter(dataPoint -> !dataPoint.getComponent().getRole().equals(Component.Role.IDENTIFIER))
-                    .collect(Collectors.toList());
-        }
-
-        @Override
-        public int compareTo(DataPoint o) {
-            checkNotNull(o);
-
-            Comparator comparator = Comparator.naturalOrder();
-            Iterator<VTLObject> li = this.ids().iterator();
-            Iterator<VTLObject> ri = o.ids().iterator();
-            int i = 0;
-            while (li.hasNext() && ri.hasNext()) {
-                i = comparator.compare(li.next().get(), ri.next().get());
-                if (i != 0)
-                    return i;
-            }
-            return i;
-        }
-
-        @Override
         public String toString() {
             return MoreObjects.toStringHelper(DataPoint.class)
-                    .add("id", ids())
-                    .add("values", values())
+                    .add("values", delegate())
                     .toString();
         }
 

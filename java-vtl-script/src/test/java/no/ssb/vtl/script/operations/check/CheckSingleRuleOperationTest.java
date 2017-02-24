@@ -116,8 +116,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(stream).isNotNull();
 
         List<Dataset.DataPoint> collect = stream.collect(toList());
-        assertThat(collect).
-                extractingResultOf("ids").isNotEmpty().hasSize(1);
 
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
@@ -170,9 +168,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(stream).isNotNull();
 
         List<Dataset.DataPoint> collect = stream.collect(toList());
-        assertThat(collect).
-                extractingResultOf("ids").isNotEmpty().hasSize(2);
-
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101", "0101");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101", "0101");
         assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(true);
@@ -235,8 +230,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(stream).isNotNull();
 
         List<Dataset.DataPoint> collect = stream.collect(toList());
-        assertThat(collect).
-                extractingResultOf("ids").isNotEmpty().hasSize(2);
 
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990", "0104");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
@@ -305,8 +298,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(stream).isNotNull();
 
         List<Dataset.DataPoint> collect = stream.collect(toList());
-        assertThat(collect).
-                extractingResultOf("ids").isNotEmpty().hasSize(1);
 
         assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101");
         assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101");
