@@ -59,6 +59,18 @@
                         </a>
                     </li>
                 {% endif %}
+                {% if page and page.edit_url %}
+                    <li>
+                        <a href="{{ page.edit_url }}"
+                            {%- if config.repo_name|lower == 'github' %}
+                                class="icon icon-github"
+                            {%- elif config.repo_name|lower == 'bitbucket' %}
+                                class="icon icon-bitbucket"
+                            {% endif %}>Edit this page on {{ config.repo_name }}</a>
+
+                    </li>
+                {% endif %}
+
                 {% if repo_url %}
                     <li>
                         <a href="{{ repo_url }}">
