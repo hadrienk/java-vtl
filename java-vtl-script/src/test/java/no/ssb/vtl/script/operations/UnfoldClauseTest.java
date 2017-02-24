@@ -130,7 +130,7 @@ public class UnfoldClauseTest {
         );
         when(dataset.getDataStructure()).thenReturn(structure);
 
-        when(dataset.get()).then(invocation -> Stream.of(
+        when(dataset.getData()).then(invocation -> Stream.of(
                 tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
                 tuple(structure, "id1-1", "id2-2", "measure1-2", "measure2-2", "attribute1-2"),
                 tuple(structure, "id1-2", "id2-1", "measure1-3", "measure2-3", "attribute1-3"),
@@ -145,14 +145,14 @@ public class UnfoldClauseTest {
                     "id1", "id2-1", "id2-2"
             );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(VTLObject::getName)
+            softly.assertThat(clause.getData()).flatExtracting(input -> input).extracting(VTLObject::getName)
                     .contains(
                             "id1", "id2-1", "id2-2",
                             "id1", "id2-1", "id2-2",
                             "id1", "id2-1", "id2-2"
                     );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(VTLObject::get)
+            softly.assertThat(clause.getData()).flatExtracting(input -> input).extracting(VTLObject::get)
                     .contains(
                             "id1-1", "measure1-1", "measure1-2",
                             "id1-2", "measure1-3", "measure1-4",

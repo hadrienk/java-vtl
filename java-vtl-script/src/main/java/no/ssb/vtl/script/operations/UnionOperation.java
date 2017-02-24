@@ -2,9 +2,7 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.*;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -94,21 +92,36 @@ public class UnionOperation implements Supplier<Dataset> {
             if (datasets.get(0).equals(datasets.get(1)))
                 return datasets.get(0);
 
-        return new Dataset() {
-
-            @Override
-            public DataStructure getDataStructure() {
-                return dataStructure;
-            }
+        return new AbstractDatasetOperation(datasets) {
 
             @Override
             public Stream<DataPoint> get() {
+                return getData().map(o -> o);
+            }
+
+            @Override
+            protected DataStructure computeDataStructure() {
+                    return dataStructure;
+            }
+
+            @Override
+            public Stream<? extends DataPoint> getData() {
                 // TODO: Attribute propagation.
                 Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
                 Set<DataPoint> seen = Collections.synchronizedSet(bucket);
                 return datasets.stream().flatMap(Supplier::get)
                         .filter((o) -> !seen.contains(o))
                         .peek(bucket::add);
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
             }
         };
     }

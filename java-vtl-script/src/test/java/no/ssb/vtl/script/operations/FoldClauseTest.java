@@ -162,7 +162,7 @@ public class FoldClauseTest {
         );
         when(dataset.getDataStructure()).thenReturn(structure);
 
-        when(dataset.get()).then(invocation -> Stream.of(
+        when(dataset.getData()).then(invocation -> Stream.of(
                 tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
                 tuple(structure, "id1-1", "id2-2", null, "measure2-2", "attribute1-2"),
                 tuple(structure, "id1-2", "id2-1", "measure1-3", null, "attribute1-3"),

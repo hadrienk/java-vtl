@@ -29,6 +29,7 @@ import no.ssb.vtl.model.Dataset;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -40,6 +41,21 @@ import static org.mockito.Mockito.when;
 public class RenameOperationTest {
 
     Dataset notNullDataset = new Dataset() {
+        @Override
+        public Stream<? extends DataPoint> getData() {
+            return null;
+        }
+
+        @Override
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
+            return null;
+        }
+
+        @Override
+        public Optional<Long> getSize() {
+            return null;
+        }
+
         @Override
         public DataStructure getDataStructure() {
             return null;
