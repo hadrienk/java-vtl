@@ -18,3 +18,5 @@ extra_css:
 extra_javascript:
     - js/main.js
 
+google_analytics: ['UA-85245041-1', 'auto']
+
