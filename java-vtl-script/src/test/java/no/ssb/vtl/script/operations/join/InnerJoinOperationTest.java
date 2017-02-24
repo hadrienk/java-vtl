@@ -144,8 +144,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
     @Repeat(iterations = 10)
     public void testRandomDatasets() throws Exception {
 
-        Integer datasetAmount = scaledRandomIntBetween(1, 50);
-        Integer rowAmount = scaledRandomIntBetween(0, 500);
+        Integer datasetAmount = scaledRandomIntBetween(1, 10);
+        Integer rowAmount = scaledRandomIntBetween(0, 100);
         Set<Component> allComponents = Sets.newHashSet();
 
         Map<String, Dataset> datasets = Maps.newLinkedHashMap();
