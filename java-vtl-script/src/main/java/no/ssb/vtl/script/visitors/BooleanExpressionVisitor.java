@@ -1,37 +1,40 @@
 package no.ssb.vtl.script.visitors;
 
-import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.lang.String;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static java.lang.String.*;
 
-public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.Tuple>> {
+public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.DataPoint>> {
     
     private final ReferenceVisitor referenceVisitor;
+    private final DataStructure dataStructure;
     
-    public BooleanExpressionVisitor(ReferenceVisitor referenceVisitor) {
+    public BooleanExpressionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
+        this.dataStructure = dataStructure;
     }
     
     @Override
-    public Predicate<Dataset.Tuple> visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
+    public Predicate<Dataset.DataPoint> visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
         if (ctx.BOOLEAN_CONSTANT() != null) {
             Boolean booleanConstant = Boolean.valueOf(ctx.BOOLEAN_CONSTANT().getText());
             return dataPoints -> booleanConstant;
         }else if (ctx.op != null) {
-            Predicate<Dataset.Tuple> left = visit(ctx.booleanExpression(0));
-            Predicate<Dataset.Tuple> right = visit(ctx.booleanExpression(1));
+            Predicate<Dataset.DataPoint> left = visit(ctx.booleanExpression(0));
+            Predicate<Dataset.DataPoint> right = visit(ctx.booleanExpression(1));
             switch (ctx.op.getType()) {
                 case VTLParser.AND:
                     return left.and(right);
@@ -50,7 +53,7 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
     }
     
     @Override
-    public Predicate<Dataset.Tuple> visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
+    public Predicate<Dataset.DataPoint> visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Object left = paramVisitor.visit(ctx.left);
         Object right = paramVisitor.visit(ctx.right);
@@ -58,19 +61,19 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
         BiPredicate<Object, Object> booleanOperation = getBooleanOperation(ctx.op);
         
         if (isComp(left) && !isComp(right)) {
-            return tuple -> {
-                Object leftValue = getOnlyElement(left, tuple);
+            return dataPoint -> {
+                Object leftValue = getValue((Component) left, dataPoint);
                 return booleanOperation.test(leftValue, right);
             };
         } else if (!isComp(left) && isComp(right)){
-            return tuple -> {
-                Object rightValue = getOnlyElement(right, tuple);
+            return dataPoint -> {
+                Object rightValue = getValue((Component) right, dataPoint);
                 return booleanOperation.test(left, rightValue);
             };
         } else if (isComp(left) && isComp(right)) {
-            return tuple -> {
-                Object rightValue = getOnlyElement(right, tuple);
-                Object leftValue = getOnlyElement(left, tuple);
+            return dataPoint -> {
+                Object rightValue = getValue((Component) right, dataPoint);
+                Object leftValue = getValue((Component) left, dataPoint);
                 return booleanOperation.test(leftValue, rightValue);
             };
         } else {
@@ -101,11 +104,10 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
         }
     }
     
-    private Object getOnlyElement(Object component, Dataset.Tuple tuple) {
-        Optional<DataPoint> element = tuple.stream()
-                .filter(dataPoint -> component.equals(dataPoint.getComponent()))
-                .collect(MoreCollectors.toOptional());
-        return element.map(DataPoint::get).orElse(null);
+    private Object getValue(Component component, Dataset.DataPoint dataPoint) {
+        Map<Component, VTLObject> componentVTLObjectMap = dataStructure.asMap(dataPoint);
+        VTLObject vtlObject = componentVTLObjectMap.get(component);
+        return vtlObject.get();
     }
     
     private boolean isComp(Object o) {
@@ -121,6 +123,8 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<Dataset.T
             return ((Boolean) value).compareTo((Boolean) scalar);
         } else if (value instanceof String && scalar instanceof String) {
             return ((String) value).compareTo((String) scalar);
+        } else if (value instanceof Instant && scalar instanceof Instant) {
+            return ((Instant) value).compareTo((Instant) scalar);
         }
         throw new ParseCancellationException(
                 format("Cannot compare %s of type %s with %s of type %s",

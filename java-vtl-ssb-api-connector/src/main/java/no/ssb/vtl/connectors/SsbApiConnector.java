@@ -126,7 +126,7 @@ public class SsbApiConnector implements Connector {
                 }
 
                 @Override
-                public Stream<Tuple> get() {
+                public Stream<DataPoint> get() {
                     return table.rowMap().entrySet().stream()
                             .map(entry -> {
                                 Map<String, Object> row = Maps.newHashMap();

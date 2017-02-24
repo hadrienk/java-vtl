@@ -3,7 +3,7 @@ package no.ssb.vtl.script.operations;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
@@ -87,14 +87,14 @@ public class FoldClause implements Dataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
+    public Stream<DataPoint> get() {
         DataStructure dataStructure = getDataStructure();
         return dataset.get().flatMap(tuple -> {
-            List<Tuple> tuples = Lists.newArrayList();
+            List<DataPoint> dataPoints = Lists.newArrayList();
             Map<String, Object> commonValues = Maps.newLinkedHashMap();
             Map<String, Object> foldedValues = Maps.newLinkedHashMap();
 
-            for (DataPoint point : tuple) {
+            for (VTLObject point : tuple) {
                 if (elements.contains(point.getComponent())) {
                     foldedValues.put(point.getName(), point.get());
                 } else {
@@ -107,10 +107,10 @@ public class FoldClause implements Dataset {
                     Map<String, Object> rowMap = Maps.newLinkedHashMap(commonValues);
                     rowMap.put(dimension, element.getName());
                     rowMap.put(measure, foldedValues.get(element.getName()));
-                    tuples.add(dataStructure.wrap(rowMap));
+                    dataPoints.add(dataStructure.wrap(rowMap));
                 }
             }
-            return tuples.stream();
+            return dataPoints.stream();
         });
     }
 

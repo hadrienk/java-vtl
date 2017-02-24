@@ -3,7 +3,7 @@ package no.ssb.vtl.script.visitors.join;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.FilterOperator;
+import no.ssb.vtl.script.operations.FilterOperation;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 
 import static com.google.common.base.Preconditions.*;
 
-public class JoinFilterClauseVisitor extends VTLBaseVisitor<FilterOperator> {
+public class JoinFilterClauseVisitor extends VTLBaseVisitor<FilterOperation> {
     
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;
@@ -22,9 +22,10 @@ public class JoinFilterClauseVisitor extends VTLBaseVisitor<FilterOperator> {
     }
 
     @Override
-    public FilterOperator visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
-        BooleanExpressionVisitor booleanExpressionVisitor = new BooleanExpressionVisitor(referenceVisitor);
-        Predicate<Dataset.Tuple> predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
-        return new FilterOperator(dataset, predicate);
+    public FilterOperation visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
+        BooleanExpressionVisitor booleanExpressionVisitor = new BooleanExpressionVisitor(referenceVisitor,
+                dataset.getDataStructure());
+        Predicate<Dataset.DataPoint> predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
+        return new FilterOperation(dataset, predicate);
     }
 }

@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 
 public class UnfoldClauseTest {
 
-    private static Dataset.Tuple tuple(DataStructure structure, Object... values) {
+    private static Dataset.DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
         Map<String, Object> map = Maps.newHashMap();
         Iterator<Object> iterator = Lists.newArrayList(values).iterator();
@@ -145,14 +145,14 @@ public class UnfoldClauseTest {
                     "id1", "id2-1", "id2-2"
             );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(DataPoint::getName)
+            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(VTLObject::getName)
                     .contains(
                             "id1", "id2-1", "id2-2",
                             "id1", "id2-1", "id2-2",
                             "id1", "id2-1", "id2-2"
                     );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(DataPoint::get)
+            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(VTLObject::get)
                     .contains(
                             "id1-1", "measure1-1", "measure1-2",
                             "id1-2", "measure1-3", "measure1-4",

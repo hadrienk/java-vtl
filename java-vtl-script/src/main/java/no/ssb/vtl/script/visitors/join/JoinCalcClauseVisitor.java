@@ -1,44 +1,53 @@
 package no.ssb.vtl.script.visitors.join;
 
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static java.lang.String.format;
+import static java.lang.String.*;
 
 /**
  * Visitor for join calc clauses.
  */
-public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple, Object>> {
+public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.DataPoint, Object>> {
 
     private final ReferenceVisitor referenceVisitor;
-
-    public JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
+    private final DataStructure dataStructure;
+    
+    public JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
+        this.dataStructure = dataStructure;
+    }
+    
+    /**
+     * Temporary hack for tests //TODO: Remove
+     */
+    JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
+        this(referenceVisitor, null);
     }
 
     @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
+    public Function<Dataset.DataPoint, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
         Component component = (Component) referenceVisitor.visit(ctx.componentRef());
-        return tuple -> {
-            for (DataPoint dataPoint : tuple) {
-                if (component == dataPoint.getComponent()) {
-                    return dataPoint.get();
-                }
-            }
-            throw new RuntimeException(format("component %s not found in %s", component, tuple));
+        return dataPoint -> {
+            Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
+            Optional<VTLObject> vtlObject = Optional.ofNullable(map.get(component));
+            return vtlObject.map(VTLObject::get).orElseThrow(() -> new RuntimeException(format("component %s not found in %s", component, dataPoint)));
         };
     }
 
     @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
+    public Function<Dataset.DataPoint, Object> visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
         VTLParser.ConstantContext constantValue = ctx.constant();
         if (constantValue.FLOAT_CONSTANT() != null)
             return tuple -> Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
@@ -51,23 +60,23 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
     }
 
     @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcPrecedence(VTLParser.JoinCalcPrecedenceContext ctx) {
+    public Function<Dataset.DataPoint, Object> visitJoinCalcPrecedence(VTLParser.JoinCalcPrecedenceContext ctx) {
         return visit(ctx.joinCalcExpression());
     }
 
     @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
-        Function<Dataset.Tuple, Object> leftResult = visit(ctx.leftOperand);
-        Function<Dataset.Tuple, Object> rightResult = visit(ctx.rightOperand);
+    public Function<Dataset.DataPoint, Object> visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
+        Function<Dataset.DataPoint, Object> leftResult = visit(ctx.leftOperand);
+        Function<Dataset.DataPoint, Object> rightResult = visit(ctx.rightOperand);
 
         // TODO: Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return tuple -> {
+        return dataPoint -> {
 
-            Number leftNumber = (Number) leftResult.apply(tuple);
-            Number rightNumber = (Number) rightResult.apply(tuple);
+            Number leftNumber = (Number) leftResult.apply(dataPoint);
+            Number rightNumber = (Number) rightResult.apply(dataPoint);
 
             // TODO: Write test
             if (leftNumber == null || rightNumber == null) {
@@ -112,17 +121,17 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
 
 
     @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
-        Function<Dataset.Tuple, Object> leftResult = visit(ctx.leftOperand);
-        Function<Dataset.Tuple, Object> rightResult = visit(ctx.rightOperand);
+    public Function<Dataset.DataPoint, Object> visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
+        Function<Dataset.DataPoint, Object> leftResult = visit(ctx.leftOperand);
+        Function<Dataset.DataPoint, Object> rightResult = visit(ctx.rightOperand);
 
         // Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return tuple -> {
-            Number leftNumber = (Number) leftResult.apply(tuple);
-            Number rightNumber = (Number) rightResult.apply(tuple);
+        return dataPoint -> {
+            Number leftNumber = (Number) leftResult.apply(dataPoint);
+            Number rightNumber = (Number) rightResult.apply(dataPoint);
 
             if (leftNumber == null ^ rightNumber == null) {
                 return null;
@@ -166,9 +175,9 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<Dataset.Tuple
     }
     
     @Override
-    public Function<Dataset.Tuple, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
-        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor);
-        Predicate<Dataset.Tuple> predicate = booleanVisitor.visit(ctx.booleanExpression());
+    public Function<Dataset.DataPoint, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
+        BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor, dataStructure);
+        Predicate<Dataset.DataPoint> predicate = booleanVisitor.visit(ctx.booleanExpression());
         return predicate::test;
     }
 }

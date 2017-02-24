@@ -22,24 +22,25 @@ package no.ssb.vtl.model;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Data structure of a {@link Dataset}.
  * <p>
  * The data structure defines the role and type of the columns of a data set and
- * serves as a {@link DataPoint}s and {@link no.ssb.vtl.model.Dataset.Tuple}s factory.
+ * serves as a {@link VTLObject}s and {@link Dataset.DataPoint}s factory.
  */
 public class DataStructure extends ForwardingMap<String, Component> {
 
@@ -50,6 +51,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     private final IdentityHashMap<Component, String> inverseCache;
     private final ImmutableMap<String, Component.Role> roleCache;
     private final ImmutableMap<String, Class<?>> typeCache;
+    private final ImmutableList<Component> indexListCache;
 
     protected DataStructure(BiFunction<Object, Class<?>, ?> converter, ImmutableMap<String, Component> map) {
         this.converter = checkNotNull(converter);
@@ -57,6 +59,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         this.inverseCache = computeInverseCache(this.delegate);
         this.roleCache = computeRoleCache(delegate);
         this.typeCache = computeTypeCache(delegate);
+        this.indexListCache = computeIndexCache(delegate);
     }
 
     private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
@@ -65,6 +68,11 @@ public class DataStructure extends ForwardingMap<String, Component> {
 
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
         return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
+    }
+    
+    private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {
+        return ImmutableList.copyOf(delegate.values());
+        
     }
 
     public static DataStructure.Builder builder() {
@@ -190,9 +198,27 @@ public class DataStructure extends ForwardingMap<String, Component> {
     public BiFunction<Object, Class<?>, ?> converter() {
         return this.converter;
     }
-
-    ;
-
+    
+    public Map<Component, VTLObject> asMap(Dataset.DataPoint dataPoint) {
+        Map<Component, VTLObject> map = new HashMap<>();
+        for (int i = 0; i< indexListCache.size(); i++) {
+            map.put(indexListCache.get(i), dataPoint.get(i));
+        }
+        return map;
+    }
+    
+    public Map<VTLObject, Component> asInverseMap(Dataset.DataPoint dataPoint) {
+        Map<VTLObject, Component> map = new HashMap<>();
+        for (int i = 0; i< indexListCache.size(); i++) {
+            map.put(dataPoint.get(i), indexListCache.get(i));
+        }
+        return map;
+    }
+    
+    public int indexOf(Component component) {
+        return indexListCache.indexOf(component);
+    }
+    
     /**
      * Creates a new {@link Component} for the given column and value.
      *
@@ -200,7 +226,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
      * @param value the value of the resulting component.
      * @return a component
      */
-    public DataPoint wrap(String name, Object value) {
+    public VTLObject wrap(String name, Object value) {
         checkArgument(
                 containsKey(name),
                 "could not find %s in data structure %s",
@@ -208,7 +234,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         );
 
         Component component = get(name);
-        return new DataPoint(component) {
+        return new VTLObject(component) {
             @Override
             public Object get() {
                 return converter().apply(value, component.getType());
@@ -217,21 +243,21 @@ public class DataStructure extends ForwardingMap<String, Component> {
     }
 
     /**
-     * Creates a new {@link Dataset.Tuple} for the given names and values.
+     * Creates a new {@link Dataset.DataPoint} for the given names and values.
      * <p>
      * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
-     * a {@link Dataset.Tuple}.
+     * a {@link Dataset.DataPoint}.
      *
      * @param map a map of name and values
      * @return the corresponding tuple (row)
      */
-    public Dataset.Tuple wrap(Map<String, Object> map) {
+    public Dataset.DataPoint wrap(Map<String, Object> map) {
 
-        List<DataPoint> components = Lists.newArrayList();
+        List<VTLObject> components = Lists.newArrayList();
         for (Map.Entry<String, Object> entry : map.entrySet())
             components.add(wrap(entry.getKey(), entry.getValue()));
 
-        return Dataset.Tuple.create(components);
+        return Dataset.DataPoint.create(components);
 
     }
 

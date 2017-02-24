@@ -10,11 +10,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A data point is a simple reference holder for values.
  */
-public abstract class DataPoint<V> implements Supplier<V> {
+public abstract class VTLObject<V> implements Supplier<V> {
 
     private final Component componentReference;
 
-    public DataPoint(Component component) {
+    public VTLObject(Component component) {
         this.componentReference = checkNotNull(component);
     }
 
@@ -22,9 +22,9 @@ public abstract class DataPoint<V> implements Supplier<V> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DataPoint<?> dataPoint = (DataPoint<?>) o;
-        return Objects.equals(componentReference, dataPoint.componentReference) &&
-                Objects.equals(get(), dataPoint.get());
+        VTLObject<?> value = (VTLObject<?>) o;
+        return Objects.equals(componentReference, value.componentReference) &&
+                Objects.equals(get(), value.get());
     }
 
     @Override
@@ -40,6 +40,7 @@ public abstract class DataPoint<V> implements Supplier<V> {
 
     /**
      * Returns the componentReference (type and role) of this data point.
+     * @deprecated Use {@link DataStructure#asMap(Dataset.DataPoint)} instead
      */
     public Component getComponent() {
         return componentReference;

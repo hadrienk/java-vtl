@@ -21,7 +21,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
@@ -38,66 +38,86 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
+        Set<Component> identifiers = getIdentifiers();
         return (left, right, compare) -> {
-            if (compare == 0) {
-                return Collections.emptyList();
+
+            // TODO: Rewrite this method after implementing the tuple "Map View"
+
+            JoinDataPoint merged;
+            ArrayList<VTLObject> ids = Lists.newArrayList();
+            for (VTLObject point : left) {
+                if (identifiers.contains(point.getComponent())) {
+                    ids.add(point);
+                }
+            }
+            if (compare <= 0) {
+                merged = new JoinDataPoint(ids);
             } else {
+                // Use left components with right values.
+                Iterator<VTLObject> idsIterator = ids.iterator();
+                List<VTLObject> rightIds = Lists.newArrayList();
+                for (VTLObject point : right) {
+                    if (identifiers.contains(point.getComponent())) {
+                        Component leftComponent = idsIterator.next().getComponent();
+                        rightIds.add(new VTLObject(leftComponent) {
+                            Object value = point.get();
 
-                // Pad left with nulls.
-                JoinTuple leftPadded = new JoinTuple(left.ids());
-                leftPadded.addAll(left.values());
-                for (DataPoint point : left.values()) {
-                    leftPadded.add(new DataPoint(point.getComponent()) {
-                        @Override
-                        public Object get() {
-                            return null;
+                            @Override
+                            public Object get() {
+                                return value;
+                            }
+                        });
+                    }
+                }
+                merged = new JoinDataPoint(rightIds);
+            }
+
+
+            if (compare == 0) {
+                for (VTLObject point : left) {
+                    if (!identifiers.contains(point.getComponent())) {
+                        merged.add(point);
+                    }
+                }
+                for (VTLObject point : right) {
+                    if (!identifiers.contains(point.getComponent()))
+                        merged.add(point);
+                }
+            } else {
+                if (compare < 0) {
+                    for (VTLObject point : left) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(point);
                         }
-                    });
-                }
-
-                // Update id reference.
-                List<DataPoint> rightIds = Lists.newArrayList();
-                Iterator<DataPoint> leftId = left.ids().iterator();
-                Iterator<DataPoint> idsIt = right.ids().iterator();
-                while (leftId.hasNext() && idsIt.hasNext()) {
-                    final Object value = idsIt.next().get();
-                    rightIds.add(new DataPoint(leftId.next().getComponent()) {
-                        @Override
-                        public Object get() {
-                            return value;
+                    }
+                    for (VTLObject point : right) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(createNull(point));
                         }
-                    });
-                }
-
-                JoinTuple rightPadded = new JoinTuple(rightIds);
-                for (DataPoint point : right.values()) {
-                    rightPadded.add(new DataPoint(point.getComponent()) {
-                        @Override
-                        public Object get() {
-                            return null;
+                    }
+                } else { // (compare > 0) {
+                    for (VTLObject point : left) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(createNull(point));
                         }
-                    });
-                }
-
-                // Update reference.
-                leftId = left.values().iterator();
-                Iterator<DataPoint> valuesIt = right.values().iterator();
-                while (leftId.hasNext() && valuesIt.hasNext()) {
-                    final Object value = valuesIt.next().get();
-                    rightPadded.add(new DataPoint(leftId.next().getComponent()) {
-                        @Override
-                        public Object get() {
-                            return value;
+                    }
+                    for (VTLObject point : right) {
+                        if (!identifiers.contains(point.getComponent())) {
+                            merged.add(point);
                         }
-                    });
+                    }
                 }
+            }
+            return Collections.singletonList(merged);
+        };
+    }
 
-                if (compare > 0) {
-                    return Arrays.asList(rightPadded, leftPadded);
-                } else {
-                    return Arrays.asList(leftPadded, rightPadded);
-                }
+    private VTLObject createNull(final VTLObject point) {
+        return new VTLObject(point.getComponent()) {
+            @Override
+            public Object get() {
+                return null;
             }
         };
     }

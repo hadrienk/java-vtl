@@ -22,7 +22,7 @@ package no.ssb.vtl.script.operations.join;
 import com.google.common.base.Objects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
@@ -93,7 +93,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return result;
     }
 
-    protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger();
+    protected abstract JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger();
 
     protected ImmutableSet<Component> getIdentifiers() {
         return this.identifiers;
@@ -132,7 +132,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
+    public Stream<DataPoint> get() {
 
         // Optimization.
         if (datasets.size() == 1) {
@@ -140,8 +140,8 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         }
 
         Iterator<Dataset> iterator = datasets.values().iterator();
-        Stream<JoinTuple> result = iterator.next().get()
-                .map(JoinTuple::new);
+        Stream<JoinDataPoint> result = iterator.next().get()
+                .map(JoinDataPoint::new);
 
         while (iterator.hasNext()) {
             result = StreamSupport.stream(
@@ -149,7 +149,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
                             getKeyComparator(),
                             result.spliterator(),
                             iterator.next().get()
-                                    .map(JoinTuple::new)
+                                    .map(JoinDataPoint::new)
                                     .spliterator(),
                             getKeyExtractor(),
                             getKeyExtractor(),
@@ -160,7 +160,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return result.map(tuple -> tuple);
     }
 
-    private Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
+    private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor() {
         return tuple -> {
             // Filter by common ids.
             return tuple.stream().filter(dataPoint ->
@@ -202,23 +202,23 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
 
     public abstract WorkingDataset workDataset();
 
-    protected Comparator<List<DataPoint>> getKeyComparator() {
+    protected Comparator<List<VTLObject>> getKeyComparator() {
         ImmutableSet<Component> keys = getIdentifiers();
         return (l, r) -> {
-            // TODO: Tuple should expose method to handle this.
-            // TODO: Evaluate migrating to DataPoint.
+            // TODO: DataPoint should expose method to handle this.
+            // TODO: Evaluate migrating to VTLObject.
             // TODO: When using on, the left over identifiers should be transformed to measures.
 
             Map<String, Comparable> lIds = l.stream()
                     .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
-                            DataPoint::getName,
+                            VTLObject::getName,
                             t -> (Comparable) t.get()
                     ));
             Map<String, Object> rIds = r.stream()
                     .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
                     .collect(Collectors.toMap(
-                            DataPoint::getName,
+                            VTLObject::getName,
                             Supplier::get
                     ));
             for (String key : lIds.keySet()) {
@@ -259,18 +259,18 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     /**
-     * Holds the "working dataset" tuples.
+     * Holds the "working dataset" dataPoint.
      */
-    static final class JoinTuple extends Dataset.AbstractTuple implements RandomAccess {
+    static final class JoinDataPoint extends AbstractDataPoint implements RandomAccess {
 
-        private final List<DataPoint> delegate = Lists.newArrayList();
+        private final List<VTLObject> delegate = Lists.newArrayList();
 
-        public JoinTuple(List<DataPoint> ids) {
+        public JoinDataPoint(List<VTLObject> ids) {
             this.delegate.addAll(ids);
         }
 
         @Override
-        protected List<DataPoint> delegate() {
+        protected List<VTLObject> delegate() {
             return delegate;
         }
 
