@@ -29,8 +29,8 @@ public class UnionOperationTest {
 
         UnionOperation operator = new UnionOperation(dataset);
 
-        assertThat(operator.get().get())
-                .as("Check that result of union operation", null)
+        assertThat(operator.get())
+                .as("Check that result of union operation")
                 .isSameAs(dataset.get());
 
     }
@@ -69,7 +69,8 @@ public class UnionOperationTest {
             when(wrongDataset.getDataStructure()).thenReturn(wrongStructure);
             Throwable expextedEx = null;
             try {
-                new UnionOperation(dataset1, wrongDataset, dataset2, dataset3);
+                UnionOperation operation = new UnionOperation(dataset1, wrongDataset, dataset2, dataset3);
+                operation.computeDataStructure();
             } catch (Throwable t) {
                 expextedEx = t;
             }
@@ -143,10 +144,8 @@ public class UnionOperationTest {
                         dataStructure.wrap("POP", 1)
                 )
         ));
-
-        UnionOperation unionOperation = new UnionOperation(totalPopulation1, totalPopulation2);
-
-        Dataset resultDataset = unionOperation.get();
+    
+        Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
         Stream<DataPoint> stream = resultDataset.stream();
@@ -265,10 +264,8 @@ public class UnionOperationTest {
                         dataStructure.wrap("POP", 60)
                 )
         ));
-
-        UnionOperation unionOperation = new UnionOperation(totalPopulation1, totalPopulation2);
-
-        Dataset resultDataset = unionOperation.get();
+    
+        Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
         Stream<DataPoint> stream = resultDataset.stream();

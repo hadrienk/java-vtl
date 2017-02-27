@@ -9,14 +9,13 @@ import no.ssb.vtl.script.visitors.join.JoinExpressionVisitor;
 
 import javax.script.ScriptContext;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.*;
 
 /**
  * A visitor that handles the relational operators.
  */
-public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
+public class RelationalVisitor extends VTLBaseVisitor<Dataset> {
 
     private final AssignmentVisitor assignmentVisitor;
     private final JoinExpressionVisitor joinVisitor;
@@ -28,7 +27,7 @@ public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
 
 
     @Override
-    public Supplier<Dataset> visitUnionExpression(VTLParser.UnionExpressionContext ctx) {
+    public Dataset visitUnionExpression(VTLParser.UnionExpressionContext ctx) {
         List<Dataset> datasets = Lists.newArrayList();
         for (VTLParser.DatasetExpressionContext datasetExpressionContext : ctx.datasetExpression()) {
             Dataset dataset = assignmentVisitor.visit(datasetExpressionContext);
@@ -38,9 +37,8 @@ public class RelationalVisitor extends VTLBaseVisitor<Supplier<Dataset>> {
     }
 
     @Override
-    public Supplier<Dataset> visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
-        Dataset visit = joinVisitor.visit(ctx);
-        return () -> visit;
+    public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
+        return joinVisitor.visit(ctx);
     }
 
 }
