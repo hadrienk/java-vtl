@@ -5,14 +5,14 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.FoldClause;
+import no.ssb.vtl.script.operations.FoldOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
+public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldOperation> {
 
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;
@@ -23,7 +23,7 @@ public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
     }
 
     @Override
-    public FoldClause visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
+    public FoldOperation visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
         // TODO: Migrate to component type.
         String dimension = ctx.dimension.getText();
         String measure = ctx.measure.getText();
@@ -33,6 +33,6 @@ public class JoinFoldClauseVisitor extends VTLBaseVisitor<FoldClause> {
                 .map(o -> (Component) o)
                 .collect(MoreCollectors.toImmutableSet());
 
-        return new FoldClause(dataset, dimension, measure, elements);
+        return new FoldOperation(dataset, dimension, measure, elements);
     }
 }

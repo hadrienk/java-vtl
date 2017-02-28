@@ -6,7 +6,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.UnfoldClause;
+import no.ssb.vtl.script.operations.UnfoldOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -14,7 +14,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldClause> {
+public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldOperation> {
 
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;
@@ -25,7 +25,7 @@ public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldClause> {
     }
 
     @Override
-    public UnfoldClause visitJoinUnfoldExpression(VTLParser.JoinUnfoldExpressionContext ctx) {
+    public UnfoldOperation visitJoinUnfoldExpression(VTLParser.JoinUnfoldExpressionContext ctx) {
         Component dimension = (Component) referenceVisitor.visit(ctx.dimension);
         Component measure = (Component) referenceVisitor.visit(ctx.measure);
 
@@ -34,6 +34,6 @@ public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldClause> {
             String constant = element.getText();
             elements.add(constant.substring(1, constant.length() - 1));
         }
-        return new UnfoldClause(dataset, dimension, measure, elements);
+        return new UnfoldOperation(dataset, dimension, measure, elements);
     }
 }

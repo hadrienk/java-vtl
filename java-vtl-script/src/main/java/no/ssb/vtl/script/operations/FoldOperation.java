@@ -18,13 +18,13 @@ import static no.ssb.vtl.model.Component.Role;
 /**
  * Fold clause.
  */
-public class FoldClause extends AbstractUnaryDatasetOperation {
+public class FoldOperation extends AbstractUnaryDatasetOperation {
 
     private final String dimension;
     private final String measure;
     private final Set<Component> elements;
 
-    public FoldClause(Dataset dataset, String dimensionReference, String measureReference, Set<Component> elements) {
+    public FoldOperation(Dataset dataset, String dimensionReference, String measureReference, Set<Component> elements) {
         // TODO: Introduce type here. Elements should be of the type of the Component.
 
         super(checkNotNull(dataset, "dataset cannot be null"));
@@ -83,15 +83,13 @@ public class FoldClause extends AbstractUnaryDatasetOperation {
         DataStructure childStructure = getChild().getDataStructure();
 
         /* Fold the values using the component in elements. */
-        return getChild().getData().flatMap(tuple -> {
-
-            List<DataPoint> foldedDataPoints = Lists.newArrayList();
-
+        return getChild().getData().flatMap(dataPoint -> {
+    
             List<VTLObject> commonValues = Lists.newArrayList();
             List<List<VTLObject>> foldedValues = Lists.newArrayList();
 
             /* separate the values that will be folded */
-            Map<Component, VTLObject> dataPointMap = childStructure.asMap(tuple);
+            Map<Component, VTLObject> dataPointMap = childStructure.asMap(dataPoint);
             for (Map.Entry<Component, VTLObject> entry : dataPointMap.entrySet()) {
                 if (!elements.contains(entry.getKey())) {
                     commonValues.add(entry.getValue());

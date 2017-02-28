@@ -19,7 +19,7 @@ import static no.ssb.vtl.model.Component.Role.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class UnfoldClauseTest {
+public class UnfoldOperationTest {
 
     private static DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
@@ -41,27 +41,27 @@ public class UnfoldClauseTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(null, validIdentifierReference, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(null, validIdentifierReference, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dataset")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, null, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, null, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dimensionReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, null, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, validIdentifierReference, null, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("measureReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, validMeasureReference, null))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, validIdentifierReference, validMeasureReference, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, validMeasureReference, Collections.emptySet()))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, validIdentifierReference, validMeasureReference, Collections.emptySet()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("empty");
@@ -86,7 +86,7 @@ public class UnfoldClauseTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, invalidReference, validMeasure, validElements);
+                UnfoldOperation clause = new UnfoldOperation(dataset, invalidReference, validMeasure, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -95,7 +95,7 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, validDimension, invalidReference, validElements);
+                UnfoldOperation clause = new UnfoldOperation(dataset, validDimension, invalidReference, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -104,7 +104,7 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, validMeasure, validDimension, validElements);
+                UnfoldOperation clause = new UnfoldOperation(dataset, validMeasure, validDimension, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -112,7 +112,7 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("was not a dimension");
 
 
-            UnfoldClause clause = new UnfoldClause(dataset, validDimension, validMeasure, validElements);
+            UnfoldOperation clause = new UnfoldOperation(dataset, validDimension, validMeasure, validElements);
             clause.getDataStructure();
         }
     }
@@ -140,7 +140,7 @@ public class UnfoldClauseTest {
         ));
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            UnfoldClause clause = new UnfoldClause(dataset, structure.get("id2"), structure.get("measure1"), elements);
+            UnfoldOperation clause = new UnfoldOperation(dataset, structure.get("id2"), structure.get("measure1"), elements);
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
                     "id1", "id2-1", "id2-2"

@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Unfold clause.
  */
-public class UnfoldClause extends AbstractUnaryDatasetOperation {
+public class UnfoldOperation extends AbstractUnaryDatasetOperation {
 
     private final Component dimension;
     private final Component measure;
     private final Set<String> elements;
 
-    public UnfoldClause(Dataset dataset, Component dimensionReference, Component measureReference, Set<String> elements) {
+    public UnfoldOperation(Dataset dataset, Component dimensionReference, Component measureReference, Set<String> elements) {
         super(checkNotNull(dataset, "dataset cannot be null"));
 
         this.dimension = checkNotNull(dimensionReference, "dimensionReference cannot be null");
@@ -58,10 +58,10 @@ public class UnfoldClause extends AbstractUnaryDatasetOperation {
                 }
             }
             return true;
-        }).map(tuples -> {
+        }).map(dataPoints -> {
             // TODO: Naive implementation for now.
             Map<String, Object> map = Maps.newLinkedHashMap();
-            for (DataPoint dataPoint : tuples) {
+            for (DataPoint dataPoint : dataPoints) {
                 Object unfoldedValue = null;
                 String columnName = null;
                 for (VTLObject value : dataPoint) {
