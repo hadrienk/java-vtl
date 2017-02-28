@@ -3,6 +3,7 @@ package no.ssb.vtl.script.operations;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.*;
 import no.ssb.vtl.model.*;
+import no.ssb.vtl.script.support.CombinedList;
 
 import java.util.List;
 import java.util.Map;
@@ -37,16 +38,21 @@ public class FoldClause extends AbstractUnaryDatasetOperation {
 
     @Override
     public DataStructure computeDataStructure() {
-        DataStructure dataStructure = getChild().getDataStructure();
+        DataStructure structure = getChild().getDataStructure();
 
-        // TODO: Constraint error.
+        /*
+        Check that all the elements are contained inside the structure.
+            TODO: This is a constraint error.
+        */
         checkArgument(
-                dataStructure.values().containsAll(elements),
+                structure.values().containsAll(elements),
                 "the element(s) [%s] were not found in [%s]",
-                Sets.difference(elements, dataStructure.keySet()), dataStructure.keySet()
+                Sets.difference(elements, structure.keySet()), structure.keySet()
         );
 
-        // Checks that elements are of the same type
+        /*
+         Checks that elements are of the same type using a Multimap.
+         */
         ListMultimap<Class<?>, Component> classes = ArrayListMultimap.create();
         for (Component element : elements) {
             classes.put(element.getType(), element);
@@ -54,52 +60,61 @@ public class FoldClause extends AbstractUnaryDatasetOperation {
         checkArgument(
                 classes.asMap().size() == 1,
                 "the element(s) [%s] must be of the same type, found [%s] in dataset [%s]",
-                elements, classes, dataStructure
+                elements, classes, structure
         );
 
-        Map<String, Component.Role> newRoles = Maps.newLinkedHashMap();
-        Map<String, Class<?>> newTypes = Maps.newLinkedHashMap();
-        for (Map.Entry<String, Component> componentEntry : dataStructure.entrySet()) {
+        DataStructure.Builder structureBuilder = DataStructure.builder();
+        for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
             if (!elements.contains(componentEntry.getValue())) {
-                newRoles.put(componentEntry.getKey(), componentEntry.getValue().getRole());
-                newTypes.put(componentEntry.getKey(), componentEntry.getValue().getType());
+                structureBuilder.put(componentEntry);
             }
         }
 
-        newRoles.put(dimension, Role.IDENTIFIER);
-        newTypes.put(dimension, String.class);
+        structureBuilder.put(dimension, Role.IDENTIFIER, String.class);
+        structureBuilder.put(measure, Role.MEASURE, classes.keySet().iterator().next());
 
-        newRoles.put(measure, Role.MEASURE);
-        newTypes.put(measure, classes.keySet().iterator().next());
-
-        return DataStructure.of(dataStructure.converter(), newTypes, newRoles);
+        return structureBuilder.build();
     }
 
     @Override
     public Stream<? extends DataPoint> getData() {
+
         DataStructure dataStructure = getDataStructure();
+        DataStructure childStructure = getChild().getDataStructure();
+
+        /* Fold the values using the component in elements. */
         return getChild().getData().flatMap(tuple -> {
-            List<DataPoint> dataPoints = Lists.newArrayList();
-            Map<String, Object> commonValues = Maps.newLinkedHashMap();
-            Map<String, Object> foldedValues = Maps.newLinkedHashMap();
 
-            for (VTLObject point : tuple) {
-                if (elements.contains(point.getComponent())) {
-                    foldedValues.put(point.getName(), point.get());
+            List<DataPoint> foldedDataPoints = Lists.newArrayList();
+
+            List<VTLObject> commonValues = Lists.newArrayList();
+            List<List<VTLObject>> foldedValues = Lists.newArrayList();
+
+            /* separate the values that will be folded */
+            Map<Component, VTLObject> dataPointMap = childStructure.asMap(tuple);
+            for (Map.Entry<Component, VTLObject> entry : dataPointMap.entrySet()) {
+                if (!elements.contains(entry.getKey())) {
+                    commonValues.add(entry.getValue());
                 } else {
-                    commonValues.put(point.getName(), point.get());
+                    Object value = entry.getValue().get();
+                    if (value != null) {
+                        String foldedColumnName = childStructure.getName(entry.getKey());
+                        VTLObject dimension = dataStructure.wrap(this.dimension, foldedColumnName);
+                        VTLObject measure = dataStructure.wrap(this.measure, value);
+                        foldedValues.add(Lists.newArrayList(
+                                dimension, measure
+                        ));
+                    }
                 }
             }
 
-            for (Component element : elements) {
-                if (foldedValues.containsKey(element.getName()) && foldedValues.get(element.getName()) != null) {
-                    Map<String, Object> rowMap = Maps.newLinkedHashMap(commonValues);
-                    rowMap.put(dimension, element.getName());
-                    rowMap.put(measure, foldedValues.get(element.getName()));
-                    dataPoints.add(dataStructure.wrap(rowMap));
-                }
-            }
-            return dataPoints.stream();
+            /*
+                create the new rows out of the folded values
+                TODO: use ordering
+             */
+            return foldedValues.stream().map(
+                    values -> DataPoint.create(new CombinedList<>(commonValues, values))
+            );
         });
     }
 

@@ -151,7 +151,7 @@ public class FoldClauseTest {
     }
 
     @Test
-    public void testUnfold() throws Exception {
+    public void testFold() throws Exception {
 
         Dataset dataset = mock(Dataset.class);
         DataStructure structure = DataStructure.of((o, aClass) -> o,
@@ -175,8 +175,8 @@ public class FoldClauseTest {
         // Set<String> elements = Sets.newLinkedHashSet(Lists.newArrayList("measure2", "measure1", "attribute1"));
         Set<Component> elements = Sets.newLinkedHashSet(
                 Lists.newArrayList(
-                        structure.get("measure1"),
                         structure.get("measure2"),
+                        structure.get("measure1"),
                         structure.get("attribute1")
                 )
         );

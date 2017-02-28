@@ -30,6 +30,7 @@ import com.google.common.collect.Maps;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -69,10 +70,10 @@ public class DataStructure extends ForwardingMap<String, Component> {
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
         return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
     }
-    
+
     private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {
         return ImmutableList.copyOf(delegate.values());
-        
+
     }
 
     public static DataStructure.Builder builder() {
@@ -198,27 +199,27 @@ public class DataStructure extends ForwardingMap<String, Component> {
     public BiFunction<Object, Class<?>, ?> converter() {
         return this.converter;
     }
-    
+
     public Map<Component, VTLObject> asMap(DataPoint dataPoint) {
-        Map<Component, VTLObject> map = new HashMap<>();
-        for (int i = 0; i< indexListCache.size(); i++) {
+        Map<Component, VTLObject> map = new LinkedHashMap<>();
+        for (int i = 0; i < indexListCache.size(); i++) {
             map.put(indexListCache.get(i), dataPoint.get(i));
         }
         return map;
     }
-    
+
     public Map<VTLObject, Component> asInverseMap(DataPoint dataPoint) {
         Map<VTLObject, Component> map = new HashMap<>();
-        for (int i = 0; i< indexListCache.size(); i++) {
+        for (int i = 0; i < indexListCache.size(); i++) {
             map.put(dataPoint.get(i), indexListCache.get(i));
         }
         return map;
     }
-    
+
     public int indexOf(Component component) {
         return indexListCache.indexOf(component);
     }
-    
+
     /**
      * Creates a new {@link Component} for the given column and value.
      *
