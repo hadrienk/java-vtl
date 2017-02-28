@@ -42,13 +42,15 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final ClauseVisitor clausesVisitor;
     private final RelationalVisitor relationalVisitor;
     private final CheckVisitor checkVisitor;
+    private final ReferenceVisitor referenceVisitor;
 
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this.context = checkNotNull(context, "the context was null");
+        referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
         relationalVisitor = new RelationalVisitor(this, context);
-        checkVisitor = new CheckVisitor(context, relationalVisitor);
+        checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
     }
 
     @Override

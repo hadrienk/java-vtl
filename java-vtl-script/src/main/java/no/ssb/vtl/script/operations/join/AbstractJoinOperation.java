@@ -64,13 +64,6 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
 
     }
 
-    // TODO: Filtering in each ids() access is very expensive. Need to optimise.
-    private static JoinTuple createJoinTuple(Tuple tuple) {
-        JoinTuple joinTuple = new JoinTuple(tuple.ids());
-        joinTuple.addAll(tuple.values());
-        return joinTuple;
-    }
-
     private ImmutableSet<Component> createIdentifierSet(Set<Component> identifiers) {
         ImmutableMultimap<String, Component> superSet = createCommonIdentifiers();
 
@@ -148,7 +141,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
 
         Iterator<Dataset> iterator = datasets.values().iterator();
         Stream<JoinTuple> result = iterator.next().get()
-                .map(AbstractJoinOperation::createJoinTuple);
+                .map(JoinTuple::new);
 
         while (iterator.hasNext()) {
             result = StreamSupport.stream(
@@ -156,7 +149,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
                             getKeyComparator(),
                             result.spliterator(),
                             iterator.next().get()
-                                    .map(AbstractJoinOperation::createJoinTuple)
+                                    .map(JoinTuple::new)
                                     .spliterator(),
                             getKeyExtractor(),
                             getKeyExtractor(),

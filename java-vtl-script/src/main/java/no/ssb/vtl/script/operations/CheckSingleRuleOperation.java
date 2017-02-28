@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -38,39 +37,17 @@ public class CheckSingleRuleOperation implements Dataset{
     private final Integer errorLevel;
     private DataStructure cache;
 
-    public CheckSingleRuleOperation(Dataset dataset, Optional<RowsToReturn> rowsToReturn, Optional<ComponentsToReturn> componentsToReturn,
-                                    Optional<String> errorCode, Optional<Integer> errorLevel) {
-        this.dataset = checkNotNull(dataset, "dataset was null");
-
-        if (rowsToReturn != null && rowsToReturn.isPresent()) {
-            this.rowsToReturn = rowsToReturn.get();
-        } else {
-            this.rowsToReturn = RowsToReturn.NOT_VALID;
-        }
-
-        if (componentsToReturn != null && componentsToReturn.isPresent()) {
-            this.componentsToReturn = componentsToReturn.get();
-        } else {
-            this.componentsToReturn = ComponentsToReturn.MEASURES;
-        }
+    private CheckSingleRuleOperation(Builder builder) {
+        this.dataset = checkNotNull(builder.dataset, "dataset was null");
+        this.rowsToReturn = builder.rowsToReturn;
+        this.componentsToReturn = builder.componentsToReturn;
+        this.errorCode = builder.errorCode;
+        this.errorLevel = builder.errorLevel;
 
         checkArgument(!(this.componentsToReturn == ComponentsToReturn.MEASURES && this.rowsToReturn == RowsToReturn.ALL),
                 "cannot use 'all' with 'measures' parameter");
 
         checkDataStructure(this.dataset);
-
-        if (errorCode != null && errorCode.isPresent()) {
-            checkArgument(!errorCode.get().isEmpty(), "the errorCode argument was empty");
-            this.errorCode = errorCode.get();
-        } else {
-            this.errorCode = null;
-        }
-
-        if (errorLevel != null && errorLevel.isPresent()) {
-            this.errorLevel = errorLevel.get();
-        } else {
-            this.errorLevel = null;
-        }
     }
 
     private void checkDataStructure(Dataset dataset) {
@@ -92,7 +69,10 @@ public class CheckSingleRuleOperation implements Dataset{
             }
 
             addComponent("errorcode", newRoles, newTypes, Component.Role.ATTRIBUTE, String.class);
-            addComponent("errorlevel", newRoles, newTypes, Component.Role.ATTRIBUTE, Integer.class);
+
+            if (errorLevel != null) {
+                addComponent("errorlevel", newRoles, newTypes, Component.Role.ATTRIBUTE, Integer.class);
+            }
 
             BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
             cache = DataStructure.of(converter, newTypes, newRoles);
@@ -122,17 +102,16 @@ public class CheckSingleRuleOperation implements Dataset{
     public Stream<Tuple> get() {
         Stream<Tuple> tupleStream = dataset.get();
 
-        DataPoint errorCodeDataPoint = getDataStructure().wrap("errorcode", errorCode);
-        DataPoint errorLevelDataPoint = getDataStructure().wrap("errorlevel", errorLevel);
-
         //first calculate the new data points...
         if (componentsToReturn == ComponentsToReturn.MEASURES) {
             tupleStream = tupleStream.map(dataPoints -> {
-                        List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
-                        dataPointsNewList.add(errorCodeDataPoint);
-                        dataPointsNewList.add(errorLevelDataPoint);
-                        return Tuple.create(dataPointsNewList);
-                    });
+                List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
+                dataPointsNewList.add(getErrorCodeAsDataPoint());
+                if (errorLevel != null) {
+                    dataPointsNewList.add(getErrorCodeAsDataPoint());
+                }
+                return Tuple.create(dataPointsNewList);
+            });
         } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
             tupleStream = tupleStream.map(dataPoints -> {
                 List<DataPoint> dataPointsNewList = new ArrayList<>(dataPoints);
@@ -145,8 +124,10 @@ public class CheckSingleRuleOperation implements Dataset{
                                 .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b));
                     }
                 });
-                dataPointsNewList.add(errorCodeDataPoint);
-                dataPointsNewList.add(errorLevelDataPoint);
+                dataPointsNewList.add(getErrorCodeAsDataPoint());
+                if (errorLevel != null) {
+                    dataPointsNewList.add(getErrorLevelAsDataPoint());
+                }
                 return Tuple.create(dataPointsNewList);
             });
         }
@@ -166,7 +147,52 @@ public class CheckSingleRuleOperation implements Dataset{
         return tupleStream;
     }
 
+    private DataPoint getErrorLevelAsDataPoint() {
+        return getDataStructure().wrap("errorlevel", errorLevel);
+    }
+
+    private DataPoint getErrorCodeAsDataPoint() {
+        return getDataStructure().wrap("errorcode", errorCode);
+    }
+
     private static Predicate<DataPoint> isConditionComponent() {
         return dataPoint -> dataPoint.getName().equals("CONDITION");
+    }
+
+    public static class Builder {
+
+        private Dataset dataset;
+        private RowsToReturn rowsToReturn = RowsToReturn.NOT_VALID;
+        private ComponentsToReturn componentsToReturn = ComponentsToReturn.MEASURES;
+        private String errorCode;
+        private Integer errorLevel;
+
+        public Builder(Dataset dataset) {
+            this.dataset = dataset;
+        }
+
+        public Builder rowsToReturn(RowsToReturn rowsToReturn) {
+            this.rowsToReturn = rowsToReturn;
+            return this;
+        }
+
+        public Builder componentsToReturn(ComponentsToReturn componentsToReturn) {
+            this.componentsToReturn = componentsToReturn;
+            return this;
+        }
+
+        public Builder errorCode(String errorCode) {
+            this.errorCode = errorCode;
+            return this;
+        }
+
+        public Builder errorLevel(Integer errorLevel) {
+            this.errorLevel = errorLevel;
+            return this;
+        }
+
+        public CheckSingleRuleOperation build() {
+            return new CheckSingleRuleOperation(this);
+        }
     }
 }
