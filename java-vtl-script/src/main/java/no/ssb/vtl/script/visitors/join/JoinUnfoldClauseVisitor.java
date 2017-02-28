@@ -4,17 +4,17 @@ package no.ssb.vtl.script.visitors.join;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.UnfoldOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
-public class JoinUnfoldClauseVisitor extends VTLBaseVisitor<UnfoldOperation> {
+public class JoinUnfoldClauseVisitor extends VTLDatasetExpressionVisitor<UnfoldOperation> {
 
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;

@@ -4,10 +4,11 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.VTLScalarExpressionVisitor;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +20,7 @@ import static java.lang.String.*;
 /**
  * Visitor for join calc clauses.
  */
-public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<DataPoint, Object>> {
+public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpression> {
 
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
@@ -29,155 +30,157 @@ public class JoinCalcClauseVisitor extends VTLBaseVisitor<Function<DataPoint, Ob
         this.dataStructure = dataStructure;
     }
     
-    /**
-     * Temporary hack for tests //TODO: Remove
-     */
-    JoinCalcClauseVisitor(ReferenceVisitor referenceVisitor) {
-        this(referenceVisitor, null);
+    JoinCalcClauseVisitor() {
+        this(null, null);
     }
 
     @Override
-    public Function<DataPoint, Object> visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
+    public VTLExpression visitJoinCalcReference(VTLParser.JoinCalcReferenceContext ctx) {
         Component component = (Component) referenceVisitor.visit(ctx.componentRef());
-        return dataPoint -> {
+        return new VTLExpression.Builder(component.getType(), dataPoint -> {
             Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
             Optional<VTLObject> vtlObject = Optional.ofNullable(map.get(component));
-            return vtlObject.map(VTLObject::get).orElseThrow(() -> new RuntimeException(format("component %s not found in %s", component, dataPoint)));
-        };
+            return vtlObject.orElseThrow(
+                    () -> new RuntimeException(format("component %s not found in %s", component, dataPoint)));
+        }).description(component.toString()).build();
     }
 
     @Override
-    public Function<DataPoint, Object> visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
+    public VTLExpression visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
         VTLParser.ConstantContext constantValue = ctx.constant();
-        if (constantValue.FLOAT_CONSTANT() != null)
-            return tuple -> Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
-        if (constantValue.INTEGER_CONSTANT() != null)
-            return tuple -> Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
-
+        if (constantValue.FLOAT_CONSTANT() != null){
+            Float aFloat = Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
+            return new VTLExpression.Builder(Float.class, dataPoint -> VTLObject.of(aFloat))
+                    .description(aFloat+"f").build();
+        }
+        if (constantValue.INTEGER_CONSTANT() != null) {
+            Integer integer = Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
+            return new VTLExpression.Builder(Integer.class, dataPoint -> VTLObject.of(integer))
+                    .description(integer.toString()).build();
+        }
         throw new RuntimeException(
                 format("unsuported constant type %s", constantValue)
         );
     }
 
     @Override
-    public Function<DataPoint, Object> visitJoinCalcPrecedence(VTLParser.JoinCalcPrecedenceContext ctx) {
+    public VTLExpression visitJoinCalcPrecedence(VTLParser.JoinCalcPrecedenceContext ctx) {
         return visit(ctx.joinCalcExpression());
     }
 
     @Override
-    public Function<DataPoint, Object> visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
-        Function<DataPoint, Object> leftResult = visit(ctx.leftOperand);
-        Function<DataPoint, Object> rightResult = visit(ctx.rightOperand);
+    public VTLExpression visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
+        Function<DataPoint, VTLObject> leftResult = visit(ctx.leftOperand);
+        Function<DataPoint, VTLObject> rightResult = visit(ctx.rightOperand);
 
         // TODO: Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return dataPoint -> {
-
-            Number leftNumber = (Number) leftResult.apply(dataPoint);
-            Number rightNumber = (Number) rightResult.apply(dataPoint);
-
-            // TODO: Write test
-            if (leftNumber == null || rightNumber == null) {
-                return null;
-            }
-
-            // TODO: document boxing and overflow
-            if (leftNumber instanceof Float || rightNumber instanceof Float) {
-                if (ctx.sign.getText().equals("+")) {
-                    return leftNumber.floatValue() + rightNumber.floatValue();
-                } else {
-                    return leftNumber.floatValue() - rightNumber.floatValue();
+        return new VTLExpression.Builder(Number.class, dataPoint -> {
+    
+                Number leftNumber = (Number) leftResult.apply(dataPoint).get();
+                Number rightNumber = (Number) rightResult.apply(dataPoint).get();
+    
+                // TODO: Write test
+                if (leftNumber == null || rightNumber == null) {
+                    return null;
                 }
-            }
-            if (leftNumber instanceof Double || rightNumber instanceof Double) {
-                if (ctx.sign.getText().equals("+")) {
-                    return leftNumber.doubleValue() + rightNumber.doubleValue();
-                } else {
-                    return leftNumber.doubleValue() - rightNumber.doubleValue();
+    
+                // TODO: document boxing and overflow
+                if (leftNumber instanceof Float || rightNumber instanceof Float) {
+                    if (ctx.sign.getText().equals("+")) {
+                        return VTLObject.of(leftNumber.floatValue() + rightNumber.floatValue());
+                    } else {
+                        return VTLObject.of(leftNumber.floatValue() - rightNumber.floatValue());
+                    }
                 }
-            }
-            if (leftNumber instanceof Integer || rightNumber instanceof Integer) {
-                if (ctx.sign.getText().equals("+")) {
-                    return leftNumber.intValue() + rightNumber.intValue();
-                } else {
-                    return leftNumber.intValue() - rightNumber.intValue();
+                if (leftNumber instanceof Double || rightNumber instanceof Double) {
+                    if (ctx.sign.getText().equals("+")) {
+                        return VTLObject.of(leftNumber.doubleValue() + rightNumber.doubleValue());
+                    } else {
+                        return VTLObject.of(leftNumber.doubleValue() - rightNumber.doubleValue());
+                    }
                 }
-            }
-            if (leftNumber instanceof Long || rightNumber instanceof Long) {
-                if (ctx.sign.getText().equals("+")) {
-                    return leftNumber.longValue() + rightNumber.longValue();
-                } else {
-                    return leftNumber.longValue() - rightNumber.longValue();
+                if (leftNumber instanceof Integer || rightNumber instanceof Integer) {
+                    if (ctx.sign.getText().equals("+")) {
+                        return VTLObject.of(leftNumber.intValue() + rightNumber.intValue());
+                    } else {
+                        return VTLObject.of(leftNumber.intValue() - rightNumber.intValue());
+                    }
                 }
-            }
-
-            throw new RuntimeException(
-                    format("unsupported number types %s, %s", leftNumber.getClass(), rightNumber.getClass())
-            );
-        };
+                if (leftNumber instanceof Long || rightNumber instanceof Long) {
+                    if (ctx.sign.getText().equals("+")) {
+                        return VTLObject.of(leftNumber.longValue() + rightNumber.longValue());
+                    } else {
+                        return VTLObject.of(leftNumber.longValue() - rightNumber.longValue());
+                    }
+                }
+    
+                throw new RuntimeException(
+                        format("unsupported number types %s, %s", leftNumber.getClass(), rightNumber.getClass())
+                );
+            }).description(format("%s %s %s", leftResult, ctx.sign.getText(), rightResult)).build();
     }
 
 
     @Override
-    public Function<DataPoint, Object> visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
-        Function<DataPoint, Object> leftResult = visit(ctx.leftOperand);
-        Function<DataPoint, Object> rightResult = visit(ctx.rightOperand);
+    public VTLExpression visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
+        VTLExpression leftResult = visit(ctx.leftOperand);
+        VTLExpression rightResult = visit(ctx.rightOperand);
 
         // Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return dataPoint -> {
-            Number leftNumber = (Number) leftResult.apply(dataPoint);
-            Number rightNumber = (Number) rightResult.apply(dataPoint);
-
-            if (leftNumber == null ^ rightNumber == null) {
-                return null;
-            }
-
-            // TODO: document boxing and overflow
-            if (leftNumber instanceof Float || rightNumber instanceof Float) {
-                if (ctx.sign.getText().equals("*")) {
-                    return leftNumber.floatValue() * rightNumber.floatValue();
-                } else {
-                    return leftNumber.floatValue() / rightNumber.floatValue();
+        return new VTLExpression.Builder(Number.class, dataPoint -> {
+                Number leftNumber = (Number) leftResult.apply(dataPoint).get();
+                Number rightNumber = (Number) rightResult.apply(dataPoint).get();
+    
+                if (leftNumber == null ^ rightNumber == null) {
+                    return null;
                 }
-            }
-            if (leftNumber instanceof Double || rightNumber instanceof Double) {
-                if (ctx.sign.getText().equals("*")) {
-                    return leftNumber.doubleValue() * rightNumber.doubleValue();
-                } else {
-                    return leftNumber.doubleValue() / rightNumber.doubleValue();
+    
+                // TODO: document boxing and overflow
+                if (leftNumber instanceof Float || rightNumber instanceof Float) {
+                    if (ctx.sign.getText().equals("*")) {
+                        return VTLObject.of(leftNumber.floatValue() * rightNumber.floatValue());
+                    } else {
+                        return VTLObject.of(leftNumber.floatValue() / rightNumber.floatValue());
+                    }
                 }
-            }
-            if (leftNumber instanceof Integer || rightNumber instanceof Integer) {
-                if (ctx.sign.getText().equals("*")) {
-                    return leftNumber.intValue() * rightNumber.intValue();
-                } else {
-                    return leftNumber.intValue() / rightNumber.intValue();
+                if (leftNumber instanceof Double || rightNumber instanceof Double) {
+                    if (ctx.sign.getText().equals("*")) {
+                        return VTLObject.of(leftNumber.doubleValue() * rightNumber.doubleValue());
+                    } else {
+                        return VTLObject.of(leftNumber.doubleValue() / rightNumber.doubleValue());
+                    }
                 }
-            }
-            if (leftNumber instanceof Long || rightNumber instanceof Long) {
-                if (ctx.sign.getText().equals("*")) {
-                    return leftNumber.longValue() * rightNumber.longValue();
-                } else {
-                    return leftNumber.longValue() / rightNumber.longValue();
+                if (leftNumber instanceof Integer || rightNumber instanceof Integer) {
+                    if (ctx.sign.getText().equals("*")) {
+                        return VTLObject.of(leftNumber.intValue() * rightNumber.intValue());
+                    } else {
+                        return VTLObject.of(leftNumber.intValue() / rightNumber.intValue());
+                    }
                 }
-            }
-
-            throw new RuntimeException(
-                    format("unsupported number types %s, %s", leftNumber.getClass(), rightNumber.getClass())
-            );
-
-        };
+                if (leftNumber instanceof Long || rightNumber instanceof Long) {
+                    if (ctx.sign.getText().equals("*")) {
+                        return VTLObject.of(leftNumber.longValue() * rightNumber.longValue());
+                    } else {
+                        return VTLObject.of(leftNumber.longValue() / rightNumber.longValue());
+                    }
+                }
+    
+                throw new RuntimeException(format("unsupported number types %s, %s", leftNumber.getClass(), rightNumber.getClass()));
+            }).description(format("%s %s %s", leftResult, ctx.sign.getText(), rightResult)).build();
     }
     
     @Override
-    public Function<DataPoint, Object> visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
+    public VTLExpression visitJoinCalcBoolean(VTLParser.JoinCalcBooleanContext ctx) {
         BooleanExpressionVisitor booleanVisitor = new BooleanExpressionVisitor(referenceVisitor, dataStructure);
         Predicate<DataPoint> predicate = booleanVisitor.visit(ctx.booleanExpression());
-        return predicate::test;
+        return new VTLExpression.Builder(Boolean.class,
+                dataPoint -> VTLObject.of(predicate.test(dataPoint)))
+                .description("boolean").build();
     }
 }

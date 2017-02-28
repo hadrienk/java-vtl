@@ -145,12 +145,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
             Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);
             dataPoint.replaceAll(vtlObject -> {
                 Component component = componentMap.get(vtlObject);
-                return  new VTLObject(component) {
-                    @Override
-                    public Object get() {
-                        return vtlObject.get();
-                    }
-                };
+                return  VTLObject.of(component, vtlObject.get());
             });
             return dataPoint;
         });

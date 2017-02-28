@@ -74,15 +74,11 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
             tupleStream = tupleStream.map(dataPoints -> {
                 List<VTLObject> dataPointsNewList = new ArrayList<>(dataPoints);
-                dataPointsNewList.add(new VTLObject(getDataStructure().get("CONDITION")) {
-                    @Override
-                    public Object get() {
-                        return dataPoints.stream()
+                dataPointsNewList.add(VTLObject.of(getDataStructure().get("CONDITION"),
+                        dataPoints.stream()
                                 .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
                                 .map(VTLObject::get)
-                                .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b));
-                    }
-                });
+                                .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b))));
                 dataPointsNewList.add(getErrorCodeAsDataPoint());
                 if (errorLevel != null) {
                     dataPointsNewList.add(getErrorLevelAsDataPoint());

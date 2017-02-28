@@ -5,13 +5,13 @@ import com.google.common.collect.ImmutableSet;
 import me.yanaga.guava.stream.MoreCollectors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.CrossJoinOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import no.ssb.vtl.script.operations.join.OuterJoinOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 import org.antlr.v4.runtime.Token;
 
 import javax.script.Bindings;
@@ -19,12 +19,12 @@ import javax.script.ScriptContext;
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Visitor that handle the join definition
  */
-public class JoinDefinitionVisitor extends VTLBaseVisitor<AbstractJoinOperation> {
+public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJoinOperation> {
 
     private final ReferenceVisitor referenceVisitor;
 

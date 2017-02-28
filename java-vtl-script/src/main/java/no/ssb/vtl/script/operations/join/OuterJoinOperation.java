@@ -60,14 +60,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                 for (VTLObject point : right) {
                     if (identifiers.contains(point.getComponent())) {
                         Component leftComponent = idsIterator.next().getComponent();
-                        rightIds.add(new VTLObject(leftComponent) {
-                            Object value = point.get();
-
-                            @Override
-                            public Object get() {
-                                return value;
-                            }
-                        });
+                        rightIds.add(VTLObject.of(leftComponent, point.get()));
                     }
                 }
                 merged = new JoinDataPoint(rightIds);
@@ -114,12 +107,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     private VTLObject createNull(final VTLObject point) {
-        return new VTLObject(point.getComponent()) {
-            @Override
-            public Object get() {
-                return null;
-            }
-        };
+        return VTLObject.of(point.getComponent(), null);
     }
 
     @Override

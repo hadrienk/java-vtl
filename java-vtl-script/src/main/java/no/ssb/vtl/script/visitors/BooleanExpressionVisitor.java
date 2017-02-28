@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -60,13 +59,12 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
         if (isComp(left) && !isComp(right)) {
             return dataPoint -> {
                 VTLObject leftValue = getValue((Component) left, dataPoint);
-                
-                return booleanOperation.test(leftValue, getVTLObject(right));
+                return booleanOperation.test(leftValue, VTLObject.of(right));
             };
         } else if (!isComp(left) && isComp(right)){
             return dataPoint -> {
                 VTLObject rightValue = getValue((Component) right, dataPoint);
-                return booleanOperation.test(getVTLObject(left), rightValue);
+                return booleanOperation.test(VTLObject.of(left), rightValue);
             };
         } else if (isComp(left) && isComp(right)) {
             return dataPoint -> {
@@ -75,7 +73,7 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
                 return booleanOperation.test(leftValue, rightValue);
             };
         } else {
-            return tuple -> booleanOperation.test(getVTLObject(left), getVTLObject(right));
+            return tuple -> booleanOperation.test(VTLObject.of(left), VTLObject.of(right));
         }
     }
     
@@ -104,26 +102,7 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
     
     private VTLObject getValue(Component component, DataPoint dataPoint) {
         Map<Component, VTLObject> componentVTLObjectMap = dataStructure.asMap(dataPoint);
-        Optional<VTLObject> vtlObjectOptional = Optional.ofNullable(componentVTLObjectMap.get(component));
-        if (vtlObjectOptional.isPresent() && vtlObjectOptional.get().get() != null) {
-            return vtlObjectOptional.get();
-        } else {
-            return null;
-        }
-    }
-    
-    //TODO: Make ParamVisitor return VTLObject?
-    private VTLObject getVTLObject(Object o) {
-        if (o == null) {
-            return null;
-        }else {
-            return new VTLObject() {
-                @Override
-                public Object get() {
-                    return o;
-                }
-            };
-        }
+        return componentVTLObjectMap.get(component);
     }
     
     private boolean isComp(Object o) {

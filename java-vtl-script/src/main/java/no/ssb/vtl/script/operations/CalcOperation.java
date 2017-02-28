@@ -5,21 +5,22 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression;
 
+import java.lang.String;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 public class CalcOperation extends AbstractUnaryDatasetOperation {
     
-    private Function<DataPoint, Object> componentExpression;
+    private VTLExpression componentExpression;
     private final String variableName;
     
-    public CalcOperation(Dataset dataset, Function<DataPoint, Object> componentExpression, String identifier) {
+    public CalcOperation(Dataset dataset, VTLExpression componentExpression, String identifier) {
         super(checkNotNull(dataset, "the dataset was null"));
         this.componentExpression = checkNotNull(componentExpression, "the function was null");
         
@@ -44,7 +45,7 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     @Override
     protected DataStructure computeDataStructure() {
         Component.Role role = Component.Role.MEASURE;
-        Class<?> type = Number.class;
+        Class<?> type = componentExpression.getType(); //Number.class; //TODO
     
         DataStructure.Builder structureCopy = DataStructure.copyOf(getChild().getDataStructure());
         structureCopy.put(variableName, role, type);

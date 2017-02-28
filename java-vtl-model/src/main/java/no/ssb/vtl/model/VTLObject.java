@@ -4,6 +4,7 @@ import com.google.common.base.MoreObjects;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.*;
@@ -15,15 +16,44 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
 
     private final Component componentReference;
     
-    public VTLObject() {
+    protected VTLObject() {
         componentReference = null; //TODO: Remove any reference to component
     }
     
     /**
      * @deprecated Use {@link DataStructure#wrap(String, Object)} instead
      */
-    public VTLObject(Component component) {
+    private VTLObject(Component component) {
         this.componentReference = checkNotNull(component);
+    }
+    
+    @Deprecated
+    public static VTLObject of(Component component, Object o) {
+        if (o instanceof VTLObject) {
+            return (VTLObject) o;
+        }
+    
+        return new VTLObject<Object>(component){
+        
+            @Override
+            public Object get() {
+                return o;
+            }
+        };
+    }
+    
+    public static VTLObject of(Object o) {
+        if (o instanceof VTLObject) {
+            return (VTLObject) o;
+        }
+        
+        return new VTLObject<Object>(){
+    
+            @Override
+            public Object get() {
+                return o;
+            }
+        };
     }
 
     /**
@@ -47,7 +77,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
      * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
      */
     public Class<?> getType() {
-        return getComponent().getType();
+        return getComponent() == null ? null : getComponent().getType();
     }
     
     /**
@@ -57,7 +87,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
      * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
      */
     public Component.Role getRole() {
-        return getComponent().getRole();
+        return getComponent() == null ? null : getComponent().getRole();
     }
     
     /**
@@ -67,7 +97,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
      * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
      */
     public String getName() {
-        return getComponent().getName();
+        return getComponent() == null ? null : getComponent().getName();
     }
     
     /**
@@ -121,7 +151,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
 
         return MoreObjects.toStringHelper(super.toString())
         //return MoreObjects.toStringHelper(this)
-                .addValue(getType().getSimpleName())
+                .addValue(Optional.ofNullable(getType()).map(Class::getSimpleName))
                 .addValue(getRole())
                 .addValue(getName())
                 .toString().concat(" = ").concat(value);

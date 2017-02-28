@@ -5,11 +5,11 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.CalcOperation;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
@@ -21,7 +21,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.*;
 
@@ -104,7 +103,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     @Override
     public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
-        Function<DataPoint, Object> componentExpression = visitor.visit(ctx);
+        VTLExpression componentExpression = visitor.visit(ctx);
         return new CalcOperation(workingDataset, componentExpression, ctx.identifier().getText());
     }
 

@@ -21,6 +21,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("PointlessArithmeticExpression")
 public class JoinCalcClauseVisitorTest {
 
     @Test
@@ -31,11 +32,11 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
-        assertThat(result.apply(null)).isEqualTo(1 + 2 + 3 + 4 + 5 - 6 - 7 - 8 - 9);
+        assertThat(result.apply(null).get()).isEqualTo(1 + 2 + 3 + 4 + 5 - 6 - 7 - 8 - 9);
 
     }
 
@@ -47,11 +48,11 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
-        assertThat(result.apply(null)).isEqualTo(1 + 2 + (3 + 4 + 5 - 6 - 7) - 8 - 9);
+        assertThat(result.apply(null).get()).isEqualTo(1 + 2 + (3 + 4 + 5 - 6 - 7) - 8 - 9);
 
     }
 
@@ -63,11 +64,12 @@ public class JoinCalcClauseVisitorTest {
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
-
-        assertThat(result.apply(null)).isEqualTo(1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9);
+        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+    
+        //noinspection PointlessArithmeticExpression
+        assertThat(result.apply(null).get()).isEqualTo(1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9);
 
     }
 
@@ -99,10 +101,10 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope), ds);
 
-        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
         // TODO: Set variables.
-        assertThat(result.apply(dataPoint)).isEqualTo(1 * 2 + 20 * (15 - 10) / 5 - 10);
+        assertThat(result.apply(dataPoint).get()).isEqualTo(1 * 2 + 20 * (15 - 10) / 5 - 10);
 
     }
 
@@ -116,11 +118,11 @@ public class JoinCalcClauseVisitorTest {
 
         // Setup fake map.
 
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(null);
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
-        assertThat(result.apply(null)).isEqualTo(1 * 2 * (3 * 4 * 5 / 6 / 7) / 8 / 9);
+        assertThat(result.apply(null).get()).isEqualTo(1 * 2 * (3 * 4 * 5 / 6 / 7) / 8 / 9);
 
     }
 
@@ -131,17 +133,17 @@ public class JoinCalcClauseVisitorTest {
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(Collections.emptyMap()));
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(Collections.emptyMap()), null);
 
         assertThatThrownBy(() -> {
             // TODO: This should happen during execution (when data is computed).
-            Function<DataPoint, Object> result = visitor.visit(parser.joinCalcExpression());
+            Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
             result.apply(new DataPoint.AbstractDataPoint() {
                 @Override
                 protected List<VTLObject> delegate() {
                     return Collections.emptyList();
                 }
-            });
+            }).get();
         }).hasMessageContaining("variable")
                 .hasMessageContaining("notFoundVariable");
 

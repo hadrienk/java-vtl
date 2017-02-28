@@ -235,12 +235,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         );
 
         Component component = get(name);
-        return new VTLObject(component) {
-            @Override
-            public Object get() {
-                return converter().apply(value, component.getType());
-            }
-        };
+        return VTLObject.of(component, converter().apply(value, component.getType()));
     }
 
     /**
