@@ -69,6 +69,9 @@ public class SsbKlassApiConnector implements Connector {
             DataStructure.builder()
                     .put(FIELD_CODE, Component.Role.IDENTIFIER, String.class)
                     .put(FIELD_VALID_FROM, Component.Role.IDENTIFIER, Instant.class)
+                    //Note: validTo can contain nulls and VTL specification states that ICs cannot contain null values (VTL 1.1, user manual, line 2283).
+                    //Nevertheless we set validTo to be an Identifier as we're not sure at this point what implications we
+                    //could come upon.
                     .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
                     .put(FIELD_NAME, Component.Role.MEASURE, String.class)
                     .build();
