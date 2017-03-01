@@ -283,20 +283,10 @@ public class OuterJoinOperationTest extends RandomizedTest {
     }
 
     private DataPoint tuple(VTLObject... components) {
-        return new DataPoint.AbstractDataPoint() {
-            @Override
-            protected List<VTLObject> delegate() {
-                return asList(components);
-            }
-        };
+        return DataPoint.create(asList(components));
     }
 
     private DataPoint tuple(List<VTLObject> components) {
-        return new DataPoint.AbstractDataPoint() {
-            @Override
-            protected List<VTLObject> delegate() {
-                return components;
-            }
-        };
+        return DataPoint.create(components);
     }
 }

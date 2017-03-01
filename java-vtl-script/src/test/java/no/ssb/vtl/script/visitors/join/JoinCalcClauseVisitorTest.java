@@ -3,8 +3,9 @@ package no.ssb.vtl.script.visitors.join;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
@@ -14,12 +15,10 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 @SuppressWarnings("PointlessArithmeticExpression")
 public class JoinCalcClauseVisitorTest {
@@ -67,7 +66,7 @@ public class JoinCalcClauseVisitorTest {
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
         Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
-    
+
         //noinspection PointlessArithmeticExpression
         assertThat(result.apply(null).get()).isEqualTo(1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9);
 
@@ -137,13 +136,8 @@ public class JoinCalcClauseVisitorTest {
 
         assertThatThrownBy(() -> {
             // TODO: This should happen during execution (when data is computed).
-            Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
-            result.apply(new DataPoint.AbstractDataPoint() {
-                @Override
-                protected List<VTLObject> delegate() {
-                    return Collections.emptyList();
-                }
-            }).get();
+            VTLExpression result = visitor.visit(parser.joinCalcExpression());
+            result.apply(DataPoint.create(Collections.emptyList()));
         }).hasMessageContaining("variable")
                 .hasMessageContaining("notFoundVariable");
 

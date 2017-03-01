@@ -5,25 +5,29 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.*;
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class UnfoldOperationTest {
 
     private static DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
-        Map<String, Object> map = Maps.newHashMap();
+        Map<String, Object> map = Maps.newLinkedHashMap();
         Iterator<Object> iterator = Lists.newArrayList(values).iterator();
         for (String name : structure.keySet()) {
             map.put(name, iterator.next());
@@ -122,6 +126,16 @@ public class UnfoldOperationTest {
 
         Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
         Dataset dataset = mock(Dataset.class);
+
+// works only with last version of mockito.
+//        , withSettings()
+//                .defaultAnswer(invocation -> {
+//                    if (invocation.getMethod().isDefault())
+//                        return invocation.callRealMethod();
+//                    else
+//                        return RETURNS_DEFAULTS.answer(invocation);
+//                }));
+
         DataStructure structure = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,

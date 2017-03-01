@@ -1,29 +1,39 @@
 package no.ssb.vtl.model;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ForwardingList;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
-public interface DataPoint extends List<VTLObject> {
+public class DataPoint extends ArrayList<VTLObject> {
 
-    static DataPoint create(List<VTLObject> components) {
-        return new AbstractDataPoint() {
-            @Override
-            protected List<VTLObject> delegate() {
-                return components;
-            }
-        };
+    ArrayList<VTLObject> delegate;
+
+    protected DataPoint(int initialCapacity) {
+        super(initialCapacity);
     }
-    
-    abstract class AbstractDataPoint extends ForwardingList<VTLObject> implements DataPoint {
 
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(DataPoint.class)
-                    .add("values", delegate())
-                    .toString();
-        }
+    protected DataPoint() {
+    }
 
+    protected DataPoint(Collection<? extends VTLObject> c) {
+        super(c);
+    }
+
+    public static DataPoint create(int initialCapacity) {
+        return new DataPoint(Collections.nCopies(initialCapacity, VTLObject.NULL));
+    }
+
+    public static DataPoint create(List<VTLObject> components) {
+        return new DataPoint(components);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(DataPoint.class)
+                .add("values", this.iterator())
+                .toString();
     }
 }

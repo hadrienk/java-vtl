@@ -2,20 +2,18 @@ package no.ssb.vtl.script.operations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static no.ssb.vtl.model.Component.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class UnionOperationTest {
 
@@ -328,11 +326,6 @@ public class UnionOperationTest {
     }
 
     private DataPoint tuple(VTLObject... components) {
-        return new DataPoint.AbstractDataPoint() {
-            @Override
-            protected List<VTLObject> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+        return DataPoint.create(Arrays.asList(components));
     }
 }

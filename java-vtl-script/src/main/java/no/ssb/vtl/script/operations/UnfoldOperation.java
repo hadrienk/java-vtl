@@ -2,9 +2,13 @@ package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Maps;
-import no.ssb.vtl.model.*;
+import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -12,8 +16,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Maps.*;
 
 /**
  * Unfold clause.

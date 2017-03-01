@@ -27,12 +27,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.*;
@@ -222,11 +225,15 @@ public class DataStructure extends ForwardingMap<String, Component> {
 
     /**
      * Creates a new {@link Component} for the given column and value.
+     * <p>
+     * This method is deprecated, the VTLObject will loose its reference to Component. That was the only
+     * reason to have a wrap method.
      *
      * @param name  the name of the column.
      * @param value the value of the resulting component.
      * @return a component
      */
+    @Deprecated
     public VTLObject wrap(String name, Object value) {
         checkArgument(
                 containsKey(name),
@@ -254,6 +261,11 @@ public class DataStructure extends ForwardingMap<String, Component> {
             components.add(wrap(entry.getKey(), entry.getValue()));
 
         return DataPoint.create(components);
+
+    }
+
+    public DataPoint wrap() {
+        return DataPoint.create(this.size());
 
     }
 

@@ -507,11 +507,6 @@ public class VTLScriptEngineTest {
     }
 
     private DataPoint tuple(VTLObject... components) {
-        return new DataPoint.AbstractDataPoint() {
-            @Override
-            protected List<VTLObject> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+        return DataPoint.create(Arrays.asList(components));
     }
 }

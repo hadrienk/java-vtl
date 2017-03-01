@@ -261,18 +261,12 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     /**
      * Holds the "working dataset" dataPoint.
      */
-    static final class JoinDataPoint extends DataPoint.AbstractDataPoint implements RandomAccess {
-
-        private final List<VTLObject> delegate = Lists.newArrayList();
+    static final class JoinDataPoint extends DataPoint implements RandomAccess {
 
         public JoinDataPoint(List<VTLObject> ids) {
-            this.delegate.addAll(ids);
+            super(ids);
         }
 
-        @Override
-        protected List<VTLObject> delegate() {
-            return delegate;
-        }
 
     }
 
