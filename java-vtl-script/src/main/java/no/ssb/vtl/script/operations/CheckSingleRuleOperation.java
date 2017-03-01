@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -8,13 +9,10 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -22,21 +20,15 @@ import static com.google.common.base.Preconditions.*;
 
 public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
-    public enum RowsToReturn {
-        NOT_VALID,
-        VALID,
-        ALL
-    }
-
-    public enum ComponentsToReturn {
-        MEASURES,
-        CONDITION
-    }
+    public static final String ERROR_CODE_LABEL = "errorcode";
+    public static final String ERROR_LEVEL_LABEL = "errorlevel";
+    public static final String CONDITION_LABEL = "condition";
 
     private final RowsToReturn rowsToReturn;
     private final ComponentsToReturn componentsToReturn;
     private final String errorCode;
     private final Integer errorLevel;
+    private final Set<Component> conditions = Sets.newHashSet();
 
     private CheckSingleRuleOperation(Builder builder) {
         super(checkNotNull(builder.dataset, "dataset was null"));
@@ -51,6 +43,15 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         checkDataStructure(getChild());
     }
 
+    private static boolean isConditionName(String name) {
+        return CONDITION_LABEL.equals(name.toLowerCase()) || name.toLowerCase().endsWith("_condition");
+    }
+
+    @Deprecated
+    private static Predicate<VTLObject> isConditionComponent() {
+        return dataPoint -> dataPoint.getName().equals("CONDITION");
+    }
+
     private void checkDataStructure(Dataset dataset) {
         int noIdentifiers = Maps.filterValues(dataset.getDataStructure().getRoles(), role -> role == Component.Role.IDENTIFIER)
                 .size();
@@ -59,47 +60,69 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<? extends DataPoint> getData() {
-        Stream<DataPoint> tupleStream = getChild().get();
+        Dataset childDataset = getChild();
+        DataStructure structure = getDataStructure();
+        DataStructure previousStructure = childDataset.getDataStructure();
+        Component conditionComponent = getConditionComponent(structure);
 
-        //first calculate the new data points...
-        if (componentsToReturn == ComponentsToReturn.MEASURES) {
-            tupleStream = tupleStream.map(dataPoints -> {
-                List<VTLObject> dataPointsNewList = new ArrayList<>(dataPoints);
-                dataPointsNewList.add(getErrorCodeAsDataPoint());
-                if (errorLevel != null) {
-                    dataPointsNewList.add(getErrorCodeAsDataPoint());
+        return childDataset.get().map(dataPoint -> {
+
+            DataPoint resultDataPoint = structure.wrap();
+            Map<Component, VTLObject> originalMap = previousStructure.asMap(dataPoint);
+            Map<Component, VTLObject> resultMap = structure.asMap(resultDataPoint);
+
+            for (Component component : resultMap.keySet()) {
+                if (originalMap.containsKey(component))
+                    resultMap.put(component, originalMap.get(component));
+            }
+
+            // Optimized and.
+            // TODO: Handle nulls somewhere else (VTLBoolean?)
+            Boolean combinedCondition = true;
+            for (Component condition : conditions) {
+                VTLObject value = originalMap.get(condition);
+                if (value.get() == null) {
+                    combinedCondition = null;
+                    break;
+                } else {
+                    if (!(combinedCondition && (Boolean) value.get())) {
+                        combinedCondition = false;
+                        break;
+                    }
                 }
-                return DataPoint.create(dataPointsNewList);
-            });
-        } else if (componentsToReturn == ComponentsToReturn.CONDITION) {
-            tupleStream = tupleStream.map(dataPoints -> {
-                List<VTLObject> dataPointsNewList = new ArrayList<>(dataPoints);
-                dataPointsNewList.add(VTLObject.of(getDataStructure().get("CONDITION"),
-                        dataPoints.stream()
-                                .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
-                                .map(VTLObject::get)
-                                .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b))));
-                dataPointsNewList.add(getErrorCodeAsDataPoint());
-                if (errorLevel != null) {
-                    dataPointsNewList.add(getErrorLevelAsDataPoint());
-                }
-                return DataPoint.create(dataPointsNewList);
-            });
-        }
+            }
 
-        //... then filter rows
-        if (rowsToReturn == RowsToReturn.NOT_VALID) {
-                        tupleStream = tupleStream.filter(dataPoint ->
-                    dataPoint.stream().filter(isConditionComponent())
-                            .anyMatch(vtlObject -> vtlObject.get().equals(false)));
-        } else if (rowsToReturn == RowsToReturn.VALID) {
-            tupleStream = tupleStream.filter(dataPoint ->
-                    //TODO should an exception be thrown if CONDITION not found?
-                    dataPoint.stream().filter(isConditionComponent())
-                            .anyMatch(vtlObject -> vtlObject.get().equals(true)));
-        } //else if ("all".equals(rowsToReturn)) //all is not filtered
+            //... then filter rows
+            if (rowsToReturn != RowsToReturn.ALL) {
+                if (rowsToReturn == RowsToReturn.VALID && !combinedCondition)
+                    return null;
+                if (rowsToReturn == RowsToReturn.NOT_VALID && combinedCondition)
+                    return null;
+            }
 
-        return tupleStream;
+            if (combinedCondition) {
+                resultMap.computeIfPresent(getErrorCodeComponent(), (k, v) -> VTLObject.of(errorCode));
+                resultMap.computeIfPresent(getErrorLevelComponent(), (k, v) -> VTLObject.of(errorLevel));
+            }
+
+            Boolean finalPrevious = combinedCondition;
+            resultMap.computeIfPresent(conditionComponent, (k, v) -> VTLObject.of(finalPrevious));
+
+
+            return resultDataPoint;
+        }).filter(Objects::nonNull);
+    }
+
+    private Component getConditionComponent(DataStructure structure) {
+        return structure.get(CONDITION_LABEL);
+    }
+
+    private Component getErrorLevelComponent() {
+        return getDataStructure().get(ERROR_LEVEL_LABEL);
+    }
+
+    private Component getErrorCodeComponent() {
+        return getDataStructure().get(ERROR_CODE_LABEL);
     }
 
     @Override
@@ -116,23 +139,44 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     @Override
     protected DataStructure computeDataStructure() {
         Dataset dataset = getChild();
-        Map<String, Component.Role> newRoles = new HashMap<>(dataset.getDataStructure().getRoles());
-        Map<String, Class<?>> newTypes = new HashMap<>(dataset.getDataStructure().getTypes());
-        Set<String> oldNames = dataset.getDataStructure().keySet();
+        DataStructure structure = dataset.getDataStructure();
 
-        if (componentsToReturn == ComponentsToReturn.CONDITION) {
-            removeAllComponentsButIdentifiersAndBooleanMeasures(newRoles, newTypes, oldNames);
-            addComponent("CONDITION", newRoles, newTypes, Component.Role.MEASURE, Boolean.class);
+        DataStructure.Builder builder = DataStructure.builder();
+        for (Map.Entry<String, Component> entry : structure.entrySet()) {
+            Component component = entry.getValue();
+            if (component.isIdentifier()) {
+                builder.put(entry);
+            } else if (component.isMeasure()) {
+                if (componentsToReturn == ComponentsToReturn.CONDITION) {
+                    if (isConditionName(entry.getKey()) && component.getType().isAssignableFrom(Boolean.class)) {
+                        checkArgument(
+                                conditions.add(component),
+                                "duplicate condition %s in %s",
+                                entry, structure
+                        );
+                    }
+                } else if (componentsToReturn == ComponentsToReturn.MEASURES) {
+                    if (!isConditionName(entry.getKey())) {
+                        builder.put(entry);
+                    }
+                }
+            } else {
+                builder.put(entry);
+            }
         }
 
-        addComponent("errorcode", newRoles, newTypes, Component.Role.ATTRIBUTE, String.class);
+        checkArgument(!conditions.isEmpty(), "the dataset %s was not a boolean dataset", dataset);
+        if (componentsToReturn == ComponentsToReturn.CONDITION) {
+            builder.put(CONDITION_LABEL, Component.Role.MEASURE, Boolean.class);
+        }
+
+        builder.put(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE, String.class);
 
         if (errorLevel != null) {
-            addComponent("errorlevel", newRoles, newTypes, Component.Role.ATTRIBUTE, Integer.class);
+            builder.put(ERROR_LEVEL_LABEL, Component.Role.ATTRIBUTE, Integer.class);
         }
 
-        BiFunction<Object, Class<?>, ?> converter = dataset.getDataStructure().converter();
-        return DataStructure.of(converter, newTypes, newRoles);
+        return builder.build();
     }
 
     private void addComponent(String componentName, Map<String, Component.Role> newRoles,
@@ -158,16 +202,16 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         return getData().map(o -> o);
     }
 
-    private VTLObject getErrorLevelAsDataPoint() {
-        return getDataStructure().wrap("errorlevel", errorLevel);
+
+    public enum RowsToReturn {
+        NOT_VALID,
+        VALID,
+        ALL
     }
 
-    private VTLObject getErrorCodeAsDataPoint() {
-        return getDataStructure().wrap("errorcode", errorCode);
-    }
-
-    private static Predicate<VTLObject> isConditionComponent() {
-        return dataPoint -> dataPoint.getName().equals("CONDITION");
+    public enum ComponentsToReturn {
+        MEASURES,
+        CONDITION
     }
 
     public static class Builder {

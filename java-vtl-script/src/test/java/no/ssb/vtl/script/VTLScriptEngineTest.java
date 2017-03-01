@@ -360,13 +360,14 @@ public class VTLScriptEngineTest {
     }
 
     //TODO temporary
-//    @Test
+    @Test
     public void testCheckSingleRule() throws Exception {
 
         when(dataset.getDataStructure()).thenReturn(
                 DataStructure.of((s, o) -> null,
                         "kommune_nr", Role.IDENTIFIER, String.class,
                         "code", Role.IDENTIFIER, String.class, //from KLASS
+                        "attribute", Role.ATTRIBUTE, String.class,
                         "CONDITION", Role.MEASURE, Boolean.class
                 )
         );
@@ -387,7 +388,7 @@ public class VTLScriptEngineTest {
     }
 
     //TODO temporary
-//    @Test
+    @Test
     public void testCheckSingleRuleWithJoin() throws Exception {
 
         Dataset ds1 = mock(Dataset.class);
