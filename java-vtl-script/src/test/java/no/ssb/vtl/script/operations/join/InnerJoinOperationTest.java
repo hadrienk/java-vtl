@@ -40,7 +40,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         return new Condition<VTLObject>(new Predicate<VTLObject>() {
             @Override
             public boolean test(VTLObject value) {
-                return name.equals(value.getName()) &&
+                return name.equals(value.getComponent().getName()) &&
                         value.equals(value.get());
             }
         }, "data point with name %s and value %s", name, value);
@@ -121,7 +121,10 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         assertThat(result.workDataset().get())
                 .flatExtracting(tuple -> tuple)
-                .flatExtracting(dataPoint -> Arrays.asList(dataPoint.getRole(), dataPoint.getComponent(), dataPoint.get()))
+                .flatExtracting(dataPoint -> {
+                    Component component = dataPoint.getComponent();
+                    return Arrays.asList(component.getRole(), component, dataPoint.get());
+                })
 
                 .startsWith(
                         IDENTIFIER, structure1.get("time"), Year.of(2010),

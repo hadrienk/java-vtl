@@ -107,7 +107,7 @@ public class ExecutorController {
         Streamable<Map<String, Object>> streamable = ((Dataset) dataset).map(dataPoints -> {
             Map<String, Object> map = Maps.newHashMap();
             for (VTLObject dataPoint : dataPoints) {
-                map.put(dataPoint.getName(), dataPoint.get());
+                map.put(dataPoint.getComponent().getName(), dataPoint.get());
             }
             return map;
         });

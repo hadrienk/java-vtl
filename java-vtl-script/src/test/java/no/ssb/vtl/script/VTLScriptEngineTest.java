@@ -190,7 +190,7 @@ public class VTLScriptEngineTest {
 
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
-                .extracting(VTLObject::getName)
+                .extracting((vtlObject) -> vtlObject.getComponent().getName())
                 .containsExactly(
                         "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
                 );

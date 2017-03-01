@@ -314,7 +314,7 @@ public class CheckSingleRuleOperationTest {
 
         for (DataPoint dataPoints : dataPoint) {
             List<VTLObject> dpListOfOne = dataPoints.stream()
-                    .filter(dp -> dp.getName().equals(componentName))
+                    .filter(dp -> dp.getComponent().getName().equals(componentName))
                     .collect(toList());
             if (dpListOfOne.size() == 1) {
                 dpsFound.add(dpListOfOne.get(0));

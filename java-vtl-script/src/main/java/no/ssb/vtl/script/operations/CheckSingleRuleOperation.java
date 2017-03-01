@@ -76,7 +76,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
                 List<VTLObject> dataPointsNewList = new ArrayList<>(dataPoints);
                 dataPointsNewList.add(VTLObject.of(getDataStructure().get("CONDITION"),
                         dataPoints.stream()
-                                .filter(dp -> dp.getRole() == Component.Role.MEASURE && dp.getType().equals(Boolean.class))
+                                .filter(vtlObject -> vtlObject.getComponent().getRole() == Component.Role.MEASURE && Boolean.class.isInstance(vtlObject.get()))
                                 .map(VTLObject::get)
                                 .reduce(true, (a, b) -> Boolean.logicalAnd((Boolean)a, (Boolean)b))));
                 dataPointsNewList.add(getErrorCodeAsDataPoint());
@@ -167,7 +167,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     }
 
     private static Predicate<VTLObject> isConditionComponent() {
-        return dataPoint -> dataPoint.getName().equals("CONDITION");
+        return dataPoint -> dataPoint.getComponent().getName().equals("CONDITION");
     }
 
     public static class Builder {

@@ -1,10 +1,7 @@
 package no.ssb.vtl.model;
 
-import com.google.common.base.MoreObjects;
-
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.*;
@@ -13,18 +10,6 @@ import static com.google.common.base.Preconditions.*;
  * A data point is a simple reference holder for values.
  */
 public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
-
-    public static final VTLObject NULL = new VTLObject() {
-        @Override
-        public Object get() {
-            return null;
-        }
-
-        @Override
-        public String toString() {
-            return "[NULL]";
-        }
-    };
 
     private final Component componentReference;
     
@@ -67,6 +52,18 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
             }
         };
     }
+    
+    public static final VTLObject NULL = new VTLObject() {
+        @Override
+        public Object get() {
+            return null;
+        }
+        
+        @Override
+        public String toString() {
+            return "[NULL]";
+        }
+    };
 
     /**
      * Returns the value of the data point.
@@ -80,36 +77,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
      */
     public Component getComponent() {
         return componentReference;
-    }
-    
-    /**
-     * Convenience method giving the type of the data point.
-     * <p>
-     * It is strictly equivalent to getComponent().getType();
-     * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
-     */
-    public Class<?> getType() {
-        return getComponent() == null ? null : getComponent().getType();
-    }
-    
-    /**
-     * Convenience method returning the {@link Component.Role} of the data point.
-     * <p>
-     * It is strictly equivalent to getComponent().getRole();
-     * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
-     */
-    public Component.Role getRole() {
-        return getComponent() == null ? null : getComponent().getRole();
-    }
-    
-    /**
-     * Convenience method returning the name of the data point.
-     * <p>
-     * It is strictly equivalent to getComponent().getName();
-     * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
-     */
-    public String getName() {
-        return getComponent() == null ? null : getComponent().getName();
     }
     
     /**
@@ -141,7 +108,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         }
         throw new IllegalArgumentException(
                 String.format("Cannot compare %s of type %s with %s of type %s", value, value.getClass(), other,
-                        other.getClass()));
+                        other==null?"<null>":other.getClass()));
     }
     
     @Override
@@ -159,14 +126,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
 
     @Override
     public String toString() {
-        String value = get() == null ? "[NULL]" : get().toString();
-
-        return MoreObjects.toStringHelper(super.toString())
-        //return MoreObjects.toStringHelper(this)
-                .addValue(Optional.ofNullable(getType()).map(Class::getSimpleName))
-                .addValue(getRole())
-                .addValue(getName())
-                .toString().concat(" = ").concat(value);
+        return get() == null ? "[NULL]" : get().toString();
     }
 
 }

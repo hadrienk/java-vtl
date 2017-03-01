@@ -1,24 +1,10 @@
 package no.ssb.vtl.model;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.function.Function;
 
-public abstract class VTLExpression extends VTLObject implements Function<DataPoint, VTLObject> {
+public abstract class VTLExpression implements Function<DataPoint, VTLObject> {
     
-    /**
-     * Returns the value of the data point.
-     */
-    @Override
-    public Object get() {
-        throw new NotImplementedException();
-    }
-    
-    @Override
-    public Class<?> getType() {
-        return super.getType();
-    }
-    
+    public abstract Class<?> getType();
     
     @Override
     public String toString() {
