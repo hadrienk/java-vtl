@@ -40,57 +40,54 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<? extends DataPoint> getData() {
-        // TODO: Handle sorting. Need to request sorting by dimension happens after all others.
         // TODO: Maybe put a filter before.
         // TODO: Expose more powerful methods in Datapoint.
+
         DataStructure dataStructure = getDataStructure();
-        return StreamUtils.aggregate(getChild().getData(), (left, right) -> {
+        DataStructure childStructure = getChild().getDataStructure();
+
+        Order order = Order.create(
+                filterValues(dataStructure, Component::isIdentifier),
+                childStructure
+        );
+        Stream<? extends DataPoint> stream = getChild().getData(order).orElseThrow(RuntimeException::new);
+
+        return StreamUtils.aggregate(stream, (left, right) -> {
             // Checks if the previous ids (except the one with unfold on) where different.
-            Iterator<VTLObject> leftIt = left.iterator();
-            Iterator<VTLObject> rightIt = right.iterator();
-            while (leftIt.hasNext() && rightIt.hasNext()) {
-                VTLObject leftValue = leftIt.next();
-                VTLObject rightValue = rightIt.next();
-                if (!leftValue.getRole().equals(Role.IDENTIFIER)) {
-                    continue;
-                }
-                if (dimension == leftValue.getComponent()) {
-                    continue;
-                }
-                if (!leftValue.equals(rightValue)) {
-                    return false;
-                }
-            }
-            return true;
+            return order.compare(left, right) == 0;
         }).map(dataPoints -> {
             // TODO: Naive implementation for now.
-            Map<String, Object> map = Maps.newLinkedHashMap();
-            for (DataPoint dataPoint : dataPoints) {
-                Object unfoldedValue = null;
-                String columnName = null;
-                for (VTLObject value : dataPoint) {
-                    if (dimension == value.getComponent()) {
-                        // TODO: Check type of the elements. Can we use element that are not String??
-                        if (elements.contains(value.get())) {
-                            columnName = (String) value.get();
+
+            DataPoint result = dataStructure.wrap();
+
+            Map<Component, VTLObject> foldedMap = dataStructure.asMap(result);
+
+            Iterator<? extends DataPoint> datapointIterator = dataPoints.iterator();
+            while (datapointIterator.hasNext()) {
+                Map<Component, VTLObject> dataPoint = childStructure.asMap(datapointIterator.next());
+
+                VTLObject unfoldedValue = null;
+                Component unfoldedComponent = null;
+
+                for (Component component : dataPoint.keySet()) {
+                    if (component.isIdentifier()) {
+                        if (component.equals(dimension)) {
+                            VTLObject value = dataPoint.get(component);
+                            if (elements.contains(value.get())) {
+                                unfoldedComponent = dataStructure.get(value.get());
+                            }
                             continue;
+                        } else {
+                            foldedMap.put(component, dataPoint.get(component));
                         }
                     }
-                    if (measure == value.getComponent()) {
-                        unfoldedValue = value.get();
-                        continue;
-                    }
-                    if (value.getRole().equals(Role.IDENTIFIER)) {
-                        map.put(value.getName(), value.get());
+                    if (component.equals(measure)) {
+                        unfoldedValue = dataPoint.get(component);
                     }
                 }
-                map.put(columnName, unfoldedValue);
+                foldedMap.put(unfoldedComponent, unfoldedValue);
             }
-            // TODO: >_<' ...
-            for (String element : elements) {
-                map.putIfAbsent(element, null);
-            }
-            return dataStructure.wrap(map);
+            return result;
         });
     }
 

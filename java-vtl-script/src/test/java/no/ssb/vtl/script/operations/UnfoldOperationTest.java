@@ -162,15 +162,8 @@ public class UnfoldOperationTest {
                     "id1", "id2-1", "id2-2"
             );
 
-            softly.assertThat(clause.getData()).flatExtracting(input -> input).extracting(VTLObject::getName)
-                    .contains(
-                            "id1", "id2-1", "id2-2",
-                            "id1", "id2-1", "id2-2",
-                            "id1", "id2-1", "id2-2"
-                    );
-
             softly.assertThat(clause.getData()).flatExtracting(input -> input).extracting(VTLObject::get)
-                    .contains(
+                    .containsExactly(
                             "id1-1", "measure1-1", "measure1-2",
                             "id1-2", "measure1-3", "measure1-4",
                             "id1-3", "measure1-5", null

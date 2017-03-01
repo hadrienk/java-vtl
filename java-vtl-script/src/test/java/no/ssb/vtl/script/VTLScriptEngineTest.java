@@ -281,23 +281,27 @@ public class VTLScriptEngineTest {
                         "id1", "1",
                         "id2", "one",
                         "m1", 101,
+                        "m2", 1.1,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
                         "id1", "1",
                         "id2", "two",
                         "m1", 102,
+                        "m2", 1.1,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
                         "id1", "2",
                         "id2", "one",
                         "m1", 201,
+                        "m2", 1.1,
                         "at1", "attr2"
                 ), ImmutableMap.of(
                         "id1", "2",
                         "id2", "two",
                         "m1", 202,
+                        "m2", 1.1,
                         "at1", "attr2"
                 )
         ).map(ds::wrap));
