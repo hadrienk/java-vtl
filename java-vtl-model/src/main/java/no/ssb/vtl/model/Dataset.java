@@ -227,27 +227,45 @@ public interface Dataset extends Streamable<DataPoint> {
                 )
         );
         static final Comparator<Map.Entry<String, Component>> BY_NAME = Comparator.comparing(Map.Entry::getKey);
-        private final ImmutableMap<String, Direction> delegate;
 
-        private Order(Map<String, Direction> orders) {
+        private final ImmutableMap<String, Direction> delegate;
+        private final DataStructure structure;
+
+        Order(Map<String, Direction> orders, DataStructure structure) {
             this.delegate = ImmutableMap.copyOf(orders);
+            this.structure = checkNotNull(structure);
+        }
+
+        public static Order create(Map<String, Component> orders, DataStructure dataStructure) {
+            ImmutableMap.Builder<String, Order.Direction> order = ImmutableMap.builder();
+            for (Entry<String, Component> entry : orders.entrySet()) {
+                order.put(entry.getKey(), ASC);
+            }
+            return new Order(order.build(), dataStructure);
         }
 
         /**
          * Return a default Order for the given datastructure.
          *
-         * @param structure
+         * @param orders
          * @return
          */
-        static Order getDefault(DataStructure structure) {
+        public static Order getDefault(Map<String, Component> orders, DataStructure dataStructure) {
             Set<Entry<String, Component>> sortedEntrySet = Sets.newTreeSet(BY_ROLE.thenComparing(BY_NAME));
-            sortedEntrySet.addAll(structure.entrySet());
+            sortedEntrySet.addAll(orders.entrySet());
 
             ImmutableMap.Builder<String, Order.Direction> order = ImmutableMap.builder();
             for (Entry<String, Component> entry : sortedEntrySet) {
                 order.put(entry.getKey(), ASC);
             }
-            return new Order(order.build());
+            return new Order(order.build(), dataStructure);
+        }
+
+        /**
+         * Return a default Order for the given datastructure.
+         */
+        public static Order getDefault(DataStructure structure) {
+            return getDefault(structure, structure);
         }
 
         @Override
@@ -259,11 +277,11 @@ public interface Dataset extends Streamable<DataPoint> {
         public int compare(DataPoint o1, DataPoint o2) {
             int result;
 
-            // TODO dataStructure.asMap(o1) ?
-            Map<String, Comparable> m1 = Maps.newHashMap(), m2 = Maps.newHashMap();
+            // TODO migrate to Map<Component, Direction> and remove the DataStructure dependency.
+            Map<Component, ? extends Comparable> m1 = structure.asMap(o1), m2 = structure.asMap(o2);
             for (Entry<String, Direction> order : delegate.entrySet()) {
                 String key = order.getKey();
-                result = NULLS_FIRST.compare(m1.get(key), m2.get(key));
+                result = NULLS_FIRST.compare(m1.get(structure.get(key)), m2.get(structure.get(key)));
                 if (result != 0) {
                     return order.getValue() == ASC ? result : -result;
                 }
