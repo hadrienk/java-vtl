@@ -142,7 +142,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
              */
 
         DataStructure.Builder newDataStructure = DataStructure.builder();
-        for (Map.Entry<String, Component> componentEntry : dataStructure.entrySet()) {;
+        for (Map.Entry<String, Component> componentEntry : dataStructure.entrySet()) {
             Component component = componentEntry.getValue();
             if (component != dimension && component != measure) {
                 if (component.isIdentifier()) {

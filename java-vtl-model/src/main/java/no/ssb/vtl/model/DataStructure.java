@@ -203,12 +203,66 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return this.converter;
     }
 
+    /**
+     * Return a {@link Map<Component, VTLObject>} view of the {@link DataPoint}.
+     * <p>
+     * The returned map can be used to edit the DataPoint using the component references.
+     *
+     * @param dataPoint the datapoint to wrap
+     * @return a modifiable map backed by the datatpoint and this structure.
+     */
     public Map<Component, VTLObject> asMap(DataPoint dataPoint) {
-        Map<Component, VTLObject> map = new LinkedHashMap<>();
-        for (int i = 0; i < indexListCache.size(); i++) {
-            map.put(indexListCache.get(i), dataPoint.get(i));
-        }
-        return map;
+        checkArgument(dataPoint.size() == this.size());
+        return new AbstractMap<Component, VTLObject>() {
+
+            @Override
+            public VTLObject put(Component key, VTLObject value) {
+                int index = indexListCache.indexOf(key);
+                return index < 0 ? null : dataPoint.set(index, value);
+            }
+
+            @Override
+            public VTLObject get(Object key) {
+                int index = indexListCache.indexOf(key);
+                return index < 0 ? null : dataPoint.get(index);
+            }
+
+            @Override
+            public VTLObject remove(Object key) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Set<Entry<Component, VTLObject>> entrySet() {
+                return new AbstractSet<Entry<Component, VTLObject>>() {
+                    @Override
+                    public Iterator<Entry<Component, VTLObject>> iterator() {
+                        return new Iterator<Entry<Component, VTLObject>>() {
+
+                            int index = 0;
+
+                            @Override
+                            public boolean hasNext() {
+                                return index < size();
+                            }
+
+                            @Override
+                            public Entry<Component, VTLObject> next() {
+                                return new SimpleEntry<>(
+                                        indexListCache.get(index),
+                                        dataPoint.get(index++)
+                                );
+                            }
+                        };
+                    }
+
+                    @Override
+                    public int size() {
+                        return indexListCache.size();
+                    }
+                };
+            }
+        };
     }
 
     public Map<VTLObject, Component> asInverseMap(DataPoint dataPoint) {

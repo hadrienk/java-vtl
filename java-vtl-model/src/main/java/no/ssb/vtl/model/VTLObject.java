@@ -14,6 +14,18 @@ import static com.google.common.base.Preconditions.*;
  */
 public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
 
+    public static final VTLObject NULL = new VTLObject() {
+        @Override
+        public Object get() {
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            return "[NULL]";
+        }
+    };
+
     private final Component componentReference;
     
     protected VTLObject() {
