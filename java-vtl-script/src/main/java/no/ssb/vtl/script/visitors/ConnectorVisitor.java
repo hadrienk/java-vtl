@@ -26,11 +26,10 @@ import no.ssb.vtl.connector.ConnectorException;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import org.antlr.v4.runtime.misc.NotNull;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * A visitor that handles get and puts VTL operators.
@@ -44,9 +43,9 @@ public class ConnectorVisitor extends VTLBaseVisitor<Dataset> {
     public ConnectorVisitor(List<Connector> connectors) {
         this.connectors = checkNotNull(connectors, "list of connectors was null");
     }
-
+    
     @Override
-    public Dataset visitGetExpression(@NotNull VTLParser.GetExpressionContext ctx) {
+    public Dataset visitGetFunction(VTLParser.GetFunctionContext ctx) {
         // TODO: Better way to get the content?
         String identifier = ctx.datasetId().getText();
         identifier = identifier.substring(1, identifier.length() - 1);
@@ -62,9 +61,9 @@ public class ConnectorVisitor extends VTLBaseVisitor<Dataset> {
         }
         return null;
     }
-
+    
     @Override
-    public Dataset visitPutExpression(@NotNull VTLParser.PutExpressionContext ctx) {
+    public Dataset visitPutFunction(VTLParser.PutFunctionContext ctx) {
         // TODO: Get the identifier and the dataset.
         String identifier = "identifier";
         Dataset dataset = null;
@@ -76,7 +75,7 @@ public class ConnectorVisitor extends VTLBaseVisitor<Dataset> {
                 }
                 return connector.putDataset(identifier, dataset);
             }
-            return super.visitPutExpression(ctx);
+            return super.visitPutFunction(ctx);
         } catch (ConnectorException ce) {
             Throwables.propagate(ce);
         }

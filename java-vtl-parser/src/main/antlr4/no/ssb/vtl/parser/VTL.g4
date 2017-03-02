@@ -30,22 +30,24 @@ block : '{' statement+ '}' ;
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | relationalExpression                                   #withRelational
-           | getExpression                                          #withGet
-           | putExpression                                          #withPut
+           | function                                               #withFunction
            | exprAtom                                               #withAtom
-           | checkExpression                                        #withCheck
            ;
 
+function: getFunction                                          #withGet
+        | putFunction                                          #withPut
+        | checkFunction                                        #withCheck
+        ;
 
-getExpression : 'get' '(' datasetId ')';
-putExpression : 'put(todo)';
+getFunction : 'get' '(' datasetId ')';
+putFunction : 'put(todo)';
 
 datasetId : STRING_CONSTANT ;
 
 /* Atom */
 exprAtom : variableRef;
 
-checkExpression : 'check' '(' checkParam ')';
+checkFunction : 'check' '(' checkParam ')';
 
 checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
 

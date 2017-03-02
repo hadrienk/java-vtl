@@ -75,12 +75,12 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitGetExpression(VTLParser.GetExpressionContext ctx) {
+    public Dataset visitGetFunction(VTLParser.GetFunctionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitPutExpression(VTLParser.PutExpressionContext ctx) {
+    public Dataset visitPutFunction(VTLParser.PutFunctionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
@@ -93,7 +93,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
-        return checkVisitor.visit(ctx.checkExpression());
+        return checkVisitor.visit(ctx.checkFunction());
     }
 
 }
