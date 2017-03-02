@@ -3,7 +3,7 @@ package no.ssb.vtl.model;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import no.ssb.vtl.model.Dataset.Order.Direction;
+import no.ssb.vtl.model.Order.Direction;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class DatasetTest extends RandomizedTest {
         DataStructure dataStructure = DataStructure.builder().putAll(entries).build();
 
         int datasize = RandomizedTest.randomIntBetween(10, 100);
-        ArrayList<Dataset.DataPoint> data = Lists.newArrayListWithCapacity(datasize);
+        ArrayList<DataPoint> data = Lists.newArrayListWithCapacity(datasize);
         for (int i = 0; i < datasize; i++) {
             ImmutableMap.Builder<String, Object> row = ImmutableMap.builder();
             for (Map.Entry<String, Component> column : dataStructure.entrySet()) {
@@ -65,8 +65,8 @@ public class DatasetTest extends RandomizedTest {
             );
         }
 
-        Dataset.Order order = Dataset.Order.from(entriesToSortBy.build().entrySet());
-        Optional<Stream<? extends Dataset.DataPoint>> stream = dataset.getData(order);
+        Order order = Order.from(entriesToSortBy.build().entrySet());
+        Optional<Stream<? extends DataPoint>> stream = dataset.getData(order);
 
     }
 

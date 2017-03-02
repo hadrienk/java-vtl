@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
@@ -153,7 +154,7 @@ public class UnfoldOperationTest {
                 tuple(structure, "id1-3", "id2-1", "measure1-5", "measure2-5", "attribute1-5")
         ));
 
-        when(dataset.getData(any(Dataset.Order.class))).then(invocation -> Optional.of(dataset.getData()));
+        when(dataset.getData(any(Order.class))).then(invocation -> Optional.of(dataset.getData()));
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             UnfoldOperation clause = new UnfoldOperation(dataset, structure.get("id2"), structure.get("measure1"), elements);
