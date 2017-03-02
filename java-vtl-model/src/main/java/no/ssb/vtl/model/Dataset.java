@@ -177,7 +177,7 @@ public interface Dataset extends Streamable<DataPoint> {
      */
     default Optional<Stream<? extends DataPoint>> getData(Filtering filtering) {
         DataStructure dataStructure = getDataStructure();
-        return getData(Order.getDefault(dataStructure), filtering, dataStructure.keySet());
+        return getData(Order.createDefault(dataStructure), filtering, dataStructure.keySet());
     }
 
     /**
@@ -190,7 +190,7 @@ public interface Dataset extends Streamable<DataPoint> {
      */
     default Optional<Stream<? extends DataPoint>> getData(Set<String> components) {
         DataStructure dataStructure = getDataStructure();
-        return getData(Order.getDefault(dataStructure), Filtering.ALL, dataStructure.keySet());
+        return getData(Order.createDefault(dataStructure), Filtering.ALL, dataStructure.keySet());
     }
 
     /**

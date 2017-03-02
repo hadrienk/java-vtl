@@ -1,9 +1,11 @@
 package no.ssb.vtl.model;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Order.Direction;
+import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -12,16 +14,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.*;
 import static no.ssb.vtl.model.Component.Role.*;
 
 public class DatasetTest extends RandomizedTest {
 
     private final DataStructure structure = DataStructure.builder()
-            .put("id1", IDENTIFIER, String.class)
-            .put("id2", IDENTIFIER, String.class)
-            .put("id3", IDENTIFIER, String.class)
+            .put("id1", IDENTIFIER, Integer.class)
+            .put("id2", IDENTIFIER, Integer.class)
+            .put("id3", IDENTIFIER, Integer.class)
             .put("me1", MEASURE, String.class)
             .put("me2", MEASURE, String.class)
             .put("me3", MEASURE, String.class)
@@ -31,44 +35,78 @@ public class DatasetTest extends RandomizedTest {
             .build();
 
     @Test
+    @Repeat(iterations = 10)
     public void testDefaultSorting() throws Exception {
         // Checks that default implementation sorts the streams.
 
-        List<Map.Entry<String, Component>> entries = Lists.newArrayList(structure.entrySet());
-        Collections.shuffle(entries, new Random(RandomizedTest.randomLong()));
-        DataStructure dataStructure = DataStructure.builder().putAll(entries).build();
+        DataStructure dataStructure = randomDataStructure();
+        TestableDataset dataset = randomDataset(dataStructure, randomIntBetween(10, 100));
+        Order.Builder order = randomOrder(dataStructure);
 
-        int datasize = RandomizedTest.randomIntBetween(10, 100);
-        ArrayList<DataPoint> data = Lists.newArrayListWithCapacity(datasize);
-        for (int i = 0; i < datasize; i++) {
-            ImmutableMap.Builder<String, Object> row = ImmutableMap.builder();
-            for (Map.Entry<String, Component> column : dataStructure.entrySet()) {
-                row.put(column.getKey(), RandomizedTest.randomAsciiOfLengthBetween(0, 50));
-            }
-            data.add(dataStructure.wrap(row.build()));
+        try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
+
+            Optional<Stream<? extends DataPoint>> sortedStream = dataset.getData(order.build());
+            softly.assertThat(sortedStream).as("Sorted stream").isPresent();
+
+            List<DataPoint> sorted = sortedStream.get().collect(toList());
+            softly.assertThat(sorted).as("Sorted stream").isSortedAccordingTo(order.build());
+
+            List<DataPoint> unsorted = dataset.getData().collect(toList());
+            softly.assertThat(unsorted).as("Unsorted stream")
+                    .containsAll(sorted);
         }
+    }
 
-        Collections.shuffle(data, new Random(RandomizedTest.randomLong()));
+    private Order.Builder randomOrder(DataStructure structure) {
+        int sortedColumns = RandomizedTest.randomIntBetween(1, structure.size());
+        ArrayList<Map.Entry<String, Component>> structureEntries = Lists.newArrayList(structure.entrySet());
 
-        TestableDataset dataset = new TestableDataset(data, dataStructure);
-
-
-        int sortedColumns = RandomizedTest.randomIntBetween(1, dataStructure.size());
-        ArrayList<Map.Entry<String, Component>> structureEntries = Lists.newArrayList(dataStructure.entrySet());
-        ImmutableMap.Builder<String, Direction> entriesToSortBy = ImmutableMap.builder();
+        Order.Builder order = Order.create(structure);
         for (int i = 0; i < sortedColumns; i++) {
             Map.Entry<String, Component> entry = RandomizedTest.randomFrom(structureEntries);
             structureEntries.remove(entry);
-            entriesToSortBy.put(
+            order.put(
                     entry.getKey(),
                     Direction.ASC
             );
         }
-
-        Order order = Order.from(entriesToSortBy.build().entrySet());
-        Optional<Stream<? extends DataPoint>> stream = dataset.getData(order);
-
+        return order;
     }
+
+    private TestableDataset randomDataset(DataStructure structure, int size) {
+        final Integer[] idSize = {size};
+        Map<Component, Integer> indexesIds = structure.values().stream()
+                .filter(Component::isIdentifier)
+                .collect(Collectors.toMap(o -> o, o -> {
+                    Integer copy = idSize[0];
+                    idSize[0] = idSize[0] / 2;
+                    return copy;
+                }));
+
+        ArrayList<DataPoint> data = Lists.newArrayListWithCapacity(size);
+        for (int i = 0; i < size; i++) {
+            ImmutableMap.Builder<String, Object> row = ImmutableMap.builder();
+            for (Map.Entry<String, Component> column : structure.entrySet()) {
+                if (indexesIds.containsKey(column.getValue())) {
+                    row.put(column.getKey(), randomIntBetween(0, indexesIds.get(column.getValue())));
+                } else {
+                    row.put(column.getKey(), "Value " + i + " for " + column.getKey());
+                }
+            }
+            data.add(structure.wrap(row.build()));
+        }
+
+        Collections.shuffle(data, new Random(RandomizedTest.randomLong()));
+
+        return new TestableDataset(data, structure);
+    }
+
+    private DataStructure randomDataStructure() {
+        List<Map.Entry<String, Component>> entries = Lists.newArrayList(structure.entrySet());
+        Collections.shuffle(entries, new Random(RandomizedTest.randomLong()));
+        return DataStructure.builder().putAll(entries).build();
+    }
+
 
     private final class TestableDataset implements Dataset {
 
@@ -101,8 +139,9 @@ public class DatasetTest extends RandomizedTest {
         }
 
         @Override
+        @Deprecated
         public Stream<DataPoint> get() {
-            return null;
+            return getData().map(o -> o);
         }
     }
 }

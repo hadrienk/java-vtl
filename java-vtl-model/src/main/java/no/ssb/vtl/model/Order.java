@@ -1,11 +1,11 @@
 package no.ssb.vtl.model;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -16,10 +16,11 @@ import static no.ssb.vtl.model.Order.Direction.*;
 /**
  * Represent the ordering the {@link DataPoint}s in a Dataset.
  */
-public final class Order extends ForwardingMap<String, Order.Direction> implements Comparator<DataPoint>, Map<String, Order.Direction> {
+public final class Order extends ForwardingMap<Component, Order.Direction> implements Comparator<DataPoint> {
 
     public static final Comparator<Comparable> NULLS_FIRST = Comparator.<Comparable>nullsFirst(Comparator.naturalOrder());
-    static final Comparator<Entry<String, Component>> BY_ROLE = Comparator.comparing(
+
+    public static final Comparator<Entry<String, Component>> BY_ROLE = Comparator.comparing(
             entry -> entry.getValue().getRole(),
             Ordering.explicit(
                     Component.Role.IDENTIFIER,
@@ -27,54 +28,47 @@ public final class Order extends ForwardingMap<String, Order.Direction> implemen
                     Component.Role.ATTRIBUTE
             )
     );
-    static final Comparator<Entry<String, Component>> BY_NAME = Comparator.comparing(Entry::getKey);
 
-    private final ImmutableMap<String, Direction> delegate;
+    public static final Comparator<Entry<String, Component>> BY_NAME = Comparator.comparing(Entry::getKey);
+
     private final DataStructure structure;
+    private final ImmutableMap<Component, Direction> delegate;
 
-    Order(Map<String, Direction> orders, DataStructure structure) {
+    Order(DataStructure structure, ImmutableMap<Component, Direction> orders) {
         this.delegate = ImmutableMap.copyOf(orders);
         this.structure = checkNotNull(structure);
     }
 
-    public static Order create(Map<String, Component> orders, DataStructure dataStructure) {
-        ImmutableMap.Builder<String, Direction> order = ImmutableMap.builder();
-        for (Entry<String, Component> entry : orders.entrySet()) {
-            order.put(entry.getKey(), ASC);
-        }
-        return new Order(order.build(), dataStructure);
-    }
-
-    static Order from(Iterable<Entry<String, Direction>> orders) {
-        return new Order(ImmutableMap.copyOf(orders));
-    }
     /**
-     * Return a default Order for the given datastructure.
+     * Create a new Order.Builder instance.
      *
-     * @param orders
-     * @return
+     * @param structure the structure this Order will operate on.
      */
-    public static Order getDefault(Map<String, Component> orders, DataStructure dataStructure) {
-        Set<Entry<String, Component>> sortedEntrySet = Sets.newTreeSet(BY_ROLE.thenComparing(BY_NAME));
-        sortedEntrySet.addAll(orders.entrySet());
-
-        ImmutableMap.Builder<String, Direction> order = ImmutableMap.builder();
-        for (Entry<String, Component> entry : sortedEntrySet) {
-            order.put(entry.getKey(), ASC);
-        }
-        return new Order(order.build(), dataStructure);
+    public static Builder create(DataStructure structure) {
+        return new Builder(structure);
     }
 
     /**
-     * Return a default Order for the given datastructure.
+     * Create a copy of the order.
+     * <p>
+     * Useful to change data structure.
      */
-    public static Order getDefault(DataStructure structure) {
-        return getDefault(structure, structure);
+    public static Order createCopyOf(DataStructure structure, Order order) {
+        return create(structure).putAll(order.entrySet()).build();
     }
 
-    @Override
-    protected Map<String, Direction> delegate() {
-        return delegate;
+    /**
+     * Return the default Order for the given DataStructure.
+     */
+    public static Order createDefault(DataStructure dataStructure) {
+        Set<Entry<String, Component>> sortedEntrySet = Sets.newTreeSet(BY_ROLE.thenComparing(BY_NAME));
+        sortedEntrySet.addAll(dataStructure.entrySet());
+
+        ImmutableMap.Builder<Component, Direction> order = ImmutableMap.builder();
+        for (Entry<String, Component> entry : sortedEntrySet) {
+            order.put(entry.getValue(), ASC);
+        }
+        return new Order(dataStructure, order.build());
     }
 
     @Override
@@ -83,28 +77,72 @@ public final class Order extends ForwardingMap<String, Order.Direction> implemen
 
         // TODO migrate to Map<Component, Direction> and remove the DataStructure dependency.
         Map<Component, ? extends Comparable> m1 = structure.asMap(o1), m2 = structure.asMap(o2);
-        for (Entry<String, Direction> order : delegate.entrySet()) {
-            String key = order.getKey();
-            result = NULLS_FIRST.compare(m1.get(structure.get(key)), m2.get(structure.get(key)));
+        for (Entry<Component, Direction> order : delegate.entrySet()) {
+            result = NULLS_FIRST.compare(m1.get(order.getKey()), m2.get(order.getKey()));
             if (result != 0) {
                 return order.getValue() == ASC ? result : -result;
             }
         }
 
         // TODO build an index?
-        Comparable[] c1 = new Comparable[1], c2 = new Comparable[1];
-        ImmutableMap<Integer, Direction> index = ImmutableMap.copyOf(Collections.emptyMap());
-        for (Entry<Integer, Direction> order : index.entrySet()) {
-            Integer i = order.getKey();
-            result = NULLS_FIRST.compare(c1[i], c2[i]);
-            if (result != 0) {
-                return order.getValue() == ASC ? result : -result;
-            }
-        }
+//        Comparable[] c1 = new Comparable[1], c2 = new Comparable[1];
+//        ImmutableMap<Integer, Direction> index = ImmutableMap.copyOf(Collections.emptyMap());
+//        for (Entry<Integer, Direction> order : index.entrySet()) {
+//            Integer i = order.getKey();
+//            result = NULLS_FIRST.compare(c1[i], c2[i]);
+//            if (result != 0) {
+//                return order.getValue() == ASC ? result : -result;
+//            }
+//        }
         return 0;
     }
 
-    enum Direction {
+    @Override
+    protected Map<Component, Direction> delegate() {
+        return delegate;
+    }
+
+    public enum Direction {
         ASC, DESC
+    }
+
+    public static class Builder {
+
+        private final ImmutableMap.Builder<Component, Direction> delegate = ImmutableMap.builder();
+        private final DataStructure structure;
+
+        private Builder(DataStructure structure) {
+            this.structure = checkNotNull(structure);
+        }
+
+        public Builder put(Component key, Direction value) {
+            delegate.put(key, value);
+            return this;
+        }
+
+        public Builder put(String key, Direction value) {
+            delegate.put(structure.get(key), value);
+            return this;
+        }
+
+        public Builder put(Entry<Component, Direction> entry) {
+            delegate.put(entry);
+            return this;
+        }
+
+        public Builder putAll(Map<Component, Direction> map) {
+            delegate.putAll(map);
+            return this;
+        }
+
+        @Beta
+        public Builder putAll(Iterable<? extends Entry<Component, Direction>> entries) {
+            delegate.putAll(entries);
+            return this;
+        }
+
+        public Order build() {
+            return new Order(structure, delegate.build());
+        }
     }
 }
