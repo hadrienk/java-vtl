@@ -105,7 +105,11 @@ public class UnionOperation extends AbstractDatasetOperation {
         Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
         Set<DataPoint> seen = Collections.synchronizedSet(bucket);
         return getChildren().stream().flatMap(Dataset::getData)
-                .filter((o) -> !seen.contains(o))
+                .peek((o) -> {
+                    if (seen.contains(o)) {
+                        throw new RuntimeException("The resulting dataset from a union contains duplicates");
+                    }
+                })
                 .peek(bucket::add);
     }
     
