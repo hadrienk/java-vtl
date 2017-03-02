@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.operations;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -153,6 +154,7 @@ public class UnfoldOperationTest {
     }
 
     @Test
+    @Repeat(iterations = 10)
     public void testUnfold() throws Exception {
 
         Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));

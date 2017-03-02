@@ -1,19 +1,27 @@
 package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.*;
-import no.ssb.vtl.model.*;
-import no.ssb.vtl.script.support.CombinedList;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static no.ssb.vtl.model.Component.Role;
+import static com.google.common.base.Preconditions.*;
+import static no.ssb.vtl.model.Component.*;
 
 /**
  * Fold clause.
@@ -79,40 +87,47 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<? extends DataPoint> getData() {
 
-        DataStructure dataStructure = getDataStructure();
-        DataStructure childStructure = getChild().getDataStructure();
+        final DataStructure dataStructure = getDataStructure();
+        final DataStructure childStructure = getChild().getDataStructure();
+        final Component dimensionComponent = dataStructure.get(dimension);
+        final Component measureComponent = dataStructure.get(measure);
+
+        final List<Component> identifiers = dataStructure.entrySet()
+                .stream()
+                .map(Map.Entry::getValue)
+                .filter(Component::isIdentifier)
+                .filter(Predicate.isEqual(dimensionComponent).negate())
+                .collect(Collectors.toList());
 
         /* Fold the values using the component in elements. */
         return getChild().getData().flatMap(dataPoint -> {
-    
-            List<VTLObject> commonValues = Lists.newArrayList();
-            List<List<VTLObject>> foldedValues = Lists.newArrayList();
 
-            /* separate the values that will be folded */
+            List<DataPoint> newDataPoints = Lists.newArrayListWithExpectedSize(elements.size());
+
+            // Got through the values that will be folded.
             Map<Component, VTLObject> dataPointMap = childStructure.asMap(dataPoint);
-            for (Map.Entry<Component, VTLObject> entry : dataPointMap.entrySet()) {
-                if (!elements.contains(entry.getKey())) {
-                    commonValues.add(entry.getValue());
-                } else {
-                    Object value = entry.getValue().get();
-                    if (value != null) {
-                        String foldedColumnName = childStructure.getName(entry.getKey());
-                        VTLObject dimension = dataStructure.wrap(this.dimension, foldedColumnName);
-                        VTLObject measure = dataStructure.wrap(this.measure, value);
-                        foldedValues.add(Lists.newArrayList(
-                                dimension, measure
-                        ));
-                    }
-                }
-            }
+            for (Component component : elements) {
 
-            /*
-                create the new rows out of the folded values
-                TODO: use ordering
-             */
-            return foldedValues.stream().map(
-                    values -> DataPoint.create(new CombinedList<>(commonValues, values))
-            );
+                VTLObject value = dataPointMap.get(component);
+                if (value == null || value == VTLObject.NULL || value.get() == null)
+                    continue;
+
+                String columnName = childStructure.getName(component);
+
+                DataPoint newDataPoint = dataStructure.wrap();
+                Map<Component, VTLObject> resultAsMap = dataStructure.asMap(newDataPoint);
+
+                // Put the new values
+                resultAsMap.put(dimensionComponent, VTLObject.of(columnName));
+                resultAsMap.put(measureComponent, value);
+
+                // Put the identifiers
+                for (Component identifier : identifiers) {
+                    resultAsMap.put(identifier, dataPointMap.get(identifier));
+                }
+                newDataPoints.add(newDataPoint);
+            }
+            return newDataPoints.stream();
         });
     }
 

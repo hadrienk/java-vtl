@@ -1,29 +1,33 @@
 package no.ssb.vtl.script.operations;
 
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
-import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.*;
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-public class FoldOperationTest {
+public class FoldOperationTest extends RandomizedTest {
 
     private static DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
@@ -151,6 +155,7 @@ public class FoldOperationTest {
     }
 
     @Test
+    @Repeat(iterations = 10)
     public void testFold() throws Exception {
 
         Dataset dataset = mock(Dataset.class);
@@ -163,48 +168,62 @@ public class FoldOperationTest {
         );
         when(dataset.getDataStructure()).thenReturn(structure);
 
-        when(dataset.getData()).then(invocation -> Stream.of(
+        // Randomly shuffle the data in.
+        ArrayList<DataPoint> data = Lists.newArrayList(
                 tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
                 tuple(structure, "id1-1", "id2-2", null, "measure2-2", "attribute1-2"),
                 tuple(structure, "id1-2", "id2-1", "measure1-3", null, "attribute1-3"),
                 tuple(structure, "id1-2", "id2-2", "measure1-4", "measure2-4", null),
                 tuple(structure, "id1-3", "id2-1", null, null, null)
-        ));
-
-        // TODO: Order should be irrelevant!
-        // Set<String> elements = Sets.newLinkedHashSet(Lists.newArrayList("measure2", "measure1", "attribute1"));
-        Set<Component> elements = Sets.newLinkedHashSet(
-                Lists.newArrayList(
-                        structure.get("measure2"),
-                        structure.get("measure1"),
-                        structure.get("attribute1")
-                )
         );
+        Collections.shuffle(data, new Random(randomLong()));
+        when(dataset.getData()).then(invocation -> data.stream());
+
+        // Randomly shuffle the measures
+        ArrayList<Component> elements = Lists.newArrayList(
+                structure.get("measure2"),
+                structure.get("measure1"),
+                structure.get("attribute1")
+        );
+        Collections.shuffle(elements, new Random(randomLong()));
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            FoldOperation clause = new FoldOperation(dataset, "newId", "newMeasure", elements);
+
+            FoldOperation clause = new FoldOperation(
+                    dataset,
+                    "newId",
+                    "newMeasure",
+                    ImmutableSet.copyOf(elements)
+            );
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
                     "id1", "id2", "newId", "newMeasure"
             );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(VTLObject::get)
+            // Need to sort back before assert.
+            Order order = Order.create(clause.getDataStructure())
+                    .put("id1", Order.Direction.ASC)
+                    .put("id2", Order.Direction.ASC)
+                    .put("newId", Order.Direction.ASC)
+                    .build();
+
+            softly.assertThat(clause.getData().sorted(order)).flatExtracting(input -> input).extracting(VTLObject::get)
                     .containsExactly(
+                            "id1-1", "id2-1", "attribute1", "attribute1-1",
                             "id1-1", "id2-1", "measure1", "measure1-1",
                             "id1-1", "id2-1", "measure2", "measure2-1",
-                            "id1-1", "id2-1", "attribute1", "attribute1-1",
 
+                            "id1-1", "id2-2", "attribute1", "attribute1-2",
                             // null
                             "id1-1", "id2-2", "measure2", "measure2-2",
-                            "id1-1", "id2-2", "attribute1", "attribute1-2",
 
+                            "id1-2", "id2-1", "attribute1", "attribute1-3",
                             "id1-2", "id2-1", "measure1", "measure1-3",
                             // null
-                            "id1-2", "id2-1", "attribute1", "attribute1-3",
 
+                            // null
                             "id1-2", "id2-2", "measure1", "measure1-4",
                             "id1-2", "id2-2", "measure2", "measure2-4"
-                            // null
                     );
         }
     }
