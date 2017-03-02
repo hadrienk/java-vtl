@@ -11,14 +11,13 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Maps.*;
 
 /**
  * Unfold clause.
@@ -41,52 +40,59 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<? extends DataPoint> getData() {
-        // TODO: Maybe put a filter before.
-        // TODO: Expose more powerful methods in Datapoint.
+        // TODO: Add an ANY sort option?
+        // TODO: Filter on elements so that we minimize data transfer.
 
         DataStructure dataStructure = getDataStructure();
         DataStructure childStructure = getChild().getDataStructure();
 
-        Order order = Order.create(
-                filterValues(dataStructure, Component::isIdentifier),
-                childStructure
-        );
-        Stream<? extends DataPoint> stream = getChild().getData(order).orElseThrow(RuntimeException::new);
+        Order defaultOrder = Order.createDefault(childStructure);
+
+        // Order by identifier, but dimension and measure must be the last ones.
+        Order.Builder orderBuilder = Order.create(childStructure)
+                .putAll(defaultOrder.entrySet().stream()
+                        .filter(e -> e.getKey().isIdentifier())
+                        .filter(e -> !e.getKey().equals(dimension))
+                        .collect(Collectors.toList())
+                );
+
+        Order commonIdentifierOrder = orderBuilder.build();
+        Order requiredOrder = orderBuilder.put(dimension, Order.Direction.ASC)
+                .put(measure, Order.Direction.ASC).build();
+
+        // Try to get data sorted as required. If impossible, sort it.
+        Stream<? extends DataPoint> stream = getChild()
+                .getData(requiredOrder)
+                .orElse(getChild().getData().sorted(requiredOrder));
+
 
         return StreamUtils.aggregate(stream, (left, right) -> {
             // Checks if the previous ids (except the one with unfold on) where different.
-            return order.compare(left, right) == 0;
+            return commonIdentifierOrder.compare(left, right) == 0;
         }).map(dataPoints -> {
-            // TODO: Naive implementation for now.
 
             DataPoint result = dataStructure.wrap();
+            Map<Component, VTLObject> resultAsMap = dataStructure.asMap(result);
 
-            Map<Component, VTLObject> foldedMap = dataStructure.asMap(result);
-
-            Iterator<? extends DataPoint> datapointIterator = dataPoints.iterator();
-            while (datapointIterator.hasNext()) {
-                Map<Component, VTLObject> dataPoint = childStructure.asMap(datapointIterator.next());
+            for (DataPoint dataPoint : dataPoints) {
+                Map<Component, VTLObject> dataPointAsMap = childStructure.asMap(dataPoint);
 
                 VTLObject unfoldedValue = null;
                 Component unfoldedComponent = null;
 
-                for (Component component : dataPoint.keySet()) {
-                    if (component.isIdentifier()) {
-                        if (component.equals(dimension)) {
-                            VTLObject value = dataPoint.get(component);
-                            if (elements.contains(value.get())) {
-                                unfoldedComponent = dataStructure.get(value.get());
-                            }
-                            continue;
-                        } else {
-                            foldedMap.put(component, dataPoint.get(component));
+                for (Component component : dataPointAsMap.keySet()) {
+                    if (component.equals(dimension)) {
+                        VTLObject value = dataPointAsMap.get(component);
+                        if (elements.contains(value.get())) {
+                            unfoldedComponent = dataStructure.get(value.get());
                         }
-                    }
-                    if (component.equals(measure)) {
-                        unfoldedValue = dataPoint.get(component);
+                    } else if (component.equals(measure)) {
+                        unfoldedValue = dataPointAsMap.get(component);
+                    } else if (component.isIdentifier()) {
+                            resultAsMap.put(component, dataPointAsMap.get(component));
                     }
                 }
-                foldedMap.put(unfoldedComponent, unfoldedValue);
+                resultAsMap.put(unfoldedComponent, unfoldedValue);
             }
             return result;
         });

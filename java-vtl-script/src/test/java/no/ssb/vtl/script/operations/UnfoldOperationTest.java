@@ -12,6 +12,7 @@ import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -123,19 +124,9 @@ public class UnfoldOperationTest {
     }
 
     @Test
-    public void testUnfold() throws Exception {
-
+    public void testUnfoldUnsorted() throws Exception {
         Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
         Dataset dataset = mock(Dataset.class);
-
-// works only with last version of mockito.
-//        , withSettings()
-//                .defaultAnswer(invocation -> {
-//                    if (invocation.getMethod().isDefault())
-//                        return invocation.callRealMethod();
-//                    else
-//                        return RETURNS_DEFAULTS.answer(invocation);
-//                }));
 
         DataStructure structure = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
@@ -146,15 +137,47 @@ public class UnfoldOperationTest {
         );
         when(dataset.getDataStructure()).thenReturn(structure);
 
-        when(dataset.getData()).then(invocation -> Stream.of(
+        ArrayList<DataPoint> data = Lists.newArrayList(
                 tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
                 tuple(structure, "id1-1", "id2-2", "measure1-2", "measure2-2", "attribute1-2"),
                 tuple(structure, "id1-2", "id2-1", "measure1-3", "measure2-3", "attribute1-3"),
                 tuple(structure, "id1-2", "id2-2", "measure1-4", "measure2-4", "attribute1-4"),
                 tuple(structure, "id1-3", "id2-1", "measure1-5", "measure2-5", "attribute1-5")
+        );
+        Collections.shuffle(data);
+
+        when(dataset.getData()).then(invocation -> Stream.of(
+
         ));
 
-        when(dataset.getData(any(Order.class))).then(invocation -> Optional.of(dataset.getData()));
+    }
+
+    @Test
+    public void testUnfold() throws Exception {
+
+        Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
+        Dataset dataset = mock(Dataset.class);
+
+        DataStructure structure = DataStructure.of((o, aClass) -> o,
+                "id1", IDENTIFIER, String.class,
+                "id2", IDENTIFIER, String.class,
+                "measure1", MEASURE, String.class,
+                "measure2", MEASURE, String.class,
+                "attribute1", ATTRIBUTE, String.class
+        );
+        when(dataset.getDataStructure()).thenReturn(structure);
+
+        ArrayList<DataPoint> data = Lists.newArrayList(
+                tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
+                tuple(structure, "id1-1", "id2-2", "measure1-2", "measure2-2", "attribute1-2"),
+                tuple(structure, "id1-2", "id2-1", "measure1-3", "measure2-3", "attribute1-3"),
+                tuple(structure, "id1-2", "id2-2", "measure1-4", "measure2-4", "attribute1-4"),
+                tuple(structure, "id1-3", "id2-1", "measure1-5", "measure2-5", "attribute1-5")
+        );
+        Collections.shuffle(data);
+
+        when(dataset.getData()).then(invocation -> data.stream());
+        when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             UnfoldOperation clause = new UnfoldOperation(dataset, structure.get("id2"), structure.get("measure1"), elements);

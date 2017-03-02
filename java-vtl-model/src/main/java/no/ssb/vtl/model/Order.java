@@ -53,7 +53,7 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
      * <p>
      * Useful to change data structure.
      */
-    public static Order createCopyOf(DataStructure structure, Order order) {
+    public static Order createCopyOf(DataStructure structure, Map<Component, Order.Direction> order) {
         return create(structure).putAll(order.entrySet()).build();
     }
 
