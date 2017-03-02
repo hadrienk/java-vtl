@@ -57,18 +57,18 @@ public abstract class VTLNumber extends VTLObject<Number> {
         
     }
     
-    public VTLNumber multiply(Number rightFactor) {
-        Number leftFactor = get();
-        if (leftFactor instanceof Float || rightFactor instanceof Float) {
-            return VTLNumber.of(leftFactor.floatValue() * rightFactor.floatValue());
-        } else if (leftFactor instanceof Double || rightFactor instanceof Double) {
-            return VTLNumber.of(leftFactor.doubleValue() * rightFactor.doubleValue());
-        } else if (leftFactor instanceof Integer || rightFactor instanceof Integer) {
-            return VTLNumber.of(leftFactor.intValue() * rightFactor.intValue());
-        } else if (leftFactor instanceof Long || rightFactor instanceof Long) {
-            return VTLNumber.of(leftFactor.longValue() * rightFactor.longValue());
+    public VTLNumber multiply(Number multiplicand) {
+        Number multiplier = get();
+        if (multiplier instanceof Float || multiplicand instanceof Float) {
+            return VTLNumber.of(multiplier.floatValue() * multiplicand.floatValue());
+        } else if (multiplier instanceof Double || multiplicand instanceof Double) {
+            return VTLNumber.of(multiplier.doubleValue() * multiplicand.doubleValue());
+        } else if (multiplier instanceof Integer || multiplicand instanceof Integer) {
+            return VTLNumber.of(multiplier.intValue() * multiplicand.intValue());
+        } else if (multiplier instanceof Long || multiplicand instanceof Long) {
+            return VTLNumber.of(multiplier.longValue() * multiplicand.longValue());
         }
-        throw new RuntimeException(format("unsupported number types %s, %s", leftFactor.getClass(), rightFactor.getClass()));
+        throw new RuntimeException(format("unsupported number types %s, %s", multiplier.getClass(), multiplicand.getClass()));
     }
     
     public VTLNumber divide(Number divisor) {
