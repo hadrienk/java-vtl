@@ -203,6 +203,10 @@ public interface Dataset extends Streamable<DataPoint> {
      */
     DataStructure getDataStructure();
 
+    @Override
+    @Deprecated
+    Stream<DataPoint> get();
+
     /**
      * Represent the filtering of the {@link DataPoint}s in a Dataset.
      */
@@ -242,6 +246,9 @@ public interface Dataset extends Streamable<DataPoint> {
             return new Order(order.build(), dataStructure);
         }
 
+        static Order from(Iterable<Entry<String, Direction>> orders) {
+            return new Order(ImmutableMap.copyOf(orders));
+        }
         /**
          * Return a default Order for the given datastructure.
          *
