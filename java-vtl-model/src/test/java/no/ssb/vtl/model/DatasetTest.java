@@ -45,7 +45,7 @@ public class DatasetTest extends RandomizedTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
-            Optional<Stream<? extends DataPoint>> sortedStream = dataset.getData(order.build());
+            Optional<Stream<DataPoint>> sortedStream = dataset.getData(order.build());
             softly.assertThat(sortedStream).as("Sorted stream").isPresent();
 
             List<DataPoint> sorted = sortedStream.get().collect(toList());
@@ -119,7 +119,7 @@ public class DatasetTest extends RandomizedTest {
         }
 
         @Override
-        public Stream<? extends DataPoint> getData() {
+        public Stream<DataPoint> getData() {
             return data.stream();
         }
 

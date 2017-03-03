@@ -106,7 +106,7 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
             
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         // TODO: Attribute propagation.
         Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
         Set<DataPoint> seen = Collections.synchronizedSet(bucket);

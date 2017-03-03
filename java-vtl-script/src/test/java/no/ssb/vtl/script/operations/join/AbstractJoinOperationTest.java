@@ -123,7 +123,7 @@ public class AbstractJoinOperationTest {
             public WorkingDataset workDataset() {
                 return new WorkingDataset() {
                     @Override
-                    public Stream<? extends DataPoint> getData() {
+                    public Stream<DataPoint> getData() {
                         return ds1.get();
                     }
 

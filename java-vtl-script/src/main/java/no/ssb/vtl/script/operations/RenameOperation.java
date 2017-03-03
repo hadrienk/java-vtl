@@ -139,7 +139,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         return getChild().get().map(dataPoint -> {
             LinkedList<Component> list = Lists.newLinkedList(getDataStructure().values());
             Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);

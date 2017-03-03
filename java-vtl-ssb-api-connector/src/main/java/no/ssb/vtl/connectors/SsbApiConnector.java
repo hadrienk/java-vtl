@@ -122,7 +122,7 @@ public class SsbApiConnector implements Connector {
 
             return new Dataset() {
                 @Override
-                public Stream<? extends DataPoint> getData() {
+                public Stream<DataPoint> getData() {
                     return table.rowMap().entrySet().stream()
                             .map(entry -> {
                                 Map<String, Object> row = Maps.newHashMap();

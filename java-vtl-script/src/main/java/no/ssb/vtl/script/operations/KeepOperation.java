@@ -55,7 +55,7 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         DataStructure oldStructure = getChild().getDataStructure();
         HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
         HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());

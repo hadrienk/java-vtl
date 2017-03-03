@@ -39,7 +39,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         // TODO: Add an ANY sort option?
         // TODO: Filter on elements so that we minimize data transfer.
 

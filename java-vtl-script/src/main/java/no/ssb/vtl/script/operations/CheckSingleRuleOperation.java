@@ -58,7 +58,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         Stream<DataPoint> tupleStream = getChild().get();
 
         //first calculate the new data points...

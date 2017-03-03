@@ -68,7 +68,7 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         return getChild().get().map(dataPoint -> {
             dataPoint.add(getDataStructure().wrap(variableName, componentExpression.apply(dataPoint)));
             System.out.println(format("Adding value for %s to datapoint %s", variableName, dataPoint));

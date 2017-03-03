@@ -33,6 +33,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
@@ -146,11 +147,20 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return builder.build();
     }
 
+    private Stream<DataPoint> getSorted(Dataset dataset, DataStructure structure) {
+        // Need to be sorted by common ids.
+        Order.Builder builder = Order.create(structure);
+        for (String id : createCommonIdentifiers().keySet()) {
+            builder.put(id, Order.Direction.ASC);
+        }
+        return dataset.getData(builder.build()).orElse(dataset.getData().sorted(builder.build()));
+    }
+
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         // Optimization.
         if (datasets.size() == 1) {
-            return datasets.values().iterator().next().get();
+            return datasets.values().iterator().next().getData();
         }
 
         Iterator<Dataset> iterator = datasets.values().iterator();
@@ -160,7 +170,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         // Create the resulting data points.
         final DataStructure joinStructure = getDataStructure();
         final DataStructure structure = dataset.getDataStructure();
-        Stream<JoinDataPoint> result = dataset.get()
+        Stream<JoinDataPoint> result = getSorted(dataset, structure)
                 .map(dataPoint -> {
                     return joinStructure.fromMap(
                             structure.asMap(dataPoint)
@@ -173,7 +183,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                     new JoinSpliterator<>(
                             getKeyComparator(),
                             result.spliterator(),
-                            dataset.get().map(JoinDataPoint::new).spliterator(),
+                            getSorted(dataset, dataset.getDataStructure()).map(JoinDataPoint::new).spliterator(),
                             getKeyExtractor(joinStructure),
                             getKeyExtractor(dataset.getDataStructure()),
                             getMerger(joinStructure, dataset.getDataStructure())

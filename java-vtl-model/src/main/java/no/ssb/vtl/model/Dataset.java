@@ -122,7 +122,7 @@ public interface Dataset extends Streamable<DataPoint> {
      * <p>
      * Other characteristics are left at the discretion of the implementers.
      */
-    Stream<? extends DataPoint> getData();
+    Stream<DataPoint> getData();
 
     /**
      * Returns the count of unique values by column.
@@ -147,7 +147,7 @@ public interface Dataset extends Streamable<DataPoint> {
      * @param filtering the filtering on the {@link Component}s of the {@link DataPoint}s
      * @return a <b>sorted</b> stream of {@link DataPoint}s if sorting is supported.
      */
-    default Optional<Stream<? extends DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+    default Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
         return Optional.of(getData().sorted(orders).filter(filtering).map(o -> {
             // TODO
             return o;
@@ -162,7 +162,7 @@ public interface Dataset extends Streamable<DataPoint> {
      *
      * @see Filtering#getData(Order, Filtering, Set)
      */
-    default Optional<Stream<? extends DataPoint>> getData(Order order) {
+    default Optional<Stream<DataPoint>> getData(Order order) {
         DataStructure dataStructure = getDataStructure();
         return getData(order, Filtering.ALL, dataStructure.keySet());
     }
@@ -175,7 +175,7 @@ public interface Dataset extends Streamable<DataPoint> {
      *
      * @see Filtering#getData(Order, Filtering, Set)
      */
-    default Optional<Stream<? extends DataPoint>> getData(Filtering filtering) {
+    default Optional<Stream<DataPoint>> getData(Filtering filtering) {
         DataStructure dataStructure = getDataStructure();
         return getData(Order.createDefault(dataStructure), filtering, dataStructure.keySet());
     }
@@ -188,7 +188,7 @@ public interface Dataset extends Streamable<DataPoint> {
      *
      * @see Filtering#getData(Order, Filtering, Set)
      */
-    default Optional<Stream<? extends DataPoint>> getData(Set<String> components) {
+    default Optional<Stream<DataPoint>> getData(Set<String> components) {
         DataStructure dataStructure = getDataStructure();
         return getData(Order.createDefault(dataStructure), Filtering.ALL, dataStructure.keySet());
     }

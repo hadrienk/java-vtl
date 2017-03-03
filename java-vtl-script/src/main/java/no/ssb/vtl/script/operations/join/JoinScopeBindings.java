@@ -55,7 +55,7 @@ final class JoinScopeBindings implements Bindings {
             ).build();
             cleanedDatasets.put(datasetEntry.getKey(), new Dataset() {
                 @Override
-                public Stream<? extends DataPoint> getData() {
+                public Stream<DataPoint> getData() {
                     return get();
                 }
 

@@ -85,7 +85,7 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
 
         final DataStructure dataStructure = getDataStructure();
         final DataStructure childStructure = getChild().getDataStructure();

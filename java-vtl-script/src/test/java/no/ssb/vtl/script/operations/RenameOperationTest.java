@@ -43,7 +43,7 @@ public class RenameOperationTest {
 
     Dataset notNullDataset = new Dataset() {
         @Override
-        public Stream<? extends DataPoint> getData() {
+        public Stream<DataPoint> getData() {
             return null;
         }
 

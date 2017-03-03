@@ -44,7 +44,7 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         return getChild().filter(predicate).stream();
     }
 
