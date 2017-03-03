@@ -179,6 +179,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         vtlPrintStream.println(ds2);
         //vtlPrintStream.println(result.getDataStructure());
         vtlPrintStream.println(result);
+        vtlPrintStream.println(result);
 
         // Check that the structure is correct. We expect:
         // common identifiers () + left and right.
@@ -191,7 +192,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         entry("ds2_value", structure2.get("value"))
                 );
 
-        assertThat(result.get())
+        assertThat(result.getData())
                 .extracting(input -> input.stream().map(VTLObject::get).collect(Collectors.toList()))
                 .containsExactly(
                         asList("1", "a", "id", "left 1a", null),

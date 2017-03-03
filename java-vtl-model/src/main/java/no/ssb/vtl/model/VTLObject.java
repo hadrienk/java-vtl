@@ -1,6 +1,7 @@
 package no.ssb.vtl.model;
 
 import java.time.Instant;
+import java.time.Year;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -93,6 +94,9 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         } else {
             other = o;
         }
+        if (value instanceof Comparable && other.getClass() == value.getClass()) {
+            return ((Comparable) value).compareTo(other);
+        }
         if (value instanceof Integer && other instanceof  Integer) {
             return ((Integer) value).compareTo((Integer) other);
         } else if (value instanceof Float && other instanceof Float) {
@@ -105,6 +109,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
             return ((String) value).compareTo((String) other);
         } else if (value instanceof Instant && other instanceof Instant) {
             return ((Instant) value).compareTo((Instant) other);
+        } else if (value instanceof Year && other instanceof Year) {
+            return ((Year) value).compareTo((Year) other);
         }
         throw new IllegalArgumentException(
                 String.format("Cannot compare %s of type %s with %s of type %s", value, value.getClass(), other,

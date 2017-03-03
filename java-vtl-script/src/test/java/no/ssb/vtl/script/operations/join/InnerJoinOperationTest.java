@@ -49,7 +49,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
     @Test
     public void testDefaultJoin() throws Exception {
         Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
                 mapper::convertValue,
@@ -287,6 +287,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         AbstractJoinOperation ds3 = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "dsCodeList2", dsCodeList2));
 
+        new VTLPrintStream(System.out).println(ds1);
+        new VTLPrintStream(System.out).println(dsCodeList2);
         new VTLPrintStream(System.out).println(ds3);
 
         assertThat(ds3.getDataStructure().getRoles()).contains(

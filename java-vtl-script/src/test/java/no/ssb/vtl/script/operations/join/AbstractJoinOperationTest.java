@@ -164,7 +164,9 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
+        protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+                final DataStructure leftStructure, final DataStructure rightStructure
+        ) {
             return null;
         }
 

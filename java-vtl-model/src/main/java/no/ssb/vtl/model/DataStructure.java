@@ -332,6 +332,12 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return delegate;
     }
 
+    public DataPoint fromMap(Map<Component, VTLObject> map) {
+        DataPoint point = DataPoint.create(this.size());
+        asMap(point).putAll(map);
+        return point;
+    }
+
     public static class Builder {
 
         private final ImmutableMap.Builder<String, Component> builder = ImmutableMap.builder();
