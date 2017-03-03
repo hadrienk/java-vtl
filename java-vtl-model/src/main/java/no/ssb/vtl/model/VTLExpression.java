@@ -1,24 +1,17 @@
 package no.ssb.vtl.model;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.function.Function;
 
-public abstract class VTLExpression extends VTLObject implements Function<DataPoint, VTLObject> {
+/**
+ * Base VTL expression
+ *
+ * Represents a scalar value (VTLObject)  whose computation can be function of a data point (ultimately of a Bindings,
+ * but we are not there yet) but still exposes its type.
+ *
+ */
+public abstract class VTLExpression implements Function<DataPoint, VTLObject> {
     
-    /**
-     * Returns the value of the data point.
-     */
-    @Override
-    public Object get() {
-        throw new NotImplementedException();
-    }
-    
-    @Override
-    public Class<?> getType() {
-        return super.getType();
-    }
-    
+    public abstract Class<?> getType();
     
     @Override
     public String toString() {

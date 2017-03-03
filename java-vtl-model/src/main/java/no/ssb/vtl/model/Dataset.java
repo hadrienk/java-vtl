@@ -91,15 +91,13 @@ public interface Dataset extends Streamable<DataPoint> {
             public int compare(DataPoint li, DataPoint ri) {
                 Comparator comparator = Comparator.naturalOrder();
 
-                Map<String, Object> lm = li.stream().filter(dataPoint -> roleSet.contains(dataPoint.getRole()))
-                        .collect(Collectors.toMap(
-                                VTLObject::getName,
+                Map<String, Object> lm = li.stream().filter(dataPoint -> roleSet.contains(dataPoint.getComponent().getRole()))
+                        .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
                                 VTLObject::get
                         ));
 
-                Map<String, Object> rm = ri.stream().filter(dataPoint -> roleSet.contains(dataPoint.getRole()))
-                        .collect(Collectors.toMap(
-                                VTLObject::getName,
+                Map<String, Object> rm = ri.stream().filter(dataPoint -> roleSet.contains(dataPoint.getComponent().getRole()))
+                        .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
                                 VTLObject::get
                         ));
 

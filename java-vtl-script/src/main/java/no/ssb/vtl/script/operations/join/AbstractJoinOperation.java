@@ -211,14 +211,12 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
             Map<String, Comparable> lIds = l.stream()
                     .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
-                    .collect(Collectors.toMap(
-                            VTLObject::getName,
+                    .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
                             t -> (Comparable) t.get()
                     ));
             Map<String, Object> rIds = r.stream()
                     .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
-                    .collect(Collectors.toMap(
-                            VTLObject::getName,
+                    .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
                             Supplier::get
                     ));
             for (String key : lIds.keySet()) {

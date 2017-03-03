@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -45,11 +44,6 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
     private static boolean isConditionName(String name) {
         return CONDITION_LABEL.equals(name.toLowerCase()) || name.toLowerCase().endsWith("_condition");
-    }
-
-    @Deprecated
-    private static Predicate<VTLObject> isConditionComponent() {
-        return dataPoint -> dataPoint.getName().equals("CONDITION");
     }
 
     private void checkDataStructure(Dataset dataset) {
@@ -177,23 +171,6 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         }
 
         return builder.build();
-    }
-
-    private void addComponent(String componentName, Map<String, Component.Role> newRoles,
-                              Map<String, Class<?>> newTypes, Component.Role role, Class<?> aClass) {
-        newRoles.put(componentName, role);
-        newTypes.put(componentName, aClass);
-    }
-
-    private void removeAllComponentsButIdentifiersAndBooleanMeasures(Map<String, Component.Role> newRoles,
-                                                                     Map<String, Class<?>> newTypes, Set<String> oldNames) {
-        for (String oldName : oldNames) {
-            if (newRoles.get(oldName) != Component.Role.IDENTIFIER
-                    && newRoles.get(oldName) != Component.Role.MEASURE && newTypes.get(oldName) != Boolean.class) {
-                newRoles.remove(oldName);
-                newTypes.remove(oldName);
-            }
-        }
     }
 
     @Override
