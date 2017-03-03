@@ -22,8 +22,8 @@ start : assignment+ EOF;
 
 /* Assignment */
 assignment : identifier ASSIGNMENT datasetExpression
-          | identifier ASSIGNMENT block
-          ;
+           | identifier ASSIGNMENT block
+           ;
 
 block : '{' assignment+ '}' ;
 
@@ -34,13 +34,18 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | exprAtom                                               #withAtom
            ;
 
-function: getFunction                                          #withGet
-        | putFunction                                          #withPut
-        | checkFunction                                        #withCheck
-        ;
+function : getFunction               #withGet
+         | putFunction               #withPut
+         | checkFunction             #withCheck
+         | aggregationFunction       #withAggregation
+         ;
+
+aggregationFunction: sumFunction;
 
 getFunction : 'get' '(' datasetId ')';
 putFunction : 'put(todo)';
+
+sumFunction: 'sum' '(' datasetRef ')' ('group by'|'along') componentRef (',' componentRef)*;
 
 datasetId : STRING_CONSTANT ;
 
