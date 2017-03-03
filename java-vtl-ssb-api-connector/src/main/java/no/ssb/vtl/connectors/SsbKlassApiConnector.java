@@ -163,13 +163,23 @@ public class SsbKlassApiConnector implements Connector {
                 }
 
                 @Override
-                public Stream<DataPoint> get() {
+                public Stream<DataPoint> getData() {
                     DataStructure dataStructure = getDataStructure();
                     Set<String> codeFields = dataStructure.keySet();
                     return datasets.stream()
                             .map(d -> Maps.filterKeys(d, codeFields::contains))
                             .map(d -> convertType(d))
                             .map(dataStructure::wrap);
+                }
+
+                @Override
+                public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public Optional<Long> getSize() {
+                    return Optional.empty();
                 }
             };
 

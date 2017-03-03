@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -39,6 +40,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -116,7 +118,7 @@ public class VTLScriptEngineTest {
         when(ds1.getDataStructure()).thenReturn(structure1);
         when(ds2.getDataStructure()).thenReturn(structure2);
 
-        when(ds1.get()).then(invocation -> Stream.of(
+        when(ds1.getData()).then(invocation -> Stream.of(
                 structure1.wrap(ImmutableMap.of(
                         "id1", "1",
                         "id2", "1",
@@ -132,8 +134,9 @@ public class VTLScriptEngineTest {
                         "at1", "attr1-2"
                 ))
         ));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
-        when(ds2.get()).then(invocation -> Stream.of(
+        when(ds2.getData()).then(invocation -> Stream.of(
                 structure2.wrap(ImmutableMap.of(
                         "id1", "1",
                         "id2", "1",
@@ -149,6 +152,7 @@ public class VTLScriptEngineTest {
                         "at2", "attr2-2"
                 ))
         ));
+        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", ds2);
@@ -188,14 +192,14 @@ public class VTLScriptEngineTest {
                 .haveAtLeastOne(componentWith("boolTest", Role.MEASURE));
 
 
-        assertThat(ds3.get())
+        assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting((vtlObject) -> vtlObject.getComponent().getName())
                 .containsExactly(
                         "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
                 );
 
-        assertThat(ds3.get())
+        assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
@@ -214,7 +218,7 @@ public class VTLScriptEngineTest {
                 "m3", Role.MEASURE, Number.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.get()).then(invocation -> Stream.of(
+        when(ds1.getData()).then(invocation -> Stream.of(
                 Arrays.asList("1", 101, 102, 103),
                 Arrays.asList("2", 201, 202, 203),
                 Arrays.asList("3", 301, 302, 303)
@@ -227,6 +231,7 @@ public class VTLScriptEngineTest {
             }
             return DataPoint.create(points);
         }));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
@@ -244,7 +249,7 @@ public class VTLScriptEngineTest {
                 entry("value", Role.MEASURE)
         );
 
-        assertThat(ds2.get()).flatExtracting(input -> input)
+        assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
                         "1", "m1", 101,
@@ -276,7 +281,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.get()).then(invocation -> Stream.of(
+        when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
                         "id1", "1",
                         "id2", "one",
@@ -323,7 +328,7 @@ public class VTLScriptEngineTest {
                 entry("onePlusTwo", Role.MEASURE)
         );
 
-        assertThat(ds2.get()).flatExtracting(input -> input)
+        assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
                         "1", 101, 102, 101 + 102,
@@ -402,7 +407,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
-        when(ds1.get()).then(invocation -> Stream.of(
+        when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
                         "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
@@ -431,7 +436,7 @@ public class VTLScriptEngineTest {
                 "validTo", Role.IDENTIFIER, Instant.class
         );
         when(dsCodeList2.getDataStructure()).thenReturn(structure2);
-        when(dsCodeList2.get()).then(invocation -> Stream.of(
+        when(dsCodeList2.getData()).then(invocation -> Stream.of(
                 tuple(
                         structure2.wrap("code", "0101"),
                         structure2.wrap("name", "Halden"),
@@ -502,7 +507,7 @@ public class VTLScriptEngineTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        assertThat(ds3.get()).flatExtracting(input -> input)
+        assertThat(ds3.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
                         "0101", "2015", 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null, true,

@@ -19,13 +19,19 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public class OuterJoinOperation extends AbstractJoinOperation {
 
@@ -38,71 +44,45 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
-        Set<Component> identifiers = getIdentifiers();
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+            final DataStructure leftStructure, final DataStructure rightStructure
+    ) {
+        final Map<Component, Component> leftToRightIds = Maps.newHashMap();
+        final Map<Component, Component> rightToLeftIds = Maps.newHashMap();
+        for (Component component : getIdentifiers()) {
+            if (leftStructure.containsValue(component)) {
+                leftToRightIds.put(component, rightStructure.get(leftStructure.getName(component)));
+            }
+            if (rightStructure.containsValue(component)) {
+                rightToLeftIds.put(component, leftStructure.get(rightStructure.getName(component)));
+            }
+        }
         return (left, right, compare) -> {
 
-            // TODO: Rewrite this method after implementing the tuple "Map View"
+            // Need to operate on a copy
+            DataPoint result = leftStructure.wrap();
+            Map<Component, VTLObject> resultMap = leftStructure.asMap(result);
 
-            JoinDataPoint merged;
-            ArrayList<VTLObject> ids = Lists.newArrayList();
-            for (VTLObject point : left) {
-                if (identifiers.contains(point.getComponent())) {
-                    ids.add(point);
-                }
-            }
+            Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
+            Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
+
             if (compare <= 0) {
-                merged = new JoinDataPoint(ids);
-            } else {
-                // Use left components with right values.
-                Iterator<VTLObject> idsIterator = ids.iterator();
-                List<VTLObject> rightIds = Lists.newArrayList();
-                for (VTLObject point : right) {
-                    if (identifiers.contains(point.getComponent())) {
-                        Component leftComponent = idsIterator.next().getComponent();
-                        rightIds.add(VTLObject.of(leftComponent, point.get()));
-                    }
-                }
-                merged = new JoinDataPoint(rightIds);
+                resultMap.putAll(leftMap);
             }
-
-
+            if (compare > 0) {
+                for (Map.Entry<Component, VTLObject> entry : rightMap.entrySet()) {
+                    resultMap.put(rightToLeftIds.getOrDefault(entry.getKey(), entry.getKey()), entry.getValue());
+                }
+            }
             if (compare == 0) {
-                for (VTLObject point : left) {
-                    if (!identifiers.contains(point.getComponent())) {
-                        merged.add(point);
-                    }
-                }
-                for (VTLObject point : right) {
-                    if (!identifiers.contains(point.getComponent()))
-                        merged.add(point);
-                }
-            } else {
-                if (compare < 0) {
-                    for (VTLObject point : left) {
-                        if (!identifiers.contains(point.getComponent())) {
-                            merged.add(point);
-                        }
-                    }
-                    for (VTLObject point : right) {
-                        if (!identifiers.contains(point.getComponent())) {
-                            merged.add(createNull(point));
-                        }
-                    }
-                } else { // (compare > 0) {
-                    for (VTLObject point : left) {
-                        if (!identifiers.contains(point.getComponent())) {
-                            merged.add(createNull(point));
-                        }
-                    }
-                    for (VTLObject point : right) {
-                        if (!identifiers.contains(point.getComponent())) {
-                            merged.add(point);
-                        }
+                for (Map.Entry<Component, VTLObject> entry : rightMap.entrySet()) {
+                    if (!rightToLeftIds.containsKey(entry.getKey())) {
+                        resultMap.put(entry.getKey(), entry.getValue());
                     }
                 }
             }
-            return Collections.singletonList(merged);
+
+            return Collections.singletonList(new JoinDataPoint(result));
         };
     }
 

@@ -9,26 +9,31 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.time.Year;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
-import static org.mockito.BDDMockito.given;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +54,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
     @Test
     public void testDefaultJoin() throws Exception {
         Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
                 mapper::convertValue,
@@ -72,7 +77,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         given(ds1.getDataStructure()).willReturn(structure1);
         given(ds2.getDataStructure()).willReturn(structure2);
 
-        given(ds1.get()).willAnswer(o -> Stream.of(
+        given(ds1.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
@@ -93,8 +98,9 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure1.wrap("obs_status", "P")
                 )
         ));
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
-        given(ds2.get()).willAnswer(o -> Stream.of(
+        given(ds2.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure2.wrap("time", Year.of(2010)),
                         structure2.wrap("ref_area", "EU25"),
@@ -103,12 +109,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure2.wrap("obs_status", "P")
                 )
         ));
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
         AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
         new VTLPrintStream(System.out).println(result);
 
-        assertThat(result.workDataset().getDataStructure())
+        assertThat(result.getDataStructure())
                 .containsOnly(
                         entry("time", structure1.get("time")),
                         entry("ref_area", structure1.get("ref_area")),
@@ -119,7 +126,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         entry("ds2_obs_status", structure2.get("obs_status"))
                 );
 
-        assertThat(result.workDataset().get())
+        assertThat(result.getData())
                 .flatExtracting(tuple -> tuple)
                 .flatExtracting(dataPoint -> {
                     Component component = dataPoint.getComponent();
@@ -170,7 +177,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
             allComponents.addAll(structure.values());
 
             int j = i;
-            when(dataset.get()).then(invocation ->
+            when(dataset.getData()).then(invocation ->
                     IntStream.rangeClosed(0, rowAmount)
                             .boxed()
                             .map(rowNum ->
@@ -183,6 +190,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                                     )
                             )
             );
+            when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
         }
 
         InnerJoinOperation result = new InnerJoinOperation(datasets);
@@ -196,27 +204,17 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 .hasSize(datasetAmount * 5);
 
         List<Object> data = datasets.values().stream()
-                .flatMap(Supplier::get)
+                .flatMap(Dataset::getData)
                 .flatMap(Collection::stream)
                 .map(VTLObject::get)
                 .collect(Collectors.toList());
     
-        assertThat(result.get().flatMap(Collection::stream))
+        assertThat(result.getData().flatMap(Collection::stream))
                 .describedAs("the data")
                 .extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         data
                 );
-
-
-//        assertThat(allComponents)
-//                .describedAs("all the components in the datasets")
-//                .
-//                .containsExactlyElementsOf(result.getDataStructure().values());
-
-        //showDataset(result);
-
-        //assertThat(result.get()).isEmpty();
 
     }
 
@@ -233,7 +231,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 "at1", Component.Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
-        when(ds1.get()).then(invocation -> Stream.of(
+        when(ds1.getData()).then(invocation -> Stream.of(
                  (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
                         "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
@@ -253,6 +251,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         "at1", "attr3"
                 )
         ).map(structure1::wrap));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure2 = DataStructure.of(
                 (o, aClass) -> o,
@@ -263,7 +262,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         );
 
         when(dsCodeList2.getDataStructure()).thenReturn(structure2);
-        when(dsCodeList2.get()).then(invocation -> Stream.of(
+        when(dsCodeList2.getData()).then(invocation -> Stream.of(
                 tuple(
                         structure2.wrap("kommune_nr", "0101"),
                         structure2.wrap("name", "Halden"),
@@ -283,10 +282,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
                 )
         ));
+        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
 
         AbstractJoinOperation ds3 = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "dsCodeList2", dsCodeList2));
 
+        new VTLPrintStream(System.out).println(ds1);
+        new VTLPrintStream(System.out).println(dsCodeList2);
         new VTLPrintStream(System.out).println(ds3);
 
         assertThat(ds3.getDataStructure().getRoles()).contains(
@@ -299,7 +301,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 entry("validTo", Component.Role.IDENTIFIER)
         );
 
-        assertThat(ds3.get()).flatExtracting(input -> input)
+        assertThat(ds3.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
                         "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,

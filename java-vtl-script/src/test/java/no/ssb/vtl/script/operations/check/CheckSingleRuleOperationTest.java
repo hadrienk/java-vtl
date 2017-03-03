@@ -86,7 +86,7 @@ public class CheckSingleRuleOperationTest {
         Dataset ds = mock(Dataset.class);
         when(ds.getDataStructure()).thenReturn(dataStructure);
 
-        when(ds.get()).thenReturn(Stream.of(
+        when(ds.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("kommune_nr", "0101"),
                         dataStructure.wrap("code", "0101"),
@@ -118,7 +118,7 @@ public class CheckSingleRuleOperationTest {
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)
         );
 
-        Stream<DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.getData();
         assertThat(stream).isNotNull();
 
         List<DataPoint> collect = stream.collect(toList());
@@ -147,7 +147,7 @@ public class CheckSingleRuleOperationTest {
         Dataset ds = mock(Dataset.class);
         when(ds.getDataStructure()).thenReturn(dataStructure);
 
-        when(ds.get()).thenReturn(Stream.of(
+        when(ds.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("kommune_nr", "0101"),
                         dataStructure.wrap("code", "0101"),
@@ -175,7 +175,7 @@ public class CheckSingleRuleOperationTest {
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        Stream<DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.getData();
         assertThat(stream).isNotNull();
 
         List<DataPoint> collect = stream.collect(toList());
@@ -201,7 +201,7 @@ public class CheckSingleRuleOperationTest {
         Dataset ds = mock(Dataset.class);
         when(ds.getDataStructure()).thenReturn(dataStructure);
 
-        when(ds.get()).thenReturn(Stream.of(
+        when(ds.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("kommune_nr", "0101"),
                         dataStructure.wrap("code", "0101"),
@@ -237,7 +237,7 @@ public class CheckSingleRuleOperationTest {
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)  //new component
         );
 
-        Stream<DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.getData();
         assertThat(stream).isNotNull();
 
         List<DataPoint> collect = stream.collect(toList());
@@ -272,7 +272,7 @@ public class CheckSingleRuleOperationTest {
         Dataset ds = mock(Dataset.class);
         when(ds.getDataStructure()).thenReturn(dataStructure);
 
-        when(ds.get()).thenReturn(Stream.of(
+        when(ds.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("kommune_nr", "0101"),
                         dataStructure.wrap("code", "0101"),
@@ -311,9 +311,7 @@ public class CheckSingleRuleOperationTest {
                 entry("errorlevel", Component.Role.ATTRIBUTE) //new component
         );
 
-        // TODO: Check types.
-
-        Stream<DataPoint> stream = checkOperation.stream();
+        Stream<DataPoint> stream = checkOperation.getData();
         assertThat(stream).isNotNull();
 
         List<DataPoint> collect = stream.collect(toList());

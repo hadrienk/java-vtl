@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -88,29 +87,24 @@ public class UnionOperation extends AbstractDatasetOperation {
     private Set<String> nonAttributeNames(DataStructure dataStructure) {
         return Maps.filterValues(dataStructure.getRoles(), role -> role != Component.Role.ATTRIBUTE).keySet();
     }
-
+            
     @Override
-    public Stream<DataPoint> get() {
+    public Stream<DataPoint> getData() {
         List<Dataset> datasets = getChildren();
         if (datasets.size() == 1) {
-            return datasets.get(0).get();
+            return datasets.get(0).getData();
         }
 
         if (datasets.size() == 2) {
             if (datasets.get(0).equals(datasets.get(1))) {
-                return datasets.get(0).get();
+                return datasets.get(0).getData();
             }
         }
 
-        return getData().map(o -> o);
-    }
-            
-    @Override
-    public Stream<? extends DataPoint> getData() {
         // TODO: Attribute propagation.
         Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
         Set<DataPoint> seen = Collections.synchronizedSet(bucket);
-        return getChildren().stream().flatMap(Supplier::get)
+        return getChildren().stream().flatMap(Dataset::getData)
                 .filter((o) -> !seen.contains(o))
                 .peek(bucket::add);
     }

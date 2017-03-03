@@ -53,13 +53,13 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         Dataset childDataset = getChild();
         DataStructure structure = getDataStructure();
         DataStructure previousStructure = childDataset.getDataStructure();
         Component conditionComponent = getConditionComponent(structure);
 
-        return childDataset.get().map(dataPoint -> {
+        return childDataset.getData().map(dataPoint -> {
 
             DataPoint resultDataPoint = structure.wrap();
             Map<Component, VTLObject> originalMap = previousStructure.asMap(dataPoint);
@@ -171,12 +171,6 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         }
 
         return builder.build();
-    }
-
-    @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
     }
 
 

@@ -212,7 +212,11 @@ public class DataStructure extends ForwardingMap<String, Component> {
      * @return a modifiable map backed by the datatpoint and this structure.
      */
     public Map<Component, VTLObject> asMap(DataPoint dataPoint) {
-        checkArgument(dataPoint.size() == this.size());
+        checkArgument(
+                dataPoint.size() >= this.size(),
+                "inconsistent data point size %s, expected %s",
+                dataPoint.size(), this.size()
+        );
         return new AbstractMap<Component, VTLObject>() {
 
             @Override
@@ -326,6 +330,12 @@ public class DataStructure extends ForwardingMap<String, Component> {
     @Override
     protected Map<String, Component> delegate() {
         return delegate;
+    }
+
+    public DataPoint fromMap(Map<Component, VTLObject> map) {
+        DataPoint point = DataPoint.create(this.size());
+        asMap(point).putAll(map);
+        return point;
     }
 
     public static class Builder {

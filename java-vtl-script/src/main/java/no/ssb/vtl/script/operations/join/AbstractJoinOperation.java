@@ -20,20 +20,37 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import com.google.common.base.Objects;
-import com.google.common.collect.*;
-import no.ssb.vtl.model.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import no.ssb.vtl.model.AbstractDatasetOperation;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.RandomAccess;
+import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Abstract join operation.
@@ -90,7 +107,9 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return result;
     }
 
-    protected abstract JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger();
+    protected abstract JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+            final DataStructure leftStructure, final DataStructure rightStructure
+    );
 
     protected ImmutableSet<Component> getIdentifiers() {
         return this.identifiers;
@@ -128,47 +147,59 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return builder.build();
     }
 
+    private Stream<DataPoint> getSorted(Dataset dataset, DataStructure structure) {
+        // Need to be sorted by common ids.
+        Order.Builder builder = Order.create(structure);
+        for (String id : createCommonIdentifiers().keySet()) {
+            builder.put(id, Order.Direction.ASC);
+        }
+        return dataset.getData(builder.build()).orElse(dataset.getData().sorted(builder.build()));
+    }
+
     @Override
-    public Stream<? extends DataPoint> getData() {
+    public Stream<DataPoint> getData() {
         // Optimization.
         if (datasets.size() == 1) {
-            return datasets.values().iterator().next().get();
+            return datasets.values().iterator().next().getData();
         }
 
         Iterator<Dataset> iterator = datasets.values().iterator();
-        Stream<JoinDataPoint> result = iterator.next().get()
-                .map(JoinDataPoint::new);
+
+        Dataset dataset = iterator.next();
+
+        // Create the resulting data points.
+        final DataStructure joinStructure = getDataStructure();
+        final DataStructure structure = dataset.getDataStructure();
+        Stream<JoinDataPoint> result = getSorted(dataset, structure)
+                .map(dataPoint -> {
+                    return joinStructure.fromMap(
+                            structure.asMap(dataPoint)
+                    );
+                }).map(JoinDataPoint::new);
 
         while (iterator.hasNext()) {
+            dataset = iterator.next();
             result = StreamSupport.stream(
                     new JoinSpliterator<>(
                             getKeyComparator(),
                             result.spliterator(),
-                            iterator.next().get()
-                                    .map(JoinDataPoint::new)
-                                    .spliterator(),
-                            getKeyExtractor(),
-                            getKeyExtractor(),
-                            getMerger()
+                            getSorted(dataset, dataset.getDataStructure()).map(JoinDataPoint::new).spliterator(),
+                            getKeyExtractor(joinStructure),
+                            getKeyExtractor(dataset.getDataStructure()),
+                            getMerger(joinStructure, dataset.getDataStructure())
                     ), false
             );
         }
         return result.map(tuple -> tuple);
     }
 
-    @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
-    }
-
-    private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor() {
-        return tuple -> {
-            // Filter by common ids.
-            return tuple.stream().filter(dataPoint ->
-                    getIdentifiers().contains(dataPoint.getComponent())
-            ).collect(Collectors.toList());
-        };
+    private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor(final DataStructure structure) {
+        // Filter by common ids.
+        final Set<Component> components = Sets.intersection(
+                getIdentifiers(),
+                Sets.newHashSet(structure.values())
+        );
+        return dataPoint -> Lists.newArrayList(Maps.filterKeys(structure.asMap(dataPoint), components::contains).values());
     }
 
     @Override
@@ -203,24 +234,10 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     public abstract WorkingDataset workDataset();
 
     protected Comparator<List<VTLObject>> getKeyComparator() {
-        ImmutableSet<Component> keys = getIdentifiers();
         return (l, r) -> {
-            // TODO: DataPoint should expose method to handle this.
-            // TODO: Evaluate migrating to VTLObject.
-            // TODO: When using on, the left over identifiers should be transformed to measures.
-
-            Map<String, Comparable> lIds = l.stream()
-                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
-                    .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
-                            t -> (Comparable) t.get()
-                    ));
-            Map<String, Object> rIds = r.stream()
-                    .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
-                    .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
-                            Supplier::get
-                    ));
-            for (String key : lIds.keySet()) {
-                int res = lIds.get(key).compareTo(rIds.get(key));
+            checkArgument(l.size() == r.size());
+            for (int i = 0; i < l.size(); i++) {
+                int res = l.get(i).compareTo(r.get(i));
                 if (res != 0)
                     return res;
             }

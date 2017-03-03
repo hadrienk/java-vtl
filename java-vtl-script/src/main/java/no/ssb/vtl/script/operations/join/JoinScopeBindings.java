@@ -55,8 +55,8 @@ final class JoinScopeBindings implements Bindings {
             ).build();
             cleanedDatasets.put(datasetEntry.getKey(), new Dataset() {
                 @Override
-                public Stream<? extends DataPoint> getData() {
-                    return get();
+                public Stream<DataPoint> getData() {
+                    throw new UnsupportedOperationException("TODO");
                 }
 
                 @Override
@@ -74,10 +74,6 @@ final class JoinScopeBindings implements Bindings {
                     return finalStructure;
                 }
 
-                @Override
-                public Stream<DataPoint> get() {
-                    throw new UnsupportedOperationException("TODO");
-                }
             });
         }
 

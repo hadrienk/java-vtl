@@ -40,7 +40,7 @@ public class VTLPrintStream extends PrintStream {
                         )
                         .collect(Collectors.toList())
         );
-        dataset.get().forEach(tuple -> {
+        dataset.getData().forEach(tuple -> {
             table.addRow(
                     tuple.stream()
                             .map(VTLObject::get)

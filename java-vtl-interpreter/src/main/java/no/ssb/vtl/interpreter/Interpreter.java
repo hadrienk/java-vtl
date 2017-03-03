@@ -87,7 +87,7 @@ public class Interpreter implements Runnable {
             output.print("]");
         }
         output.println();
-        for (DataPoint dataPoint : (Iterable<DataPoint>) dataset.stream()::iterator) {
+        for (DataPoint dataPoint : (Iterable<DataPoint>) dataset.getData()::iterator) {
             for (VTLObject component : dataPoint) {
                 output.print(component.get());
                 output.print(",");
@@ -203,7 +203,7 @@ public class Interpreter implements Runnable {
         console.println(columns.stream().collect(Collectors.joining(",")));
 
         // Rows
-        Iterator<DataPoint> iterator = dataset.stream().iterator();
+        Iterator<DataPoint> iterator = dataset.getData().iterator();
         while (iterator.hasNext()) {
             columns.clear();
             DataPoint row = iterator.next();

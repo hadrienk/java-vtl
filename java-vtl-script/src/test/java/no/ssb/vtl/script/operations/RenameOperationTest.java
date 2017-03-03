@@ -43,7 +43,7 @@ public class RenameOperationTest {
 
     Dataset notNullDataset = new Dataset() {
         @Override
-        public Stream<? extends DataPoint> getData() {
+        public Stream<DataPoint> getData() {
             return null;
         }
 
@@ -62,10 +62,6 @@ public class RenameOperationTest {
             return null;
         }
 
-        @Override
-        public Stream<DataPoint> get() {
-            return null;
-        }
     };
 
 //    @Test(expected = IllegalArgumentException.class)
@@ -156,7 +152,7 @@ public class RenameOperationTest {
                 "Attribute2", Role.ATTRIBUTE, String.class
         );
         when(dataset.getDataStructure()).thenReturn(structure);
-        when(dataset.get()).then(invocation -> {
+        when(dataset.getData()).then(invocation -> {
             return Stream.of(
                     structure.wrap(Maps.asMap(structure.keySet(), input -> (Object) input))
             );
@@ -192,7 +188,7 @@ public class RenameOperationTest {
                 entry("Attribute2Measure", Role.MEASURE)
         );
 
-        assertThat(rename.get()).flatExtracting(input -> input).extracting(VTLObject::get)
+        assertThat(rename.getData()).flatExtracting(input -> input).extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         structure.keySet()
                 );
