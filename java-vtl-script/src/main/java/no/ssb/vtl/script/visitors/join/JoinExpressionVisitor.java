@@ -1,25 +1,28 @@
 package no.ssb.vtl.script.visitors.join;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.operations.CalcOperation;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.MoreObjects.*;
 
 public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
@@ -99,43 +102,9 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        /*
-            TODO: Handle explicit and implicit component computation.
-            Need to parse the role
-            If implicit, error if already defined.
-         */
-        String variableName = removeQuoteIfNeeded(ctx.identifier().getText());
-        Component.Role role = Component.Role.MEASURE;
-        Class<?> type = Number.class;
-
-        DataStructure.Builder structureCopy = DataStructure.copyOf(workingDataset.getDataStructure());
-        structureCopy.put(variableName, role, type);
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor);
-        Function<Dataset.Tuple, Object> componentExpression = visitor.visit(ctx);
-
-        // TODO: Extract to its own visitor implementing dataset.
-        Dataset dataset = workingDataset;
-        DataStructure dataStructure = structureCopy.build();
-        return new Dataset() {
-            @Override
-            public DataStructure getDataStructure() {
-                return dataStructure;
-            }
-
-            @Override
-            public Stream<Tuple> get() {
-                return dataset.get().map(tuple -> {
-                    tuple.add(dataStructure.wrap(variableName, componentExpression.apply(tuple)));
-                    return tuple;
-                });
-            }
-
-            @Override
-            public String toString() {
-                MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper("Calc");
-                return helper.omitNullValues().toString();
-            }
-        };
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
+        VTLExpression componentExpression = visitor.visit(ctx);
+        return new CalcOperation(workingDataset, componentExpression, ctx.identifier().getText());
     }
 
     @Override
@@ -174,12 +143,4 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         return visitor.visit(ctx);
     }
 
-    private static String removeQuoteIfNeeded(String key) {
-        if (!key.isEmpty() && key.length() > 3) {
-            if (key.charAt(0) == '\'' && key.charAt(key.length() - 1) == '\'') {
-                return key.substring(1, key.length() - 1);
-            }
-        }
-        return key;
-    }
 }

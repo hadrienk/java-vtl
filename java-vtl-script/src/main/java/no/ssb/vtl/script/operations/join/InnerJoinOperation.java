@@ -21,7 +21,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
@@ -48,7 +48,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
         ImmutableSet<Component> commonIdentifiers = getIdentifiers();
 
         return (left, right, compare) -> {
@@ -61,9 +61,29 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         };
     }
 
-    private Collection<? extends DataPoint> getNonCommon(ImmutableSet<Component> commonIdentifiers, JoinTuple right) {
+    private Collection<? extends VTLObject> getNonCommon(ImmutableSet<Component> commonIdentifiers, JoinDataPoint right) {
         return right.stream()
                 .filter(dataPoint -> !commonIdentifiers.contains(dataPoint.getComponent()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
     }
 }

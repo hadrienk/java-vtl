@@ -4,14 +4,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
 import javax.script.Bindings;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -57,12 +55,27 @@ final class JoinScopeBindings implements Bindings {
             ).build();
             cleanedDatasets.put(datasetEntry.getKey(), new Dataset() {
                 @Override
+                public Stream<? extends DataPoint> getData() {
+                    return get();
+                }
+
+                @Override
+                public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public Optional<Long> getSize() {
+                    return Optional.empty();
+                }
+
+                @Override
                 public DataStructure getDataStructure() {
                     return finalStructure;
                 }
 
                 @Override
-                public Stream<Tuple> get() {
+                public Stream<DataPoint> get() {
                     throw new UnsupportedOperationException("TODO");
                 }
             });

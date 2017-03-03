@@ -22,40 +22,37 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Rename operation.
  * <p>
  * TODO: Implement {@link Dataset}
  */
-public class RenameOperation implements Dataset {
+public class RenameOperation extends AbstractUnaryDatasetOperation {
 
-    private final Dataset dataset;
     private final Map<Component, Component> mapping = Maps.newHashMap();
     private final Map<Component, String> newNames;
     private final Map<Component, Component.Role> newRoles;
 
-    private DataStructure cache;
-
     public RenameOperation(Dataset dataset, Map<Component, String> newNames) {
-        this.dataset = checkNotNull(dataset);
-        this.newNames = newNames;
-        this.newRoles = Collections.emptyMap();
+        this(dataset, newNames, Collections.emptyMap());
     }
 
     public RenameOperation(Dataset dataset, Map<Component, String> newNames, Map<Component, Component.Role> newRoles) {
-        this.dataset = checkNotNull(dataset);
+        super(checkNotNull(dataset));
         this.newNames = newNames;
         this.newRoles = newRoles;
     }
@@ -97,14 +94,10 @@ public class RenameOperation implements Dataset {
     }
 
     @Override
-    public DataStructure getDataStructure() {
-        return cache = (cache == null ? computeDataStructure() : cache);
-    }
-
-    private DataStructure computeDataStructure() {
+    protected DataStructure computeDataStructure() {
         Map<Component, String> map = Maps.newHashMap();
         DataStructure.Builder newDataStructure = DataStructure.builder();
-        for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
+        for (Map.Entry<String, Component> componentEntry : getChild().getDataStructure().entrySet()) {
             Component component = componentEntry.getValue();
             if (newNames.containsKey(component)) {
                 String oldName = component.getName();
@@ -131,23 +124,9 @@ public class RenameOperation implements Dataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
-        return dataset.get().map(points -> {
-            points.replaceAll(point -> {
-                Component component = point.getComponent();
-                if (mapping.containsKey(component)) {
-                    return new DataPoint(mapping.get(component)) {
-                        @Override
-                        public Object get() {
-                            return point.get();
-                        }
-                    };
-                } else {
-                    return point;
-                }
-            });
-            return points;
-        });
+    @Deprecated
+    public Stream<DataPoint> get() {
+        return getData().map(o -> o);
     }
 
     @Override
@@ -155,7 +134,31 @@ public class RenameOperation implements Dataset {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         helper.addValue(newNames);
         helper.addValue(newRoles);
-        helper.add("structure", cache);
+        helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
+    }
+
+    @Override
+    public Stream<? extends DataPoint> getData() {
+        return getChild().get().map(dataPoint -> {
+            LinkedList<Component> list = Lists.newLinkedList(getDataStructure().values());
+            Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);
+            dataPoint.replaceAll(vtlObject -> {
+                Component component = componentMap.get(vtlObject);
+                return  VTLObject.of(component, vtlObject.get());
+            });
+            return dataPoint;
+        });
+    }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        // TODO: Adjust the names.
+        return getChild().getDistinctValuesCount();
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        return null;
     }
 }

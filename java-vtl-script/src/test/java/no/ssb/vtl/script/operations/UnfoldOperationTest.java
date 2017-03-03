@@ -7,22 +7,27 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.*;
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-public class UnfoldClauseTest {
+public class UnfoldOperationTest {
 
-    private static Dataset.Tuple tuple(DataStructure structure, Object... values) {
+    private static DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
-        Map<String, Object> map = Maps.newHashMap();
+        Map<String, Object> map = Maps.newLinkedHashMap();
         Iterator<Object> iterator = Lists.newArrayList(values).iterator();
         for (String name : structure.keySet()) {
             map.put(name, iterator.next());
@@ -40,27 +45,27 @@ public class UnfoldClauseTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(null, validIdentifierReference, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(null, validIdentifierReference, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dataset")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, null, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, null, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dimensionReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, null, validElements))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, validIdentifierReference, null, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("measureReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, validMeasureReference, null))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, validIdentifierReference, validMeasureReference, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new UnfoldClause(dataset, validIdentifierReference, validMeasureReference, Collections.emptySet()))
+            softly.assertThatThrownBy(() -> new UnfoldOperation(dataset, validIdentifierReference, validMeasureReference, Collections.emptySet()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("empty");
@@ -85,7 +90,7 @@ public class UnfoldClauseTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, invalidReference, validMeasure, validElements);
+                UnfoldOperation clause = new UnfoldOperation(dataset, invalidReference, validMeasure, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -94,7 +99,7 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, validDimension, invalidReference, validElements);
+                UnfoldOperation clause = new UnfoldOperation(dataset, validDimension, invalidReference, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -103,7 +108,7 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                UnfoldClause clause = new UnfoldClause(dataset, validMeasure, validDimension, validElements);
+                UnfoldOperation clause = new UnfoldOperation(dataset, validMeasure, validDimension, validElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -111,7 +116,7 @@ public class UnfoldClauseTest {
                     .hasMessageContaining("was not a dimension");
 
 
-            UnfoldClause clause = new UnfoldClause(dataset, validDimension, validMeasure, validElements);
+            UnfoldOperation clause = new UnfoldOperation(dataset, validDimension, validMeasure, validElements);
             clause.getDataStructure();
         }
     }
@@ -121,6 +126,16 @@ public class UnfoldClauseTest {
 
         Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
         Dataset dataset = mock(Dataset.class);
+
+// works only with last version of mockito.
+//        , withSettings()
+//                .defaultAnswer(invocation -> {
+//                    if (invocation.getMethod().isDefault())
+//                        return invocation.callRealMethod();
+//                    else
+//                        return RETURNS_DEFAULTS.answer(invocation);
+//                }));
+
         DataStructure structure = DataStructure.of((o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
@@ -130,7 +145,7 @@ public class UnfoldClauseTest {
         );
         when(dataset.getDataStructure()).thenReturn(structure);
 
-        when(dataset.get()).then(invocation -> Stream.of(
+        when(dataset.getData()).then(invocation -> Stream.of(
                 tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
                 tuple(structure, "id1-1", "id2-2", "measure1-2", "measure2-2", "attribute1-2"),
                 tuple(structure, "id1-2", "id2-1", "measure1-3", "measure2-3", "attribute1-3"),
@@ -138,22 +153,17 @@ public class UnfoldClauseTest {
                 tuple(structure, "id1-3", "id2-1", "measure1-5", "measure2-5", "attribute1-5")
         ));
 
+        when(dataset.getData(any(Dataset.Order.class))).then(invocation -> Optional.of(dataset.getData()));
+
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            UnfoldClause clause = new UnfoldClause(dataset, structure.get("id2"), structure.get("measure1"), elements);
+            UnfoldOperation clause = new UnfoldOperation(dataset, structure.get("id2"), structure.get("measure1"), elements);
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
                     "id1", "id2-1", "id2-2"
             );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(DataPoint::getName)
-                    .contains(
-                            "id1", "id2-1", "id2-2",
-                            "id1", "id2-1", "id2-2",
-                            "id1", "id2-1", "id2-2"
-                    );
-
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(DataPoint::get)
-                    .contains(
+            softly.assertThat(clause.getData()).flatExtracting(input -> input).extracting(VTLObject::get)
+                    .containsExactly(
                             "id1-1", "measure1-1", "measure1-2",
                             "id1-2", "measure1-3", "measure1-4",
                             "id1-3", "measure1-5", null

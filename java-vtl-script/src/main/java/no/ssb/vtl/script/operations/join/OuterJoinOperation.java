@@ -21,7 +21,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
@@ -38,71 +38,64 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
         Set<Component> identifiers = getIdentifiers();
         return (left, right, compare) -> {
 
             // TODO: Rewrite this method after implementing the tuple "Map View"
 
-            JoinTuple merged;
-            ArrayList<DataPoint> ids = Lists.newArrayList();
-            for (DataPoint point : left) {
+            JoinDataPoint merged;
+            ArrayList<VTLObject> ids = Lists.newArrayList();
+            for (VTLObject point : left) {
                 if (identifiers.contains(point.getComponent())) {
                     ids.add(point);
                 }
             }
             if (compare <= 0) {
-                merged = new JoinTuple(ids);
+                merged = new JoinDataPoint(ids);
             } else {
                 // Use left components with right values.
-                Iterator<DataPoint> idsIterator = ids.iterator();
-                List<DataPoint> rightIds = Lists.newArrayList();
-                for (DataPoint point : right) {
+                Iterator<VTLObject> idsIterator = ids.iterator();
+                List<VTLObject> rightIds = Lists.newArrayList();
+                for (VTLObject point : right) {
                     if (identifiers.contains(point.getComponent())) {
                         Component leftComponent = idsIterator.next().getComponent();
-                        rightIds.add(new DataPoint(leftComponent) {
-                            Object value = point.get();
-
-                            @Override
-                            public Object get() {
-                                return value;
-                            }
-                        });
+                        rightIds.add(VTLObject.of(leftComponent, point.get()));
                     }
                 }
-                merged = new JoinTuple(rightIds);
+                merged = new JoinDataPoint(rightIds);
             }
 
 
             if (compare == 0) {
-                for (DataPoint point : left) {
+                for (VTLObject point : left) {
                     if (!identifiers.contains(point.getComponent())) {
                         merged.add(point);
                     }
                 }
-                for (DataPoint point : right) {
+                for (VTLObject point : right) {
                     if (!identifiers.contains(point.getComponent()))
                         merged.add(point);
                 }
             } else {
                 if (compare < 0) {
-                    for (DataPoint point : left) {
+                    for (VTLObject point : left) {
                         if (!identifiers.contains(point.getComponent())) {
                             merged.add(point);
                         }
                     }
-                    for (DataPoint point : right) {
+                    for (VTLObject point : right) {
                         if (!identifiers.contains(point.getComponent())) {
                             merged.add(createNull(point));
                         }
                     }
                 } else { // (compare > 0) {
-                    for (DataPoint point : left) {
+                    for (VTLObject point : left) {
                         if (!identifiers.contains(point.getComponent())) {
                             merged.add(createNull(point));
                         }
                     }
-                    for (DataPoint point : right) {
+                    for (VTLObject point : right) {
                         if (!identifiers.contains(point.getComponent())) {
                             merged.add(point);
                         }
@@ -113,13 +106,8 @@ public class OuterJoinOperation extends AbstractJoinOperation {
         };
     }
 
-    private DataPoint createNull(final DataPoint point) {
-        return new DataPoint(point.getComponent()) {
-            @Override
-            public Object get() {
-                return null;
-            }
-        };
+    private VTLObject createNull(final VTLObject point) {
+        return VTLObject.of(point.getComponent(), null);
     }
 
     @Override
@@ -128,4 +116,23 @@ public class OuterJoinOperation extends AbstractJoinOperation {
         return this;
     }
 
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
 }

@@ -10,6 +10,7 @@ import io.termd.core.util.Helper;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import no.ssb.vtl.connectors.SsbKlassApiConnector;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLLexer;
@@ -189,10 +190,10 @@ public class TtyConsole implements Consumer<TtyConnection> {
         ttyConnection.write(columns.stream().collect(Collectors.joining(",")) + "\n");
 
         // Rows
-        Iterator<Dataset.Tuple> iterator = dataset.stream().iterator();
+        Iterator<DataPoint> iterator = dataset.stream().iterator();
         while (iterator.hasNext()) {
             columns.clear();
-            Dataset.Tuple row = iterator.next();
+            DataPoint row = iterator.next();
             columns = row.stream().map(dataPoint -> {
                 return dataPoint.get() == null ? "[NULL]" : dataPoint.get().toString();
             }).collect(Collectors.toList());

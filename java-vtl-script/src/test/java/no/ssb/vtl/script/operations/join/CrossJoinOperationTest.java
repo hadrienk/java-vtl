@@ -4,16 +4,16 @@ import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import java.time.Year;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.mock;
 
 public class CrossJoinOperationTest {
@@ -97,12 +97,7 @@ public class CrossJoinOperationTest {
         vtlPrintStream.println(result);
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
-            @Override
-            protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+    private DataPoint tuple(VTLObject... components) {
+        return DataPoint.create(Arrays.asList(components));
     }
 }

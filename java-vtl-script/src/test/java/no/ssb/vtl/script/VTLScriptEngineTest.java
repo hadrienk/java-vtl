@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -189,14 +190,14 @@ public class VTLScriptEngineTest {
 
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
-                .extracting(DataPoint::getName)
+                .extracting((vtlObject) -> vtlObject.getComponent().getName())
                 .containsExactly(
                         "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
                 );
 
         assertThat(ds3.get())
                 .flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "1", "1", 10, 40, 0, true
                 );
@@ -219,12 +220,12 @@ public class VTLScriptEngineTest {
                 Arrays.asList("3", 301, 302, 303)
         ).map(list -> {
             Iterator<?> it = list.iterator();
-            List<DataPoint> points = Lists.newArrayList();
+            List<VTLObject> points = Lists.newArrayList();
             for (String name : ds.keySet()) {
                 Object value = it.hasNext() ? it.next() : null;
                 points.add(ds.wrap(name, value));
             }
-            return Dataset.Tuple.create(points);
+            return DataPoint.create(points);
         }));
 
         bindings.put("ds1", ds1);
@@ -244,7 +245,7 @@ public class VTLScriptEngineTest {
         );
 
         assertThat(ds2.get()).flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "1", "m1", 101,
                         "1", "m2", 102,
@@ -280,23 +281,27 @@ public class VTLScriptEngineTest {
                         "id1", "1",
                         "id2", "one",
                         "m1", 101,
+                        "m2", 1.1,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
                         "id1", "1",
                         "id2", "two",
                         "m1", 102,
+                        "m2", 1.1,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
                         "id1", "2",
                         "id2", "one",
                         "m1", 201,
+                        "m2", 1.1,
                         "at1", "attr2"
                 ), ImmutableMap.of(
                         "id1", "2",
                         "id2", "two",
                         "m1", 202,
+                        "m2", 1.1,
                         "at1", "attr2"
                 )
         ).map(ds::wrap));
@@ -319,7 +324,7 @@ public class VTLScriptEngineTest {
         );
 
         assertThat(ds2.get()).flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "1", 101, 102, 101 + 102,
                         "2", 201, 202, 201 + 202
@@ -497,7 +502,7 @@ public class VTLScriptEngineTest {
         );
 
         assertThat(ds3.get()).flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "0101", "2015", 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null, true,
                         "0111", "2014", 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null, false,
@@ -505,12 +510,7 @@ public class VTLScriptEngineTest {
                 );
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
-            @Override
-            protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+    private DataPoint tuple(VTLObject... components) {
+        return DataPoint.create(Arrays.asList(components));
     }
 }

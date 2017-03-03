@@ -24,11 +24,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -41,12 +43,27 @@ public class RenameOperationTest {
 
     Dataset notNullDataset = new Dataset() {
         @Override
+        public Stream<? extends DataPoint> getData() {
+            return null;
+        }
+
+        @Override
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
+            return null;
+        }
+
+        @Override
+        public Optional<Long> getSize() {
+            return null;
+        }
+
+        @Override
         public DataStructure getDataStructure() {
             return null;
         }
 
         @Override
-        public Stream<Tuple> get() {
+        public Stream<DataPoint> get() {
             return null;
         }
     };
@@ -175,7 +192,7 @@ public class RenameOperationTest {
                 entry("Attribute2Measure", Role.MEASURE)
         );
 
-        assertThat(rename.get()).flatExtracting(input -> input).extracting(DataPoint::get)
+        assertThat(rename.get()).flatExtracting(input -> input).extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         structure.keySet()
                 );

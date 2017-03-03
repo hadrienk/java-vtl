@@ -3,7 +3,7 @@ package no.ssb.vtl.tools.webconsole;
 import com.codepoetics.protonpack.Streamable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,8 +106,8 @@ public class ExecutorController {
         Object dataset = bindings.get(id);
         Streamable<Map<String, Object>> streamable = ((Dataset) dataset).map(dataPoints -> {
             Map<String, Object> map = Maps.newHashMap();
-            for (DataPoint dataPoint : dataPoints) {
-                map.put(dataPoint.getName(), dataPoint.get());
+            for (VTLObject dataPoint : dataPoints) {
+                map.put(dataPoint.getComponent().getName(), dataPoint.get());
             }
             return map;
         });

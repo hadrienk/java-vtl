@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +81,7 @@ public class SsbApiConnectorTest {
 
         assertThat(dataset.get())
                 .flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsSequence(
                         30308, 75, 79, 72, "0101", 70, 26, 82, "2014K3",
                         387, -3, 425, 30328, 95, 20, 63, "0101", 42, 68, 49, "2014K4"

@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -35,12 +36,12 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
     private ObjectMapper mapper = new ObjectMapper();
 
-    private static Condition<DataPoint> dataPointWith(String name, Object value) {
-        return new Condition<DataPoint>(new Predicate<DataPoint>() {
+    private static Condition<VTLObject> dataPointWith(String name, Object value) {
+        return new Condition<VTLObject>(new Predicate<VTLObject>() {
             @Override
-            public boolean test(DataPoint dataPoint) {
-                return name.equals(dataPoint.getName()) &&
-                        value.equals(dataPoint.get());
+            public boolean test(VTLObject value) {
+                return name.equals(value.getComponent().getName()) &&
+                        value.equals(value.get());
             }
         }, "data point with name %s and value %s", name, value);
     }
@@ -120,7 +121,10 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         assertThat(result.workDataset().get())
                 .flatExtracting(tuple -> tuple)
-                .flatExtracting(dataPoint -> Arrays.asList(dataPoint.getRole(), dataPoint.getComponent(), dataPoint.get()))
+                .flatExtracting(dataPoint -> {
+                    Component component = dataPoint.getComponent();
+                    return Arrays.asList(component.getRole(), component, dataPoint.get());
+                })
 
                 .startsWith(
                         IDENTIFIER, structure1.get("time"), Year.of(2010),
@@ -144,8 +148,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
     @Repeat(iterations = 10)
     public void testRandomDatasets() throws Exception {
 
-        Integer datasetAmount = scaledRandomIntBetween(1, 50);
-        Integer rowAmount = scaledRandomIntBetween(0, 500);
+        Integer datasetAmount = scaledRandomIntBetween(1, 10);
+        Integer rowAmount = scaledRandomIntBetween(0, 100);
         Set<Component> allComponents = Sets.newHashSet();
 
         Map<String, Dataset> datasets = Maps.newLinkedHashMap();
@@ -193,15 +197,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
         List<Object> data = datasets.values().stream()
                 .flatMap(Supplier::get)
-                .map(Dataset.Tuple::values)
                 .flatMap(Collection::stream)
-                .map(DataPoint::get)
+                .map(VTLObject::get)
                 .collect(Collectors.toList());
-
-        assertThat(result.get())
+    
+        assertThat(result.get().flatMap(Collection::stream))
                 .describedAs("the data")
-                .flatExtracting(Dataset.Tuple::values)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         data
                 );
@@ -298,19 +300,14 @@ public class InnerJoinOperationTest extends RandomizedTest {
         );
 
         assertThat(ds3.get()).flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsExactly(
                         "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
                         "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
                 );
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
-            @Override
-            protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+    private DataPoint tuple(VTLObject... components) {
+        return DataPoint.create(Arrays.asList(components));
     }
 }

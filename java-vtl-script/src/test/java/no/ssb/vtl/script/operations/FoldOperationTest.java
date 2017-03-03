@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
@@ -22,9 +23,9 @@ import static no.ssb.vtl.model.Component.Role.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class FoldClauseTest {
+public class FoldOperationTest {
 
-    private static Dataset.Tuple tuple(DataStructure structure, Object... values) {
+    private static DataPoint tuple(DataStructure structure, Object... values) {
         checkArgument(values.length == structure.size());
         Map<String, Object> map = Maps.newLinkedHashMap();
         Iterator<Object> iterator = Lists.newArrayList(values).iterator();
@@ -50,37 +51,37 @@ public class FoldClauseTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
-            softly.assertThatThrownBy(() -> new FoldClause(null, validDimensionReference, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new FoldOperation(null, validDimensionReference, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dataset")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new FoldClause(dataset, null, validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new FoldOperation(dataset, null, validMeasureReference, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("dimensionReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new FoldClause(dataset, validDimensionReference, null, validElements))
+            softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, null, validElements))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("measureReference")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new FoldClause(dataset, validDimensionReference, validMeasureReference, null))
+            softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("null");
 
-            softly.assertThatThrownBy(() -> new FoldClause(dataset, "", validMeasureReference, validElements))
+            softly.assertThatThrownBy(() -> new FoldOperation(dataset, "", validMeasureReference, validElements))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("dimensionReference")
                     .hasMessageContaining("empty");
 
-            softly.assertThatThrownBy(() -> new FoldClause(dataset, validDimensionReference, "", validElements))
+            softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, "", validElements))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("measureReference")
                     .hasMessageContaining("empty");
 
-            softly.assertThatThrownBy(() -> new FoldClause(dataset, validDimensionReference, validMeasureReference, Collections.emptySet()))
+            softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, Collections.emptySet()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("elements")
                     .hasMessageContaining("empty");
@@ -130,7 +131,7 @@ public class FoldClauseTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {
-                FoldClause clause = new FoldClause(dataset, "newDimension", "newMeasure", invalidElements);
+                FoldOperation clause = new FoldOperation(dataset, "newDimension", "newMeasure", invalidElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
@@ -138,19 +139,19 @@ public class FoldClauseTest {
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
-                FoldClause clause = new FoldClause(invalidDataset, "newDimension", "newMeasure", wrongTypesElements);
+                FoldOperation clause = new FoldOperation(invalidDataset, "newDimension", "newMeasure", wrongTypesElements);
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("same type");
 
-            FoldClause clause = new FoldClause(dataset, "newDimension", "newMeasure", validElements);
+            FoldOperation clause = new FoldOperation(dataset, "newDimension", "newMeasure", validElements);
             softly.assertThat(clause.getDataStructure()).isNotNull();
         }
     }
 
     @Test
-    public void testUnfold() throws Exception {
+    public void testFold() throws Exception {
 
         Dataset dataset = mock(Dataset.class);
         DataStructure structure = DataStructure.of((o, aClass) -> o,
@@ -162,7 +163,7 @@ public class FoldClauseTest {
         );
         when(dataset.getDataStructure()).thenReturn(structure);
 
-        when(dataset.get()).then(invocation -> Stream.of(
+        when(dataset.getData()).then(invocation -> Stream.of(
                 tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
                 tuple(structure, "id1-1", "id2-2", null, "measure2-2", "attribute1-2"),
                 tuple(structure, "id1-2", "id2-1", "measure1-3", null, "attribute1-3"),
@@ -174,20 +175,20 @@ public class FoldClauseTest {
         // Set<String> elements = Sets.newLinkedHashSet(Lists.newArrayList("measure2", "measure1", "attribute1"));
         Set<Component> elements = Sets.newLinkedHashSet(
                 Lists.newArrayList(
-                        structure.get("measure1"),
                         structure.get("measure2"),
+                        structure.get("measure1"),
                         structure.get("attribute1")
                 )
         );
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            FoldClause clause = new FoldClause(dataset, "newId", "newMeasure", elements);
+            FoldOperation clause = new FoldOperation(dataset, "newId", "newMeasure", elements);
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
                     "id1", "id2", "newId", "newMeasure"
             );
 
-            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(DataPoint::get)
+            softly.assertThat(clause.get()).flatExtracting(input -> input).extracting(VTLObject::get)
                     .containsExactly(
                             "id1-1", "id2-1", "measure1", "measure1-1",
                             "id1-1", "id2-1", "measure2", "measure2-1",

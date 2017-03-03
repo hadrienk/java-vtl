@@ -21,10 +21,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.*;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.*;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
@@ -41,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Abstract join operation.
  */
-public abstract class AbstractJoinOperation implements WorkingDataset {
+public abstract class AbstractJoinOperation extends AbstractDatasetOperation implements WorkingDataset {
 
     // The datasets the join operates on.
     private final Bindings joinScope;
@@ -49,7 +46,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     private final ImmutableSet<Component> identifiers;
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
-
+        super(Lists.newArrayList(namedDatasets.values()));
         this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
 
         checkNotNull(identifiers);
@@ -93,7 +90,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return result;
     }
 
-    protected abstract JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger();
+    protected abstract JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger();
 
     protected ImmutableSet<Component> getIdentifiers() {
         return this.identifiers;
@@ -132,16 +129,15 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     @Override
-    public Stream<Tuple> get() {
-
+    public Stream<? extends DataPoint> getData() {
         // Optimization.
         if (datasets.size() == 1) {
             return datasets.values().iterator().next().get();
         }
 
         Iterator<Dataset> iterator = datasets.values().iterator();
-        Stream<JoinTuple> result = iterator.next().get()
-                .map(JoinTuple::new);
+        Stream<JoinDataPoint> result = iterator.next().get()
+                .map(JoinDataPoint::new);
 
         while (iterator.hasNext()) {
             result = StreamSupport.stream(
@@ -149,7 +145,7 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
                             getKeyComparator(),
                             result.spliterator(),
                             iterator.next().get()
-                                    .map(JoinTuple::new)
+                                    .map(JoinDataPoint::new)
                                     .spliterator(),
                             getKeyExtractor(),
                             getKeyExtractor(),
@@ -160,7 +156,13 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return result.map(tuple -> tuple);
     }
 
-    private Function<JoinTuple, List<DataPoint>> getKeyExtractor() {
+    @Override
+    @Deprecated
+    public Stream<DataPoint> get() {
+        return getData().map(o -> o);
+    }
+
+    private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor() {
         return tuple -> {
             // Filter by common ids.
             return tuple.stream().filter(dataPoint ->
@@ -169,11 +171,8 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         };
     }
 
-    /**
-     * Compute the DataStructure of the join dataset.
-     */
-    public DataStructure getDataStructure() {
-
+    @Override
+    protected DataStructure computeDataStructure() {
         // Optimization.
         if (datasets.size() == 1) {
             return datasets.values().iterator().next().getDataStructure();
@@ -200,25 +199,24 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
         return joinScope;
     }
 
+    @Deprecated
     public abstract WorkingDataset workDataset();
 
-    protected Comparator<List<DataPoint>> getKeyComparator() {
+    protected Comparator<List<VTLObject>> getKeyComparator() {
         ImmutableSet<Component> keys = getIdentifiers();
         return (l, r) -> {
-            // TODO: Tuple should expose method to handle this.
-            // TODO: Evaluate migrating to DataPoint.
+            // TODO: DataPoint should expose method to handle this.
+            // TODO: Evaluate migrating to VTLObject.
             // TODO: When using on, the left over identifiers should be transformed to measures.
 
             Map<String, Comparable> lIds = l.stream()
                     .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
-                    .collect(Collectors.toMap(
-                            DataPoint::getName,
+                    .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
                             t -> (Comparable) t.get()
                     ));
             Map<String, Object> rIds = r.stream()
                     .filter(dataPoint -> keys.contains(dataPoint.getComponent()))
-                    .collect(Collectors.toMap(
-                            DataPoint::getName,
+                    .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
                             Supplier::get
                     ));
             for (String key : lIds.keySet()) {
@@ -259,20 +257,14 @@ public abstract class AbstractJoinOperation implements WorkingDataset {
     }
 
     /**
-     * Holds the "working dataset" tuples.
+     * Holds the "working dataset" dataPoint.
      */
-    static final class JoinTuple extends Dataset.AbstractTuple implements RandomAccess {
+    static final class JoinDataPoint extends DataPoint implements RandomAccess {
 
-        private final List<DataPoint> delegate = Lists.newArrayList();
-
-        public JoinTuple(List<DataPoint> ids) {
-            this.delegate.addAll(ids);
+        public JoinDataPoint(List<VTLObject> ids) {
+            super(ids);
         }
 
-        @Override
-        protected List<DataPoint> delegate() {
-            return delegate;
-        }
 
     }
 

@@ -39,9 +39,9 @@ public class CrossJoinOperation extends InnerJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
         return (left, right, compare) -> {
-            JoinTuple tuple = new JoinTuple(Collections.emptyList());
+            JoinDataPoint tuple = new JoinDataPoint(Collections.emptyList());
             if (compare == 0) {
                 tuple.addAll(left);
                 tuple.addAll(right);

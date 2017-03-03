@@ -6,7 +6,6 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static java.util.Optional.*;
 
@@ -46,8 +45,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        Supplier<Dataset> datasetSupplier = relationalVisitor.visit(ctx);
-        return datasetSupplier.get();
+        return relationalVisitor.visit(ctx);
     }
 
 

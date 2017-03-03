@@ -4,17 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static no.ssb.vtl.model.Component.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class UnionOperationTest {
 
@@ -28,8 +27,8 @@ public class UnionOperationTest {
 
         UnionOperation operator = new UnionOperation(dataset);
 
-        assertThat(operator.get().get())
-                .as("Check that result of union operation", null)
+        assertThat(operator.get())
+                .as("Check that result of union operation")
                 .isSameAs(dataset.get());
 
     }
@@ -68,7 +67,8 @@ public class UnionOperationTest {
             when(wrongDataset.getDataStructure()).thenReturn(wrongStructure);
             Throwable expextedEx = null;
             try {
-                new UnionOperation(dataset1, wrongDataset, dataset2, dataset3);
+                UnionOperation operation = new UnionOperation(dataset1, wrongDataset, dataset2, dataset3);
+                operation.computeDataStructure();
             } catch (Throwable t) {
                 expextedEx = t;
             }
@@ -142,13 +142,11 @@ public class UnionOperationTest {
                         dataStructure.wrap("POP", 1)
                 )
         ));
-
-        UnionOperation unionOperation = new UnionOperation(totalPopulation1, totalPopulation2);
-
-        Dataset resultDataset = unionOperation.get();
+    
+        Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
-        Stream<Dataset.Tuple> stream = resultDataset.stream();
+        Stream<DataPoint> stream = resultDataset.stream();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
@@ -264,13 +262,11 @@ public class UnionOperationTest {
                         dataStructure.wrap("POP", 60)
                 )
         ));
-
-        UnionOperation unionOperation = new UnionOperation(totalPopulation1, totalPopulation2);
-
-        Dataset resultDataset = unionOperation.get();
+    
+        Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
-        Stream<Dataset.Tuple> stream = resultDataset.stream();
+        Stream<DataPoint> stream = resultDataset.stream();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
@@ -329,12 +325,7 @@ public class UnionOperationTest {
 
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
-            @Override
-            protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+    private DataPoint tuple(VTLObject... components) {
+        return DataPoint.create(Arrays.asList(components));
     }
 }

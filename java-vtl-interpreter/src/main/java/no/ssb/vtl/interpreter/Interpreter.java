@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.connectors.SsbApiConnector;
@@ -86,8 +87,8 @@ public class Interpreter implements Runnable {
             output.print("]");
         }
         output.println();
-        for (Dataset.Tuple tuple : (Iterable<Dataset.Tuple>) dataset.stream()::iterator) {
-            for (DataPoint component : tuple) {
+        for (DataPoint dataPoint : (Iterable<DataPoint>) dataset.stream()::iterator) {
+            for (VTLObject component : dataPoint) {
                 output.print(component.get());
                 output.print(",");
             }
@@ -202,12 +203,12 @@ public class Interpreter implements Runnable {
         console.println(columns.stream().collect(Collectors.joining(",")));
 
         // Rows
-        Iterator<Dataset.Tuple> iterator = dataset.stream().iterator();
+        Iterator<DataPoint> iterator = dataset.stream().iterator();
         while (iterator.hasNext()) {
             columns.clear();
-            Dataset.Tuple row = iterator.next();
+            DataPoint row = iterator.next();
             //Map<String, Object> asMap = row.stream().collect(Collectors.toMap(
-            //        DataPoint::getName, DataPoint::get
+            //        VTLObject::getName, VTLObject::get
             //));
             //for (String name : dataset.getDataStructure().keySet())
             //    columns.add(asMap.get(name).toString());
