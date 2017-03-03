@@ -153,11 +153,6 @@ public class SsbApiConnector implements Connector {
                     return structure;
                 }
 
-                @Override
-                @Deprecated
-                public Stream<DataPoint> get() {
-                    return getData().map(o -> o);
-                }
             };
 
         } catch (RestClientException rce) {

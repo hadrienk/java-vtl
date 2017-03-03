@@ -182,7 +182,7 @@ public class TtyConsole implements Consumer<TtyConnection> {
         ttyConnection.write(columns.stream().collect(Collectors.joining(",")) + "\n");
 
         // Rows
-        Iterator<DataPoint> iterator = dataset.stream().iterator();
+        Iterator<DataPoint> iterator = dataset.getData().iterator();
         while (iterator.hasNext()) {
             columns.clear();
             DataPoint row = iterator.next();

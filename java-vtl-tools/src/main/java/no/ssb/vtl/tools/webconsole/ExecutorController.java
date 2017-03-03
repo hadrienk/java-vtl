@@ -1,16 +1,22 @@
 package no.ssb.vtl.tools.webconsole;
 
-import com.codepoetics.protonpack.Streamable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -103,14 +109,16 @@ public class ExecutorController {
             method = RequestMethod.GET
     )
     public Iterable<Map<String, Object>> getData(@PathVariable String id) {
-        Object dataset = bindings.get(id);
-        Streamable<Map<String, Object>> streamable = ((Dataset) dataset).map(dataPoints -> {
-            Map<String, Object> map = Maps.newHashMap();
-            for (VTLObject dataPoint : dataPoints) {
-                map.put(dataPoint.getComponent().getName(), dataPoint.get());
-            }
-            return map;
-        });
-        return () -> streamable.get().iterator();
+        final Dataset dataset = (Dataset) bindings.get(id);
+        DataStructure structure = dataset.getDataStructure();
+        return () -> {
+            return dataset.getData().map(dataPoints -> {
+                Map<String, Object> map = Maps.newHashMap();
+                for (Map.Entry<Component, VTLObject> entry : structure.asMap(dataPoints).entrySet()) {
+                    map.put(structure.getName(entry.getKey()), entry.getValue());
+                }
+                return map;
+            }).iterator();
+        };
     }
 }

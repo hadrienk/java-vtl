@@ -38,7 +38,7 @@ public class JoinFilterClauseVisitorTest {
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
     
-        when(ds1.get()).then(invocation -> Stream.of(
+        when(ds1.getData()).then(invocation -> Stream.of(
                 structure1.wrap(ImmutableMap.of(
                         "id1", "1",
                         "m1", 10
@@ -60,7 +60,7 @@ public class JoinFilterClauseVisitorTest {
         );
         when(ds2.getDataStructure()).thenReturn(structure2);
     
-        when(ds2.get()).then(invocation -> Stream.of(
+        when(ds2.getData()).then(invocation -> Stream.of(
                 structure2.wrap(ImmutableMap.of(
                         "id1", "1",
                         "m1", 10,
@@ -92,7 +92,7 @@ public class JoinFilterClauseVisitorTest {
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
         Dataset ds3 = (Dataset) bindings.get("ds3");
         
-        assertThat(ds3.get())
+        assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
@@ -117,7 +117,7 @@ public class JoinFilterClauseVisitorTest {
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
         Dataset ds3 = (Dataset) bindings.get("ds3");
     
-        assertThat(ds3.get())
+        assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(

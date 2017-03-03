@@ -108,7 +108,7 @@ public class AbstractJoinOperationTest {
         );
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
-        given(ds1.get()).will(invocation -> {
+        given(ds1.getData()).will(invocation -> {
             return IntStream.rangeClosed(0, 10).boxed().map(
                     integer -> ds1Struct.wrap(
                             ImmutableMap.of(
@@ -124,7 +124,7 @@ public class AbstractJoinOperationTest {
                 return new WorkingDataset() {
                     @Override
                     public Stream<DataPoint> getData() {
-                        return ds1.get();
+                        return ds1.getData();
                     }
 
                     @Override
@@ -142,18 +142,13 @@ public class AbstractJoinOperationTest {
                         return ds1.getDataStructure();
                     }
 
-                    @Override
-                    @Deprecated
-                    public Stream<DataPoint> get() {
-                        return getData().map(o -> o);
-                    }
                 };
             }
 
         };
 
-        assertThat(result.workDataset().get())
-                .containsAll(ds1.get().collect(Collectors.toList()));
+        assertThat(result.getData())
+                .containsAll(ds1.getData().collect(Collectors.toList()));
 
     }
 

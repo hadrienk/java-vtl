@@ -209,7 +209,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 .map(VTLObject::get)
                 .collect(Collectors.toList());
     
-        assertThat(result.getData().parallel().flatMap(Collection::stream))
+        assertThat(result.getData().flatMap(Collection::stream))
                 .describedAs("the data")
                 .extracting(VTLObject::get)
                 .containsOnlyElementsOf(
@@ -301,7 +301,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 entry("validTo", Component.Role.IDENTIFIER)
         );
 
-        assertThat(ds3.get()).flatExtracting(input -> input)
+        assertThat(ds3.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
                         "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,

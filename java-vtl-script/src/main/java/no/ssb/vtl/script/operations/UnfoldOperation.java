@@ -163,12 +163,6 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
-    }
-
-    @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         helper.add("identifier", dimension);

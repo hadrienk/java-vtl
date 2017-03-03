@@ -124,12 +124,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
-    }
-
-    @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         helper.addValue(newNames);
@@ -140,7 +134,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        return getChild().get().map(dataPoint -> {
+        return getChild().getData().map(dataPoint -> {
             LinkedList<Component> list = Lists.newLinkedList(getDataStructure().values());
             Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);
             dataPoint.replaceAll(vtlObject -> {

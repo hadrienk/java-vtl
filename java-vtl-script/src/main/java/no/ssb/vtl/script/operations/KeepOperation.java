@@ -41,12 +41,6 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
-    }
-
-    @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         helper.addValue(components);
@@ -60,7 +54,7 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
         HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
         HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
         LinkedList<Component> componentsToRemove = Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
-        return getChild().get().map(
+        return getChild().getData().map(
                 dataPoints -> {
                     Iterator<Component> descendingIterator = componentsToRemove.descendingIterator();
                     while (descendingIterator.hasNext()) {

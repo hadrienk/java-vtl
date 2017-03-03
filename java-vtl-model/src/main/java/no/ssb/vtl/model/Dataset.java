@@ -20,7 +20,6 @@ package no.ssb.vtl.model;
  * #L%
  */
 
-import com.codepoetics.protonpack.Streamable;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -73,7 +72,7 @@ import static com.google.common.base.Preconditions.*;
  * {@link Dataset#getData(Order, Filtering, Set)} methods. This allows optimized implementations of operations like
  * join or union.
  */
-public interface Dataset extends Streamable<DataPoint> {
+public interface Dataset {
 
     /**
      * Deprecated, we are moving toward a Map view of the tuples.
@@ -197,10 +196,6 @@ public interface Dataset extends Streamable<DataPoint> {
      * Returns the data structure of the DataSet.
      */
     DataStructure getDataStructure();
-
-    @Override
-    @Deprecated
-    Stream<DataPoint> get();
 
     /**
      * Represent the filtering of the {@link DataPoint}s in a Dataset.

@@ -193,12 +193,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return result.map(tuple -> tuple);
     }
 
-    @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
-    }
-
     private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor(final DataStructure structure) {
         // Filter by common ids.
         final Set<Component> components = Sets.intersection(

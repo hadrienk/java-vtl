@@ -28,16 +28,11 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
         return getChild().getDataStructure();
     }
 
-    @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
-    }
 
     @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        Map<Boolean, List<DataPoint>> predicateResultMap = getChild().stream().collect(Collectors.partitioningBy(predicate));
+        Map<Boolean, List<DataPoint>> predicateResultMap = getChild().getData().collect(Collectors.partitioningBy(predicate));
         helper.addValue(predicateResultMap);
         helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
@@ -45,7 +40,7 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        return getChild().filter(predicate).stream();
+        return getChild().getData().filter(predicate);
     }
 
     @Override

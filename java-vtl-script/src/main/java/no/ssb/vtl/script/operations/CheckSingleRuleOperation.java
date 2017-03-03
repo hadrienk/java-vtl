@@ -59,7 +59,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        Stream<DataPoint> tupleStream = getChild().get();
+        Stream<DataPoint> tupleStream = getChild().getData();
 
         //first calculate the new data points...
         if (componentsToReturn == ComponentsToReturn.MEASURES) {
@@ -150,12 +150,6 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
                 newTypes.remove(oldName);
             }
         }
-    }
-
-    @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-        return getData().map(o -> o);
     }
 
     private VTLObject getErrorLevelAsDataPoint() {

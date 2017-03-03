@@ -138,10 +138,5 @@ public class DatasetTest extends RandomizedTest {
             return dataStructure;
         }
 
-        @Override
-        @Deprecated
-        public Stream<DataPoint> get() {
-            return getData().map(o -> o);
-        }
     }
 }
