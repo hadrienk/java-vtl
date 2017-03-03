@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 import static com.google.common.base.Preconditions.*;
 
 /**
- * A data point is a simple reference holder for values.
+ * Root of the VTL data type hierarchy.
  */
 public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
 
