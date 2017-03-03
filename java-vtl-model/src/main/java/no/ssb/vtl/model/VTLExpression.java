@@ -2,6 +2,13 @@ package no.ssb.vtl.model;
 
 import java.util.function.Function;
 
+/**
+ * Base VTL expression
+ *
+ * Represents a scalar value (VTLObject)  whose computation can be function of a data point (ultimately of a Bindings,
+ * but we are not there yet) but still exposes its type.
+ *
+ */
 public abstract class VTLExpression implements Function<DataPoint, VTLObject> {
     
     public abstract Class<?> getType();
