@@ -5,7 +5,6 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -16,7 +15,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
-import static no.ssb.vtl.script.operations.CheckSingleRuleOperation.*;
+import static no.ssb.vtl.script.operations.check.CheckSingleRuleOperation.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;

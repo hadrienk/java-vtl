@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.check;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

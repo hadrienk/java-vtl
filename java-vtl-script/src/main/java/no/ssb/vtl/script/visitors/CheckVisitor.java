@@ -3,7 +3,6 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
 
 import java.util.Optional;
 
@@ -24,8 +23,8 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         VTLParser.CheckParamContext checkParamContext = ctx.checkParam();
         Dataset dataset = visit(checkParamContext.datasetExpression());
 
-        CheckSingleRuleOperation.ComponentsToReturn componentsToReturn = getComponentsToReturn(checkParamContext.checkColumns());
-        CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
+        ComponentsToReturn componentsToReturn = getComponentsToReturn(checkParamContext.checkColumns());
+        RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
 
         String errorCode = getErrorCode(checkParamContext);
         Integer errorLevel = getErrorLevel(checkParamContext);
@@ -63,21 +62,21 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         return null;
     }
 
-    private CheckSingleRuleOperation.ComponentsToReturn getComponentsToReturn(VTLParser.CheckColumnsContext checkColumnsContext) {
+    private ComponentsToReturn getComponentsToReturn(VTLParser.CheckColumnsContext checkColumnsContext) {
         Optional<String> componentsToReturn = ofNullable(checkColumnsContext).map(VTLParser.CheckColumnsContext::getText);
 
         if (componentsToReturn.isPresent() && !componentsToReturn.get().isEmpty()) {
-            return CheckSingleRuleOperation.ComponentsToReturn.valueOf(componentsToReturn.get().toUpperCase());
+            return ComponentsToReturn.valueOf(componentsToReturn.get().toUpperCase());
         }
 
         return null;
     }
 
-    private CheckSingleRuleOperation.RowsToReturn getRowsToReturn(VTLParser.CheckRowsContext checkColumnsContext) {
+    private RowsToReturn getRowsToReturn(VTLParser.CheckRowsContext checkColumnsContext) {
         Optional<String> rowsToReturn = ofNullable(checkColumnsContext).map(VTLParser.CheckRowsContext::getText);
 
         if (rowsToReturn.isPresent() && !rowsToReturn.get().isEmpty()) {
-            return CheckSingleRuleOperation.RowsToReturn.valueOf(rowsToReturn.get().toUpperCase());
+            return RowsToReturn.valueOf(rowsToReturn.get().toUpperCase());
         }
 
         return null;
