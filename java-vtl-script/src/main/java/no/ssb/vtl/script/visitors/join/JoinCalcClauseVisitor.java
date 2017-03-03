@@ -59,7 +59,7 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
                     .description(integer.toString()).build();
         }
         throw new RuntimeException(
-                format("unsuported constant type %s", constantValue)
+                format("unsupported constant type %s", constantValue)
         );
     }
 

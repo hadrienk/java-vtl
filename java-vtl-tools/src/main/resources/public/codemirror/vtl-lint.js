@@ -30,7 +30,7 @@
             callback(errors, false);
         }).catch(function (error) {
             // handle network error
-            alert(error);
+            console.log(error);
         });
     });
 

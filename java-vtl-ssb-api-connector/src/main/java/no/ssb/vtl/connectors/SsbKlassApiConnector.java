@@ -18,6 +18,7 @@ import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.connector.ConnectorException;
 import no.ssb.vtl.connector.NotFoundException;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.springframework.http.HttpEntity;
@@ -157,18 +158,33 @@ public class SsbKlassApiConnector implements Connector {
 
             return new Dataset() {
                 @Override
+                public Stream<DataPoint> get() {
+                    return getData();
+                }
+
+                @Override
                 public DataStructure getDataStructure() {
                     return DATA_STRUCTURE;
                 }
 
                 @Override
-                public Stream<Tuple> get() {
+                public Stream<DataPoint> getData() {
                     DataStructure dataStructure = getDataStructure();
                     Set<String> codeFields = dataStructure.keySet();
                     return datasets.stream()
                             .map(d -> Maps.filterKeys(d, codeFields::contains))
                             .map(d -> convertType(d))
                             .map(dataStructure::wrap);
+                }
+
+                @Override
+                public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public Optional<Long> getSize() {
+                    return Optional.empty();
                 }
             };
 

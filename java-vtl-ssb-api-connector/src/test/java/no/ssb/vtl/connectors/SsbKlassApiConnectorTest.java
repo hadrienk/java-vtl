@@ -1,13 +1,11 @@
 package no.ssb.vtl.connectors;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
-
-import java.io.InputStream;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
+import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.InputStreamResource;
@@ -15,13 +13,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Resources;
+import java.io.InputStream;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
-import no.ssb.vtl.connector.Connector;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.Dataset;
+import static org.assertj.core.api.Assertions.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 public class SsbKlassApiConnectorTest {
 
@@ -79,7 +77,7 @@ public class SsbKlassApiConnectorTest {
 
         assertThat(dataset.get())
                 .flatExtracting(input -> input)
-                .extracting(DataPoint::get)
+                .extracting(VTLObject::get)
                 .containsSequence(
                         "0101", "Halden", OffsetDateTime.parse("2012-12-31T23:00:00Z").toInstant(), null,
                         "0104", "Moss", OffsetDateTime.parse("2012-12-31T23:00:00Z").toInstant(), null
