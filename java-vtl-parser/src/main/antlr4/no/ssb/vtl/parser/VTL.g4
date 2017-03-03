@@ -18,14 +18,14 @@
  * #L%
  */
 grammar VTL;
-start : statement+ EOF;
+start : assignment+ EOF;
 
 /* Assignment */
-statement : identifier ASSIGNMENT datasetExpression
+assignment : identifier ASSIGNMENT datasetExpression
           | identifier ASSIGNMENT block
           ;
 
-block : '{' statement+ '}' ;
+block : '{' assignment+ '}' ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause

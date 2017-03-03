@@ -55,9 +55,9 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
         return nextResult != null ? nextResult : aggregate;
     }
-
+    
     @Override
-    public Dataset visitStatement(VTLParser.StatementContext ctx) {
+    public Dataset visitAssignment(VTLParser.AssignmentContext ctx) {
         String name = ctx.identifier().getText();
         Dataset dataset = visit(ctx.datasetExpression());
         context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
