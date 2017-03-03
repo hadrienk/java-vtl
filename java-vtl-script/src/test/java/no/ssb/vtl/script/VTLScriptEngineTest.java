@@ -427,6 +427,7 @@ public class VTLScriptEngineTest {
                         "at1", "attr3"
                 )
         ).map(structure1::wrap));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure2 = DataStructure.of(
                 (o, aClass) -> o,
@@ -456,6 +457,7 @@ public class VTLScriptEngineTest {
                         structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
                 )
         ));
+        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", dsCodeList2);
