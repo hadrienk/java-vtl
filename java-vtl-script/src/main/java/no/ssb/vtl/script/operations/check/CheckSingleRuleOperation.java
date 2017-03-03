@@ -141,15 +141,14 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
             if (component.isIdentifier()) {
                 builder.put(entry);
             } else if (component.isMeasure()) {
-                if (componentsToReturn == ComponentsToReturn.CONDITION) {
-                    if (isConditionName(entry.getKey()) && component.getType().isAssignableFrom(Boolean.class)) {
-                        checkArgument(
-                                conditions.add(component),
-                                "duplicate condition %s in %s",
-                                entry, structure
-                        );
-                    }
-                } else if (componentsToReturn == ComponentsToReturn.MEASURES) {
+                if (isConditionName(entry.getKey()) && component.getType().isAssignableFrom(Boolean.class)) {
+                    checkArgument(
+                            conditions.add(component),
+                            "duplicate condition %s in %s",
+                            entry, structure
+                    );
+                }
+                if (componentsToReturn == ComponentsToReturn.MEASURES) {
                     if (!isConditionName(entry.getKey())) {
                         builder.put(entry);
                     }
