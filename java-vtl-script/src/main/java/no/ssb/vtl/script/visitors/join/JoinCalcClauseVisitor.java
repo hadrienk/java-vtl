@@ -3,17 +3,16 @@ package no.ssb.vtl.script.visitors.join;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import no.ssb.vtl.script.visitors.VTLScalarExpressionVisitor;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.lang.String.*;
@@ -71,8 +70,8 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
 
     @Override
     public VTLExpression visitJoinCalcSummation(VTLParser.JoinCalcSummationContext ctx) {
-        Function<DataPoint, VTLObject> leftResult = visit(ctx.leftOperand);
-        Function<DataPoint, VTLObject> rightResult = visit(ctx.rightOperand);
+        VTLExpression leftResult = visit(ctx.leftOperand);
+        VTLExpression rightResult = visit(ctx.rightOperand);
 
         // TODO: Check types?
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
