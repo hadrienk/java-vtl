@@ -3,7 +3,9 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLPredicate;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.Token;
@@ -11,9 +13,8 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Map;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
-public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint>> {
+public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
     
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
@@ -24,20 +25,20 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
     }
     
     @Override
-    public Predicate<DataPoint> visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
+    public VTLPredicate visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
         if (ctx.BOOLEAN_CONSTANT() != null) {
             Boolean booleanConstant = Boolean.valueOf(ctx.BOOLEAN_CONSTANT().getText());
-            return dataPoints -> booleanConstant;
+            return dataPoints -> VTLBoolean.of(booleanConstant);
         }else if (ctx.op != null) {
-            Predicate<DataPoint> left = visit(ctx.booleanExpression(0));
-            Predicate<DataPoint> right = visit(ctx.booleanExpression(1));
+            VTLPredicate left = visit(ctx.booleanExpression(0));
+            VTLPredicate right = visit(ctx.booleanExpression(1));
             switch (ctx.op.getType()) {
                 case VTLParser.AND:
                     return left.and(right);
                 case VTLParser.OR:
                     return left.or(right);
                 case VTLParser.XOR:
-                    return left.or(right).and(left.and(right).negate());
+                    return left.xor(right);
                 default:
                     throw new ParseCancellationException("Unsupported boolean operation: " + ctx.op.getText());
             }
@@ -49,7 +50,7 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
     }
     
     @Override
-    public Predicate<DataPoint> visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
+    public VTLPredicate visitBooleanEquality(VTLParser.BooleanEqualityContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Object left = paramVisitor.visit(ctx.left);
         Object right = paramVisitor.visit(ctx.right);
@@ -59,21 +60,21 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<Predicate<DataPoint
         if (isComp(left) && !isComp(right)) {
             return dataPoint -> {
                 VTLObject leftValue = getValue((Component) left, dataPoint);
-                return booleanOperation.test(leftValue, VTLObject.of(right));
+                return VTLBoolean.of(booleanOperation.test(leftValue, VTLObject.of(right)));
             };
         } else if (!isComp(left) && isComp(right)){
             return dataPoint -> {
                 VTLObject rightValue = getValue((Component) right, dataPoint);
-                return booleanOperation.test(VTLObject.of(left), rightValue);
+                return VTLBoolean.of(booleanOperation.test(VTLObject.of(left), rightValue));
             };
         } else if (isComp(left) && isComp(right)) {
             return dataPoint -> {
                 VTLObject rightValue = getValue((Component) right, dataPoint);
                 VTLObject leftValue = getValue((Component) left, dataPoint);
-                return booleanOperation.test(leftValue, rightValue);
+                return VTLBoolean.of(booleanOperation.test(leftValue, rightValue));
             };
         } else {
-            return tuple -> booleanOperation.test(VTLObject.of(left), VTLObject.of(right));
+            return tuple -> VTLBoolean.of(booleanOperation.test(VTLObject.of(left), VTLObject.of(right)));
         }
     }
     

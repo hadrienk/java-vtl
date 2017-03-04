@@ -4,11 +4,6 @@ import static java.lang.String.*;
 
 public abstract class VTLNumber extends VTLObject<Number> {
     
-    /**
-     * Returns the value of the data point.
-     */
-    @Override
-    public abstract Number get();
     
     public static VTLNumber of(Number number) {
         
