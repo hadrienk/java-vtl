@@ -163,3 +163,32 @@ yellow, 510nm
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
+
+## Check operators
+
+The check operators are used to validate data sets. Three check operator
+ variants are available, check with rule sets, check with hierarchical
+ rule sets and check with single boolean rule.
+
+The return value of the check function depend of parameters.
+When used with the parameter "condition", the resulting dataset will only
+ contain a condition measure of type Boolean indicating if the DataPoint
+ is valid according to the rule set, hierarchical rule set or boolean
+ expression.
+With the parameter "measures", the resulting dataset contains all the
+measures of the input dataset.
+
+### Check with single rule
+<div vtl-example>
+    <vtl-code>
+folded := check(data.valid <> "na")
+    </vtl-code>
+    <vtl-dataset name="data">
+country[I,String],population[M,String]
+France , 64M
+Norway , 5M
+Italy  , na
+Sweden , 9.8M
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
