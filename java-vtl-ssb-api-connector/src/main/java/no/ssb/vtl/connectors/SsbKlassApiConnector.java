@@ -155,10 +155,6 @@ public class SsbKlassApiConnector implements Connector {
             List<Map<String, Object>> datasets = exchange.getBody().getCodes();
 
             return new Dataset() {
-                @Override
-                public Stream<DataPoint> get() {
-                    return getData();
-                }
 
                 @Override
                 public DataStructure getDataStructure() {

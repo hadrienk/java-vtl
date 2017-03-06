@@ -7,8 +7,6 @@ import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
@@ -20,12 +18,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -157,7 +149,7 @@ public class ExecutorController {
             componentWrapper.setType(component.getValue().getType());
             structure.add(componentWrapper);
         }
-        List<List<Object>> data = dataset.get()
+        List<List<Object>> data = dataset.getData()
                 .map(tuple -> tuple.stream()
                         .map(VTLObject::get).collect(Collectors.toList())
                 ).collect(Collectors.toList());
@@ -173,10 +165,6 @@ public class ExecutorController {
 
         final DataStructure structure = builder.build();
         return new Dataset() {
-            @Override
-            public Stream<DataPoint> get() {
-                return null;
-            }
 
             @Override
             public DataStructure getDataStructure() {
@@ -186,8 +174,11 @@ public class ExecutorController {
             @Override
             public Stream<DataPoint> getData() {
                 return dataset.data.stream().map(objects -> {
-                    DataPoint dataPoint = structure.wrap();
-                    objects.stream().map(VTLObject::of).forEach(dataPoint::add);
+                    DataPoint dataPoint =
+                            DataPoint.create(
+                                    objects.stream().map(VTLObject::of)
+                                    .collect(Collectors.toList())
+                            );
                     return dataPoint;
                 });
             }
