@@ -189,7 +189,7 @@ public class SumOperationTest {
             ));
 
             DataStructure ld = left.getDataStructure();
-            when(left.get()).thenReturn(
+            when(left.getData()).thenReturn(
                     Stream.of(
                             tuple(ld.wrap("TIME", "2013"),
                                     ld.wrap("GEO", "Belgium"),
@@ -207,7 +207,7 @@ public class SumOperationTest {
             );
 
             DataStructure rd = right.getDataStructure();
-            when(right.get()).thenReturn(
+            when(right.getData()).thenReturn(
                     Stream.of(
                             tuple(rd.wrap("TIME", "2013"),
                                     rd.wrap("GEO", "Belgium"),
@@ -251,7 +251,7 @@ public class SumOperationTest {
             );
             softly.assertThat(
                     StreamUtils.zip(
-                            left.get(), right.get(), sumOperation.getTupleOperator()
+                            left.getData(), right.getData(), sumOperation.getTupleOperator()
                     )
             ).as("data tuple of the sum operation of %s and %s", left, right)
                     .containsExactly(
@@ -297,7 +297,7 @@ public class SumOperationTest {
             ));
 
             DataStructure ld = left.getDataStructure();
-            when(left.get()).thenReturn(
+            when(left.getData()).thenReturn(
                     Stream.of(
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "EU25"),
@@ -329,7 +329,7 @@ public class SumOperationTest {
 
             DataStructure sumDs = sumOperation.getDataStructure();
             softly.assertThat(
-                    join.workDataset().get()
+                    join.workDataset().getData()
             ).as("data of the sum operation of %s and 1", left)
                     .containsExactly(
                             tuple(sumDs.wrap("TIME", "2010"),
@@ -382,7 +382,7 @@ public class SumOperationTest {
             when(right.getDataStructure()).thenReturn(ds);
 
             DataStructure ld = left.getDataStructure();
-            when(left.get()).thenReturn(
+            when(left.getData()).thenReturn(
                     Stream.of(
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "EU25"),
@@ -402,7 +402,7 @@ public class SumOperationTest {
                     )
             );
 
-            when(right.get()).thenReturn(
+            when(right.getData()).thenReturn(
                     Stream.of(
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "EU25"),
@@ -433,7 +433,7 @@ public class SumOperationTest {
 
             DataStructure sumDs = join.workDataset().getDataStructure();
             softly.assertThat(
-                    join.workDataset().get()
+                    join.workDataset().getData()
             ).as("data of the sum operation of %s and %s", left, right)
                     .containsExactly(
                             tuple(sumDs.wrap("TIME", "2010"),
