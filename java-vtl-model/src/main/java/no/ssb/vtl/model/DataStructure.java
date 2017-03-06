@@ -21,6 +21,7 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.annotations.Beta;
+import com.google.common.base.Function;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -67,11 +68,11 @@ public class DataStructure extends ForwardingMap<String, Component> {
     }
 
     private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getRole));
+        return ImmutableMap.copyOf(Maps.transformValues(delegate, (component) -> component.getRole()));
     }
 
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
+        return ImmutableMap.copyOf(Maps.transformValues(delegate, (Function<Component, ? extends Class<?>>) (component) -> component.getType()));
     }
 
     private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {
