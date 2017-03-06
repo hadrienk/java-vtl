@@ -15,7 +15,6 @@ import org.springframework.test.web.client.MockRestServiceServer;
 
 import java.io.InputStream;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
@@ -75,12 +74,12 @@ public class SsbKlassApiConnectorTest {
                 entry("validTo", Instant.class)
         );
 
-        assertThat(dataset.get())
+        assertThat(dataset.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsSequence(
-                        "0101", "Halden", OffsetDateTime.parse("2012-12-31T23:00:00Z").toInstant(), null,
-                        "0104", "Moss", OffsetDateTime.parse("2012-12-31T23:00:00Z").toInstant(), null
+                        "0101", "Halden", Instant.parse("2012-12-31T23:00:00Z"), null,
+                        "0104", "Moss", Instant.parse("2012-12-31T23:00:00Z"), null
                 );
 
     }

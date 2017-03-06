@@ -2,10 +2,9 @@ package no.ssb.vtl.connectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -33,11 +32,10 @@ import org.springframework.web.util.UriTemplate;
 
 import java.io.IOException;
 import java.lang.String;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -238,33 +236,27 @@ public class SsbKlassApiConnector implements Connector {
         @Override
         public Map<String, Object> deserialize(JsonParser jp, DeserializationContext ctxt)
                 throws IOException {
-            JsonNode node = jp.getCodec().readTree(jp);
-            String code = node.get(FIELD_CODE).asText();
-            String name = node.get(FIELD_NAME).asText();
-            String validFromAsString = node.get(FIELD_VALID_FROM).asText();
-            String validToAsString = node.get(FIELD_VALID_TO).asText();
 
             HashMap<String, Object> entry = Maps.newHashMap();
-            entry.put(FIELD_CODE, code);
-            entry.put(FIELD_NAME, name);
-            entry.put(FIELD_VALID_FROM, parseKlassDate(validFromAsString));
-            entry.put(FIELD_VALID_TO, parseKlassDate(validToAsString));
-
+            while (jp.nextValue() != JsonToken.END_OBJECT) {
+                switch (jp.getCurrentName()) {
+                    case FIELD_VALID_FROM:
+                    case FIELD_VALID_TO:
+                        Instant value = null;
+                        LocalDate localDate = jp.readValueAs(LocalDate.class);
+                        if (localDate != null) {
+                            value = localDate.atStartOfDay()
+                                    .toInstant(ZoneOffset.ofHours(1));
+                        }
+                        entry.put(jp.getCurrentName(), value);
+                        break;
+                    case FIELD_CODE:
+                    case FIELD_NAME:
+                        entry.put(jp.getCurrentName(), jp.getValueAsString());
+                        break;
+                }
+            }
             return entry;
         }
-    }
-
-    public static Instant parseKlassDate(String input) throws JsonParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(KLASS_DATE_PATTERN);
-        if (input != null && !input.isEmpty() && !input.toLowerCase().equals("null")) {
-            try {
-                Date date = dateFormat.parse(input);
-                return (date != null) ? date.toInstant() : null;
-            } catch (ParseException e) {
-                throw new JsonParseException(null, "Could not parse input to date. Data: "
-                        + input + ", required format: " + KLASS_DATE_PATTERN);
-            }
-        }
-        return null;
     }
 }
