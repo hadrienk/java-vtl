@@ -21,7 +21,6 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.annotations.Beta;
-import com.google.common.base.Function;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -68,11 +67,19 @@ public class DataStructure extends ForwardingMap<String, Component> {
     }
 
     private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, (component) -> component.getRole()));
+        ImmutableMap.Builder<String, Component.Role> builder = ImmutableMap.builder();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getRole());
+        }
+        return builder.build();
     }
 
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, (Function<Component, ? extends Class<?>>) (component) -> component.getType()));
+        ImmutableMap.Builder<String, Class<?>> builder = ImmutableMap.builder();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getType());
+        }
+        return builder.build();
     }
 
     private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {
@@ -327,6 +334,12 @@ public class DataStructure extends ForwardingMap<String, Component> {
     @Override
     protected Map<String, Component> delegate() {
         return delegate;
+    }
+
+    public DataPoint fromMap(Map<Component, VTLObject> map) {
+        DataPoint point = DataPoint.create(this.size());
+        asMap(point).putAll(map);
+        return point;
     }
 
     public static class Builder {
