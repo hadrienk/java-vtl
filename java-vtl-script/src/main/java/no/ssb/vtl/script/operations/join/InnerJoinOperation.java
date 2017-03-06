@@ -21,6 +21,7 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
@@ -48,16 +49,21 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger() {
-        ImmutableSet<Component> commonIdentifiers = getIdentifiers();
-
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+            final DataStructure leftStructure, final DataStructure rightStructure
+    ) {
+        final Set<Component> identifiers = getIdentifiers();
         return (left, right, compare) -> {
-            if (compare == 0) {
-                left.addAll(getNonCommon(commonIdentifiers, right));
-                return Collections.singletonList(left);
-            } else {
+            if (compare != 0)
                 return null;
+
+            Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
+            for (Map.Entry<Component, VTLObject> entry : rightStructure.asMap(right).entrySet()) {
+                if (!identifiers.contains(entry.getKey())) {
+                    leftMap.put(entry.getKey(), entry.getValue());
+                }
             }
+            return Collections.singletonList(left);
         };
     }
 

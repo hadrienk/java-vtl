@@ -8,23 +8,25 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Arrays.asList;
+import static java.util.Arrays.*;
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
-import static org.mockito.BDDMockito.given;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -98,7 +100,8 @@ public class OuterJoinOperationTest extends RandomizedTest {
             dataStructures.put(datasetName, currentStructure);
             when(dataset.getDataStructure()).thenReturn(currentStructure);
             data.put(datasetName, currentData);
-            when(dataset.get()).thenAnswer(o -> currentData.stream());
+            when(dataset.getData()).thenAnswer(o -> currentData.stream());
+            when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
         }
 
         OuterJoinOperation result = new OuterJoinOperation(datasets);
@@ -133,7 +136,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         given(ds1.getDataStructure()).willReturn(structure1);
         given(ds2.getDataStructure()).willReturn(structure2);
 
-        given(ds1.get()).willAnswer(o -> Stream.of(
+        given(ds1.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure1.wrap("id1", "1"),
                         structure1.wrap("id2", "a"),
@@ -151,8 +154,9 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         structure1.wrap("value", "left 3c")
                 )
         ));
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
-        given(ds2.get()).willAnswer(o -> Stream.of(
+        given(ds2.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure2.wrap("id1", "2"),
                         structure2.wrap("id2", "b"),
@@ -170,6 +174,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         structure2.wrap("value", "right 4d")
                 )
         ));
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
         AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
@@ -178,6 +183,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         vtlPrintStream.println(ds1);
         vtlPrintStream.println(ds2);
         //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(result);
         vtlPrintStream.println(result);
 
         // Check that the structure is correct. We expect:
@@ -191,7 +197,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         entry("ds2_value", structure2.get("value"))
                 );
 
-        assertThat(result.get())
+        assertThat(result.getData())
                 .extracting(input -> input.stream().map(VTLObject::get).collect(Collectors.toList()))
                 .containsExactly(
                         asList("1", "a", "id", "left 1a", null),
@@ -206,7 +212,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
 
 
         Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
@@ -224,7 +230,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
         given(ds1.getDataStructure()).willReturn(structure1);
         given(ds2.getDataStructure()).willReturn(structure2);
 
-        given(ds1.get()).willAnswer(o -> Stream.of(
+        given(ds1.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure1.wrap("id1", "1"),
                         structure1.wrap("value", "left 1")
@@ -236,8 +242,9 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         structure1.wrap("value", "left 3")
                 )
         ));
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
-        given(ds2.get()).willAnswer(o -> Stream.of(
+        given(ds2.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure2.wrap("id1", "2"),
                         structure2.wrap("value", "right 2"),
@@ -252,6 +259,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         structure2.wrap("id2", "d")
                 )
         ));
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
         AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
@@ -272,7 +280,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         entry("id2", structure2.get("id2"))
                 );
 
-        assertThat(result.get())
+        assertThat(result.getData())
                 .extracting(input -> input.stream().map(VTLObject::get).collect(Collectors.toList()))
                 .containsExactly(
                         asList("1", "left 1", null, null),

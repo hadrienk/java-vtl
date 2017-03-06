@@ -51,12 +51,6 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
         structureCopy.put(variableName, role, type);
         return structureCopy.build();
     }
-
-    @Override
-    @Deprecated
-    public Stream<DataPoint> get() {
-       return getData().map(o -> o);
-    }
     
     private static String removeQuoteIfNeeded(String key) {
         if (!key.isEmpty() && key.length() > 3) {
@@ -68,8 +62,8 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<? extends DataPoint> getData() {
-        return getChild().get().map(dataPoint -> {
+    public Stream<DataPoint> getData() {
+        return getChild().getData().map(dataPoint -> {
             dataPoint.add(getDataStructure().wrap(variableName, componentExpression.apply(dataPoint)));
             System.out.println(format("Adding value for %s to datapoint %s", variableName, dataPoint));
             return dataPoint;

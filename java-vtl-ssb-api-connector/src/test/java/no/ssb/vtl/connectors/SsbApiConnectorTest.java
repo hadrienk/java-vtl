@@ -79,7 +79,7 @@ public class SsbApiConnectorTest {
                 entry("Utvandring6", Number.class)
         );
 
-        assertThat(dataset.get())
+        assertThat(dataset.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsSequence(

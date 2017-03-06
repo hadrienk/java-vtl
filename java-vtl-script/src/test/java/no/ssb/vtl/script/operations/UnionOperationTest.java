@@ -23,13 +23,13 @@ public class UnionOperationTest {
     public void testOneDatasetReturnedUnchanged() throws Exception {
 
         Dataset dataset = mock(Dataset.class);
-        when(dataset.get()).thenReturn(Stream.empty());
+        when(dataset.getData()).thenReturn(Stream.empty());
 
         UnionOperation operator = new UnionOperation(dataset);
 
-        assertThat(operator.get())
+        assertThat(operator.getData())
                 .as("Check that result of union operation")
-                .isSameAs(dataset.get());
+                .isSameAs(dataset.getData());
 
     }
 
@@ -95,7 +95,7 @@ public class UnionOperationTest {
         when(totalPopulation1.getDataStructure()).thenReturn(dataStructure);
         when(totalPopulation2.getDataStructure()).thenReturn(dataStructure);
 
-        when(totalPopulation1.get()).thenReturn(Stream.of(
+        when(totalPopulation1.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
@@ -123,7 +123,7 @@ public class UnionOperationTest {
                 )
         ));
 
-        when(totalPopulation2.get()).thenReturn(Stream.of(
+        when(totalPopulation2.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Netherlands"),
@@ -146,7 +146,7 @@ public class UnionOperationTest {
         Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
-        Stream<DataPoint> stream = resultDataset.stream();
+        Stream<DataPoint> stream = resultDataset.getData();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
@@ -207,7 +207,7 @@ public class UnionOperationTest {
         when(totalPopulation1.getDataStructure()).thenReturn(dataStructure);
         when(totalPopulation2.getDataStructure()).thenReturn(dataStructure);
 
-        when(totalPopulation1.get()).thenReturn(Stream.of(
+        when(totalPopulation1.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
@@ -235,7 +235,7 @@ public class UnionOperationTest {
                 )
         ));
 
-        when(totalPopulation2.get()).thenReturn(Stream.of(
+        when(totalPopulation2.getData()).thenReturn(Stream.of(
                 tuple(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Belgium"),
@@ -266,7 +266,7 @@ public class UnionOperationTest {
         Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
-        Stream<DataPoint> stream = resultDataset.stream();
+        Stream<DataPoint> stream = resultDataset.getData();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
