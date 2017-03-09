@@ -36,7 +36,40 @@ public class BooleanExpressionVisitorTest {
         
         
     }
-    
+
+    @Test
+    public void testIsNull() throws Exception {
+        VTLPredicate isNull = visitor.getIsNullPredicate(dataStructure.get("id1"));
+
+        assertFalse(isNull.test(dataPointWithValues).get());
+        assertTrue(isNull.test(dataPointWithNull).get());
+
+        VTLPredicate isNullWithNull = visitor.getIsNullPredicate(null);
+        assertTrue(isNullWithNull.test(dataPointWithValues).get());
+        assertTrue(isNullWithNull.test(dataPointWithNull).get());
+
+        VTLPredicate isNullWithNonNull = visitor.getIsNullPredicate(1);
+        assertFalse(isNullWithNonNull.test(dataPointWithValues).get());
+        assertFalse(isNullWithNonNull.test(dataPointWithNull).get());
+
+    }
+
+    @Test
+    public void testNot() throws Exception {
+
+        VTLPredicate stringEqualsTrue = visitor.getVtlPredicate(dataStructure.get("id1"), "1", op(VTLParser.EQ));
+        VTLPredicate stringEqualsFalse = visitor.getVtlPredicate(dataStructure.get("id1"), "1", op(VTLParser.NE));
+        VTLPredicate notTrue = visitor.getNotPredicate(stringEqualsTrue);
+        VTLPredicate notFalse = visitor.getNotPredicate(stringEqualsFalse);
+
+        assertFalse(notTrue.test(dataPointWithValues).get());
+        assertNull(notTrue.test(dataPointWithNull));
+
+        assertTrue(notFalse.test(dataPointWithValues).get());
+        assertNull(notFalse.test(dataPointWithNull));
+
+    }
+
     @Test
     public void testEqualityWithValues() throws Exception {
         VTLPredicate stringEquals = visitor.getVtlPredicate(dataStructure.get("id1"), "1", op(VTLParser.EQ));

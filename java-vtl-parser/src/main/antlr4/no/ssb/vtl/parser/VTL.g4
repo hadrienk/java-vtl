@@ -102,15 +102,25 @@ aggregate   : 'aggregate' ;
 booleanExpression
     : booleanExpression op=AND booleanExpression
     | booleanExpression op=(OR|XOR) booleanExpression
+    | booleanNot
+    | booleanIsNull
     | booleanEquality
     | BOOLEAN_CONSTANT
     ;
+
 booleanEquality
     : left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam
     ;
 booleanParam
     : componentRef
     | constant
+    ;
+
+booleanNot
+    : 'not' '(' booleanExpression ')';
+
+booleanIsNull
+    : 'isnull' '(' booleanParam ')'
     ;
 
 //datasetExpression
