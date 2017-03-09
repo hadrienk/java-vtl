@@ -113,8 +113,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
             return ((Year) value).compareTo((Year) other);
         }
         throw new IllegalArgumentException(
-                String.format("Cannot compare %s of type %s with %s of type %s", value, value.getClass(), other,
-                        other==null?"<null>":other.getClass()));
+                String.format("Cannot compare %s of type %s with %s of type %s",
+                        value, value==null?"<null>":value.getClass(), other, other==null?"<null>":other.getClass()));
     }
     
     @Override
