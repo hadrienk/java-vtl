@@ -85,6 +85,10 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
         }
     }
 
+    public VTLPredicate getNotPredicate(VTLPredicate predicate) {
+        return predicate.negate();
+    }
+
     public VTLPredicate getIsNullPredicate(Object value) {
         if (isComp(value)) {
             return dataPoint -> {
@@ -135,6 +139,12 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
         Object ref = paramVisitor.visit(ctx.booleanParam());
 
         return getIsNullPredicate(ref);
+    }
+
+    @Override
+    public VTLPredicate visitBooleanNot(VTLParser.BooleanNotContext ctx) {
+        VTLPredicate predicate = visitBooleanExpression(ctx.booleanExpression());
+        return getNotPredicate(predicate);
     }
 
     private VTLObject getValue(Component component, DataPoint dataPoint) {
