@@ -43,6 +43,10 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
             }
         } else if (ctx.booleanEquality() != null) {
             return visit(ctx.booleanEquality());
+        } else if (ctx.booleanIsNull() != null) {
+            return visit(ctx.booleanIsNull());
+        } else if (ctx.booleanNot() != null) {
+            return visit(ctx.booleanNot());
         } else {
             return super.visit(ctx);
         }
