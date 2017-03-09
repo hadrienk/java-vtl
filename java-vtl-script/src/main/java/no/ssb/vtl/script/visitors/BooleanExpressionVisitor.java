@@ -84,7 +84,22 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
             return dataPoint -> nullableResultOf(booleanOperation, VTLObject.of(left), VTLObject.of(right));
         }
     }
-    
+
+    public VTLPredicate getIsNullPredicate(Object value) {
+        if (isComp(value)) {
+            return dataPoint -> {
+                VTLObject resolvedValue = getValue((Component) value, dataPoint);
+                return VTLBoolean.of(
+                        resolvedValue == null ||
+                        resolvedValue == VTLObject.NULL ||
+                        resolvedValue.get() == null
+                );
+            };
+        } else {
+            return dataPoint -> VTLBoolean.of(value == null);
+        }
+    }
+
     private VTLBoolean nullableResultOf(BiPredicate<VTLObject, VTLObject> operation, VTLObject left, VTLObject right) {
         if (left == null || left.get() == null || right == null || right.get() == null) {
             return null;
@@ -112,7 +127,16 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
                 throw new ParseCancellationException("Unsupported boolean equality operator " + op);
         }
     }
-    
+
+
+    @Override
+    public VTLPredicate visitBooleanIsNull(VTLParser.BooleanIsNullContext ctx) {
+        ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
+        Object ref = paramVisitor.visit(ctx.booleanParam());
+
+        return getIsNullPredicate(ref);
+    }
+
     private VTLObject getValue(Component component, DataPoint dataPoint) {
         Map<Component, VTLObject> componentVTLObjectMap = dataStructure.asMap(dataPoint);
         return componentVTLObjectMap.get(component);
