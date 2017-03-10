@@ -100,33 +100,27 @@ aggregate   : 'aggregate' ;
 //WS          : [ \t\n\t] -> skip ;
 
 booleanExpression
-    : booleanExpression op=AND booleanExpression
-    | booleanExpression op=(OR|XOR) booleanExpression
-    | booleanNot
-    | booleanIsNull
-    | booleanEquality
-    | BOOLEAN_CONSTANT
+    : '(' booleanExpression ')'                             # BooleanPrecedence
+    | func=ISNULL_FUNC '(' booleanParam ')'                 # BooleanFunction
+    | left=booleanParam op=EQ_OPERATOR right=booleanParam   # BooleanEquality
+    | booleanExpression op=AND booleanExpression            # BooleanAlgebra
+    | booleanExpression op=(OR|XOR) booleanExpression       # BooleanAlgebra
+    | booleanParam op=(ISNULL|ISNOTNULL)                    # BooleanPostfix
+    | op=NOT booleanExpression                              # BooleanNot
+    //| componentRef                                          # BooleanReference
+    | BOOLEAN_CONSTANT                                      # BooleanConstant
     ;
 
-booleanEquality
-    : left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam
-    ;
 booleanParam
     : componentRef
     | constant
-    ;
-
-booleanNot
-    : 'not' '(' booleanExpression ')';
-
-booleanIsNull
-    : 'isnull' '(' booleanParam ')'
     ;
 
 //datasetExpression
 //    : 'dsTest'
 //    ;
 
+EQ_OPERATOR : ( EQ | NE | LE | LT | GE | GT ) ;
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
@@ -137,6 +131,11 @@ GT : '>'  ;
 AND : 'and' ;
 OR  : 'or' ;
 XOR : 'xor' ;
+NOT : 'not' ;
+ISNULL : 'is null' ;
+ISNOTNULL : 'is not null' ;
+
+ISNULL_FUNC : 'isnull' ;
 
 //WS : [ \r\t\u000C] -> skip ;
 
