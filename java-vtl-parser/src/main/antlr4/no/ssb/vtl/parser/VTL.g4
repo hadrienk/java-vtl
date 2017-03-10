@@ -93,8 +93,6 @@ attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
 
-//booleanExpression : 'booleanExpression' ;
-
 //varID       : 'varId';
 
 //WS          : [ \t\n\t] -> skip ;
@@ -107,7 +105,6 @@ booleanExpression
     | booleanExpression op=(OR|XOR) booleanExpression       # BooleanAlgebra
     | booleanParam op=(ISNULL|ISNOTNULL)                    # BooleanPostfix
     | op=NOT booleanExpression                              # BooleanNot
-    //| componentRef                                          # BooleanReference
     | BOOLEAN_CONSTANT                                      # BooleanConstant
     ;
 
@@ -115,10 +112,6 @@ booleanParam
     : componentRef
     | constant
     ;
-
-//datasetExpression
-//    : 'dsTest'
-//    ;
 
 EQ_OPERATOR : ( EQ | NE | LE | LT | GE | GT ) ;
 EQ : '='  ;
