@@ -515,6 +515,63 @@ public class VTLScriptEngineTest {
                 );
     }
 
+    @Test
+    public void testNvlAsClause() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class,
+                "m2", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData()).then(invocation -> Stream.of(
+                tuple(
+                        ds.wrap("id1", "1"),
+                        ds.wrap("m1", 1),
+                        ds.wrap("m2", null)
+                ),
+                tuple(
+                        ds.wrap("id1", "2"),
+                        ds.wrap("m1", null),
+                        ds.wrap("m2", "str2")
+                ),
+                tuple(
+                        ds.wrap("id1", "3"),
+                        ds.wrap("m1", null),
+                        ds.wrap("m2", null)
+                )
+        ));
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 = nvl(m1 , 0), " +
+                "   m22 = nvl(ds1.m2, \" \"), " +
+                "   drop m1, m2 " +
+                "}"
+        );
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset ds2 = (Dataset) bindings.get("ds2");
+
+        assertThat(ds2.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("m11", Role.MEASURE),
+                entry("m22", Role.MEASURE)
+        );
+
+        assertThat(ds2.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", 1, " ",
+                        "2", 0, "str2",
+                        "3", 0, " "
+                );
+
+    }
+
     private DataPoint tuple(VTLObject... components) {
         return DataPoint.create(Arrays.asList(components));
     }

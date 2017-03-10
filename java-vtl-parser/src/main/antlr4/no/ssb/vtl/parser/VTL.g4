@@ -164,6 +164,19 @@ joinClause : role? identifier '=' joinCalcExpression # joinCalcClause
 joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=identifier ',' measure=identifier ;
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
+conditionalExpression
+    : nvlExpression
+    ;
+
+nvlExpression : 'nvl' '(' nvlParam ',' nvlRepValue ')';
+
+nvlParam
+    : componentRef
+    | constant
+    ;
+
+nvlRepValue : constant;
+
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
@@ -171,6 +184,7 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    | booleanExpression                                                                  #joinCalcBoolean
+                   | conditionalExpression                                                              #joinCalcCondition
                    ;
 
 
