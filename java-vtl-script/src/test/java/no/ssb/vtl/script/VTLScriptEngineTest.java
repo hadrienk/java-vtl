@@ -547,7 +547,7 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
                 "   m11 = nvl(m1 , 0), " +
-                "   m22 = nvl(ds1.m2, \" \"), " +
+                "   m22 = nvl(ds1.m2, \"constant\"), " +
                 "   drop m1, m2 " +
                 "}"
         );
@@ -565,9 +565,9 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 1, " ",
+                        "1", 1, "constant",
                         "2", 0, "str2",
-                        "3", 0, " "
+                        "3", 0, "constant"
                 );
 
     }
