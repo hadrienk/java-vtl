@@ -1,11 +1,10 @@
 package no.ssb.vtl.model;
 
-import com.google.common.base.MoreObjects;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DataPoint extends ArrayList<VTLObject> {
 
@@ -32,8 +31,8 @@ public class DataPoint extends ArrayList<VTLObject> {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(DataPoint.class)
-                .add("values", this.iterator())
-                .toString();
+        return this.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 }

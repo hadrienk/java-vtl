@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.error.VTLRuntimeException;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -107,7 +108,7 @@ public class UnionOperation extends AbstractDatasetOperation {
         return getChildren().stream().flatMap(Dataset::getData)
                 .peek((o) -> {
                     if (seen.contains(o)) {
-                        throw new RuntimeException("The resulting dataset from a union contains duplicates");
+                        throw new VTLRuntimeException("The resulting dataset from a union contains duplicates", "VTL-1xxx", o); //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
                     }
                 })
                 .peek(bucket::add);
