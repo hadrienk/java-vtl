@@ -168,7 +168,7 @@ conditionalExpression
     : nvlExpression
     ;
 
-nvlExpression : 'nvl' '(' variableRef ',' nvlRepValue ')';
+nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue ')';
 
 nvlRepValue : constant;
 
