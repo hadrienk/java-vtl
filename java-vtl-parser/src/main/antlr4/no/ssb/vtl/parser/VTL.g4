@@ -174,10 +174,10 @@ nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
+                   | conditionalExpression                                                              #joinCalcCondition
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    | booleanExpression                                                                  #joinCalcBoolean
-                   | conditionalExpression                                                              #joinCalcCondition
                    ;
 
 
