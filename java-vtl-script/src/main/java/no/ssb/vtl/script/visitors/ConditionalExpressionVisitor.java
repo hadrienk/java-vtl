@@ -35,7 +35,7 @@ public class ConditionalExpressionVisitor extends VTLBaseVisitor<VTLExpression> 
     public VTLExpression visitNvlExpression(VTLParser.NvlExpressionContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
-        Object repValue = paramVisitor.visit(ctx.nvlRepValue());
+        Object repValue = paramVisitor.visit(ctx.nvlRepValue);
 
         return new VTLExpression.Builder(Number.class, dataPoint -> {
             Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);

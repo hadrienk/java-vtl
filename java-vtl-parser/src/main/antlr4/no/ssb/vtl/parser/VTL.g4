@@ -168,9 +168,7 @@ conditionalExpression
     : nvlExpression
     ;
 
-nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue ')';
-
-nvlRepValue : constant;
+nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
 
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
