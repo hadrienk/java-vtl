@@ -21,8 +21,8 @@ grammar VTL;
 start : statement+ EOF;
 
 /* Assignment */
-statement : identifier ASIGNMENT datasetExpression
-          | identifier ASIGNMENT block
+statement : identifier ASSIGNMENT datasetExpression
+          | identifier ASSIGNMENT block
           ;
 
 block : '{' statement+ '}' ;
@@ -97,14 +97,15 @@ aggregate   : 'aggregate' ;
 
 //WS          : [ \t\n\t] -> skip ;
 
-booleanExpression
-    : '(' booleanExpression ')'                                                 # BooleanPrecedence
-    | func=ISNULL_FUNC '(' booleanParam ')'                                     # BooleanFunction
-    | left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam   # BooleanEquality
-    | booleanExpression op=AND booleanExpression                                # BooleanAlgebra
-    | booleanExpression op=(OR|XOR) booleanExpression                           # BooleanAlgebra
-    | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix
-    | op=NOT booleanExpression                                                  # BooleanNot
+booleanExpression                                                                                       //Evaluation order of the operators
+    : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
+    | func=ISNULL_FUNC '(' booleanParam ')'                                     # BooleanFunction       // II  All functional operators
+    | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix        // ??
+    | left=booleanParam op=( LE | LT | GE | GT ) right=booleanParam             # BooleanEquality       // VII
+    | op=NOT booleanExpression                                                  # BooleanNot            // IV
+    | left=booleanParam op=( EQ | NE ) right=booleanParam                       # BooleanEquality       // IX
+    | booleanExpression op=AND booleanExpression                                # BooleanAlgebra        // X
+    | booleanExpression op=(OR|XOR) booleanExpression                           # BooleanAlgebra        // XI
     | BOOLEAN_CONSTANT                                                          # BooleanConstant
     ;
 
@@ -113,7 +114,7 @@ booleanParam
     | constant
     ;
 
-ASIGNMENT : ':=' ;
+ASSIGNMENT : ':=' ;
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
@@ -143,7 +144,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 joinBody : joinClause (',' joinClause)* ;
 
 // TODO: Implement role and implicit
-joinClause : role? identifier ASIGNMENT joinCalcExpression # joinCalcClause
+joinClause : role? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
