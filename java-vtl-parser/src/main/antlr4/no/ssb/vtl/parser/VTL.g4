@@ -21,8 +21,8 @@ grammar VTL;
 start : statement+ EOF;
 
 /* Assignment */
-statement : identifier ':=' datasetExpression
-          | identifier ':=' block
+statement : identifier ASIGNMENT datasetExpression
+          | identifier ASIGNMENT block
           ;
 
 block : '{' statement+ '}' ;
@@ -79,7 +79,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=identifier ( 'role' '=' role )? ;
+renameParam : from=componentRef 'as' to=identifier ( 'role' role )? ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
@@ -98,14 +98,14 @@ aggregate   : 'aggregate' ;
 //WS          : [ \t\n\t] -> skip ;
 
 booleanExpression
-    : '(' booleanExpression ')'                             # BooleanPrecedence
-    | func=ISNULL_FUNC '(' booleanParam ')'                 # BooleanFunction
-    | left=booleanParam op=EQ_OPERATOR right=booleanParam   # BooleanEquality
-    | booleanExpression op=AND booleanExpression            # BooleanAlgebra
-    | booleanExpression op=(OR|XOR) booleanExpression       # BooleanAlgebra
-    | booleanParam op=(ISNULL|ISNOTNULL)                    # BooleanPostfix
-    | op=NOT booleanExpression                              # BooleanNot
-    | BOOLEAN_CONSTANT                                      # BooleanConstant
+    : '(' booleanExpression ')'                                                 # BooleanPrecedence
+    | func=ISNULL_FUNC '(' booleanParam ')'                                     # BooleanFunction
+    | left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam   # BooleanEquality
+    | booleanExpression op=AND booleanExpression                                # BooleanAlgebra
+    | booleanExpression op=(OR|XOR) booleanExpression                           # BooleanAlgebra
+    | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix
+    | op=NOT booleanExpression                                                  # BooleanNot
+    | BOOLEAN_CONSTANT                                                          # BooleanConstant
     ;
 
 booleanParam
@@ -113,7 +113,7 @@ booleanParam
     | constant
     ;
 
-EQ_OPERATOR : ( EQ | NE | LE | LT | GE | GT ) ;
+ASIGNMENT : ':=' ;
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
@@ -143,7 +143,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 joinBody : joinClause (',' joinClause)* ;
 
 // TODO: Implement role and implicit
-joinClause : role? identifier '=' joinCalcExpression # joinCalcClause
+joinClause : role? identifier ASIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause

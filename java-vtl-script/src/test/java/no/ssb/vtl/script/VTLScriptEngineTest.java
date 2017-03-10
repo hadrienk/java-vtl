@@ -160,9 +160,9 @@ public class VTLScriptEngineTest {
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
                 "  filter id1 = \"1\" and m1 = 30 or m1 = 10," +            //TODO: precedence
-                "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
+                "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
-                "  boolTest = (ds1.m1 = 10)," +
+                "  boolTest := (ds1.m1 = 10)," +
                 "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
                 "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +  // renamedId1, id2, m1, m2, ident
                 "}" +
@@ -235,7 +235,7 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
-                "  total = ds1.m1 + ds1.m2 + ds1.m3," +
+                "  total := ds1.m1 + ds1.m2 + ds1.m3," +
                 "  fold ds1.m1, ds1.m2, ds1.m3, total to type, value" +
                 "}"
         );
@@ -314,7 +314,7 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
                 "  unfold id2, ds1.m1 to \"one\", \"two\"," +
-                "  onePlusTwo = one + two" +
+                "  onePlusTwo := one + two" +
                 "}"
         );
 
@@ -350,9 +350,9 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", dataset);
         engine.eval("ds2 := ds1[rename id1 as id3]"
                 + "            [rename id3 as id1]"
-                + "                [rename id1 as id1m role = MEASURE,"
-                + "                        me1 as me1a role = ATTRIBUTE,"
-                + "                        at1 as at1i role = IDENTIFIER]");
+                + "                [rename id1 as id1m role MEASURE,"
+                + "                        me1 as me1a role ATTRIBUTE,"
+                + "                        at1 as at1i role IDENTIFIER]");
 
         assertThat(bindings).containsKey("ds2");
         Dataset result = (Dataset) bindings.get("ds2");
