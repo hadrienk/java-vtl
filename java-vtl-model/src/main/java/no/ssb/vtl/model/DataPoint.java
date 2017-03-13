@@ -32,7 +32,7 @@ public class DataPoint extends ArrayList<VTLObject> {
     @Override
     public String toString() {
         return this.stream()
-                .map(Object::toString)
+                .map((vtlObject) -> vtlObject == null ? "<null>" : vtlObject.toString())
                 .collect(Collectors.joining(", ", "[", "]"));
     }
 }
