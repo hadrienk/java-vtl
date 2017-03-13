@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.error.VTLRuntimeException;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -105,7 +106,11 @@ public class UnionOperation extends AbstractDatasetOperation {
         Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
         Set<DataPoint> seen = Collections.synchronizedSet(bucket);
         return getChildren().stream().flatMap(Dataset::getData)
-                .filter((o) -> !seen.contains(o))
+                .peek((o) -> {
+                    if (seen.contains(o)) {
+                        throw new VTLRuntimeException("The resulting dataset from a union contains duplicates", "VTL-1xxx", o); //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
+                    }
+                })
                 .peek(bucket::add);
     }
     

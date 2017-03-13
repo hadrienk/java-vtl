@@ -5,10 +5,13 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.error.VTLRuntimeException;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.*;
@@ -18,7 +21,18 @@ import static org.mockito.Mockito.*;
 public class UnionOperationTest {
 
     ObjectMapper mapper = new ObjectMapper();
-
+    private DataStructure dataStructure;
+    
+    
+    @Before
+    public void setUp() throws Exception {
+        dataStructure = DataStructure.of(mapper::convertValue,
+                "TIME", Role.IDENTIFIER, String.class,
+                "GEO", Role.IDENTIFIER, String.class,
+                "POP", Role.MEASURE, Integer.class
+        );
+    }
+    
     @Test
     public void testOneDatasetReturnedUnchanged() throws Exception {
 
@@ -39,13 +53,6 @@ public class UnionOperationTest {
 
         SoftAssertions softly = new SoftAssertions();
         try {
-
-            DataStructure dataStructure = DataStructure.of(mapper::convertValue,
-                    "TIME", Role.IDENTIFIER, String.class,
-                    "GEO", Role.IDENTIFIER, String.class,
-                    "POP", Role.MEASURE, Integer.class
-            );
-
             Dataset dataset1 = mock(Dataset.class);
             Dataset dataset2 = mock(Dataset.class);
             Dataset dataset3 = mock(Dataset.class);
@@ -84,39 +91,33 @@ public class UnionOperationTest {
 
         // Example 1 of the operator specification
 
-        DataStructure dataStructure = DataStructure.of(mapper::convertValue,
-                "TIME", Role.IDENTIFIER, String.class,
-                "GEO", Role.IDENTIFIER, String.class,
-                "POP", Role.MEASURE, Integer.class
-        );
-
         Dataset totalPopulation1 = mock(Dataset.class);
         Dataset totalPopulation2 = mock(Dataset.class);
         when(totalPopulation1.getDataStructure()).thenReturn(dataStructure);
         when(totalPopulation2.getDataStructure()).thenReturn(dataStructure);
 
         when(totalPopulation1.getData()).thenReturn(Stream.of(
-                tuple(
+                dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
                         dataStructure.wrap("POP", 5)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
                         dataStructure.wrap("POP", 2)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
                         dataStructure.wrap("POP", 3)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
                         dataStructure.wrap("POP", 7)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Finland"),
                         dataStructure.wrap("POP", 9)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Switzerland"),
                         dataStructure.wrap("POP", 12)
@@ -124,19 +125,15 @@ public class UnionOperationTest {
         ));
 
         when(totalPopulation2.getData()).thenReturn(Stream.of(
-                tuple(
+                dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Netherlands"),
                         dataStructure.wrap("POP", 23)
-                ), tuple(
-                        dataStructure.wrap("TIME", "2012"),
-                        dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("POP", 2)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Spain"),
                         dataStructure.wrap("POP", 5)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Iceland"),
                         dataStructure.wrap("POP", 1)
@@ -151,39 +148,39 @@ public class UnionOperationTest {
 
         assertThat(stream)
                 .contains(
-                        tuple(
+                        dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Belgium"),
                                 dataStructure.wrap("POP", 5)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Greece"),
                                 dataStructure.wrap("POP", 2)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "France"),
                                 dataStructure.wrap("POP", 3)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Malta"),
                                 dataStructure.wrap("POP", 7)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Finland"),
                                 dataStructure.wrap("POP", 9)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Switzerland"),
                                 dataStructure.wrap("POP", 12)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Netherlands"),
                                 dataStructure.wrap("POP", 23)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Spain"),
                                 dataStructure.wrap("POP", 5)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Iceland"),
                                 dataStructure.wrap("POP", 1)
@@ -192,15 +189,9 @@ public class UnionOperationTest {
     }
 
     @Test
-    public void testUnion2() throws Exception {
+    public void testUnionWithOneDifferingComponent() throws Exception {
 
         // Example 2 of the operator specification.
-
-        DataStructure dataStructure = DataStructure.of(mapper::convertValue,
-                "TIME", Role.IDENTIFIER, String.class,
-                "GEO", Role.IDENTIFIER, String.class,
-                "POP", Role.MEASURE, Integer.class
-        );
 
         Dataset totalPopulation1 = mock(Dataset.class);
         Dataset totalPopulation2 = mock(Dataset.class);
@@ -208,27 +199,27 @@ public class UnionOperationTest {
         when(totalPopulation2.getDataStructure()).thenReturn(dataStructure);
 
         when(totalPopulation1.getData()).thenReturn(Stream.of(
-                tuple(
+                dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
                         dataStructure.wrap("POP", 1)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
                         dataStructure.wrap("POP", 2)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
                         dataStructure.wrap("POP", 3)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
                         dataStructure.wrap("POP", 4)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Finland"),
                         dataStructure.wrap("POP", 5)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Switzerland"),
                         dataStructure.wrap("POP", 6)
@@ -236,27 +227,27 @@ public class UnionOperationTest {
         ));
 
         when(totalPopulation2.getData()).thenReturn(Stream.of(
-                tuple(
+                dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Belgium"),
                         dataStructure.wrap("POP", 10)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Greece"),
                         dataStructure.wrap("POP", 20)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "France"),
                         dataStructure.wrap("POP", 30)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Malta"),
                         dataStructure.wrap("POP", 40)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Finland"),
                         dataStructure.wrap("POP", 50)
-                ), tuple(
+                ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Switzerland"),
                         dataStructure.wrap("POP", 60)
@@ -271,52 +262,52 @@ public class UnionOperationTest {
 
         assertThat(stream)
                 .contains(
-                        tuple(
+                        dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Belgium"),
                                 dataStructure.wrap("POP", 1)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Greece"),
                                 dataStructure.wrap("POP", 2)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "France"),
                                 dataStructure.wrap("POP", 3)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Malta"),
                                 dataStructure.wrap("POP", 4)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Finland"),
                                 dataStructure.wrap("POP", 5)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Switzerland"),
                                 dataStructure.wrap("POP", 6)
                         ),
-                        tuple(
+                        dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Belgium"),
                                 dataStructure.wrap("POP", 10)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Greece"),
                                 dataStructure.wrap("POP", 20)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "France"),
                                 dataStructure.wrap("POP", 30)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Malta"),
                                 dataStructure.wrap("POP", 40)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Finland"),
                                 dataStructure.wrap("POP", 50)
-                        ), tuple(
+                        ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Switzerland"),
                                 dataStructure.wrap("POP", 60)
@@ -324,8 +315,59 @@ public class UnionOperationTest {
                 );
 
     }
+    
+    @Test(expected = VTLRuntimeException.class)
+    public void testUnionWithDuplicate() throws Exception {
+        Dataset totalPopulation1 = mock(Dataset.class);
+        Dataset totalPopulation2 = mock(Dataset.class);
+        when(totalPopulation1.getDataStructure()).thenReturn(dataStructure);
+        when(totalPopulation2.getDataStructure()).thenReturn(dataStructure);
 
-    private DataPoint tuple(VTLObject... components) {
+        when(totalPopulation1.getData()).thenReturn(Stream.of(
+                dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "Greece"),
+                        dataStructure.wrap("POP", 2)
+                ), dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "France"),
+                        dataStructure.wrap("POP", 3)
+                ), dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "Malta"),
+                        dataStructure.wrap("POP", 4)
+                )
+        ));
+
+        when(totalPopulation2.getData()).thenReturn(Stream.of(
+                dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "Belgium"),
+                        dataStructure.wrap("POP", 1)
+                ), dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "Greece"),
+                        dataStructure.wrap("POP", 2)
+                ), dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "France"),
+                        dataStructure.wrap("POP", 3)
+                ), dataPoint(
+                        dataStructure.wrap("TIME", "2012"),
+                        dataStructure.wrap("GEO", "Malta"),
+                        dataStructure.wrap("POP", 4)
+                )
+        ));
+    
+        Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
+        assertThat(resultDataset).isNotNull();
+
+        Stream<DataPoint> stream = resultDataset.getData();
+        fail("UnionOperation with duplicates did not throw exception as expected but returned: " +
+                stream.map(dataPoint -> "["+dataPoint.toString()+"]").collect(Collectors.joining(", ")));
+    }
+    
+    private DataPoint dataPoint(VTLObject... components) {
         return DataPoint.create(Arrays.asList(components));
     }
 }
