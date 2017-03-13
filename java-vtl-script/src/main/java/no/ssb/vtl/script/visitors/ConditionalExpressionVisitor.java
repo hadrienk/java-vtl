@@ -23,15 +23,6 @@ public class ConditionalExpressionVisitor extends VTLBaseVisitor<VTLExpression> 
     }
 
     @Override
-    public VTLExpression visitConditionalExpression(VTLParser.ConditionalExpressionContext ctx) {
-        if (ctx.nvlExpression() != null) {
-            return visit(ctx.nvlExpression());
-        } else {
-            return super.visit(ctx);
-        }
-    }
-
-    @Override
     public VTLExpression visitNvlExpression(VTLParser.NvlExpressionContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
