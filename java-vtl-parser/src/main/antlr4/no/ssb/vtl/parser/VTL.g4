@@ -99,7 +99,7 @@ aggregate   : 'aggregate' ;
 
 booleanExpression                                                                                       //Evaluation order of the operators
     : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
-    | func=ISNULL_FUNC '(' booleanParam ')'                                     # BooleanFunction       // II  All functional operators
+    | ISNULL_FUNC '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
     | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix        // ??
     | left=booleanParam op=( LE | LT | GE | GT ) right=booleanParam             # BooleanEquality       // VII
     | op=NOT booleanExpression                                                  # BooleanNot            // IV
