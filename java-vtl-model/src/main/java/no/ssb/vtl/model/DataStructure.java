@@ -67,11 +67,19 @@ public class DataStructure extends ForwardingMap<String, Component> {
     }
 
     private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getRole));
+        ImmutableMap.Builder<String, Component.Role> builder = ImmutableMap.builder();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getRole());
+        }
+        return builder.build();
     }
 
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
+        ImmutableMap.Builder<String, Class<?>> builder = ImmutableMap.builder();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getType());
+        }
+        return builder.build();
     }
 
     private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {

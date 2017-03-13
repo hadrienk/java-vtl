@@ -19,15 +19,17 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Represent an inner join on datasets.
@@ -65,12 +67,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
             return Collections.singletonList(left);
         };
-    }
-
-    private Collection<? extends VTLObject> getNonCommon(ImmutableSet<Component> commonIdentifiers, JoinDataPoint right) {
-        return right.stream()
-                .filter(dataPoint -> !commonIdentifiers.contains(dataPoint.getComponent()))
-                .collect(Collectors.toList());
     }
 
     @Override

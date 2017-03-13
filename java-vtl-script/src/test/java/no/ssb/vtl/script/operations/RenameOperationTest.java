@@ -154,7 +154,7 @@ public class RenameOperationTest {
         when(dataset.getDataStructure()).thenReturn(structure);
         when(dataset.getData()).then(invocation -> {
             return Stream.of(
-                    structure.wrap(Maps.asMap(structure.keySet(), input -> (Object) input))
+                    structure.wrap(Maps.asMap(structure.keySet(), (String input) -> (Object) input))
             );
         });
 

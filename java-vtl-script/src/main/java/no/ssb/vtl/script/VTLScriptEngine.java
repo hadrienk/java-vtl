@@ -158,7 +158,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
 
     @Override
     public Bindings createBindings() {
-        return new SimpleBindings(Maps.newConcurrentMap());
+        return new SimpleBindings(Maps.newLinkedHashMap());
     }
 
     @Override

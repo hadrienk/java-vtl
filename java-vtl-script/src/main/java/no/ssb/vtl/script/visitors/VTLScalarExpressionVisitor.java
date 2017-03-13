@@ -6,5 +6,5 @@ import no.ssb.vtl.parser.VTLBaseVisitor;
 
 import java.util.function.Function;
 
-public class VTLScalarExpressionVisitor<T extends Function<DataPoint, VTLObject>> extends VTLBaseVisitor<T> {
+public class VTLScalarExpressionVisitor<T extends Function<DataPoint, ? extends VTLObject>> extends VTLBaseVisitor<T> {
 }
