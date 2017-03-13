@@ -78,8 +78,8 @@ public class SsbKlassApiConnectorTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsSequence(
-                        "0101", "Halden", Instant.parse("2012-12-31T23:00:00Z"), null,
-                        "0104", "Moss", Instant.parse("2012-12-31T23:00:00Z"), null
+                        "0101", "Halden", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z"),
+                        "0104", "Moss", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z")
                 );
 
     }
