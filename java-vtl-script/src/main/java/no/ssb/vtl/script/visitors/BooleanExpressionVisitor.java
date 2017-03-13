@@ -78,7 +78,14 @@ public class BooleanExpressionVisitor extends VTLScalarExpressionVisitor<VTLPred
         }
         
     }
-    
+
+    @Override
+    public VTLPredicate visitBooleanFunction(VTLParser.BooleanFunctionContext ctx) {
+        ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
+        Object ref = paramVisitor.visit(ctx.booleanParam());
+        return getIsNullPredicate(ref);
+    }
+
     @Override
     public VTLPredicate visitBooleanNot(VTLParser.BooleanNotContext ctx) {
         VTLPredicate predicate = visit(ctx.booleanExpression());
