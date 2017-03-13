@@ -36,7 +36,7 @@ Conditional|if-then-else|
 Conditional|nvl|
 Validation|Comparisons (>,<,>=,<=,=,<>)|
 Validation|in,not in, between|
-Validation|isnull|
+Validation|isnull|![done][done]|Implemented syntax are `isnull(value)`, `value is null` and `value is not null`|
 Validation|exist_in, not_exist_in|
 Validation|exist_in_all, not_exist_in_all|
 Validation|check|
