@@ -25,16 +25,17 @@ import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -43,14 +44,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role;
-import static no.ssb.vtl.test.ComponentConditions.componentWith;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+import static no.ssb.vtl.model.Component.*;
+import static no.ssb.vtl.test.ComponentConditions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class VTLScriptEngineTest {
 
@@ -561,6 +560,12 @@ public class VTLScriptEngineTest {
                 entry("m22", Role.MEASURE)
         );
 
+        assertThat(ds2.getDataStructure().getTypes()).containsOnly(
+                entry("id1", String.class),
+                entry("m11", Integer.class),
+                entry("m22", String.class)
+        );
+
         assertThat(ds2.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
@@ -569,7 +574,30 @@ public class VTLScriptEngineTest {
                         "2", 0, "str2",
                         "3", 0, "constant"
                 );
+    }
 
+    @Test(expected = ScriptException.class)
+    public void testNvlAsClauseNotEqualTypes() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData()).then(invocation -> Stream.of(
+                tuple(
+                        ds.wrap("id1", "1"),
+                        ds.wrap("m1", null)
+                )
+        ));
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 = nvl(m1 , \"constant\") " +
+                "}"
+        );
     }
 
     private DataPoint tuple(VTLObject... components) {
