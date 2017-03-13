@@ -33,7 +33,7 @@ Clauses|calc|
 Clauses|attrcalc|
 Clauses|aggregate|
 Conditional|if-then-else|
-Conditional|nvl|
+Conditional|nvl|![usable](http://progressed.io/bar/50)|Dataset as input not implemented.
 Validation|Comparisons (>,<,>=,<=,=,<>)|
 Validation|in,not in, between|
 Validation|isnull|![done][done]|Implemented syntax are `isnull(value)`, `value is null` and `value is not null`|

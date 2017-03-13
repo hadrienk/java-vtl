@@ -193,6 +193,26 @@ Sweden , 9M
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
+## Conditional operators
+
+### nvl
+The operator nvl replaces null values with a value given as a parameter.
+<div vtl-example>
+    <vtl-code>
+join := [left, left] {
+    b = nvl(population, 0)
+}
+    </vtl-code>
+    <vtl-dataset name="left">
+country[I,String],population[M,String]
+France , 64M
+Norway , 5M
+Italy  , null
+Sweden , 9M
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
 ## Boolean operators
 
 ### Null operators
