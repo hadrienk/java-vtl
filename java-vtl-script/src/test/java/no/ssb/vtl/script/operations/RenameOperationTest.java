@@ -24,11 +24,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -41,14 +43,25 @@ public class RenameOperationTest {
 
     Dataset notNullDataset = new Dataset() {
         @Override
-        public DataStructure getDataStructure() {
+        public Stream<DataPoint> getData() {
             return null;
         }
 
         @Override
-        public Stream<Tuple> get() {
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
             return null;
         }
+
+        @Override
+        public Optional<Long> getSize() {
+            return null;
+        }
+
+        @Override
+        public DataStructure getDataStructure() {
+            return null;
+        }
+
     };
 
 //    @Test(expected = IllegalArgumentException.class)
@@ -139,9 +152,9 @@ public class RenameOperationTest {
                 "Attribute2", Role.ATTRIBUTE, String.class
         );
         when(dataset.getDataStructure()).thenReturn(structure);
-        when(dataset.get()).then(invocation -> {
+        when(dataset.getData()).then(invocation -> {
             return Stream.of(
-                    structure.wrap(Maps.asMap(structure.keySet(), input -> (Object) input))
+                    structure.wrap(Maps.asMap(structure.keySet(), (String input) -> (Object) input))
             );
         });
 
@@ -175,7 +188,7 @@ public class RenameOperationTest {
                 entry("Attribute2Measure", Role.MEASURE)
         );
 
-        assertThat(rename.get()).flatExtracting(input -> input).extracting(DataPoint::get)
+        assertThat(rename.getData()).flatExtracting(input -> input).extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         structure.keySet()
                 );

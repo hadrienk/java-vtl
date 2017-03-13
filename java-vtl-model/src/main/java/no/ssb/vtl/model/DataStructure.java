@@ -22,24 +22,29 @@ package no.ssb.vtl.model;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Data structure of a {@link Dataset}.
  * <p>
  * The data structure defines the role and type of the columns of a data set and
- * serves as a {@link DataPoint}s and {@link no.ssb.vtl.model.Dataset.Tuple}s factory.
+ * serves as a {@link VTLObject}s and {@link DataPoint}s factory.
  */
 public class DataStructure extends ForwardingMap<String, Component> {
 
@@ -50,6 +55,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     private final IdentityHashMap<Component, String> inverseCache;
     private final ImmutableMap<String, Component.Role> roleCache;
     private final ImmutableMap<String, Class<?>> typeCache;
+    private final ImmutableList<Component> indexListCache;
 
     protected DataStructure(BiFunction<Object, Class<?>, ?> converter, ImmutableMap<String, Component> map) {
         this.converter = checkNotNull(converter);
@@ -57,14 +63,28 @@ public class DataStructure extends ForwardingMap<String, Component> {
         this.inverseCache = computeInverseCache(this.delegate);
         this.roleCache = computeRoleCache(delegate);
         this.typeCache = computeTypeCache(delegate);
+        this.indexListCache = computeIndexCache(delegate);
     }
 
     private static ImmutableMap<String, Component.Role> computeRoleCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getRole));
+        ImmutableMap.Builder<String, Component.Role> builder = ImmutableMap.builder();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getRole());
+        }
+        return builder.build();
     }
 
     private static ImmutableMap<String, Class<?>> computeTypeCache(ImmutableMap<String, Component> delegate) {
-        return ImmutableMap.copyOf(Maps.transformValues(delegate, Component::getType));
+        ImmutableMap.Builder<String, Class<?>> builder = ImmutableMap.builder();
+        for (Entry<String, Component> entry : delegate.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getType());
+        }
+        return builder.build();
+    }
+
+    private static ImmutableList<Component> computeIndexCache(ImmutableMap<String, Component> delegate) {
+        return ImmutableList.copyOf(delegate.values());
+
     }
 
     public static DataStructure.Builder builder() {
@@ -191,16 +211,96 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return this.converter;
     }
 
-    ;
+    /**
+     * Return a {@link Map<Component, VTLObject>} view of the {@link DataPoint}.
+     * <p>
+     * The returned map can be used to edit the DataPoint using the component references.
+     *
+     * @param dataPoint the datapoint to wrap
+     * @return a modifiable map backed by the datatpoint and this structure.
+     */
+    public Map<Component, VTLObject> asMap(DataPoint dataPoint) {
+        checkArgument(
+                dataPoint.size() >= this.size(),
+                "inconsistent data point size %s, expected %s",
+                dataPoint.size(), this.size()
+        );
+        return new AbstractMap<Component, VTLObject>() {
+
+            @Override
+            public VTLObject put(Component key, VTLObject value) {
+                int index = indexListCache.indexOf(key);
+                return index < 0 ? null : dataPoint.set(index, value);
+            }
+
+            @Override
+            public VTLObject get(Object key) {
+                int index = indexListCache.indexOf(key);
+                return index < 0 ? null : dataPoint.get(index);
+            }
+
+            @Override
+            public VTLObject remove(Object key) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Set<Entry<Component, VTLObject>> entrySet() {
+                return new AbstractSet<Entry<Component, VTLObject>>() {
+                    @Override
+                    public Iterator<Entry<Component, VTLObject>> iterator() {
+                        return new Iterator<Entry<Component, VTLObject>>() {
+
+                            int index = 0;
+
+                            @Override
+                            public boolean hasNext() {
+                                return index < size();
+                            }
+
+                            @Override
+                            public Entry<Component, VTLObject> next() {
+                                return new SimpleEntry<>(
+                                        indexListCache.get(index),
+                                        dataPoint.get(index++)
+                                );
+                            }
+                        };
+                    }
+
+                    @Override
+                    public int size() {
+                        return indexListCache.size();
+                    }
+                };
+            }
+        };
+    }
+
+    public Map<VTLObject, Component> asInverseMap(DataPoint dataPoint) {
+        Map<VTLObject, Component> map = new HashMap<>();
+        for (int i = 0; i < indexListCache.size(); i++) {
+            map.put(dataPoint.get(i), indexListCache.get(i));
+        }
+        return map;
+    }
+
+    public int indexOf(Component component) {
+        return indexListCache.indexOf(component);
+    }
 
     /**
      * Creates a new {@link Component} for the given column and value.
+     * <p>
+     * This method is deprecated, the VTLObject will loose its reference to Component. That was the only
+     * reason to have a wrap method.
      *
      * @param name  the name of the column.
      * @param value the value of the resulting component.
      * @return a component
      */
-    public DataPoint wrap(String name, Object value) {
+    @Deprecated
+    public VTLObject wrap(String name, Object value) {
         checkArgument(
                 containsKey(name),
                 "could not find %s in data structure %s",
@@ -208,36 +308,42 @@ public class DataStructure extends ForwardingMap<String, Component> {
         );
 
         Component component = get(name);
-        return new DataPoint(component) {
-            @Override
-            public Object get() {
-                return converter().apply(value, component.getType());
-            }
-        };
+        return VTLObject.of(component, converter().apply(value, component.getType()));
     }
 
     /**
-     * Creates a new {@link Dataset.Tuple} for the given names and values.
+     * Creates a new {@link DataPoint} for the given names and values.
      * <p>
      * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
-     * a {@link Dataset.Tuple}.
+     * a {@link DataPoint}.
      *
      * @param map a map of name and values
      * @return the corresponding tuple (row)
      */
-    public Dataset.Tuple wrap(Map<String, Object> map) {
+    public DataPoint wrap(Map<String, Object> map) {
 
-        List<DataPoint> components = Lists.newArrayList();
+        List<VTLObject> components = Lists.newArrayList();
         for (Map.Entry<String, Object> entry : map.entrySet())
             components.add(wrap(entry.getKey(), entry.getValue()));
 
-        return Dataset.Tuple.create(components);
+        return DataPoint.create(components);
+
+    }
+
+    public DataPoint wrap() {
+        return DataPoint.create(this.size());
 
     }
 
     @Override
     protected Map<String, Component> delegate() {
         return delegate;
+    }
+
+    public DataPoint fromMap(Map<Component, VTLObject> map) {
+        DataPoint point = DataPoint.create(this.size());
+        asMap(point).putAll(map);
+        return point;
     }
 
     public static class Builder {

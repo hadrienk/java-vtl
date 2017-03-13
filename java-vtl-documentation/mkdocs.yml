@@ -2,7 +2,7 @@ site_name: Java VTL
 
 site_url: https://statisticsnorway.github.io/java-vtl/
 repo_url: https://github.com/statisticsnorway/java-vtl
-edit_uri: edit/feature/tooling/java-vtl-documentation/docs
+edit_uri: edit/develop/java-vtl-documentation/docs
 
 theme_dir: cinder
 pages:

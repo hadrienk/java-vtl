@@ -7,14 +7,20 @@ import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
+import no.ssb.vtl.connectors.SsbApiConnector;
+import no.ssb.vtl.connectors.SsbKlassApiConnector;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLScriptEngine;
-import no.ssb.vtl.connectors.SsbApiConnector;
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.LexerNoViableAltException;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import javax.script.Bindings;
@@ -30,7 +36,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
+import static java.lang.String.*;
+
+import java.lang.String;
 
 /**
  * A termd interpreter.
@@ -83,8 +91,9 @@ public class TtyConsole implements Consumer<TtyConnection> {
         // ScriptEngineManager manager = new ScriptEngineManager();
         // engine = checkNotNull(manager.getEngineByName("VTLJava"));
 
-        engine = new VTLScriptEngine(new SsbApiConnector(new ObjectMapper()));
-
+        engine = new VTLScriptEngine(
+                new SsbKlassApiConnector(new ObjectMapper()),
+                new SsbApiConnector(new ObjectMapper()));
 
         read(ttyConnection, readline);
     }
@@ -181,10 +190,10 @@ public class TtyConsole implements Consumer<TtyConnection> {
         ttyConnection.write(columns.stream().collect(Collectors.joining(",")) + "\n");
 
         // Rows
-        Iterator<Dataset.Tuple> iterator = dataset.stream().iterator();
+        Iterator<DataPoint> iterator = dataset.getData().iterator();
         while (iterator.hasNext()) {
             columns.clear();
-            Dataset.Tuple row = iterator.next();
+            DataPoint row = iterator.next();
             columns = row.stream().map(dataPoint -> {
                 return dataPoint.get() == null ? "[NULL]" : dataPoint.get().toString();
             }).collect(Collectors.toList());

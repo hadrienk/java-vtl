@@ -1,6 +1,5 @@
 package no.ssb.vtl.tools.webconsole;
 
-import com.codepoetics.protonpack.Streamable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
@@ -9,12 +8,20 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -23,15 +30,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static no.ssb.vtl.model.Component.Role;
+import static no.ssb.vtl.model.Component.*;
 
 /**
  * Simple execution service that allows executions of a VTL expression
@@ -94,15 +100,17 @@ public class ExecutorController {
             method = RequestMethod.GET
     )
     public Iterable<Map<String, Object>> getData(@PathVariable String id) {
-        Object dataset = bindings.get(id);
-        Streamable<Map<String, Object>> streamable = ((Dataset) dataset).map(dataPoints -> {
-            Map<String, Object> map = Maps.newHashMap();
-            for (DataPoint dataPoint : dataPoints) {
-                map.put(dataPoint.getName(), dataPoint.get());
-            }
-            return map;
-        });
-        return () -> streamable.get().iterator();
+        final Dataset dataset = (Dataset) bindings.get(id);
+        DataStructure structure = dataset.getDataStructure();
+        return () -> {
+            return dataset.getData().map(dataPoints -> {
+                Map<String, Object> map = Maps.newHashMap();
+                for (Map.Entry<Component, VTLObject> entry : structure.asMap(dataPoints).entrySet()) {
+                    map.put(structure.getName(entry.getKey()), entry.getValue());
+                }
+                return map;
+            }).iterator();
+        };
     }
 
     @RequestMapping(
@@ -141,9 +149,9 @@ public class ExecutorController {
             componentWrapper.setType(component.getValue().getType());
             structure.add(componentWrapper);
         }
-        List<List<Object>> data = dataset.get()
+        List<List<Object>> data = dataset.getData()
                 .map(tuple -> tuple.stream()
-                        .map(DataPoint::get).collect(Collectors.toList())
+                        .map(VTLObject::get).collect(Collectors.toList())
                 ).collect(Collectors.toList());
         wrapper.setData(data);
         return wrapper;
@@ -157,39 +165,32 @@ public class ExecutorController {
 
         final DataStructure structure = builder.build();
         return new Dataset() {
+
             @Override
             public DataStructure getDataStructure() {
                 return structure;
             }
 
             @Override
-            public Stream<Tuple> get() {
+            public Stream<DataPoint> getData() {
+                return dataset.data.stream().map(objects -> {
+                    DataPoint dataPoint =
+                            DataPoint.create(
+                                    objects.stream().map(VTLObject::of)
+                                    .collect(Collectors.toList())
+                            );
+                    return dataPoint;
+                });
+            }
 
-                List<String> names = Lists.newArrayList(structure.keySet());
-                return dataset.data.stream()
-                        .map(row -> {
-                            checkArgument(row.size() == structure.size());
-                            return new AbstractTuple() {
-                                @Override
-                                protected List<DataPoint> delegate() {
-                                    return new AbstractList<DataPoint>() {
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
 
-                                        @Override
-                                        public int size() {
-                                            return row.size();
-                                        }
-
-                                        @Override
-                                        public DataPoint get(int index) {
-                                            return structure.wrap(
-                                                    names.get(index),
-                                                    row.get(index)
-                                            );
-                                        }
-                                    };
-                                }
-                            };
-                        });
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
             }
         };
     }

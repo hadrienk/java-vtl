@@ -12,6 +12,7 @@ import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.connector.ConnectorException;
 import no.ssb.vtl.connector.NotFoundException;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.jsonstat.JsonStatModule;
@@ -125,12 +126,7 @@ public class SsbApiConnector implements Connector {
 
             return new Dataset() {
                 @Override
-                public DataStructure getDataStructure() {
-                    return structure;
-                }
-
-                @Override
-                public Stream<Tuple> get() {
+                public Stream<DataPoint> getData() {
                     return table.rowMap().entrySet().stream()
                             .map(entry -> {
                                 Map<String, Object> row = Maps.newHashMap();
@@ -144,6 +140,23 @@ public class SsbApiConnector implements Connector {
                                 return row;
                             }).map(structure::wrap);
                 }
+
+                @Override
+                public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                    // TODO
+                    return Optional.empty();
+                }
+
+                @Override
+                public Optional<Long> getSize() {
+                    return Optional.of((long) dataset.getRows().size() * metric.size());
+                }
+
+                @Override
+                public DataStructure getDataStructure() {
+                    return structure;
+                }
+
             };
 
         } catch (RestClientException rce) {

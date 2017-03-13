@@ -20,6 +20,7 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
@@ -39,9 +40,11 @@ public class CrossJoinOperation extends InnerJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+            final DataStructure leftStructure, final DataStructure rightStructure
+    ) {
         return (left, right, compare) -> {
-            JoinTuple tuple = new JoinTuple(Collections.emptyList());
+            JoinDataPoint tuple = new JoinDataPoint(Collections.emptyList());
             if (compare == 0) {
                 tuple.addAll(left);
                 tuple.addAll(right);

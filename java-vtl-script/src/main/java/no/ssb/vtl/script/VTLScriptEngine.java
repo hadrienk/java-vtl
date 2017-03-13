@@ -83,7 +83,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                         - TypeException
                         - ConstraintException
                     - ValidationException
-                    - ScriptRuntimeException
+                    - VTLRuntimeException
             The WrappedScriptException is used to report errors that are not originating
             from the VTL Parser.
          */

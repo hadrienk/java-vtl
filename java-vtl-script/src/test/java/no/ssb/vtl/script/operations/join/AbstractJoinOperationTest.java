@@ -5,16 +5,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.script.support.JoinSpliterator;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -110,7 +108,7 @@ public class AbstractJoinOperationTest {
         );
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
-        given(ds1.get()).will(invocation -> {
+        given(ds1.getData()).will(invocation -> {
             return IntStream.rangeClosed(0, 10).boxed().map(
                     integer -> ds1Struct.wrap(
                             ImmutableMap.of(
@@ -125,21 +123,32 @@ public class AbstractJoinOperationTest {
             public WorkingDataset workDataset() {
                 return new WorkingDataset() {
                     @Override
+                    public Stream<DataPoint> getData() {
+                        return ds1.getData();
+                    }
+
+                    @Override
+                    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                        return null;
+                    }
+
+                    @Override
+                    public Optional<Long> getSize() {
+                        return null;
+                    }
+
+                    @Override
                     public DataStructure getDataStructure() {
                         return ds1.getDataStructure();
                     }
 
-                    @Override
-                    public Stream<Tuple> get() {
-                        return ds1.get();
-                    }
                 };
             }
 
         };
 
-        assertThat(result.workDataset().get())
-                .containsAll(ds1.get().collect(Collectors.toList()));
+        assertThat(result.getData())
+                .containsAll(ds1.getData().collect(Collectors.toList()));
 
     }
 
@@ -150,12 +159,14 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
+        protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+                final DataStructure leftStructure, final DataStructure rightStructure
+        ) {
             return null;
         }
 
         @Override
-        protected Comparator<List<DataPoint>> getKeyComparator() {
+        protected Comparator<List<VTLObject>> getKeyComparator() {
             return null;
         }
 
@@ -167,6 +178,16 @@ public class AbstractJoinOperationTest {
         @Override
         public WorkingDataset workDataset() {
             return null;
+        }
+
+        @Override
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Long> getSize() {
+            return Optional.empty();
         }
     }
 }

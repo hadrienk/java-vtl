@@ -3,17 +3,17 @@ package no.ssb.vtl.script.visitors.join;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * A visitor that instantiate rename operators.
  */
-public class JoinRenameClauseVisitor extends VTLBaseVisitor<RenameOperation> {
+public class JoinRenameClauseVisitor extends VTLDatasetExpressionVisitor<RenameOperation> {
 
     private final Dataset dataset;
     private final ReferenceVisitor referenceVisitor;

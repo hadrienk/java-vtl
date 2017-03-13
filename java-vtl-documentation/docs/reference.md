@@ -100,16 +100,16 @@ outerJoin := [outer left, right] {
     <vtl-dataset name="left">
 id1[I,String],id2[I,String],measure[M,String],attribute[A,String]
 1,3,left value 3, left attribute 3
-2,4,left value 4, left attribute 4
-3,5,left value 5, left attribute 5
-4,6,left value 6, left attribute 6
+1,4,left value 4, left attribute 4
+1,5,left value 5, left attribute 5
+1,6,left value 6, left attribute 6
     </vtl-dataset>
     <vtl-dataset name="right">
 id1[I,String],id2[I,String],measure[M,String],attribute[A,String]
 1,1,right value 1, right attribute 1
-2,2,right value 2, right attribute 2
-3,3,right value 3, right attribute 3
-4,4,right value 4, right attribute 4
+1,2,right value 2, right attribute 2
+1,3,right value 3, right attribute 3
+1,4,right value 4, right attribute 4
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
@@ -163,3 +163,102 @@ yellow, 510nm
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
+
+## Check operators
+
+The check operators are used to validate data sets. Three check operator
+ variants are available, check with rule sets, check with hierarchical
+ rule sets and check with single boolean rule.
+
+The return value of the check function depend of parameters.
+When used with the parameter "condition", the resulting dataset will only
+ contain a condition measure of type Boolean indicating if the DataPoint
+ is valid according to the rule set, hierarchical rule set or boolean
+ expression.
+With the parameter "measures", the resulting dataset contains all the
+measures of the input dataset.
+
+### Check with single rule
+<div vtl-example>
+    <vtl-code>
+folded := check(data.valid <> "na")
+    </vtl-code>
+    <vtl-dataset name="data">
+country[I,String],population[M,String]
+France , 64M
+Norway , 5M
+Italy  , na
+Sweden , 9M
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+## Conditional operators
+
+### nvl
+The operator nvl replaces null values with a value given as a parameter.
+<div vtl-example>
+    <vtl-code>
+join := [left, left] {
+    b = nvl(population, 0)
+}
+    </vtl-code>
+    <vtl-dataset name="left">
+country[I,String],population[M,String]
+France , 64M
+Norway , 5M
+Italy  , null
+Sweden , 9M
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+## Boolean operators
+
+### Null operators
+
+VTL adopts 3VL (three-value logic); null is not considered a "value",
+ but rather a marker (or placeholder) indicating the absence of value.
+
+| *p*     | *q*     | *p*  OR *q* | *p*  AND *q* | *p*  = *q* |
+|---------|---------|-------------|--------------|------------|
+| True    | True    | True        | True         | True       |
+| True    | False   | True        | False        | False      |
+| True    | Unknown | True        | Unknown      | Unknown    |
+| False   | True    | True        | False        | False      |
+| False   | False   | False       | False        | True       |
+| False   | Unknown | Unknown     | False        | Unknown    |
+| Unknown | True    | True        | Unknown      | Unknown    |
+| Unknown | False   | Unknown     | False        | Unknown    |
+| Unknown | Unknown | Unknown     | Unknown      | Unknown    |
+
+| *p*     | NOT *p* |
+|:--------|:--------|
+| True    | False   |
+| False   | True    |
+| Unknown | Unknown |
+
+Null in boolean operators evaluates to false. In order to test whether
+ or not a value is null one can use the postfix operator `is null` or
+ `is not null` as well as the functional equivalents `isnull()` or
+ `not(isnull())`.
+
+<div vtl-example>
+    <vtl-code>
+isnotnull := [data] {
+    filter value is not null
+}
+isnull := {
+    filter value is null
+}
+    </vtl-code>
+    <vtl-dataset name="data">
+country[I,String],value[M,String]
+Null , null
+NotNull , value
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+
+

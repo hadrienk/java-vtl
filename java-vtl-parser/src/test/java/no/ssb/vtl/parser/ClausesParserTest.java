@@ -26,9 +26,9 @@ public class ClausesParserTest extends GrammarTest {
 
     @Test
     public void testRenameWithRole() throws Exception {
-        parse("[rename varId as varId role = IDENTIFIER]", "clauseExpression");
-        parse("[rename varId as varId role = MEASURE]", "clauseExpression");
-        parse("[rename varId as varId role = ATTRIBUTE]", "clauseExpression");
+        parse("[rename varId as varId role IDENTIFIER]", "clauseExpression");
+        parse("[rename varId as varId role MEASURE]", "clauseExpression");
+        parse("[rename varId as varId role ATTRIBUTE]", "clauseExpression");
     }
 
     @Test
@@ -38,9 +38,9 @@ public class ClausesParserTest extends GrammarTest {
 
     @Test
     public void testMultipleRenamesWithRoles() throws Exception {
-        parse("[rename varId as varId role = IDENTIFIER," +
-                        "    varId as varId role = MEASURE," +
-                        "    varId as varId role = ATTRIBUTE]",
+        parse("[rename varId as varId role IDENTIFIER," +
+                        "    varId as varId role MEASURE," +
+                        "    varId as varId role ATTRIBUTE]",
                 "clauseExpression");
     }
 

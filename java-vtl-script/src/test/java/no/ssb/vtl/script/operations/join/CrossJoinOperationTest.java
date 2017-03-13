@@ -4,16 +4,18 @@ import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import java.time.Year;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.mock;
 
 public class CrossJoinOperationTest {
@@ -44,7 +46,7 @@ public class CrossJoinOperationTest {
         given(ds1.getDataStructure()).willReturn(structure1);
         given(ds2.getDataStructure()).willReturn(structure2);
 
-        given(ds1.get()).willReturn(Stream.of(
+        given(ds1.getData()).willReturn(Stream.of(
                 tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
@@ -65,8 +67,9 @@ public class CrossJoinOperationTest {
                         structure1.wrap("obs_status", "P")
                 )
         ));
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
-        given(ds2.get()).willReturn(Stream.of(
+        given(ds2.getData()).willReturn(Stream.of(
                 tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
@@ -87,6 +90,7 @@ public class CrossJoinOperationTest {
                         structure1.wrap("obs_status", "P")
                 )
         ));
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
         AbstractJoinOperation result = new CrossJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
@@ -97,12 +101,7 @@ public class CrossJoinOperationTest {
         vtlPrintStream.println(result);
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
-            @Override
-            protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+    private DataPoint tuple(VTLObject... components) {
+        return DataPoint.create(Arrays.asList(components));
     }
 }

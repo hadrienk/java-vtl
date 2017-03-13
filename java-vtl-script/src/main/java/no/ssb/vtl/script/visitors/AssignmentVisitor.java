@@ -20,17 +20,16 @@ package no.ssb.vtl.script.visitors;
  * #L%
  */
 
+import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.connector.Connector;
 
 import javax.script.ScriptContext;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * Assignment visitor.
@@ -41,12 +40,15 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final ConnectorVisitor connectorVisitor;
     private final ClauseVisitor clausesVisitor;
     private final RelationalVisitor relationalVisitor;
-
+    private final CheckVisitor checkVisitor;
+    
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this.context = checkNotNull(context, "the context was null");
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
         relationalVisitor = new RelationalVisitor(this, context);
+        ReferenceVisitor referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
+        checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
     }
 
     @Override
@@ -64,8 +66,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        Supplier<Dataset> datasetSupplier = relationalVisitor.visit(ctx);
-        return datasetSupplier.get();
+        return relationalVisitor.visit(ctx);
     }
 
     @Override
@@ -88,6 +89,11 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         Dataset dataset = visit(ctx.datasetExpression());
         Function<Dataset, Dataset> clause = clausesVisitor.visit(ctx.clauseExpression());
         return clause.apply(dataset);
+    }
+
+    @Override
+    public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
+        return checkVisitor.visit(ctx.checkExpression());
     }
 
 }

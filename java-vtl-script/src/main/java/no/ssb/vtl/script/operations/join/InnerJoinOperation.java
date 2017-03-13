@@ -19,14 +19,17 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Represent an inner join on datasets.
@@ -48,22 +51,41 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinTuple, JoinTuple, Integer, List<JoinTuple>> getMerger() {
-        ImmutableSet<Component> commonIdentifiers = getIdentifiers();
-
+    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+            final DataStructure leftStructure, final DataStructure rightStructure
+    ) {
+        final Set<Component> identifiers = getIdentifiers();
         return (left, right, compare) -> {
-            if (compare == 0) {
-                left.addAll(getNonCommon(commonIdentifiers, right));
-                return Collections.singletonList(left);
-            } else {
+            if (compare != 0)
                 return null;
+
+            Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
+            for (Map.Entry<Component, VTLObject> entry : rightStructure.asMap(right).entrySet()) {
+                if (!identifiers.contains(entry.getKey())) {
+                    leftMap.put(entry.getKey(), entry.getValue());
+                }
             }
+            return Collections.singletonList(left);
         };
     }
 
-    private Collection<? extends DataPoint> getNonCommon(ImmutableSet<Component> commonIdentifiers, JoinTuple right) {
-        return right.stream()
-                .filter(dataPoint -> !commonIdentifiers.contains(dataPoint.getComponent()))
-                .collect(Collectors.toList());
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
     }
 }
