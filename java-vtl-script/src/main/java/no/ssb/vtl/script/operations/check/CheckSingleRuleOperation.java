@@ -76,7 +76,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
             for (Component condition : conditions) {
                 VTLObject value = originalMap.get(condition);
                 if (value.get() == null) {
-                    combinedCondition = null;
+                    combinedCondition = false;
                     break;
                 } else {
                     if (!(combinedCondition && (Boolean) value.get())) {
