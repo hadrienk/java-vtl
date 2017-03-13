@@ -37,6 +37,6 @@ public class ConditionalExpressionVisitor extends VTLBaseVisitor<VTLExpression> 
                 return vtlObject.get();
             }
 
-        }).description(format("%s %s", input, repValue)).build();
+        }).description(format("nvl(%s, %s)", input, repValue)).build();
     }
 }
