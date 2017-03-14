@@ -67,6 +67,10 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         context = new VTLScriptContext();
     }
 
+    /**
+     * Returns the default time zone of the JVM.
+     * @return the default time zone of the JVM.
+     */
     public static TimeZone getDefaultTimeZone() {
         return TimeZone.getDefault();
     }
