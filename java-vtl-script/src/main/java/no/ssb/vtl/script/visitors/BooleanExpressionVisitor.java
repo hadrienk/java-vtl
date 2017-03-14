@@ -6,14 +6,13 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLPredicate;
-import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Map;
 import java.util.function.BiPredicate;
 
-public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
+public class BooleanExpressionVisitor extends VTLScalarExpressionVisitor<VTLPredicate> {
     
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
@@ -22,34 +21,34 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
         this.referenceVisitor = referenceVisitor;
         this.dataStructure = dataStructure;
     }
-    
+
     @Override
-    public VTLPredicate visitBooleanExpression(VTLParser.BooleanExpressionContext ctx) {
-        if (ctx.BOOLEAN_CONSTANT() != null) {
-            Boolean booleanConstant = Boolean.valueOf(ctx.BOOLEAN_CONSTANT().getText());
-            return dataPoints -> VTLBoolean.of(booleanConstant);
-        }else if (ctx.op != null) {
-            VTLPredicate left = visit(ctx.booleanExpression(0));
-            VTLPredicate right = visit(ctx.booleanExpression(1));
-            switch (ctx.op.getType()) {
-                case VTLParser.AND:
-                    return left.and(right);
-                case VTLParser.OR:
-                    return left.or(right);
-                case VTLParser.XOR:
-                    return left.xor(right);
-                default:
-                    throw new ParseCancellationException("Unsupported boolean operation: " + ctx.op.getText());
-            }
-        } else if (ctx.booleanEquality() != null) {
-            return visit(ctx.booleanEquality());
-        } else if (ctx.booleanIsNull() != null) {
-            return visit(ctx.booleanIsNull());
-        } else if (ctx.booleanNot() != null) {
-            return visit(ctx.booleanNot());
-        } else {
-            return super.visit(ctx);
+    public VTLPredicate visitBooleanConstant(VTLParser.BooleanConstantContext ctx) {
+        Boolean booleanConstant = Boolean.valueOf(ctx.BOOLEAN_CONSTANT().getText());
+        return dataPoints -> VTLBoolean.of(booleanConstant);
+    }
+
+    @Override
+    public VTLPredicate visitBooleanAlgebra(VTLParser.BooleanAlgebraContext ctx) {
+
+        VTLPredicate left = visit(ctx.booleanExpression(0));
+        VTLPredicate right = visit(ctx.booleanExpression(1));
+
+        switch (ctx.op.getType()) {
+            case VTLParser.AND:
+                return left.and(right);
+            case VTLParser.OR:
+                return left.or(right);
+            case VTLParser.XOR:
+                return left.xor(right);
+            default:
+                throw new ParseCancellationException("Unsupported boolean operation: " + ctx.op.getText());
         }
+    }
+
+    @Override
+    public VTLPredicate visitBooleanPrecedence(VTLParser.BooleanPrecedenceContext ctx) {
+        return visit(ctx.booleanExpression());
     }
     
     @Override
@@ -61,6 +60,56 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
         BiPredicate<VTLObject, VTLObject> booleanOperation = getBooleanOperation(ctx.op.getType());
     
         return getVtlPredicate(left, right, booleanOperation);
+    }
+    
+    @Override
+    public VTLPredicate visitBooleanPostfix(VTLParser.BooleanPostfixContext ctx) {
+        ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
+        Object ref = paramVisitor.visit(ctx.booleanParam());
+        
+        int op = ctx.op.getType();
+        switch (op) {
+            case VTLParser.ISNULL:
+                return getIsNullPredicate(ref);
+            case VTLParser.ISNOTNULL:
+                return getNotPredicate(getIsNullPredicate(ref));
+            default:
+                throw new ParseCancellationException("Unsupported boolean postfix operator " + op);
+        }
+        
+    }
+
+    @Override
+    public VTLPredicate visitBooleanIsNullFunction(VTLParser.BooleanIsNullFunctionContext ctx) {
+        ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
+        Object ref = paramVisitor.visit(ctx.booleanParam());
+        return getIsNullPredicate(ref);
+    }
+
+    @Override
+    public VTLPredicate visitBooleanNot(VTLParser.BooleanNotContext ctx) {
+        VTLPredicate predicate = visit(ctx.booleanExpression());
+        return getNotPredicate(predicate);
+    }
+    
+    BiPredicate<VTLObject, VTLObject> getBooleanOperation(int op) {
+        BiPredicate<VTLObject, VTLObject> equals = ((l, r) -> l.compareTo(r) == 0);
+        switch (op) {
+            case VTLParser.EQ:
+                return equals;
+            case VTLParser.NE:
+                return equals.negate();
+            case VTLParser.LE:
+                return (l, r) ->  l.compareTo(r) <= 0;
+            case VTLParser.LT:
+                return (l, r) -> l.compareTo(r) < 0;
+            case VTLParser.GE:
+                return (l, r) -> l.compareTo(r) >= 0;
+            case VTLParser.GT:
+                return (l, r) -> l.compareTo(r) > 0;
+            default:
+                throw new ParseCancellationException("Unsupported boolean equality operator " + op);
+        }
     }
     
     VTLPredicate getVtlPredicate(Object left, Object right, BiPredicate<VTLObject, VTLObject> booleanOperation) {
@@ -88,12 +137,12 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
             return dataPoint -> nullableResultOf(booleanOperation, VTLObject.of(left), VTLObject.of(right));
         }
     }
-
-    public VTLPredicate getNotPredicate(VTLPredicate predicate) {
+    
+    VTLPredicate getNotPredicate(VTLPredicate predicate) {
         return predicate.negate();
     }
-
-    public VTLPredicate getIsNullPredicate(Object value) {
+    
+    VTLPredicate getIsNullPredicate(Object value) {
         if (isComp(value)) {
             return dataPoint -> {
                 VTLObject resolvedValue = getValue((Component) value, dataPoint);
@@ -114,41 +163,6 @@ public class BooleanExpressionVisitor extends VTLBaseVisitor<VTLPredicate> {
         } else {
             return VTLBoolean.of(operation.test(left, right));
         }
-    }
-    
-    BiPredicate<VTLObject, VTLObject> getBooleanOperation(int op) {
-        BiPredicate<VTLObject, VTLObject> equals = ((l, r) -> l.compareTo(r) == 0);
-        switch (op) {
-            case VTLParser.EQ:
-                return equals;
-            case VTLParser.NE:
-                return equals.negate();
-            case VTLParser.LE:
-                return (l, r) ->  l.compareTo(r) <= 0;
-            case VTLParser.LT:
-                return (l, r) -> l.compareTo(r) < 0;
-            case VTLParser.GE:
-                return (l, r) -> l.compareTo(r) >= 0;
-            case VTLParser.GT:
-                return (l, r) -> l.compareTo(r) > 0;
-            default:
-                throw new ParseCancellationException("Unsupported boolean equality operator " + op);
-        }
-    }
-
-
-    @Override
-    public VTLPredicate visitBooleanIsNull(VTLParser.BooleanIsNullContext ctx) {
-        ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
-        Object ref = paramVisitor.visit(ctx.booleanParam());
-
-        return getIsNullPredicate(ref);
-    }
-
-    @Override
-    public VTLPredicate visitBooleanNot(VTLParser.BooleanNotContext ctx) {
-        VTLPredicate predicate = visitBooleanExpression(ctx.booleanExpression());
-        return getNotPredicate(predicate);
     }
 
     private VTLObject getValue(Component component, DataPoint dataPoint) {

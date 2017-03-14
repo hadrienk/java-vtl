@@ -21,8 +21,8 @@ grammar VTL;
 start : statement+ EOF;
 
 /* Assignment */
-statement : identifier ':=' datasetExpression
-          | identifier ':=' block
+statement : identifier ASSIGNMENT datasetExpression
+          | identifier ASSIGNMENT block
           ;
 
 block : '{' statement+ '}' ;
@@ -79,7 +79,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=identifier ( 'role' '=' role )? ;
+renameParam : from=componentRef 'as' to=identifier ( 'role' role )? ;
 
 role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
 
@@ -93,40 +93,28 @@ attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
 
-//booleanExpression : 'booleanExpression' ;
-
 //varID       : 'varId';
 
 //WS          : [ \t\n\t] -> skip ;
 
-booleanExpression
-    : booleanExpression op=AND booleanExpression
-    | booleanExpression op=(OR|XOR) booleanExpression
-    | booleanNot
-    | booleanIsNull
-    | booleanEquality
-    | BOOLEAN_CONSTANT
+booleanExpression                                                                                       //Evaluation order of the operators
+    : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
+    | ISNULL_FUNC '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
+    | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix        // ??
+    | left=booleanParam op=( LE | LT | GE | GT ) right=booleanParam             # BooleanEquality       // VII
+    | op=NOT booleanExpression                                                  # BooleanNot            // IV
+    | left=booleanParam op=( EQ | NE ) right=booleanParam                       # BooleanEquality       // IX
+    | booleanExpression op=AND booleanExpression                                # BooleanAlgebra        // X
+    | booleanExpression op=(OR|XOR) booleanExpression                           # BooleanAlgebra        // XI
+    | BOOLEAN_CONSTANT                                                          # BooleanConstant
     ;
 
-booleanEquality
-    : left=booleanParam op=( EQ | NE | LE | LT | GE | GT ) right=booleanParam
-    ;
 booleanParam
     : componentRef
     | constant
     ;
 
-booleanNot
-    : 'not' '(' booleanExpression ')';
-
-booleanIsNull
-    : 'isnull' '(' booleanParam ')'
-    ;
-
-//datasetExpression
-//    : 'dsTest'
-//    ;
-
+ASSIGNMENT : ':=' ;
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
@@ -137,6 +125,11 @@ GT : '>'  ;
 AND : 'and' ;
 OR  : 'or' ;
 XOR : 'xor' ;
+NOT : 'not' ;
+ISNULL : 'is null' ;
+ISNOTNULL : 'is not null' ;
+
+ISNULL_FUNC : 'isnull' ;
 
 //WS : [ \r\t\u000C] -> skip ;
 
@@ -151,7 +144,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 joinBody : joinClause (',' joinClause)* ;
 
 // TODO: Implement role and implicit
-joinClause : role? identifier '=' joinCalcExpression # joinCalcClause
+joinClause : role? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -164,6 +157,12 @@ joinClause : role? identifier '=' joinCalcExpression # joinCalcClause
 joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=identifier ',' measure=identifier ;
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
+conditionalExpression
+    : nvlExpression
+    ;
+
+nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
+
 stringExpression
     : dateFromStringExpression
     ;
@@ -175,6 +174,7 @@ dateFromStringExpression : 'date_from_string' '(' componentRef ',' format=STRING
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
+                   | conditionalExpression                                                              #joinCalcCondition
                    | stringExpression                                                                   #joinCalcString
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom

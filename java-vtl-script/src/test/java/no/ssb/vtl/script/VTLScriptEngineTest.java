@@ -25,10 +25,10 @@ import com.google.common.collect.Lists;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
@@ -44,14 +44,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role;
-import static no.ssb.vtl.test.ComponentConditions.componentWith;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+import static no.ssb.vtl.model.Component.*;
+import static no.ssb.vtl.test.ComponentConditions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class VTLScriptEngineTest {
 
@@ -161,9 +159,9 @@ public class VTLScriptEngineTest {
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
                 "  filter id1 = \"1\" and m1 = 30 or m1 = 10," +            //TODO: precedence
-                "  ident = ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
+                "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
-                "  boolTest = (ds1.m1 = 10)," +
+                "  boolTest := (ds1.m1 = 10)," +
                 "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
                 "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +  // renamedId1, id2, m1, m2, ident
                 "}" +
@@ -236,7 +234,7 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
-                "  total = ds1.m1 + ds1.m2 + ds1.m3," +
+                "  total := ds1.m1 + ds1.m2 + ds1.m3," +
                 "  fold ds1.m1, ds1.m2, ds1.m3, total to type, value" +
                 "}"
         );
@@ -315,7 +313,7 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
                 "  unfold id2, ds1.m1 to \"one\", \"two\"," +
-                "  onePlusTwo = one + two" +
+                "  onePlusTwo := one + two" +
                 "}"
         );
 
@@ -351,9 +349,9 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", dataset);
         engine.eval("ds2 := ds1[rename id1 as id3]"
                 + "            [rename id3 as id1]"
-                + "                [rename id1 as id1m role = MEASURE,"
-                + "                        me1 as me1a role = ATTRIBUTE,"
-                + "                        at1 as at1i role = IDENTIFIER]");
+                + "                [rename id1 as id1m role MEASURE,"
+                + "                        me1 as me1a role ATTRIBUTE,"
+                + "                        at1 as at1i role IDENTIFIER]");
 
         assertThat(bindings).containsKey("ds2");
         Dataset result = (Dataset) bindings.get("ds2");
@@ -514,6 +512,92 @@ public class VTLScriptEngineTest {
                         "0111", "2014", 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null, false,
                         "9000", "2014", 102, "attr3", null,     null                                    , null, false
                 );
+    }
+
+    @Test
+    public void testNvlAsClause() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class,
+                "m2", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData()).then(invocation -> Stream.of(
+                tuple(
+                        ds.wrap("id1", "1"),
+                        ds.wrap("m1", 1),
+                        ds.wrap("m2", null)
+                ),
+                tuple(
+                        ds.wrap("id1", "2"),
+                        ds.wrap("m1", null),
+                        ds.wrap("m2", "str2")
+                ),
+                tuple(
+                        ds.wrap("id1", "3"),
+                        ds.wrap("m1", null),
+                        ds.wrap("m2", null)
+                )
+        ));
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 := nvl(m1 , 0), " +
+                "   m22 := nvl(ds1.m2, \"constant\"), " +
+                "   drop m1, m2 " +
+                "}"
+        );
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset ds2 = (Dataset) bindings.get("ds2");
+
+        assertThat(ds2.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("m11", Role.MEASURE),
+                entry("m22", Role.MEASURE)
+        );
+
+        assertThat(ds2.getDataStructure().getTypes()).containsOnly(
+                entry("id1", String.class),
+                entry("m11", Integer.class),
+                entry("m22", String.class)
+        );
+
+        assertThat(ds2.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", 1, "constant",
+                        "2", 0, "str2",
+                        "3", 0, "constant"
+                );
+    }
+
+    @Test(expected = ScriptException.class)
+    public void testNvlAsClauseNotEqualTypes() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Integer.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData()).then(invocation -> Stream.of(
+                tuple(
+                        ds.wrap("id1", "1"),
+                        ds.wrap("m1", null)
+                )
+        ));
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 := nvl(m1 , \"constant\") " +
+                "}"
+        );
     }
 
     @Test

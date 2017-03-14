@@ -34,13 +34,14 @@ import java.io.IOException;
 import java.lang.String;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -74,6 +75,10 @@ public class SsbKlassApiConnector implements Connector {
                     .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
                     .put(FIELD_NAME, Component.Role.MEASURE, String.class)
                     .build();
+
+    //Instead of using null when validTo not specified
+    private static final Instant MAX_DATE = Instant.parse("9999-12-31T23:59:59.999Z");
+    private static final String KLASS_TIME_ZONE = "Europe/Oslo";
 
     private final List<UriTemplate> dataTemplates;
     private final ObjectMapper mapper;
@@ -241,8 +246,10 @@ public class SsbKlassApiConnector implements Connector {
                         Instant value = null;
                         LocalDate localDate = jp.readValueAs(LocalDate.class);
                         if (localDate != null) {
-                            value = localDate.atStartOfDay()
-                                    .toInstant(ZoneOffset.ofHours(1));
+                            value = localDate.atStartOfDay(TimeZone.getTimeZone(ZoneId.of(KLASS_TIME_ZONE)).toZoneId())
+                                    .toInstant();
+                        } else {
+                            value = MAX_DATE;
                         }
                         entry.put(jp.getCurrentName(), value);
                         break;

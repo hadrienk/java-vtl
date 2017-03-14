@@ -19,6 +19,7 @@ public class VTLScriptContext extends SimpleScriptContext{
         super();
         scopes = new HashMap<>(2);
         scopes.put(ENGINE_SCOPE, engineScope);
+        scopes.put(GLOBAL_SCOPE, new SimpleBindings());
     }
     
     public void addScope(int scope) {

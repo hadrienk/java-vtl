@@ -87,7 +87,7 @@ public class SsbApiConnector implements Connector {
     }
 
     public boolean canHandle(String identifier) {
-        return true;
+        return identifier.startsWith("http://data.ssb.no/api/v0/dataset/");
     }
 
     public Dataset getDataset(String identifier) throws ConnectorException {
@@ -97,6 +97,10 @@ public class SsbApiConnector implements Connector {
         };
 
         try {
+
+            if (identifier.startsWith("http://data.ssb.no/api/v0/dataset/")) {
+                identifier = identifier.replace("http://data.ssb.no/api/v0/dataset/", "");
+            }
             //http://data.ssb.no/api/v0/dataset/1106.json?lang=en;
             ResponseEntity<Map<String, DatasetBuildable>> exchange = restTemplate.exchange(
                     "http://data.ssb.no/api/v0/dataset/{id}.json?lang=en",
