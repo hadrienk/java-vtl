@@ -3,7 +3,7 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.CheckSingleRuleOperation;
+import no.ssb.vtl.script.operations.check.CheckSingleRuleOperation;
 
 import java.util.Optional;
 
@@ -58,7 +58,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
     private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorCode() != null) {
-             return checkParamContext.errorCode().getText();
+            return checkParamContext.errorCode().getText();
         }
         return null;
     }

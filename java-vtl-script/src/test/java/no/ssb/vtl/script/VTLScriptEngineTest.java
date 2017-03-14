@@ -364,13 +364,14 @@ public class VTLScriptEngineTest {
     }
 
     //TODO temporary
-//    @Test
+    @Test
     public void testCheckSingleRule() throws Exception {
 
         when(dataset.getDataStructure()).thenReturn(
                 DataStructure.of((s, o) -> null,
                         "kommune_nr", Role.IDENTIFIER, String.class,
                         "code", Role.IDENTIFIER, String.class, //from KLASS
+                        "attribute", Role.ATTRIBUTE, String.class,
                         "CONDITION", Role.MEASURE, Boolean.class
                 )
         );
@@ -390,8 +391,7 @@ public class VTLScriptEngineTest {
         );
     }
 
-    //TODO temporary
-//    @Test
+    @Test
     public void testCheckSingleRuleWithJoin() throws Exception {
 
         Dataset ds1 = mock(Dataset.class);
@@ -425,6 +425,7 @@ public class VTLScriptEngineTest {
                         "at1", "attr3"
                 )
         ).map(structure1::wrap));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure2 = DataStructure.of(
                 (o, aClass) -> o,
@@ -439,13 +440,13 @@ public class VTLScriptEngineTest {
                         structure2.wrap("code", "0101"),
                         structure2.wrap("name", "Halden"),
                         structure2.wrap("validFrom",  Instant.parse("2013-01-01T00:00:00.00Z")),
-                        structure2.wrap("validTo", null)
+                        structure2.wrap("validTo", Instant.MAX)
                 ),
                 tuple(
                         structure2.wrap("code", "0111"),
                         structure2.wrap("name", "Hvaler"),
                         structure2.wrap("validFrom", Instant.parse("2015-01-01T00:00:00.00Z")),
-                        structure2.wrap("validTo", null)
+                        structure2.wrap("validTo", Instant.MAX)
                 ),
                 tuple(
                         structure2.wrap("code", "1001"),
@@ -454,6 +455,7 @@ public class VTLScriptEngineTest {
                         structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
                 )
         ));
+        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", dsCodeList2);
@@ -461,16 +463,12 @@ public class VTLScriptEngineTest {
         VTLPrintStream out = new VTLPrintStream(System.out);
         engine.eval("" +
                         "ds2r := ds2[rename code as kommune_nr]" +
-//                        "'inner' := [ds1, ds2r] {" +
-//                        "   type = 1" +
-//                        "}" +
                         "dsBoolean := [outer ds1, ds2r]{" +
-                        "   filter periode <> null," +
-                        "   CONDITION = (validFrom <> null " +
-                        "       and validFrom <= periode " +
-                        "       and validTo > periode)" +
+                        "   filter ds1.m1 is not null," +
+                        "   CONDITION := validFrom <= periode and periode < validTo" +
                         "}"+
-                        "ds3 := check(dsBoolean, not_valid, measures)"
+                        "ds3invalid := check(dsBoolean, not_valid, measures)" +
+                        "ds3valid   := check(dsBoolean, valid, measures)"
         );
 //        out.println(bindings.get("ds2r"));
 //        out.println(bindings.get("'inner'"));
@@ -486,14 +484,13 @@ public class VTLScriptEngineTest {
 //                "       and validTo > date_from_string(periode, \"YYYY\"))" +
 //                "}" +
 //                "ds3 := check(dsBoolean, not_valid, measures)");
+        assertThat(bindings).containsKey("ds3invalid");
+        assertThat(bindings).containsKey("ds3valid");
 
+        Dataset ds3invalid = (Dataset) bindings.get("ds3invalid");
+        Dataset ds3valid = (Dataset) bindings.get("ds3valid");
 
-        assertThat(bindings).containsKey("ds3");
-        out.println(bindings.get("dsBoolean"));
-        out.println(bindings.get("ds3"));
-        Dataset ds3 = (Dataset) bindings.get("ds3");
-
-        assertThat(ds3.getDataStructure().getRoles()).contains(
+        assertThat(ds3invalid.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("periode", Component.Role.IDENTIFIER),
                 entry("ds1_m1", Component.Role.MEASURE),
@@ -501,17 +498,39 @@ public class VTLScriptEngineTest {
                 entry("ds2r_name", Component.Role.MEASURE),
                 entry("validFrom", Component.Role.IDENTIFIER),
                 entry("validTo", Component.Role.IDENTIFIER),
-                entry("CONDITION", Component.Role.MEASURE),
+                //entry("CONDITION", Component.Role.MEASURE), // TODO: Double check this.
                 entry("errorcode", Component.Role.ATTRIBUTE)
         );
 
-        assertThat(ds3.getData()).flatExtracting(input -> input)
+        assertThat(ds3valid.getDataStructure().getRoles()).contains(
+                entry("kommune_nr", Component.Role.IDENTIFIER),
+                entry("periode", Component.Role.IDENTIFIER),
+                entry("ds1_m1", Component.Role.MEASURE),
+                entry("ds1_at1", Component.Role.ATTRIBUTE),
+                entry("ds2r_name", Component.Role.MEASURE),
+                entry("validFrom", Component.Role.IDENTIFIER),
+                entry("validTo", Component.Role.IDENTIFIER),
+                //entry("CONDITION", Component.Role.MEASURE), // TODO: Double check this.
+                entry("errorcode", Component.Role.ATTRIBUTE)
+        );
+
+        // Should only contain the "non valid" rows.
+        assertThat(ds3invalid.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "0101", "2015", 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null, true,
-                        "0111", "2014", 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null, false,
-                        "9000", "2014", 102, "attr3", null,     null                                    , null, false
+                        "0111", Instant.parse("2014-01-01T00:00:00Z"), 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), Instant.MAX, null,
+                        "9000", Instant.parse("2014-01-01T00:00:00Z"), 102, "attr3", null,     null                                    , null, null
                 );
+
+        // Should only contain the "valid" rows.
+        assertThat(ds3valid.getData()).flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "0101", Instant.parse("2014-01-01T00:00:00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00Z"), Instant.MAX, null
+                );
+
+        assertThat(bindings).containsKey("ds3");
+
     }
 
     @Test
