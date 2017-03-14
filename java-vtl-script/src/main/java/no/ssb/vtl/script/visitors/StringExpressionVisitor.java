@@ -51,7 +51,11 @@ public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
         return new VTLExpression.Builder(Instant.class, dataPoint -> {
             Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
             Optional<VTLObject> vtlObject = Optional.ofNullable(map.get(input));
-            if (!vtlObject.isPresent() || vtlObject.get().get() == null) {
+            if (!vtlObject.isPresent()) {
+                throw new RuntimeException(
+                        format("Component %s not found in data structure", input));
+            }
+            if (vtlObject.get().get() == null) {
                 return VTLObject.NULL;
             } else {
                 String dateAsString = (String) vtlObject.get().get();
