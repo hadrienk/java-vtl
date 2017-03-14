@@ -164,10 +164,18 @@ joinClause : role? identifier '=' joinCalcExpression # joinCalcClause
 joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=identifier ',' measure=identifier ;
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
+stringExpression
+    : dateFromStringExpression
+    ;
+
+dateFromStringExpression : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
+
+
 // Left recursive
 joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
+                   | stringExpression                                                                   #joinCalcString
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    | booleanExpression                                                                  #joinCalcBoolean

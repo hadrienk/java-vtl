@@ -10,6 +10,7 @@ import no.ssb.vtl.model.VTLPredicate;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.StringExpressionVisitor;
 import no.ssb.vtl.script.visitors.VTLScalarExpressionVisitor;
 
 import java.util.Map;
@@ -134,4 +135,12 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
                 dataPoint -> VTLBoolean.of(predicate.apply(dataPoint)))
                 .description("boolean").build();
     }
+
+    @Override
+    public VTLExpression visitJoinCalcString(VTLParser.JoinCalcStringContext ctx) {
+        StringExpressionVisitor stringExpressionVisitor = new StringExpressionVisitor(
+                referenceVisitor, dataStructure);
+        return stringExpressionVisitor.visit(ctx.stringExpression());
+    }
+
 }

@@ -36,6 +36,7 @@ import javax.script.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.TimeZone;
 
 /**
  * A VTL {@link ScriptEngine} implementation.
@@ -64,6 +65,10 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         super(n);
         this.connectors = ImmutableList.copyOf(connectors);
         context = new VTLScriptContext();
+    }
+
+    public static TimeZone getDefaultTimeZone() {
+        return TimeZone.getDefault();
     }
 
     @Override
