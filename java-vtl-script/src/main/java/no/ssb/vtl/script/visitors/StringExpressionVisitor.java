@@ -18,6 +18,7 @@ import static java.lang.String.*;
 
 public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
 
+    private static final char QUOTE_CHAR = '\"';
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
 
@@ -32,7 +33,7 @@ public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
         String dateFormatQuoted = ctx.STRING_CONSTANT().getText();
 
-        if (!dateFormatQuoted.contains("\"")) {
+        if (!isQuoted(dateFormatQuoted)) {
             throw new ParseCancellationException("The format parameter must be quoted");
         }
 
@@ -62,6 +63,10 @@ public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
                 return VTLDate.of(dateAsString, dateFormat, VTLScriptEngine.getDefaultTimeZone());
             }
         }).description(format("date_from_string(%s, %s)", input, dateFormat)).build();
+    }
+
+    private boolean isQuoted(String str) {
+        return str.charAt(0) == QUOTE_CHAR && str.charAt(str.length() - 1) == QUOTE_CHAR;
     }
 
 }
