@@ -1,11 +1,8 @@
 package no.ssb.vtl.script.operations.hierarchy;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.graph.EndpointPair;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.graph.MutableNetwork;
@@ -14,14 +11,11 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import java.time.Year;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +24,6 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.*;
-import static no.ssb.vtl.model.Order.Direction.*;
 
 public class HierarchyOperationTest extends RandomizedTest {
 
@@ -75,17 +68,6 @@ public class HierarchyOperationTest extends RandomizedTest {
         graph.putEdge("Belgium", "Benelux");
         graph.putEdge("Luxembourg", "Benelux");
 
-// TODO
-//        MutableValueGraph<String, Boolean> buckets = ValueGraphBuilder.from(graph).build();
-//        buckets.putEdgeValue("Austria", "European Union", true);
-//        buckets.putEdgeValue("Italy", "European Union", true);
-//        buckets.putEdgeValue("Holland", "European Union", true);
-//        buckets.putEdgeValue("Belgium", "European Union", true);
-//        buckets.putEdgeValue("Luxembourg", "European Union", true);
-//        buckets.putEdgeValue("Holland", "Benelux", true);
-//        buckets.putEdgeValue("Belgium", "Benelux", true);
-//        buckets.putEdgeValue("Luxembourg", "Benelux", true);
-
         // Year, Country, Pop
         Dataset population = createPopulationDataset();
 
@@ -93,93 +75,13 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         // Country is the identifier we operate on.
         // Population is the value we operate on.
+        DataStructure structure = population.getDataStructure();
+        Component value = structure.get("Population");
+        Component identifier = structure.get("Country");
 
-        final DataStructure structure = population.getDataStructure();
-        final List<Component> ics = Lists.newArrayList(structure.get("Year"));
-        final Component value = structure.get("Population");
-        final Component group = structure.get("Country");
+        HierarchyOperation result = new HierarchyOperation(population, graph, identifier, value);
+        printStream.println(result);
 
-        Order ordering = Order.create(structure)
-                .put("Year", ASC)
-                .put("Country", ASC)
-                .build();
-
-        Order aggregateOn = Order.create(structure)
-                .put("Year", ASC)
-                .build();
-
-        Stream<DataPoint> sortedData = population.getData(ordering).get();
-
-        Stream<DataPoint> newStream = StreamUtils.aggregate(
-                sortedData,
-                (prev, current) -> aggregateOn.compare(prev, current) == 0
-        ).peek(o -> printStream.println(o))
-                .map(dataPoints -> {
-
-                    // Map the values.
-                    Map<String, Integer> buckets = Maps.newHashMap();
-                    for (DataPoint dataPoint : dataPoints) {
-                        VTLObject groupObject = structure.asMap(dataPoint).get(group);
-                        String node = (String) groupObject.get();
-                        if (graph.nodes().contains(node)) {
-                            VTLObject valueObject = structure.asMap(dataPoint).get(value);
-                            buckets.put(node, (Integer) valueObject.get());
-                        }
-                    }
-
-                    // Aggregate
-                    for (EndpointPair<String> pair : graph.edges()) {
-                        if (buckets.containsKey(pair.source())) {
-                            buckets.merge(pair.target(), buckets.get(pair.source()), Integer::sum);
-                        }
-                    }
-
-
-                    Map<Component, VTLObject> original = structure.asMap(dataPoints.get(0));
-                    List<DataPoint> result = Lists.newArrayList();
-                    for (Map.Entry<String, Integer> entry : buckets.entrySet()) {
-
-                        DataPoint point = structure.wrap();
-                        result.add(point);
-
-                        Map<Component, VTLObject> asMap = structure.asMap(point);
-                        for (Component ic : ics) {
-                            asMap.put(ic, original.get(ic));
-                        }
-
-                        asMap.put(group, VTLObject.of(entry.getKey()));
-                        asMap.put(value, VTLObject.of(entry.getValue()));
-                    }
-                    return result;
-
-                }).flatMap(Collection::stream);
-
-        printStream.println(createDataset(structure, newStream));
-
-    }
-
-    private Dataset createDataset(final DataStructure structure, final Stream<DataPoint> newStream) {
-        return new Dataset() {
-            @Override
-            public Stream<DataPoint> getData() {
-                return newStream;
-            }
-
-            @Override
-            public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<Long> getSize() {
-                return Optional.empty();
-            }
-
-            @Override
-            public DataStructure getDataStructure() {
-                return structure;
-            }
-        };
     }
 
     private Dataset createPopulationDataset() {
