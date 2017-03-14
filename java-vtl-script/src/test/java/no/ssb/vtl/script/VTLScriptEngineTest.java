@@ -619,6 +619,95 @@ public class VTLScriptEngineTest {
         );
     }
 
+    @Test
+    public void testDateFromStringAsClause() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData()).then(invocation -> Stream.of(
+                tuple(
+                        ds.wrap("id1", "1"),
+                        ds.wrap("m1", "2017")
+                ),
+                tuple(
+                        ds.wrap("id1", "2"),
+                        ds.wrap("m1", null)
+                )
+        ));
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 := date_from_string(m1, \"YYYY\"), " +
+                "   drop m1 " +
+                "}"
+        );
+
+        assertThat(bindings).containsKey("ds2");
+        Dataset ds2 = (Dataset) bindings.get("ds2");
+
+        assertThat(ds2.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("m11", Role.MEASURE)
+        );
+
+        assertThat(ds2.getDataStructure().getTypes()).containsOnly(
+                entry("id1", String.class),
+                entry("m11", Instant.class)
+        );
+
+        assertThat(ds2.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", Instant.parse("2016-12-31T23:00:00Z"),
+                        "2", null
+                );
+
+    }
+
+    @Test(expected = ScriptException.class)
+    public void testDateFromStringAsClauseUnsupportedFormat() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 := date_from_string(m1, \"YYYYSN\") " +
+                "}"
+        );
+
+    }
+
+    @Test(expected = ScriptException.class)
+    public void testDateFromStringAsClauseInputNotStringType() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Number.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "   m11 := date_from_string(m1, \"YYYY\") " +
+                "}"
+        );
+
+    }
+
     private DataPoint tuple(VTLObject... components) {
         return DataPoint.create(Arrays.asList(components));
     }
