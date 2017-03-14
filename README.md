@@ -69,6 +69,7 @@ String|trim|
 String|upper/lower case|
 String|substring|
 String|indexof|
+String|date_from_string|![usable](http://progressed.io/bar/25)|Dataset as input not implemented. Only YYYY date format accepted.
 
 
 
