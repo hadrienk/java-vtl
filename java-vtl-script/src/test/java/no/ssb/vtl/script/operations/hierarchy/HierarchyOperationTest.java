@@ -11,6 +11,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
@@ -24,6 +25,7 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.*;
+import static org.assertj.core.api.Assertions.*;
 
 public class HierarchyOperationTest extends RandomizedTest {
 
@@ -80,7 +82,42 @@ public class HierarchyOperationTest extends RandomizedTest {
         Component identifier = structure.get("Country");
 
         HierarchyOperation result = new HierarchyOperation(population, graph, identifier, value);
+
         printStream.println(result);
+
+        assertThat(result.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        Year.of(2000), "Austria", 2000,
+                        Year.of(2000), "Belgium", 2000,
+                        Year.of(2000), "European Union", 10000,
+                        Year.of(2000), "Luxembourg", 2000,
+                        Year.of(2000), "Benelux", 6000,
+                        Year.of(2000), "Italy", 2000,
+                        Year.of(2000), "Holland", 2000,
+                        Year.of(2001), "Austria", 2001,
+                        Year.of(2001), "Belgium", 2001,
+                        Year.of(2001), "European Union", 10005,
+                        Year.of(2001), "Luxembourg", 2001,
+                        Year.of(2001), "Benelux", 6003,
+                        Year.of(2001), "Italy", 2001,
+                        Year.of(2001), "Holland", 2001,
+                        Year.of(2002), "Austria", 2002,
+                        Year.of(2002), "Belgium", 2002,
+                        Year.of(2002), "European Union", 10010,
+                        Year.of(2002), "Luxembourg", 2002,
+                        Year.of(2002), "Benelux", 6006,
+                        Year.of(2002), "Italy", 2002,
+                        Year.of(2002), "Holland", 2002,
+                        Year.of(2003), "Austria", 2003,
+                        Year.of(2003), "Belgium", 2003,
+                        Year.of(2003), "European Union", 10015,
+                        Year.of(2003), "Luxembourg", 2003,
+                        Year.of(2003), "Benelux", 6009,
+                        Year.of(2003), "Italy", 2003,
+                        Year.of(2003), "Holland", 2003
+                );
 
     }
 
@@ -112,7 +149,7 @@ public class HierarchyOperationTest extends RandomizedTest {
                 DataPoint point = structure.wrap(ImmutableMap.of(
                         "Year", year,
                         "Country", country,
-                        "Population", randomIntBetween(0, 20)
+                        "Population", year.getValue()//randomIntBetween(0, 20)
                 ));
                 data.add(point);
             }
