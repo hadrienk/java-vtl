@@ -623,7 +623,7 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
-                "   m11 = date_from_string(m1, \"YYYY\"), " +
+                "   m11 := date_from_string(m1, \"YYYY\"), " +
                 "   drop m1 " +
                 "}"
         );
@@ -664,7 +664,7 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
-                "   m11 = date_from_string(m1, \"YYYYSN\") " +
+                "   m11 := date_from_string(m1, \"YYYYSN\") " +
                 "}"
         );
 
@@ -683,7 +683,7 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
-                "   m11 = date_from_string(m1, \"YYYY\") " +
+                "   m11 := date_from_string(m1, \"YYYY\") " +
                 "}"
         );
 
