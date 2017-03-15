@@ -40,12 +40,15 @@ function : getFunction               #withGet
          | aggregationFunction       #withAggregation
          ;
 
-aggregationFunction: sumFunction;
-
 getFunction : 'get' '(' datasetId ')';
 putFunction : 'put(todo)';
 
-sumFunction: 'sum' '(' datasetRef ')' ('group by'|'along') componentRef (',' componentRef)*;
+aggregationFunction
+       : 'sum' '(' (datasetRef) ')' aggregationParms       #aggregateSum
+       | 'avg' '(' (datasetRef) ')' aggregationParms       #aggregateAvg
+       ;
+
+aggregationParms: (aggregationClause='group by'|'along') componentRef (',' componentRef)*;
 
 datasetId : STRING_CONSTANT ;
 
