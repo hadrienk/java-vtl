@@ -15,6 +15,7 @@ import no.ssb.vtl.parser.VTLParser;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,16 +39,18 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationV
     }
     
     AggregationOperation getSumOperation(Dataset dataset, List<Component> components) {
-        return new AggregationOperation(dataset, components);
+        return new AggregationOperation(dataset, components, VTLNumber::add);
     }
     
     class AggregationOperation extends AbstractUnaryDatasetOperation{
     
         private final List<Component> components;
+        private final BiFunction<VTLNumber, VTLNumber, VTLNumber> aggregationFunction;
     
-        public AggregationOperation(Dataset child, List<Component> components) {
+        public AggregationOperation(Dataset child, List<Component> components, BiFunction<VTLNumber, VTLNumber, VTLNumber> aggregationFunction) {
             super(child);
             this.components = components;
+            this.aggregationFunction = aggregationFunction;
             
         }
     
@@ -61,24 +64,21 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationV
         public Stream<DataPoint> getData() {
             Order order = Order.create(getDataStructure()).build();
             return StreamUtils.aggregate(getChild().getData(), (dataPoint, dataPoint2) -> {
-                System.out.println(String.format("aggregating: %s, %s", dataPoint, dataPoint2));
                 Map<Component, VTLObject> map1 = getDataStructure().asMap(dataPoint);
                 Map<Component, VTLObject> map2 = getDataStructure().asMap(dataPoint2);
                 return map1.get(components.get(0)).compareTo(map2.get(components.get(0))) == 0;
 //                return order.compare(dataPoint, dataPoint2) == 0;
             })
                     .map(dataPoints -> {
-                        System.out.println("List of datapoints:");
-                        VTLNumber sum = VTLNumber.of(0);
+                        VTLNumber aggregatedValue = VTLNumber.of(0);
                         VTLObject id = null;
                         for (DataPoint dataPoint : dataPoints) {
                             Map<Component, VTLObject> map = getDataStructure().asMap(dataPoint);
                             id = map.get(components.get(0));
-                            VTLObject object = map.get(getDataStructure().get("m1"));
-                            sum = sum.add((Number) object.get());
-                            System.out.println(sum);
+                            VTLNumber object = (VTLNumber) map.get(getDataStructure().get("m1"));
+                            aggregatedValue = aggregationFunction.apply(aggregatedValue, object);
                         }
-                        return DataPoint.create(Lists.newArrayList(id, sum));
+                        return DataPoint.create(Lists.newArrayList(id, aggregatedValue));
                     });
         }
     
