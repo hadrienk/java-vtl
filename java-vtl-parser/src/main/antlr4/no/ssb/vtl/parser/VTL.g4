@@ -163,7 +163,7 @@ conditionalExpression
 
 nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
 
-stringExpression
+stringFunction
     : dateFromStringExpression
     ;
 
@@ -175,7 +175,7 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
                    | conditionalExpression                                                              #joinCalcCondition
-                   | stringExpression                                                                   #joinCalcString
+                   | stringFunction                                                                     #joinCalcString
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    | booleanExpression                                                                  #joinCalcBoolean

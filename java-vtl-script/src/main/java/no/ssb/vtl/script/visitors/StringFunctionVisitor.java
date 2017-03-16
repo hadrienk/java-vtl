@@ -16,13 +16,13 @@ import java.util.Optional;
 
 import static java.lang.String.*;
 
-public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
+public class StringFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     private static final char QUOTE_CHAR = '\"';
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
 
-    public StringExpressionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
+    public StringFunctionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
         this.dataStructure = dataStructure;
     }
