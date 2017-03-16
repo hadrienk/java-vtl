@@ -3,7 +3,7 @@ package no.ssb.vtl.parser;
 
 import org.junit.Test;
 
-public class StringParserTest extends GrammarTest {
+public class DateFromStringParserTest extends GrammarTest {
 
     @Test
     public void testDateFromStringQuotedFormat() throws Exception {
