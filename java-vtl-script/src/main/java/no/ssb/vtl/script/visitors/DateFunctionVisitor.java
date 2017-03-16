@@ -16,13 +16,13 @@ import java.util.Optional;
 
 import static java.lang.String.*;
 
-public class StringFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
+public class DateFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     private static final char QUOTE_CHAR = '\"';
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
 
-    public StringFunctionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
+    public DateFunctionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
         this.dataStructure = dataStructure;
     }
@@ -60,7 +60,7 @@ public class StringFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
                 return VTLObject.NULL;
             } else {
                 String dateAsString = (String) vtlObject.get().get();
-                return VTLDate.of(dateAsString, dateFormat, VTLScriptEngine.getDefaultTimeZone());
+                return VTLDate.of(dateAsString, dateFormat, VTLScriptEngine.getTimeZone());
             }
         }).description(format("date_from_string(%s, %s)", input, dateFormat)).build();
     }

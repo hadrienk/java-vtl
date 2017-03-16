@@ -28,6 +28,17 @@ public abstract class VTLDate extends VTLObject<Instant> {
 
     }
 
+    public static VTLDate of(Instant instant) {
+
+        return new VTLDate() {
+            @Override
+            public Instant get() {
+                return instant;
+            }
+        };
+
+    }
+
     public static boolean canParse(String dateFormat) {
         if (!"YYYY".equals(dateFormat)) {
             return false;
