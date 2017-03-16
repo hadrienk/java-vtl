@@ -7,20 +7,18 @@ import java.util.TimeZone;
 
 import static java.lang.String.*;
 
-import java.lang.String;
-
 public abstract class VTLDate extends VTLObject<Instant> {
 
     public static VTLDate of(String input, String dateFormat, TimeZone timeZone) {
 
+        if (!canParse(dateFormat)) {
+            throw new RuntimeException(
+                    format("Date format %s unsupported", dateFormat));
+        }
+
         return new VTLDate() {
             @Override
             public Instant get() {
-                if (!"YYYY".equals(dateFormat)) {
-                    throw new RuntimeException(
-                            format("Date format %s unsupported", dateFormat));
-                }
-
                 DateTimeFormatter formatter =
                         DateTimeFormatter.ofPattern("yyyy");
                 Year year = Year.parse(input, formatter);
