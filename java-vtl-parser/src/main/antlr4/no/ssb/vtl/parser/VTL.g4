@@ -175,7 +175,7 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
                    | conditionalExpression                                                              #joinCalcCondition
-                   | dateFunction                                                                     #joinCalcString
+                   | dateFunction                                                                       #joinCalcDate
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    | booleanExpression                                                                  #joinCalcBoolean

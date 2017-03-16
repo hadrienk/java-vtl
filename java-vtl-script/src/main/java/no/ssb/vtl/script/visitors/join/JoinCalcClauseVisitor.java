@@ -145,10 +145,10 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
     }
 
     @Override
-    public VTLExpression visitJoinCalcString(VTLParser.JoinCalcStringContext ctx) {
+    public VTLExpression visitJoinCalcDate(VTLParser.JoinCalcDateContext ctx) {
         DateFunctionVisitor dateFunctionVisitor = new DateFunctionVisitor(
                 referenceVisitor, dataStructure);
-        return dateFunctionVisitor.visit(ctx.stringFunction());
+        return dateFunctionVisitor.visit(ctx.dateFunction());
     }
 
 }
