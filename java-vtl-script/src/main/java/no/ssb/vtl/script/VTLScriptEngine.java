@@ -95,7 +95,6 @@ public class VTLScriptEngine extends AbstractScriptEngine {
      */
     public void setTimeZone(TimeZone tz) {
         timeZone = tz;
-        TimeZone.getTimeZone("Europe/Oslo");
     }
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException {
