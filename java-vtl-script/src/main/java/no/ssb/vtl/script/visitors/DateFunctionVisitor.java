@@ -28,7 +28,7 @@ public class DateFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     @Override
-    public VTLExpression visitDateFromStringExpression(VTLParser.DateFromStringExpressionContext ctx) {
+    public VTLExpression visitDateFromStringFunction(VTLParser.DateFromStringFunctionContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
         String dateFormatQuoted = ctx.STRING_CONSTANT().getText();
