@@ -16,12 +16,13 @@ import java.util.Optional;
 
 import static java.lang.String.*;
 
-public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
+public class DateFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
 
+    private static final char QUOTE_CHAR = '\"';
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
 
-    public StringExpressionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
+    public DateFunctionVisitor(ReferenceVisitor referenceVisitor, DataStructure dataStructure) {
         this.referenceVisitor = referenceVisitor;
         this.dataStructure = dataStructure;
     }
@@ -32,7 +33,7 @@ public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
         String dateFormatQuoted = ctx.STRING_CONSTANT().getText();
 
-        if (!dateFormatQuoted.contains("\"")) {
+        if (!isQuoted(dateFormatQuoted)) {
             throw new ParseCancellationException("The format parameter must be quoted");
         }
 
@@ -51,13 +52,21 @@ public class StringExpressionVisitor  extends VTLBaseVisitor<VTLExpression> {
         return new VTLExpression.Builder(Instant.class, dataPoint -> {
             Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
             Optional<VTLObject> vtlObject = Optional.ofNullable(map.get(input));
-            if (!vtlObject.isPresent() || vtlObject.get().get() == null) {
+            if (!vtlObject.isPresent()) {
+                throw new RuntimeException(
+                        format("Component %s not found in data structure", input));
+            }
+            if (vtlObject.get().get() == null) {
                 return VTLObject.NULL;
             } else {
                 String dateAsString = (String) vtlObject.get().get();
-                return VTLDate.of(dateAsString, dateFormat, VTLScriptEngine.getDefaultTimeZone());
+                return VTLDate.of(dateAsString, dateFormat, VTLScriptEngine.getTimeZone());
             }
         }).description(format("date_from_string(%s, %s)", input, dateFormat)).build();
+    }
+
+    private boolean isQuoted(String str) {
+        return str.charAt(0) == QUOTE_CHAR && str.charAt(str.length() - 1) == QUOTE_CHAR;
     }
 
 }

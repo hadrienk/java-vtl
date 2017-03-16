@@ -163,11 +163,11 @@ conditionalExpression
 
 nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
 
-stringExpression
-    : dateFromStringExpression
+dateFunction
+    : dateFromStringFunction
     ;
 
-dateFromStringExpression : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
+dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
 
 
 // Left recursive
@@ -175,7 +175,7 @@ joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOpe
                    | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
                    | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
                    | conditionalExpression                                                              #joinCalcCondition
-                   | stringExpression                                                                   #joinCalcString
+                   | dateFunction                                                                     #joinCalcString
                    | componentRef                                                                       #joinCalcReference
                    | constant                                                                           #joinCalcAtom
                    | booleanExpression                                                                  #joinCalcBoolean
