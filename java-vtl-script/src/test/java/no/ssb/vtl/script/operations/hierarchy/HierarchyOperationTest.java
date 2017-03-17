@@ -1,35 +1,59 @@
 package no.ssb.vtl.script.operations.hierarchy;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import com.google.common.graph.GraphBuilder;
+import com.google.common.graph.Graphs;
 import com.google.common.graph.MutableGraph;
 import com.google.common.graph.MutableNetwork;
+import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.NetworkBuilder;
+import com.google.common.graph.ValueGraphBuilder;
+import com.google.common.io.Resources;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
+import org.brotli.dec.BrotliInputStream;
 import org.junit.Test;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.*;
+import static java.util.stream.Collectors.*;
 import static no.ssb.vtl.model.Component.Role.*;
+import static no.ssb.vtl.script.operations.hierarchy.HierarchyOperation.*;
 import static org.assertj.core.api.Assertions.*;
 
 public class HierarchyOperationTest extends RandomizedTest {
 
     private VTLPrintStream printStream = new VTLPrintStream(System.out);
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     //@Test
     public void testNetwork() throws Exception {
@@ -58,17 +82,243 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testGraph() throws Exception {
+    public void testCheckNoPath() throws Exception {
 
         MutableGraph<String> graph = GraphBuilder.directed().allowsSelfLoops(false).build();
-        graph.putEdge("Austria", "European Union");
-        graph.putEdge("Italy", "European Union");
-        graph.putEdge("Holland", "European Union");
-        graph.putEdge("Belgium", "European Union");
-        graph.putEdge("Luxembourg", "European Union");
-        graph.putEdge("Holland", "Benelux");
-        graph.putEdge("Belgium", "Benelux");
-        graph.putEdge("Luxembourg", "Benelux");
+
+        graph.putEdge("a", "b1");
+        graph.putEdge("a", "b2");
+        graph.putEdge("a", "b3");
+        graph.putEdge("b1", "c1");
+        graph.putEdge("b1", "c2");
+        graph.putEdge("b1", "c3");
+
+        graph.putEdge("b2", "d1");
+        graph.putEdge("b2", "d2");
+        graph.putEdge("b2", "d3");
+
+        graph.putEdge("b3", "e1");
+        graph.putEdge("b3", "e2");
+        graph.putEdge("b3", "e3");
+
+
+        //graph.putEdge(graph, "a", "e1");
+
+        assertThat(checkNoPath(graph, "e1", "a")).isEmpty();
+        long sum = 0;
+        final int loops = 100000;
+        for (int i = 0; i < loops; i++) {
+            long then = System.nanoTime();
+            checkNoPath(graph, "e1", "a");
+            sum += System.nanoTime() - then;
+        }
+        System.out.println("checkNoPath(): " + sum / loops);
+
+
+        assertThat(checkNoPath(graph, "a", "e1")).isNotEmpty();
+
+        graph.putEdge("a", "e2");
+        assertThat(Graphs.hasCycle(graph)).isFalse();
+        graph.putEdge("e1", "a");
+        assertThat(Graphs.hasCycle(graph)).isTrue();
+
+        sum = 0;
+        for (int i = 0; i < loops; i++) {
+            long then = System.nanoTime();
+            Graphs.hasCycle(graph);
+            sum += System.nanoTime() - then;
+        }
+        System.out.println("Graphs.hasCycle(): " + sum / loops);
+
+    }
+
+    @Test
+    public void testIntegration() throws IOException {
+        // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
+        //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
+        // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
+        // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
+
+        Dataset testDataset = create0ADataset();
+        Dataset hierarchy = getAccountHierarchyDataset();
+
+        printStream.println(testDataset.getDataStructure());
+        printStream.println(hierarchy.getDataStructure());
+
+        Component id = testDataset.getDataStructure().get("ART");
+        Component value = testDataset.getDataStructure().get("BELOP");
+        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, id, value);
+
+        AtomicLong count = new AtomicLong(0);
+        result.getData().forEach(dataPoint -> {
+            count.incrementAndGet();
+            if (dataPoint.get(8).get().toString().length() > 4) {
+                System.out.println(dataPoint);
+            }
+        });
+
+        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/testResult"));
+        result.getData().forEach(file::println);
+
+        System.out.println(count);
+    }
+
+    private Dataset getAccountHierarchyDataset() throws IOException {
+        DataStructure hierarchyStructure = createAccountHierarchyStructure();
+        List<DataPoint> hierarchyDataset = createAccountHierarchy(hierarchyStructure);
+        return new Dataset() {
+
+            @Override
+            public Stream<DataPoint> getData() {
+                return hierarchyDataset.stream();
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return hierarchyStructure;
+            }
+        };
+    }
+
+    private DataStructure createAccountHierarchyStructure() {
+        return DataStructure.builder()
+                .put("to", IDENTIFIER, String.class)
+                .put("from", IDENTIFIER, String.class)
+                .put("sign", MEASURE, String.class)
+                .build();
+    }
+
+    private List<DataPoint> createAccountHierarchy(DataStructure hierarchyStructure) throws IOException {
+        InputStream compressedStream = Resources.getResource(this.getClass(), "account_hierarchy.json.bro").openStream();
+        BrotliInputStream stream = new BrotliInputStream(compressedStream);
+
+        JsonFactory factory = objectMapper.getFactory();
+        JsonParser parser = factory.createParser(stream);
+
+        parser.nextValue();
+        parser.nextValue();
+        MappingIterator<Map<String, Object>> rows = objectMapper.readValues(parser, new TypeReference<Map<String, Object>>() {
+        });
+
+
+        return Streams.stream(rows)
+                .filter(map -> !map.get("from").toString().isEmpty())
+                .filter(map -> !map.get("to").toString().isEmpty())
+                .map((map) -> {
+                    return hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey));
+                }).collect(toList());
+    }
+
+    private Dataset create0ADataset() {
+        DataStructure structure = create0AStructure();
+        return new Dataset() {
+            @Override
+            public Stream<DataPoint> getData() {
+                return create0AData(structure);
+            }
+
+            @Override
+            public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+                return Optional.of(getData());
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return structure;
+            }
+        };
+    }
+
+    private DataStructure create0AStructure() {
+        return DataStructure.builder()
+                .put("AARGANG", IDENTIFIER, String.class)
+                .put("ART_SEKTOR", IDENTIFIER, String.class)
+                .put("BYDEL", IDENTIFIER, String.class)
+                .put("FUNKSJON_KAPITTEL", IDENTIFIER, String.class)
+                .put("KONTOKLASSE", IDENTIFIER, String.class)
+                .put("PERIODE", IDENTIFIER, String.class)
+                .put("REGION", IDENTIFIER, String.class)
+                .put("BELOP", MEASURE, Integer.class)
+                .put("ART", IDENTIFIER, String.class)
+                .build();
+    }
+
+    private Stream<DataPoint> create0AData(DataStructure structure) {
+
+        try {
+            InputStream compressedStream = Resources.getResource(this.getClass(), "hierarchy-data.bro").openStream();
+            BrotliInputStream stream = new BrotliInputStream(compressedStream);
+            JsonFactory factory = objectMapper.getFactory();
+            JsonParser parser = factory.createParser(stream);
+            MappingIterator<List<Object>> rows = objectMapper.readValues(parser, new TypeReference<List<Object>>() {
+            });
+
+            // Needed so that we can filter null ids.
+            List<Component> ids = structure.values().stream()
+                    .filter(Component::isIdentifier)
+                    .collect(toList());
+
+            return Streams.stream(rows).map(list -> {
+
+                checkArgument(list.size() == structure.size());
+                DataPoint dataPoint = structure.wrap();
+
+                Iterator<Component> components = structure.values().iterator();
+                for (int i = 0; i < list.size(); i++) {
+                    VTLObject vtlObject = VTLObject.of(objectMapper.convertValue(list.get(i), components.next().getType()));
+                    dataPoint.set(i, vtlObject);
+                }
+                return dataPoint;
+
+            }).filter(dataPoint -> {
+                Map<Component, VTLObject> asMap = structure.asMap(dataPoint);
+                for (Component id : ids) {
+                    if (asMap.get(id).get() == null) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+    }
+
+    @Test
+    public void testGraph() throws Exception {
+
+
+        MutableValueGraph<String, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        graph.putEdgeValue("Austria", "European Union", Composition.UNION);
+        graph.putEdgeValue("Italy", "European Union", Composition.UNION);
+        graph.putEdgeValue("Holland", "European Union", Composition.UNION);
+        graph.putEdgeValue("Belgium", "European Union", Composition.UNION);
+        graph.putEdgeValue("Luxembourg", "European Union", Composition.UNION);
+        graph.putEdgeValue("Holland", "Benelux", Composition.UNION);
+        graph.putEdgeValue("Belgium", "Benelux", Composition.UNION);
+        graph.putEdgeValue("Luxembourg", "Benelux", Composition.UNION);
 
         // Year, Country, Pop
         Dataset population = createPopulationDataset();
@@ -88,7 +338,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         Year.of(2000), "Austria", 2000,
                         Year.of(2000), "Belgium", 2000,
                         Year.of(2000), "European Union", 10000,

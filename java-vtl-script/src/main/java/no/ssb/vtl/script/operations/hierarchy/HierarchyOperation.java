@@ -110,7 +110,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return graph;
     }
 
-    private static List<List<String>> checkNoPath(Graph<String> graph, String from, String to) {
+    static List<List<String>> checkNoPath(Graph<String> graph, String from, String to) {
         List<List<String>> paths = Lists.newArrayList();
         if (graph.nodes().contains(from) && graph.nodes().contains(to)) {
             // DAG means no loop.
