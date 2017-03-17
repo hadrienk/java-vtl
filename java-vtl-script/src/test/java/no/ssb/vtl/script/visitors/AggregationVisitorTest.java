@@ -29,20 +29,18 @@ public class AggregationVisitorTest {
                 (o, aClass) -> o,
                 "time", Component.Role.IDENTIFIER, String.class,
                 "geo", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Integer.class,
-                "m2", Component.Role.MEASURE, Double.class,
-                "at1", Component.Role.ATTRIBUTE, String.class);
+                "m1", Component.Role.MEASURE, Integer.class);
         visitor = new AggregationVisitor();
         dataset = new TestableDataset(Arrays.asList(
-                dataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "NO", "m1", 20, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "SE", "m1", 40, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "NO", "m1", 11, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "SE", "m1", 31, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "NO", "m1", 72, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 82, "m2", 10.0, "at1", "blabla")),
-                dataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92, "m2", 10.0, "at1", "blabla"))
+                dataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "NO", "m1", 20)),
+                dataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "SE", "m1", 40)),
+                dataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60)),
+                dataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "NO", "m1", 11)),
+                dataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "SE", "m1", 31)),
+                dataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51)),
+                dataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "NO", "m1", 72)),
+                dataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 82)),
+                dataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92))
             ),dataStructure);
         
     }
@@ -54,10 +52,22 @@ public class AggregationVisitorTest {
         AggregationVisitor.AggregationOperation sumOperation = visitor.getSumOperation(dataset,components);
         sumOperation.getData().forEach(System.out::println);
     
+        DataStructure resultingDataStructure = sumOperation.getDataStructure();
+    
+        assertThat(resultingDataStructure.getRoles()).contains(
+                entry("time", Component.Role.IDENTIFIER),
+                entry("m1", Component.Role.MEASURE)
+        );
+    
+        assertThat(resultingDataStructure.getTypes()).contains(
+                entry("time", String.class),
+                entry("m1", Integer.class)
+        );
+        
         assertThat(sumOperation.getData()).contains(
-                dataStructure.wrap(ImmutableMap.of("time", "2010", "m1", 20+40+60)),
-                dataStructure.wrap(ImmutableMap.of("time", "2011", "m1", 11+31+51)),
-                dataStructure.wrap(ImmutableMap.of("time", "2012", "m1", 72+82+92))
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "m1", 20+40+60)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "m1", 11+31+51)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "m1", 72+82+92))
         );
     
     }
