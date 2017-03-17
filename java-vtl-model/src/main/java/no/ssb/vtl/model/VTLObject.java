@@ -125,7 +125,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
     @Override
     public boolean equals(Object o) { //TODO
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || !(o instanceof VTLObject)) return false;
         VTLObject<?> value = (VTLObject<?>) o;
         return Objects.equals(get(), value.get());
     }
