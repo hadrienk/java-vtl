@@ -7,15 +7,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Streams;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
 import com.google.common.graph.MutableGraph;
-import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.MutableValueGraph;
-import com.google.common.graph.NetworkBuilder;
 import com.google.common.graph.ValueGraphBuilder;
 import com.google.common.io.Resources;
 import no.ssb.vtl.model.Component;
@@ -35,7 +36,9 @@ import java.io.PrintStream;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,30 +58,87 @@ public class HierarchyOperationTest extends RandomizedTest {
     private VTLPrintStream printStream = new VTLPrintStream(System.out);
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    //@Test
-    public void testNetwork() throws Exception {
+    @Test
+    public void testAlgo() throws Exception {
 
-        MutableNetwork<String, String> build = NetworkBuilder.undirected().build();
+        MutableValueGraph<String, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
 
-        build.addNode("Austria");
-        build.addNode("Italy");
-        build.addNode("Holland");
-        build.addNode("Belgium");
-        build.addNode("Luxembourg");
+        graph.putEdgeValue("A", "B", Composition.UNION);
+        graph.putEdgeValue("A", "C", Composition.UNION);
 
-        build.addNode("Benelux");
-        build.addNode("European Union");
+        graph.putEdgeValue("B", "C", Composition.COMPLEMENT);
 
-        build.addEdge("European Union", "Austria", "+");
-        build.addEdge("Italy", "Austria", "+");
-        build.addEdge("Holland", "Austria", "+");
-        build.addEdge("Belgium", "Austria", "+");
-        build.addEdge("Luxembourg", "Austria", "+");
+        graph.putEdgeValue("D", "B", Composition.UNION);
+        graph.putEdgeValue("E", "C", Composition.UNION);
 
-        build.addEdge("Benelux", "Holland", "+");
-        build.addEdge("Benelux", "Belgium", "+");
-        build.addEdge("Benelux", "Luxembourg", "+");
+        graph.putEdgeValue("F", "B", Composition.UNION);
+        graph.putEdgeValue("F", "C", Composition.UNION);
 
+        graph.putEdgeValue("G", "C", Composition.COMPLEMENT);
+        graph.putEdgeValue("G", "E", Composition.UNION);
+
+        graph.putEdgeValue("H", "E", Composition.UNION);
+
+        graph.putEdgeValue("I", "C", Composition.UNION);
+        graph.putEdgeValue("I", "F", Composition.UNION);
+
+        graph.putEdgeValue("J", "F", Composition.COMPLEMENT);
+
+        assertThat(Graphs.hasCycle(graph)).isFalse();
+
+        ImmutableMap<String, Integer> allNodeValues = ImmutableMap.<String, Integer>builder()
+                .put("A", 1).put("B", 2).put("C", 4)
+                .put("D", 8).put("E", 16).put("F", 32)
+                .put("G", 64).put("H", 128).put("I", 256)
+                .put("J", 512).build();
+
+        ImmutableMap<String, Integer> leavesValues = ImmutableMap.<String, Integer>builder()
+                .put("A", 1).put("D", 8).put("G", 64)
+                .put("H", 128).put("I", 256).put("J", 512)
+                .build();
+
+
+        LinkedList<String> sorted = kahnTopologicalSort(graph);
+
+        // Go through the list, duplicating elements if union.
+        Multimap<String, Integer> merged = LinkedHashMultimap.create();
+        for (Map.Entry<String, Integer> entry : leavesValues.entrySet()) {
+            merged.put(entry.getKey(), entry.getValue());
+        }
+        for (String node : sorted) {
+            for (String successor : graph.successors(node)) {
+                if (graph.edgeValue(node, successor) != Composition.UNION)
+                    continue;
+
+                merged.putAll(successor, merged.get(node));
+            }
+        }
+
+        System.out.println(merged);
+    }
+
+    private LinkedList<String> kahnTopologicalSort(MutableValueGraph<String, Composition> graph) {
+        // Kahn topological sort
+        MutableValueGraph<String, Composition> g = Graphs.copyOf(graph);
+        LinkedList<String> sorted = Lists.newLinkedList();
+        Deque<String> leaves = Lists.newLinkedList(g.nodes()
+                .stream()
+                .filter(n -> g.inDegree(n) == 0)
+                .collect(toList())
+        );
+        while (!leaves.isEmpty()) {
+            String node = leaves.pop();
+            sorted.push(node);
+            Set<String> successors = ImmutableSet.copyOf(g.successors(node));
+            for (String successor : successors) {
+                g.removeEdge(node, successor);
+                if (g.inDegree(successor) == 0) {
+                    leaves.addLast(successor);
+                }
+            }
+        }
+        Collections.reverse(sorted);
+        return sorted;
     }
 
     @Test

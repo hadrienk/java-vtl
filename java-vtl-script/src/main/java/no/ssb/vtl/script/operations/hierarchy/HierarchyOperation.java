@@ -186,9 +186,9 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 return dataPoints;
             }
 
+            // Stores the values as we compute them.
             Map<String, Integer> buckets = Maps.newConcurrentMap();
 
-            // Map the values.
             for (DataPoint dataPoint : dataPoints) {
                 VTLObject groupObject = structure.asMap(dataPoint).get(this.id);
                 String node = (String) groupObject.get();
