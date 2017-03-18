@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -36,7 +35,6 @@ import java.io.PrintStream;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -98,7 +96,7 @@ public class HierarchyOperationTest extends RandomizedTest {
                 .build();
 
 
-        LinkedList<String> sorted = kahnTopologicalSort(graph);
+        LinkedList<String> sorted = sortTopologically(graph);
 
         // Go through the list, duplicating elements if union.
         Multimap<String, Integer> merged = LinkedHashMultimap.create();
@@ -115,30 +113,6 @@ public class HierarchyOperationTest extends RandomizedTest {
         }
 
         System.out.println(merged);
-    }
-
-    private LinkedList<String> kahnTopologicalSort(MutableValueGraph<String, Composition> graph) {
-        // Kahn topological sort
-        MutableValueGraph<String, Composition> g = Graphs.copyOf(graph);
-        LinkedList<String> sorted = Lists.newLinkedList();
-        Deque<String> leaves = Lists.newLinkedList(g.nodes()
-                .stream()
-                .filter(n -> g.inDegree(n) == 0)
-                .collect(toList())
-        );
-        while (!leaves.isEmpty()) {
-            String node = leaves.pop();
-            sorted.push(node);
-            Set<String> successors = ImmutableSet.copyOf(g.successors(node));
-            for (String successor : successors) {
-                g.removeEdge(node, successor);
-                if (g.inDegree(successor) == 0) {
-                    leaves.addLast(successor);
-                }
-            }
-        }
-        Collections.reverse(sorted);
-        return sorted;
     }
 
     @Test
@@ -164,18 +138,18 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         //graph.putEdge(graph, "a", "e1");
 
-        assertThat(checkNoPath(graph, "e1", "a")).isEmpty();
+        assertThat(findPaths(graph, "e1", "a")).isEmpty();
         long sum = 0;
         final int loops = 100000;
         for (int i = 0; i < loops; i++) {
             long then = System.nanoTime();
-            checkNoPath(graph, "e1", "a");
+            findPaths(graph, "e1", "a");
             sum += System.nanoTime() - then;
         }
-        System.out.println("checkNoPath(): " + sum / loops);
+        System.out.println("findPaths(): " + sum / loops);
 
 
-        assertThat(checkNoPath(graph, "a", "e1")).isNotEmpty();
+        assertThat(findPaths(graph, "a", "e1")).isNotEmpty();
 
         graph.putEdge("a", "e2");
         assertThat(Graphs.hasCycle(graph)).isFalse();

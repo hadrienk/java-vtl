@@ -2,9 +2,11 @@ package no.ssb.vtl.script.operations.hierarchy;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.graph.Graph;
+import com.google.common.graph.Graphs;
 import com.google.common.graph.ImmutableValueGraph;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
@@ -19,15 +21,19 @@ import no.ssb.vtl.model.VTLObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
+import static java.util.stream.Collectors.*;
 
 public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
@@ -35,6 +41,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     public static final String TO_COLUMN_NAME = "to";
     public static final String SIGN_COLUMN_NAME = "sign";
     public static final String COLUMN_NOT_FOUND = "could not find the column %s";
+    public static final String UNKNOWN_SIGN_VALUE = "unknown sign value %s";
+    public static final String CIRCULAR_DEPENDENCY = "the edge %s -(%s)-> %s introduced a loop (%s)";
     private static final Map<String, Composition> COMPOSITION_MAP = ImmutableMap.of(
             "", Composition.UNION,
             "+", Composition.UNION,
@@ -42,8 +50,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             "-", Composition.COMPLEMENT,
             "minus", Composition.COMPLEMENT
     );
-    public static final String UNKNOWN_SIGN_VALUE = "unknown sign value %s";
-    public static final String CIRCULAR_DEPENDENCY = "the edge %s -(%s)-> %s introduced a loop (%s)";
     private final ImmutableValueGraph<String, Composition> graph;
     private final Component id;
     private final Component value;
@@ -102,7 +108,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
             Composition composition = checkNotNull(COMPOSITION_MAP.get(sign), UNKNOWN_SIGN_VALUE, sign);
 
-            List<List<String>> paths = checkNoPath(graph, to, from);
+            List<List<String>> paths = findPaths(graph, to, from);
             checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
 
             graph.putEdgeValue(from, to, composition);
@@ -110,7 +116,36 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return graph;
     }
 
-    static List<List<String>> checkNoPath(Graph<String> graph, String from, String to) {
+    static LinkedList<String> sortTopologically(MutableValueGraph<String, Composition> graph) {
+        // Kahn's algorithm
+        MutableValueGraph<String, Composition> g = Graphs.copyOf(graph);
+        LinkedList<String> sorted = Lists.newLinkedList();
+        Deque<String> leaves = Lists.newLinkedList(g.nodes()
+                .stream()
+                .filter(n -> g.inDegree(n) == 0)
+                .collect(toList())
+        );
+        while (!leaves.isEmpty()) {
+            String node = leaves.pop();
+            sorted.push(node);
+            Set<String> successors = ImmutableSet.copyOf(g.successors(node));
+            for (String successor : successors) {
+                g.removeEdge(node, successor);
+                if (g.inDegree(successor) == 0) {
+                    leaves.addLast(successor);
+                }
+            }
+        }
+        Collections.reverse(sorted);
+        return sorted;
+    }
+
+    /**
+     * Try to find a path in the graph between from and to.
+     *
+     * @return a list (possibly empty) of paths
+     */
+    static List<List<String>> findPaths(Graph<String> graph, String from, String to) {
         List<List<String>> paths = Lists.newArrayList();
         if (graph.nodes().contains(from) && graph.nodes().contains(to)) {
             // DAG means no loop.
