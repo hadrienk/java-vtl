@@ -37,12 +37,12 @@ import static java.util.stream.Collectors.*;
 
 public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
-    public static final String FROM_COLUMN_NAME = "from";
-    public static final String TO_COLUMN_NAME = "to";
-    public static final String SIGN_COLUMN_NAME = "sign";
-    public static final String COLUMN_NOT_FOUND = "could not find the column %s";
-    public static final String UNKNOWN_SIGN_VALUE = "unknown sign value %s";
-    public static final String CIRCULAR_DEPENDENCY = "the edge %s -(%s)-> %s introduced a loop (%s)";
+    private static final String FROM_COLUMN_NAME = "from";
+    private static final String TO_COLUMN_NAME = "to";
+    private static final String SIGN_COLUMN_NAME = "sign";
+    private static final String COLUMN_NOT_FOUND = "could not find the column %s";
+    private static final String UNKNOWN_SIGN_VALUE = "unknown sign value %s";
+    private static final String CIRCULAR_DEPENDENCY = "the edge %s -(%s)-> %s introduced a loop (%s)";
     private static final Map<String, Composition> COMPOSITION_MAP = ImmutableMap.of(
             "", Composition.UNION,
             "+", Composition.UNION,
@@ -50,12 +50,14 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             "-", Composition.COMPLEMENT,
             "minus", Composition.COMPLEMENT
     );
-    private final ImmutableValueGraph<String, Composition> graph;
+
+    private final ImmutableValueGraph<VTLObject, Composition> graph;
+
     private final Component id;
     private final Component value;
 
     // TODO: Error messages.
-    public HierarchyOperation(Dataset dataset, ValueGraph<String, Composition> hierarchy, Component id, Component value) {
+    public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Component id, Component value) {
         super(dataset);
 
         this.id = checkNotNull(id);
@@ -84,7 +86,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
      * @throws IllegalArgumentException if a circular dependency is found.
      * @throws IllegalArgumentException if from and to are not of the same type.
      */
-    private static ValueGraph<String, Composition> convertToHierarchy(final Dataset hierarchy) {
+    private static ValueGraph<VTLObject, Composition> convertToHierarchy(final Dataset hierarchy) {
 
         // Checks.
         final DataStructure structure = checkNotNull(hierarchy).getDataStructure();
@@ -93,7 +95,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         Component signComponent = checkNotNull(structure.get(SIGN_COLUMN_NAME), COLUMN_NOT_FOUND, SIGN_COLUMN_NAME);
 
         // The graph.
-        MutableValueGraph<String, Composition> graph = ValueGraphBuilder.directed()
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed()
                 .allowsSelfLoops(false)
                 .build();
 
@@ -102,13 +104,13 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
             Map<Component, VTLObject> asMap = structure.asMap(point);
 
-            String from = asMap.get(fromComponent).get().toString();
-            String to = asMap.get(toComponent).get().toString();
-            String sign = asMap.get(signComponent).get().toString();
+            VTLObject from = asMap.get(fromComponent);
+            VTLObject to = asMap.get(toComponent);
+            VTLObject sign = asMap.get(signComponent);
 
             Composition composition = checkNotNull(COMPOSITION_MAP.get(sign), UNKNOWN_SIGN_VALUE, sign);
 
-            List<List<String>> paths = findPaths(graph, to, from);
+            List<List<VTLObject>> paths = findPaths(graph, to, from);
             checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
 
             graph.putEdgeValue(from, to, composition);
@@ -116,20 +118,20 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return graph;
     }
 
-    static LinkedList<String> sortTopologically(MutableValueGraph<String, Composition> graph) {
+    static <T> LinkedList<T> sortTopologically(MutableValueGraph<T, Composition> graph) {
         // Kahn's algorithm
-        MutableValueGraph<String, Composition> g = Graphs.copyOf(graph);
-        LinkedList<String> sorted = Lists.newLinkedList();
-        Deque<String> leaves = Lists.newLinkedList(g.nodes()
+        MutableValueGraph<T, Composition> g = Graphs.copyOf(graph);
+        LinkedList<T> sorted = Lists.newLinkedList();
+        Deque<T> leaves = Lists.newLinkedList(g.nodes()
                 .stream()
                 .filter(n -> g.inDegree(n) == 0)
                 .collect(toList())
         );
         while (!leaves.isEmpty()) {
-            String node = leaves.pop();
+            T node = leaves.pop();
             sorted.push(node);
-            Set<String> successors = ImmutableSet.copyOf(g.successors(node));
-            for (String successor : successors) {
+            Set<T> successors = ImmutableSet.copyOf(g.successors(node));
+            for (T successor : successors) {
                 g.removeEdge(node, successor);
                 if (g.inDegree(successor) == 0) {
                     leaves.addLast(successor);
@@ -145,30 +147,30 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
      *
      * @return a list (possibly empty) of paths
      */
-    static List<List<String>> findPaths(Graph<String> graph, String from, String to) {
-        List<List<String>> paths = Lists.newArrayList();
+    static <T> List<List<T>> findPaths(Graph<T> graph, T from, T to) {
+        List<List<T>> paths = Lists.newArrayList();
         if (graph.nodes().contains(from) && graph.nodes().contains(to)) {
             // DAG means no loop.
             // Each time we add nodes, check if there is a path
             // already. We don't check if we never saw one of them.
 
             //LinkedHashSet<String> path = Sets.newLinkedHashSet();
-            Deque<String> stack = Lists.newLinkedList();
+            Deque<T> stack = Lists.newLinkedList();
             stack.push(from);
 
             while (!stack.isEmpty()) {
-                String current = stack.pop();
+                T current = stack.pop();
 
                 if (current.equals(to)) {
                     // return false;
-                    ArrayList<String> path = Lists.newArrayList();
+                    ArrayList<T> path = Lists.newArrayList();
                     path.add(from);
                     path.addAll(stack);
                     path.add(to);
                     paths.add(path);
                     continue;
                 }
-                for (String t : graph.successors(current)) {
+                for (T t : graph.successors(current)) {
                     if (!stack.contains(t)) {
                         stack.push(t);
                     }
@@ -222,11 +224,10 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             }
 
             // Stores the values as we compute them.
-            Map<String, Integer> buckets = Maps.newConcurrentMap();
+            Map<VTLObject, Integer> buckets = Maps.newConcurrentMap();
 
             for (DataPoint dataPoint : dataPoints) {
-                VTLObject groupObject = structure.asMap(dataPoint).get(this.id);
-                String node = (String) groupObject.get();
+                VTLObject node = structure.asMap(dataPoint).get(this.id);
                 if (graph.nodes().contains(node) && !graph.successors(node).isEmpty()) {
                     VTLObject valueObject = structure.asMap(dataPoint).get(this.value);
                     buckets.put(node, (Integer) valueObject.get());
@@ -234,8 +235,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             }
 
             // Aggregate
-            for (String source : buckets.keySet()) {
-                for (String destination : graph.successors(source)) {
+            for (VTLObject source : buckets.keySet()) {
+                for (VTLObject destination : graph.successors(source)) {
                     buckets.merge(destination, buckets.get(source), Integer::sum);
                 }
             }
@@ -248,7 +249,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
             Map<Component, VTLObject> original = structure.asMap(dataPoints.get(0));
             List<DataPoint> result = Lists.newArrayList();
-            for (Map.Entry<String, Integer> entry : buckets.entrySet()) {
+            for (Map.Entry<VTLObject, Integer> entry : buckets.entrySet()) {
 
                 DataPoint point = structure.wrap();
                 result.add(point);

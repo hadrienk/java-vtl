@@ -344,15 +344,15 @@ public class HierarchyOperationTest extends RandomizedTest {
     public void testGraph() throws Exception {
 
 
-        MutableValueGraph<String, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
-        graph.putEdgeValue("Austria", "European Union", Composition.UNION);
-        graph.putEdgeValue("Italy", "European Union", Composition.UNION);
-        graph.putEdgeValue("Holland", "European Union", Composition.UNION);
-        graph.putEdgeValue("Belgium", "European Union", Composition.UNION);
-        graph.putEdgeValue("Luxembourg", "European Union", Composition.UNION);
-        graph.putEdgeValue("Holland", "Benelux", Composition.UNION);
-        graph.putEdgeValue("Belgium", "Benelux", Composition.UNION);
-        graph.putEdgeValue("Luxembourg", "Benelux", Composition.UNION);
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("Benelux"), Composition.UNION);
 
         // Year, Country, Pop
         Dataset population = createPopulationDataset();
