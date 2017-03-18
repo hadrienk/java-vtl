@@ -1,10 +1,12 @@
 package no.ssb.vtl.script.operations.hierarchy;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.graph.Graph;
 import com.google.common.graph.Graphs;
 import com.google.common.graph.ImmutableValueGraph;
@@ -23,13 +25,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -41,7 +42,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     private static final String TO_COLUMN_NAME = "to";
     private static final String SIGN_COLUMN_NAME = "sign";
     private static final String COLUMN_NOT_FOUND = "could not find the column %s";
-    private static final String UNKNOWN_SIGN_VALUE = "unknown sign value %s";
+    private static final String UNKNOWN_SIGN_VALUE = "unknown sign component %s";
     private static final String CIRCULAR_DEPENDENCY = "the edge %s -(%s)-> %s introduced a loop (%s)";
     private static final Map<String, Composition> COMPOSITION_MAP = ImmutableMap.of(
             "", Composition.UNION,
@@ -53,18 +54,25 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
     private final ImmutableValueGraph<VTLObject, Composition> graph;
 
-    private final Component id;
-    private final Component value;
+    // The components to "group by"
+    private final Set<Component> group;
+
+    // The component to map with the hierarchy.
+    private final Component component;
 
     // TODO: Error messages.
-    public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Component id, Component value) {
+    public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Set<Component> group, Component component) {
         super(dataset);
 
-        this.id = checkNotNull(id);
-        checkArgument(id.isIdentifier());
+        // TODO: Check that component are in structure in the computeStructure.
+        this.group = checkNotNull(group);
+        for (Component groupComponent : group) {
+            checkArgument(groupComponent.isIdentifier());
+        }
 
-        this.value = checkNotNull(value);
-        checkArgument(value.isMeasure());
+        // TODO: Check that component are in structure in the computeStructure.
+        this.component = checkNotNull(component);
+        checkArgument(component.isIdentifier());
 
         // TODO: Hierarchy should be typed.
         checkNotNull(hierarchy);
@@ -73,8 +81,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         this.graph = ImmutableValueGraph.copyOf(hierarchy);
     }
 
-    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component id, Component value) {
-        this(dataset, convertToHierarchy(hierarchy), id, value);
+    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Set<Component> group, Component component) {
+        this(dataset, convertToHierarchy(hierarchy), group, component);
     }
 
     /**
@@ -108,7 +116,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             VTLObject to = asMap.get(toComponent);
             VTLObject sign = asMap.get(signComponent);
 
-            Composition composition = checkNotNull(COMPOSITION_MAP.get(sign), UNKNOWN_SIGN_VALUE, sign);
+            Composition composition = checkNotNull(COMPOSITION_MAP.get(sign.get()), UNKNOWN_SIGN_VALUE, sign);
 
             List<List<VTLObject>> paths = findPaths(graph, to, from);
             checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
@@ -118,7 +126,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return graph;
     }
 
-    static <T> LinkedList<T> sortTopologically(MutableValueGraph<T, Composition> graph) {
+    static <T> LinkedList<T> sortTopologically(ValueGraph<T, Composition> graph) {
         // Kahn's algorithm
         MutableValueGraph<T, Composition> g = Graphs.copyOf(graph);
         LinkedList<T> sorted = Lists.newLinkedList();
@@ -180,13 +188,16 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return paths;
     }
 
-    private static Order computeOrder(DataStructure structure, Component id) {
-        Order.Builder builder = Order.create(structure);
-        for (Component component : structure.values()) {
-            if (!component.equals(id)) {
-                builder.put(component, Order.Direction.ASC);
+    private Order computeOrder() {
+        // Sort by all the identifiers we are grouping on but the hierarchy element.
+        // The hierarchy element has to be the last one.
+        Order.Builder builder = Order.create(getDataStructure());
+        for (Component component : group) {
+            if (!component.equals(this.component)) {
+                builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
             }
         }
+        builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
         return builder.build();
     }
 
@@ -199,72 +210,116 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     public Stream<DataPoint> getData() {
 
         final DataStructure structure = getDataStructure();
+        final Order groupOrder = computeOrder();
+        final Order groupPredicate = computePredicate();
 
-        // Order by all ids, except the one we apply the hierarchy on.
-        final Order requiredOrder = computeOrder(structure, id);
-
-        // The identifiers we want to copy.
-        final List<Component> identifiers = structure.values().stream()
-                .filter(Component::isIdentifier)
-                .filter(Predicate.isEqual(id).negate())
-                .collect(Collectors.toList());
+        // TODO: Save the graph in the correct order.
+        final LinkedList<VTLObject> sorted = sortTopologically(this.graph);
 
         // Get the data sorted.
-        Stream<DataPoint> sortedData = getChild().getData(requiredOrder)
-                .orElse(getChild().getData().sorted(requiredOrder));
+        Stream<DataPoint> sortedData = getChild().getData(groupOrder)
+                .orElse(getChild().getData().sorted(groupOrder));
 
-        return StreamUtils.aggregate(
+        Stream<SignedDataPoint> streamToAggregate = StreamUtils.aggregate(
                 sortedData,
-                (prev, current) -> requiredOrder.compare(prev, current) == 0
+                (prev, current) -> groupPredicate.compare(prev, current) == 0
         ).map(dataPoints -> {
 
-            // Optimization
-            if (dataPoints.size() == 1) {
-                return dataPoints;
-            }
-
-            // Stores the values as we compute them.
-            Map<VTLObject, Integer> buckets = Maps.newConcurrentMap();
-
+            // Organize the data points in "buckets" for each group. Here we add "sign" information
+            // to the data points so that we can use it later when we aggregate.
+            Multimap<VTLObject, SignedDataPoint> buckets = ArrayListMultimap.create();
             for (DataPoint dataPoint : dataPoints) {
-                VTLObject node = structure.asMap(dataPoint).get(this.id);
-                if (graph.nodes().contains(node) && !graph.successors(node).isEmpty()) {
-                    VTLObject valueObject = structure.asMap(dataPoint).get(this.value);
-                    buckets.put(node, (Integer) valueObject.get());
+                Map<Component, VTLObject> map = structure.asMap(dataPoint);
+                VTLObject group = map.get(this.component);
+                buckets.put(group, new SignedDataPoint(dataPoint, Composition.UNION));
+            }
+
+            // TODO: Filter the nodes by the keys of the bucket (and check that it is faster)
+            // For each group put the content in every successors. If the edge was a complement (-) then we invert
+            // the sign of each datapoint (ie. a - (b - c + d) = a - b + c - d)
+            for (VTLObject node : sorted) {
+                for (VTLObject successor : graph.successors(node)) {
+                    Composition sign = graph.edgeValue(node, successor);
+                    for (SignedDataPoint point : buckets.get(node)) {
+                        if (Composition.COMPLEMENT.equals(sign)) {
+                            // Invert if complement.
+                            buckets.put(successor, SignedDataPoint.invert(point));
+                        } else {
+                            buckets.put(successor, new SignedDataPoint(point, point.sign));
+                        }
+                    }
                 }
             }
 
-            // Aggregate
-            for (VTLObject source : buckets.keySet()) {
-                for (VTLObject destination : graph.successors(source)) {
-                    buckets.merge(destination, buckets.get(source), Integer::sum);
-                }
-            }
-            // TODO: Use graph.predecessors()
-//            for (EndpointPair<String> pair : graph.edges()) {
-//                if (buckets.containsKey(pair.source())) {
-//                    buckets.merge(pair.target(), buckets.get(pair.source()), Integer::sum);
-//                }
-//            }
-
-            Map<Component, VTLObject> original = structure.asMap(dataPoints.get(0));
-            List<DataPoint> result = Lists.newArrayList();
-            for (Map.Entry<VTLObject, Integer> entry : buckets.entrySet()) {
-
-                DataPoint point = structure.wrap();
+            // Put the new "mapped" component
+            List<SignedDataPoint> result = Lists.newArrayList();
+            for (Map.Entry<VTLObject, SignedDataPoint> entry : buckets.entries()) {
+                VTLObject group = entry.getKey();
+                SignedDataPoint point = entry.getValue();
                 result.add(point);
-
-                Map<Component, VTLObject> asMap = structure.asMap(point);
-                for (Component ic : identifiers) {
-                    asMap.put(ic, original.get(ic));
-                }
-
-                asMap.put(this.id, VTLObject.of(entry.getKey()));
-                asMap.put(this.value, VTLObject.of(entry.getValue()));
+                structure.asMap(point).put(this.component, group);
             }
+
+            // Not needed since we are constructing the result by group.
+            // Collections.sort(result, groupOrder);
+
             return result;
 
         }).flatMap(Collection::stream);
+
+
+        return StreamUtils.aggregate(
+                streamToAggregate,
+                (dataPoint, dataPoint2) -> groupOrder.compare(dataPoint, dataPoint2) == 0
+        ).map(dataPoints -> {
+
+            DataPoint aggregate;
+            // Optimization.
+            if (dataPoints.size() > 1) {
+
+                Iterator<SignedDataPoint> iterator = dataPoints.iterator();
+
+                // TODO: extract merge function. Use static for now.
+                Component value = structure.get("BELOP");
+
+                // Won't fail since we check size.
+                aggregate = DataPoint.create(iterator.next());
+                Map<Component, VTLObject> result = structure.asMap(aggregate);
+                while (iterator.hasNext()) {
+                    SignedDataPoint signedDataPoint = iterator.next();
+
+                    Map<Component, VTLObject> next = structure.asMap(signedDataPoint);
+                    VTLObject objectValue = next.get(value);
+                    if (Composition.COMPLEMENT.equals(signedDataPoint.getSign())) {
+                        objectValue = new VTLObject() {
+                            @Override
+                            public Object get() {
+                                Integer integer = (Integer) next.get(value).get();
+                                return -1 * integer;
+                            }
+                        };
+                    }
+                    result.merge(value, objectValue, (vtlObject, vtlObject2) -> {
+                        return VTLObject.of(Integer.sum((Integer) vtlObject.get(), (Integer) vtlObject2.get()));
+                    });
+                }
+            } else {
+                aggregate = dataPoints.get(0);
+            }
+
+            return aggregate;
+        });
+    }
+
+    private Order computePredicate() {
+        // Same as the groupOrder, but we exclude the hierarchy component.
+        Order.Builder builder = Order.create(getDataStructure());
+        for (Map.Entry<Component, Order.Direction> direction : computeOrder().entrySet()) {
+            if (!direction.getKey().equals(this.component)) {
+                builder.put(direction);
+            }
+        }
+        return builder.build();
     }
 
     @Override
@@ -275,5 +330,36 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Optional<Long> getSize() {
         return Optional.empty();
+    }
+
+    static class SignedDataPoint extends DataPoint {
+        private final Composition sign;
+
+        public SignedDataPoint(Collection<? extends VTLObject> c, Composition sign) {
+            super(c);
+            this.sign = checkNotNull(sign);
+        }
+
+        static SignedDataPoint invert(SignedDataPoint original) {
+            switch (original.getSign()) {
+                case COMPLEMENT:
+                    return new SignedDataPoint(original, Composition.UNION);
+                case UNION:
+                    return new SignedDataPoint(original, Composition.COMPLEMENT);
+                default:
+                    throw new IllegalArgumentException("unknown sign");
+            }
+        }
+
+        Composition getSign() {
+            return sign;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(super.toString())
+                    .addValue(sign)
+                    .toString();
+        }
     }
 }

@@ -11,6 +11,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -176,25 +176,37 @@ public class HierarchyOperationTest extends RandomizedTest {
         Dataset testDataset = create0ADataset();
         Dataset hierarchy = getAccountHierarchyDataset();
 
-        printStream.println(testDataset.getDataStructure());
+        DataStructure dataStructure = testDataset.getDataStructure();
+        printStream.println(dataStructure);
         printStream.println(hierarchy.getDataStructure());
 
-        Component id = testDataset.getDataStructure().get("ART");
-        Component value = testDataset.getDataStructure().get("BELOP");
-        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, id, value);
+        Component value = dataStructure.get("ART");
+        Set<Component> group = Sets.newHashSet(
+                dataStructure.get("AARGANG"),
+                //dataStructure.get("ART_SEKTOR"),
+                dataStructure.get("BYDEL"),
+                dataStructure.get("FUNKSJON_KAPITTEL"),
+                //dataStructure.get("KONTOKLASSE"),
+                dataStructure.get("PERIODE"),
+                dataStructure.get("REGION"),
+                dataStructure.get("ART")
+                //dataStructure.get("BELOP")
+        );
 
-        AtomicLong count = new AtomicLong(0);
-        result.getData().forEach(dataPoint -> {
-            count.incrementAndGet();
-            if (dataPoint.get(8).get().toString().length() > 4) {
-                System.out.println(dataPoint);
-            }
-        });
+        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
+
+//        AtomicLong count = new AtomicLong(0);
+//        result.getData().forEach(dataPoint -> {
+//            count.incrementAndGet();
+//            if (dataPoint.get(8).get().toString().length() > 4) {
+//                System.out.println(dataPoint);
+//            }
+//        });
 
         PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/testResult"));
         result.getData().forEach(file::println);
 
-        System.out.println(count);
+        //System.out.println(count);
     }
 
     private Dataset getAccountHierarchyDataset() throws IOException {
@@ -362,10 +374,13 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Country is the identifier we operate on.
         // Population is the value we operate on.
         DataStructure structure = population.getDataStructure();
-        Component value = structure.get("Population");
-        Component identifier = structure.get("Country");
+        Component value = structure.get("Country");
+        Set<Component> group = Sets.newHashSet(
+                structure.get("Year"),
+                structure.get("Country")
+        );
 
-        HierarchyOperation result = new HierarchyOperation(population, graph, identifier, value);
+        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
 
         printStream.println(result);
 
