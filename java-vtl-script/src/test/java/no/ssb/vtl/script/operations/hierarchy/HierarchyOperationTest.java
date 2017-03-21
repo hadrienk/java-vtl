@@ -173,7 +173,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
         // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
 
-        Dataset testDataset = create0ADataset();
+        Dataset testDataset = create0ADataset("kostra0a_grunnskole_driftregnskap_2016.json.bro");
 
         Dataset hierarchy = getAccountHierarchyDataset("account_hierarchy.json.bro");
 
@@ -208,7 +208,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
         // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
 
-        Dataset testDataset = create0ADataset();
+        Dataset testDataset = create0ADataset("kostra0a_2016.json.bro");
 
         Dataset hierarchy = getAccountHierarchyDataset("hierarchy_agim.json");
 
@@ -218,18 +218,18 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         Component value = dataStructure.get("ART_SEKTOR");
         Set<Component> group = Sets.newHashSet(
-                dataStructure.get("AARGANG"),
-                //dataStructure.get("ART_SEKTOR"),
+                dataStructure.get("PERIODE"),
                 dataStructure.get("BYDEL"),
                 dataStructure.get("FUNKSJON_KAPITTEL"),
-                //dataStructure.get("KONTOKLASSE"),
+                dataStructure.get("KONTOKLASSE"),
                 dataStructure.get("PERIODE"),
-                dataStructure.get("REGION"),
-                dataStructure.get("ART")
-                //dataStructure.get("BELOP")
+                dataStructure.get("REGION")
+                //dataStructure.get("ART_SEKTOR"),
         );
-        
+
         HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
+
+        //printStream.println(result);
 
         PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_agim"));
         result.getData().forEach(file::println);
@@ -496,10 +496,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     private List<DataPoint> createAccountHierarchy(DataStructure hierarchyStructure, String file) throws IOException {
-        InputStream stream = Resources.getResource(this.getClass(), file).openStream();
-
-        if (file.endsWith(".bro"))
-            stream = new BrotliInputStream(stream);
+        InputStream stream = openBroFile(file);
 
         JsonFactory factory = objectMapper.getFactory();
         JsonParser parser = factory.createParser(stream);
@@ -540,12 +537,12 @@ public class HierarchyOperationTest extends RandomizedTest {
                 }).collect(toList());
     }
 
-    private Dataset create0ADataset() {
+    private Dataset create0ADataset(String file) {
         DataStructure structure = create0AStructure();
         return new Dataset() {
             @Override
             public Stream<DataPoint> getData() {
-                return create0AData(structure);
+                return create0AData(structure, file);
             }
 
             @Override
@@ -572,25 +569,26 @@ public class HierarchyOperationTest extends RandomizedTest {
 
     private DataStructure create0AStructure() {
         return DataStructure.builder()
-                .put("AARGANG", IDENTIFIER, String.class)
+                .put("PERIODE", IDENTIFIER, String.class)
                 .put("ART_SEKTOR", IDENTIFIER, String.class)
                 .put("BYDEL", IDENTIFIER, String.class)
                 .put("FUNKSJON_KAPITTEL", IDENTIFIER, String.class)
                 .put("KONTOKLASSE", IDENTIFIER, String.class)
-                .put("PERIODE", IDENTIFIER, String.class)
                 .put("REGION", IDENTIFIER, String.class)
                 .put("BELOP", MEASURE, Integer.class)
-                .put("ART", IDENTIFIER, String.class)
                 .build();
     }
 
-    private Stream<DataPoint> create0AData(DataStructure structure) {
+    private Stream<DataPoint> create0AData(DataStructure structure, String file) {
 
         try {
-            InputStream compressedStream = Resources.getResource(this.getClass(), "hierarchy-data.bro").openStream();
-            BrotliInputStream stream = new BrotliInputStream(compressedStream);
+            InputStream stream = openBroFile(file);
+
             JsonFactory factory = objectMapper.getFactory();
             JsonParser parser = factory.createParser(stream);
+
+            parser.nextValue();
+            parser.nextValue();
             MappingIterator<List<Object>> rows = objectMapper.readValues(parser, new TypeReference<List<Object>>() {
             });
 
@@ -625,6 +623,13 @@ public class HierarchyOperationTest extends RandomizedTest {
             throw new RuntimeException(ex);
         }
 
+    }
+
+    private InputStream openBroFile(String file) throws IOException {
+        InputStream stream = Resources.getResource(this.getClass(), file).openStream();
+        if (file.endsWith(".bro"))
+            stream = new BrotliInputStream(stream);
+        return stream;
     }
 
     private Dataset createPopulationDataset() {
