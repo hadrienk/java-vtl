@@ -4,6 +4,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.check.CheckSingleRuleOperation;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Optional;
 
@@ -58,7 +59,13 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
     private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorCode() != null) {
-            return checkParamContext.errorCode().getText();
+            String errorCodeQuoted = checkParamContext.errorCode().STRING_CONSTANT().getText();
+
+            if (!VisitorUtil.isQuoted(errorCodeQuoted)) {
+                throw new ParseCancellationException("The error code parameter must be quoted");
+            }
+
+            return errorCodeQuoted.substring(1, errorCodeQuoted.length() - 1);
         }
         return null;
     }
