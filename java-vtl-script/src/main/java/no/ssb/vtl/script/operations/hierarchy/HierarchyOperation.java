@@ -146,6 +146,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 }
             }
         }
+        checkArgument(g.edges().isEmpty(), "the graph contains a circular dependency %s", g);
         Collections.reverse(sorted);
         return sorted;
     }
@@ -277,14 +278,17 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             // Optimization.
             if (dataPoints.size() > 1) {
 
-                Iterator<SignedDataPoint> iterator = dataPoints.iterator();
 
                 // TODO: extract merge function. Use static for now.
                 Component value = structure.get("BELOP");
 
                 // Won't fail since we check size.
-                aggregate = DataPoint.create(iterator.next());
+                aggregate = DataPoint.create(dataPoints.get(0));
                 Map<Component, VTLObject> result = structure.asMap(aggregate);
+                result.put(value, null);
+
+
+                Iterator<SignedDataPoint> iterator = dataPoints.iterator();
                 while (iterator.hasNext()) {
                     SignedDataPoint signedDataPoint = iterator.next();
 

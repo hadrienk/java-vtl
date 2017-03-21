@@ -174,7 +174,8 @@ public class HierarchyOperationTest extends RandomizedTest {
         // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
 
         Dataset testDataset = create0ADataset();
-        Dataset hierarchy = getAccountHierarchyDataset();
+
+        Dataset hierarchy = getAccountHierarchyDataset("account_hierarchy.json.bro");
 
         DataStructure dataStructure = testDataset.getDataStructure();
         printStream.println(dataStructure);
@@ -195,23 +196,273 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
 
-//        AtomicLong count = new AtomicLong(0);
-//        result.getData().forEach(dataPoint -> {
-//            count.incrementAndGet();
-//            if (dataPoint.get(8).get().toString().length() > 4) {
-//                System.out.println(dataPoint);
-//            }
-//        });
-
-        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/testResult"));
+        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_account"));
         result.getData().forEach(file::println);
 
-        //System.out.println(count);
     }
 
-    private Dataset getAccountHierarchyDataset() throws IOException {
+    @Test
+    public void testIntegrationAgim() throws IOException {
+        // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
+        //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
+        // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
+        // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
+
+        Dataset testDataset = create0ADataset();
+
+        Dataset hierarchy = getAccountHierarchyDataset("hierarchy_agim.json");
+
+        DataStructure dataStructure = testDataset.getDataStructure();
+        printStream.println(dataStructure);
+        printStream.println(hierarchy.getDataStructure());
+
+        Component value = dataStructure.get("ART_SEKTOR");
+        Set<Component> group = Sets.newHashSet(
+                dataStructure.get("AARGANG"),
+                //dataStructure.get("ART_SEKTOR"),
+                dataStructure.get("BYDEL"),
+                dataStructure.get("FUNKSJON_KAPITTEL"),
+                //dataStructure.get("KONTOKLASSE"),
+                dataStructure.get("PERIODE"),
+                dataStructure.get("REGION"),
+                dataStructure.get("ART")
+                //dataStructure.get("BELOP")
+        );
+        
+        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
+
+        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_agim"));
+        result.getData().forEach(file::println);
+
+    }
+
+    @Test
+    public void testWithComplement() throws Exception {
+
+        // Here the hierarchy uses complement
+        //
+        // Austria         -(+)-> European Union
+        // ...             -(+)-> European Union
+        //
+        // European Union  -(+)-> Luxembourg
+        //
+        // Luxembourg      -(-)-> Benelux
+        // Austria         -(-)-> Benelux
+        // Italy         -(-)-> Benelux
+
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("European Union"), Composition.UNION);
+
+        graph.putEdgeValue(VTLObject.of("European Union"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("Benelux"), Composition.COMPLEMENT);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("Benelux"), Composition.COMPLEMENT);
+
+        // Year, Country, Pop
+        Dataset population = createPopulationDataset();
+
+        printStream.println(population);
+
+        // Country is the identifier we operate on.
+        // Population is the value we operate on.
+        DataStructure structure = population.getDataStructure();
+        Component value = structure.get("Country");
+        Set<Component> group = Sets.newHashSet(
+                structure.get("Year"),
+                structure.get("Country")
+        );
+
+        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
+
+        printStream.println(result);
+
+        assertThat(result.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactlyInAnyOrder(
+                        Year.of(2000), "Austria", 2000,
+                        Year.of(2000), "Belgium", 2000,
+                        Year.of(2000), "European Union", 10000,
+                        Year.of(2000), "Luxembourg", 2000,
+                        Year.of(2000), "Benelux", 6000,
+                        Year.of(2000), "Italy", 2000,
+                        Year.of(2000), "Holland", 2000,
+                        Year.of(2001), "Austria", 2001,
+                        Year.of(2001), "Belgium", 2001,
+                        Year.of(2001), "European Union", 10005,
+                        Year.of(2001), "Luxembourg", 2001,
+                        Year.of(2001), "Benelux", 6003,
+                        Year.of(2001), "Italy", 2001,
+                        Year.of(2001), "Holland", 2001,
+                        Year.of(2002), "Austria", 2002,
+                        Year.of(2002), "Belgium", 2002,
+                        Year.of(2002), "European Union", 10010,
+                        Year.of(2002), "Luxembourg", 2002,
+                        Year.of(2002), "Benelux", 6006,
+                        Year.of(2002), "Italy", 2002,
+                        Year.of(2002), "Holland", 2002,
+                        Year.of(2003), "Austria", 2003,
+                        Year.of(2003), "Belgium", 2003,
+                        Year.of(2003), "European Union", 10015,
+                        Year.of(2003), "Luxembourg", 2003,
+                        Year.of(2003), "Benelux", 6009,
+                        Year.of(2003), "Italy", 2003,
+                        Year.of(2003), "Holland", 2003
+                );
+
+    }
+
+    @Test
+    public void testWithComposition() throws Exception {
+
+        // Here the hierarchy contains two levels;
+        //
+        // Luxembourg -> Benelux
+        // ... -> Benelux
+        //
+        // Benelux -> European Union
+        // Austria -> European Union
+        // ... -> European Union
+
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Benelux"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("Benelux"), Composition.UNION);
+
+        // Year, Country, Pop
+        Dataset population = createPopulationDataset();
+
+        printStream.println(population);
+
+        // Country is the identifier we operate on.
+        // Population is the value we operate on.
+        DataStructure structure = population.getDataStructure();
+        Component value = structure.get("Country");
+        Set<Component> group = Sets.newHashSet(
+                structure.get("Year"),
+                structure.get("Country")
+        );
+
+        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
+
+        printStream.println(result);
+
+        assertThat(result.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactlyInAnyOrder(
+                        Year.of(2000), "Austria", 2000,
+                        Year.of(2000), "Belgium", 2000,
+                        Year.of(2000), "European Union", 10000,
+                        Year.of(2000), "Luxembourg", 2000,
+                        Year.of(2000), "Benelux", 6000,
+                        Year.of(2000), "Italy", 2000,
+                        Year.of(2000), "Holland", 2000,
+                        Year.of(2001), "Austria", 2001,
+                        Year.of(2001), "Belgium", 2001,
+                        Year.of(2001), "European Union", 10005,
+                        Year.of(2001), "Luxembourg", 2001,
+                        Year.of(2001), "Benelux", 6003,
+                        Year.of(2001), "Italy", 2001,
+                        Year.of(2001), "Holland", 2001,
+                        Year.of(2002), "Austria", 2002,
+                        Year.of(2002), "Belgium", 2002,
+                        Year.of(2002), "European Union", 10010,
+                        Year.of(2002), "Luxembourg", 2002,
+                        Year.of(2002), "Benelux", 6006,
+                        Year.of(2002), "Italy", 2002,
+                        Year.of(2002), "Holland", 2002,
+                        Year.of(2003), "Austria", 2003,
+                        Year.of(2003), "Belgium", 2003,
+                        Year.of(2003), "European Union", 10015,
+                        Year.of(2003), "Luxembourg", 2003,
+                        Year.of(2003), "Benelux", 6009,
+                        Year.of(2003), "Italy", 2003,
+                        Year.of(2003), "Holland", 2003
+                );
+
+    }
+
+    @Test
+    public void testWithoutComposition() throws Exception {
+
+        // Here the hierarchy contains node that are connected to two others nodes;
+        // Luxembourg -> European Union
+        // Benelux -> European Union
+
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("Benelux"), Composition.UNION);
+
+        // Year, Country, Pop
+        Dataset population = createPopulationDataset();
+
+        printStream.println(population);
+
+        // Country is the identifier we operate on.
+        // Population is the value we operate on.
+        DataStructure structure = population.getDataStructure();
+        Component value = structure.get("Country");
+        Set<Component> group = Sets.newHashSet(
+                structure.get("Year"),
+                structure.get("Country")
+        );
+
+        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
+
+        printStream.println(result);
+
+        assertThat(result.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactlyInAnyOrder(
+                        Year.of(2000), "Austria", 2000,
+                        Year.of(2000), "Belgium", 2000,
+                        Year.of(2000), "European Union", 10000,
+                        Year.of(2000), "Luxembourg", 2000,
+                        Year.of(2000), "Benelux", 6000,
+                        Year.of(2000), "Italy", 2000,
+                        Year.of(2000), "Holland", 2000,
+                        Year.of(2001), "Austria", 2001,
+                        Year.of(2001), "Belgium", 2001,
+                        Year.of(2001), "European Union", 10005,
+                        Year.of(2001), "Luxembourg", 2001,
+                        Year.of(2001), "Benelux", 6003,
+                        Year.of(2001), "Italy", 2001,
+                        Year.of(2001), "Holland", 2001,
+                        Year.of(2002), "Austria", 2002,
+                        Year.of(2002), "Belgium", 2002,
+                        Year.of(2002), "European Union", 10010,
+                        Year.of(2002), "Luxembourg", 2002,
+                        Year.of(2002), "Benelux", 6006,
+                        Year.of(2002), "Italy", 2002,
+                        Year.of(2002), "Holland", 2002,
+                        Year.of(2003), "Austria", 2003,
+                        Year.of(2003), "Belgium", 2003,
+                        Year.of(2003), "European Union", 10015,
+                        Year.of(2003), "Luxembourg", 2003,
+                        Year.of(2003), "Benelux", 6009,
+                        Year.of(2003), "Italy", 2003,
+                        Year.of(2003), "Holland", 2003
+                );
+
+    }
+
+    private Dataset getAccountHierarchyDataset(String file) throws IOException {
         DataStructure hierarchyStructure = createAccountHierarchyStructure();
-        List<DataPoint> hierarchyDataset = createAccountHierarchy(hierarchyStructure);
+        List<DataPoint> hierarchyDataset = createAccountHierarchy(hierarchyStructure, file);
         return new Dataset() {
 
             @Override
@@ -244,9 +495,33 @@ public class HierarchyOperationTest extends RandomizedTest {
                 .build();
     }
 
-    private List<DataPoint> createAccountHierarchy(DataStructure hierarchyStructure) throws IOException {
-        InputStream compressedStream = Resources.getResource(this.getClass(), "account_hierarchy.json.bro").openStream();
-        BrotliInputStream stream = new BrotliInputStream(compressedStream);
+    private List<DataPoint> createAccountHierarchy(DataStructure hierarchyStructure, String file) throws IOException {
+        InputStream stream = Resources.getResource(this.getClass(), file).openStream();
+
+        if (file.endsWith(".bro"))
+            stream = new BrotliInputStream(stream);
+
+        JsonFactory factory = objectMapper.getFactory();
+        JsonParser parser = factory.createParser(stream);
+
+        parser.nextValue();
+        parser.nextValue();
+        MappingIterator<Map<String, Object>> rows = objectMapper.readValues(parser, new TypeReference<Map<String, Object>>() {
+        });
+
+
+        return Streams.stream(rows)
+                .filter(map -> !map.get("from").toString().isEmpty())
+                .filter(map -> !map.get("to").toString().isEmpty())
+                .map((map) -> {
+                    return hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey));
+                }).collect(toList());
+    }
+
+    private List<DataPoint> createAgimHierarchy(DataStructure hierarchyStructure) throws IOException {
+        InputStream compressedStream = Resources.getResource(this.getClass(), "agim_hierarchy.json").openStream();
+        //InputStream stream = new BrotliInputStream(compressedStream);
+        InputStream stream = compressedStream;
 
         JsonFactory factory = objectMapper.getFactory();
         JsonParser parser = factory.createParser(stream);
@@ -349,74 +624,6 @@ public class HierarchyOperationTest extends RandomizedTest {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-
-    }
-
-    @Test
-    public void testGraph() throws Exception {
-
-
-        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
-        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("European Union"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("European Union"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("European Union"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("Benelux"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("Benelux"), Composition.UNION);
-        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("Benelux"), Composition.UNION);
-
-        // Year, Country, Pop
-        Dataset population = createPopulationDataset();
-
-        printStream.println(population);
-
-        // Country is the identifier we operate on.
-        // Population is the value we operate on.
-        DataStructure structure = population.getDataStructure();
-        Component value = structure.get("Country");
-        Set<Component> group = Sets.newHashSet(
-                structure.get("Year"),
-                structure.get("Country")
-        );
-
-        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
-
-        printStream.println(result);
-
-        assertThat(result.getData())
-                .flatExtracting(input -> input)
-                .extracting(VTLObject::get)
-                .containsExactlyInAnyOrder(
-                        Year.of(2000), "Austria", 2000,
-                        Year.of(2000), "Belgium", 2000,
-                        Year.of(2000), "European Union", 10000,
-                        Year.of(2000), "Luxembourg", 2000,
-                        Year.of(2000), "Benelux", 6000,
-                        Year.of(2000), "Italy", 2000,
-                        Year.of(2000), "Holland", 2000,
-                        Year.of(2001), "Austria", 2001,
-                        Year.of(2001), "Belgium", 2001,
-                        Year.of(2001), "European Union", 10005,
-                        Year.of(2001), "Luxembourg", 2001,
-                        Year.of(2001), "Benelux", 6003,
-                        Year.of(2001), "Italy", 2001,
-                        Year.of(2001), "Holland", 2001,
-                        Year.of(2002), "Austria", 2002,
-                        Year.of(2002), "Belgium", 2002,
-                        Year.of(2002), "European Union", 10010,
-                        Year.of(2002), "Luxembourg", 2002,
-                        Year.of(2002), "Benelux", 6006,
-                        Year.of(2002), "Italy", 2002,
-                        Year.of(2002), "Holland", 2002,
-                        Year.of(2003), "Austria", 2003,
-                        Year.of(2003), "Belgium", 2003,
-                        Year.of(2003), "European Union", 10015,
-                        Year.of(2003), "Luxembourg", 2003,
-                        Year.of(2003), "Benelux", 6009,
-                        Year.of(2003), "Italy", 2003,
-                        Year.of(2003), "Holland", 2003
-                );
 
     }
 
