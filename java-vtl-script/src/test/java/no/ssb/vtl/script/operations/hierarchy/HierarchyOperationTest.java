@@ -382,9 +382,9 @@ public class HierarchyOperationTest extends RandomizedTest {
         }).isNotNull().hasMessageContaining("m4");
     }
 
-    @Test
+    //@Test
     public void testConstaintGraphType() throws Exception {
-        // The type of the graph should be the same as the component.
+        // TODO: The type of the graph should be the same as the component.
         fail("TODO");
     }
 
