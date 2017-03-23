@@ -78,8 +78,15 @@ public class ExecutorController {
             path = "/dataset/{id}/structure",
             method = RequestMethod.GET
     )
-    public Object getStructure(@PathVariable String id) {
-        return bindings.get(id);
+    public ResponseEntity<StructureWrapper> getStructure(@PathVariable String id) {
+        Dataset dataset = (Dataset) bindings.get(id);
+
+        if (dataset == null)
+            return ResponseEntity.notFound().build();
+
+        StructureWrapper structureWrapper = new StructureWrapper();
+        structureWrapper.setDataStructure(dataset.getDataStructure());
+        return ResponseEntity.ok(structureWrapper);
     }
 
     @RequestMapping(
@@ -177,7 +184,7 @@ public class ExecutorController {
                     DataPoint dataPoint =
                             DataPoint.create(
                                     objects.stream().map(VTLObject::of)
-                                    .collect(Collectors.toList())
+                                            .collect(Collectors.toList())
                             );
                     return dataPoint;
                 });
@@ -229,6 +236,23 @@ public class ExecutorController {
             this.datasets = datasets;
         }
 
+    }
+
+    /**
+     * Json wrapper for data structure.
+     */
+    static class StructureWrapper {
+
+        @JsonProperty
+        private DataStructure dataStructure;
+
+        public DataStructure getDataStructure() {
+            return dataStructure;
+        }
+
+        public void setDataStructure(DataStructure dataStructure) {
+            this.dataStructure = dataStructure;
+        }
     }
 
     /**
