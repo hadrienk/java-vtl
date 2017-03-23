@@ -6,6 +6,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.script.operations.AggregationOperation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -64,7 +65,7 @@ public class AggregationVisitorTest {
     public void testSumSingleMeasureDataSet() throws Exception {
     
         List<Component> components = Lists.newArrayList(datasetSingleMeasure.getDataStructure().getOrDefault("time", null));
-        AggregationVisitor.AggregationOperation sumOperation = visitor.getSumOperation(datasetSingleMeasure,components);
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetSingleMeasure,components);
         sumOperation.getData().forEach(System.out::println);
     
         DataStructure resultingDataStructure = sumOperation.getDataStructure();
@@ -91,7 +92,7 @@ public class AggregationVisitorTest {
     @Test(expected = IllegalArgumentException.class)
     public void testSumMultiMeasureDataSetFail() throws Exception {
         List<Component> components = Lists.newArrayList(datasetMultiMeasure.getDataStructure().getOrDefault("time", null));
-        AggregationVisitor.AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,components);
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,components);
         fail("Expected an IllegalArgumentException when attempting to create a sum operation on a data set with more than one measure component");
     }
     
@@ -102,7 +103,7 @@ public class AggregationVisitorTest {
         Component m1 = dataStructure.getOrDefault("m1", null);
         List<Component> groupBy = Lists.newArrayList(dataStructure.getOrDefault("time", null));
         
-        AggregationVisitor.AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy, m1);
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy, m1);
         
         DataStructure resultingDataStructure = sumOperation.getDataStructure();
         
