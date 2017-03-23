@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.visitors;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -10,6 +11,7 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLParser;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.*;
 
 public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationVisitor.AggregationOperation> {
     
@@ -30,26 +34,43 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationV
     
     @Override
     public AggregationOperation visitAggregateSum(VTLParser.AggregateSumContext ctx) {
-        Dataset dataset = (Dataset) referenceVisitor.visit(ctx.datasetRef());
-        List<Component> components = ctx.aggregationParms().componentRef().stream()
+        List<Component> groupBy = ctx.aggregationParms().componentRef().stream()
                 .map(referenceVisitor::visit)
                 .map(o -> (Component) o)
                 .collect(Collectors.toList());
-        return getSumOperation(dataset, components);
+        Dataset dataset;
+        if (ctx.datasetRef() != null) {
+            dataset = (Dataset) referenceVisitor.visit(ctx.datasetRef());
+            return getSumOperation(dataset, groupBy);
+        } else if (ctx.componentRef() != null) {
+            dataset = (Dataset) referenceVisitor.visit(ctx.componentRef().datasetRef());
+            Component aggregationComponent = (Component) referenceVisitor.visit(ctx.componentRef());
+            getSumOperation(dataset, groupBy, aggregationComponent);
+        } throw new ParseCancellationException("Required parameters not found");
     }
     
-    AggregationOperation getSumOperation(Dataset dataset, List<Component> components) {
-        return new AggregationOperation(dataset, components, vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).get());
+    AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy) {
+        Component component = dataset.getDataStructure().values().stream()
+                .filter(Component::isMeasure)
+                .collect(MoreCollectors.onlyElement());
+        return getSumOperation(dataset, groupBy, component);
+    }
+    
+    AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, Component aggregationComponent) {
+        return new AggregationOperation(dataset, groupBy, aggregationComponent,
+                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).get());
     }
     
     class AggregationOperation extends AbstractUnaryDatasetOperation{
     
-        private final List<Component> components;
+        private final List<Component> groupBy;
+        private final Component aggregationComponent;
         private final Function<List<VTLNumber>, VTLNumber> aggregationFunction;
     
-        public AggregationOperation(Dataset child, List<Component> components, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
+        public AggregationOperation(Dataset child, List<Component> groupBy, Component aggregationComponent, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
             super(child);
-            this.components = components;
+            this.groupBy = groupBy;
+            this.aggregationComponent = checkNotNull(aggregationComponent);
             this.aggregationFunction = aggregationFunction;
             
         }
@@ -58,7 +79,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationV
         protected DataStructure computeDataStructure() {
             DataStructure.Builder newDataStructure = DataStructure.builder();
             for (Map.Entry<String, Component> entry : getChild().getDataStructure().entrySet()) {
-                if (components.contains(entry.getValue()) || entry.getValue().isMeasure()) {
+                if (groupBy.contains(entry.getValue()) || aggregationComponent.equals(entry.getValue())) {
                     newDataStructure.put(entry);
                 }
             }
@@ -72,10 +93,9 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationV
                     dataPoint, dataPoint2) -> {
                 Map<Component, VTLObject> map1 = getDataStructure().asMap(dataPoint);
                 Map<Component, VTLObject> map2 = getDataStructure().asMap(dataPoint2);
-                return map1.get(components.get(0)).compareTo(map2.get(components.get(0))) == 0;
+                return map1.get(groupBy.get(0)).compareTo(map2.get(groupBy.get(0))) == 0;
             })
                     .map(dataPoints -> {
-                        Component m1 = getChild().getDataStructure().get("m1");
                         DataPoint result = getDataStructure().wrap();
                         Map<Component, VTLObject> resultAsMap = getDataStructure().asMap(result);
     
@@ -83,14 +103,14 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationV
                         for (DataPoint dataPoint : dataPoints) {
                             Map<Component, VTLObject> objectMap = getChild().getDataStructure().asMap(dataPoint);
                             for (Map.Entry<Component, VTLObject> entry : objectMap.entrySet()) {
-                                if (entry.getKey().equals(m1)) {
+                                if (entry.getKey().equals(aggregationComponent)) {
                                     aggregationValues.add(VTLNumber.of((Number) entry.getValue().get()));
-                                } else if (components.contains(entry.getKey())) {
+                                } else if (groupBy.contains(entry.getKey())) {
                                     resultAsMap.put(entry.getKey(), entry.getValue());
                                 }
                             }
                         }
-                        resultAsMap.put(m1, aggregationFunction.apply(aggregationValues));
+                        resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
                         return result;
                     });
         }

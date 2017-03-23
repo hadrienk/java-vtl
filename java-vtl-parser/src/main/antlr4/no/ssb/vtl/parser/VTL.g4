@@ -44,8 +44,8 @@ getFunction : 'get' '(' datasetId ')';
 putFunction : 'put(todo)';
 
 aggregationFunction
-       : 'sum' '(' (datasetRef) ')' aggregationParms       #aggregateSum
-       | 'avg' '(' (datasetRef) ')' aggregationParms       #aggregateAvg
+       : 'sum' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateSum
+       | 'avg' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateAvg
        ;
 
 aggregationParms: (aggregationClause='group by'|'along') componentRef (',' componentRef)*;
