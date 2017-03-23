@@ -1,14 +1,21 @@
 package no.ssb.vtl.script.visitors;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 public final class VisitorUtil {
 
-    public static final char QUOTE_CHAR = '\"';
+    private static final String QUOTE_CHAR = "\"";
 
     private VisitorUtil() {
     }
 
-    public static boolean isQuoted(String str) {
-        return str.charAt(0) == QUOTE_CHAR && str.charAt(str.length() - 1) == QUOTE_CHAR;
+    public static String stripQuotes(TerminalNode stringConstant) {
+
+        if (stringConstant != null && stringConstant.getText() != null) {
+            return stringConstant.getText().replaceAll(QUOTE_CHAR, "");
+        }
+
+        return null;
     }
 
 }

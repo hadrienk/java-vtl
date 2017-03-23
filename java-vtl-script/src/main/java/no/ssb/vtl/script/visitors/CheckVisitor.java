@@ -59,13 +59,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
     private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorCode() != null) {
-            String errorCodeQuoted = checkParamContext.errorCode().STRING_CONSTANT().getText();
-
-            if (!VisitorUtil.isQuoted(errorCodeQuoted)) {
-                throw new ParseCancellationException("The error code parameter must be quoted");
-            }
-
-            return errorCodeQuoted.substring(1, errorCodeQuoted.length() - 1);
+            return VisitorUtil.stripQuotes(checkParamContext.errorCode().STRING_CONSTANT());
         }
         return null;
     }
