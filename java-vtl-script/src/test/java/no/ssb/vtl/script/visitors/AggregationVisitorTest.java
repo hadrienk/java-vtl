@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 
 public class AggregationVisitorTest {
     
-    private AggregationVisitor visitor = new AggregationVisitor();
+    private AggregationVisitor visitor = new AggregationVisitor(null);
     private TestableDataset datasetSingleMeasure;
     private TestableDataset datasetMultiMeasure;
     

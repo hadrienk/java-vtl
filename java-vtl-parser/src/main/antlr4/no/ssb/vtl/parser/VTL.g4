@@ -48,7 +48,10 @@ aggregationFunction
        | 'avg' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateAvg
        ;
 
-aggregationParms: (aggregationClause='group by'|'along') componentRef (',' componentRef)*;
+aggregationParms: aggregationClause=(GROUP_BY|ALONG) componentRef (',' componentRef)*;
+
+ALONG : 'along' ;
+GROUP_BY : 'group by' ;
 
 datasetId : STRING_CONSTANT ;
 

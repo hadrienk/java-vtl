@@ -41,6 +41,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final ClauseVisitor clausesVisitor;
     private final RelationalVisitor relationalVisitor;
     private final CheckVisitor checkVisitor;
+    private final AggregationVisitor aggregationVisitor;
     
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this.context = checkNotNull(context, "the context was null");
@@ -49,6 +50,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         relationalVisitor = new RelationalVisitor(this, context);
         ReferenceVisitor referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
         checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
+        aggregationVisitor = new AggregationVisitor(referenceVisitor);
     }
 
     @Override
@@ -95,5 +97,16 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
         return checkVisitor.visit(ctx.checkFunction());
     }
-
+    
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     * @param ctx
+     */
+    @Override
+    public Dataset visitWithAggregation(VTLParser.WithAggregationContext ctx) {
+        return aggregationVisitor.visit(ctx.aggregationFunction());
+    }
 }
