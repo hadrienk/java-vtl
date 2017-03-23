@@ -9,8 +9,8 @@ import java.util.function.BiFunction;
  */
 public interface HierarchyAccumulator<T> {
 
-    HierarchyAccumulator SUM = new SumHierarchyAccumulator();
-    HierarchyAccumulator PRODUCT = new ProductHierarchyAccumulator();
+    public HierarchyAccumulator SUM = new SumHierarchyAccumulator();
+    public HierarchyAccumulator PRODUCT = new ProductHierarchyAccumulator();
 
     VTLObject<T> identity();
 

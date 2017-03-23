@@ -585,7 +585,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactlyElementsOf(aggregatedPopulation);
+                .containsOnlyElementsOf(aggregatedPopulation);
 
     }
 
@@ -627,7 +627,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactlyElementsOf(aggregatedPopulation);
+                .containsOnlyElementsOf(aggregatedPopulation);
 
     }
 
@@ -666,7 +666,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactlyElementsOf(aggregatedPopulation);
+                .containsOnlyElementsOf(aggregatedPopulation);
 
     }
 }

@@ -55,13 +55,13 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     private final ImmutableValueGraph<VTLObject, Composition> graph;
 
     // The component
-    private final Component group;
+    private final Component component;
+    private final HierarchyAccumulator accumulator = HierarchyAccumulator.SUM;
 
-    // TODO: Error messages.
     public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Component group) {
         super(dataset);
 
-        this.group = checkNotNull(group, "group cannot be null");
+        this.component = checkNotNull(group, "component cannot be null");
 
         checkArgument(
                 group.isIdentifier(),
@@ -78,8 +78,9 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         for (Component component : dataset.getDataStructure().values()) {
             if (component.isMeasure()) {
                 checkArgument(
-                        component.getType().isAssignableFrom(Number.class),
-                        "all measure components must be numeric"
+                        Number.class.isAssignableFrom(component.getType()),
+                        "all measure components must be numeric (%s was not)",
+                        component
                 );
             }
         }
@@ -91,8 +92,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         this.graph = ImmutableValueGraph.copyOf(hierarchy);
     }
 
-    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component group) {
-        this(dataset, convertToHierarchy(hierarchy), group);
+    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component component) {
+        this(dataset, convertToHierarchy(hierarchy), component);
     }
 
     /**
@@ -205,11 +206,11 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         DataStructure structure = getDataStructure();
         Order.Builder builder = Order.create(structure);
         for (Component component : structure.values()) {
-            if (!component.equals(this.group)) {
+            if (!component.equals(this.component)) {
                 builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
             }
         }
-        builder.put(group, Order.Direction.ASC); // TODO: Could be ASC or DESC
+        builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
         return builder.build();
     }
 
@@ -237,17 +238,17 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 (prev, current) -> groupPredicate.compare(prev, current) == 0
         ).map(dataPoints -> {
 
-            // Organize the data points in "buckets" for each group. Here we add "sign" information
+            // Organize the data points in "buckets" for each component. Here we add "sign" information
             // to the data points so that we can use it later when we aggregate.
             Multimap<VTLObject, ComposedDataPoint> buckets = ArrayListMultimap.create();
             for (DataPoint dataPoint : dataPoints) {
                 Map<Component, VTLObject> map = structure.asMap(dataPoint);
-                VTLObject group = map.get(this.group);
+                VTLObject group = map.get(this.component);
                 buckets.put(group, new ComposedDataPoint(dataPoint, Composition.UNION));
             }
 
             // TODO: Filter the nodes by the keys of the bucket (and check that it is faster)
-            // For each group put the content in every successors. If the edge was a complement (-) then we invert
+            // For each component put the content in every successors. If the edge was a complement (-) then we invert
             // the sign of each datapoint (ie. a - (b - c + d) = a - b + c - d)
             for (VTLObject node : sorted) {
                 for (VTLObject successor : graph.successors(node)) {
@@ -269,10 +270,10 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 VTLObject group = entry.getKey();
                 ComposedDataPoint point = entry.getValue();
                 result.add(point);
-                structure.asMap(point).put(this.group, group);
+                structure.asMap(point).put(this.component, group);
             }
 
-            // Not needed since we are constructing the result by group.
+            // Not needed since we are constructing the result by component.
             // Collections.sort(result, groupOrder);
 
             return result;
@@ -289,13 +290,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             // Optimization.
             if (dataPoints.size() > 1) {
 
-                // TODO: extract merge function. Use static for now.
-
-                Component belop = structure.get("BELOP");
-                Map<Component, HierarchyAccumulator> accumulators = ImmutableMap.of(
-                        belop,
-                        new SumHierarchyAccumulator()
-                );
+                Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap(accumulator);
 
                 // Won't fail since we check size.
                 aggregate = DataPoint.create(dataPoints.get(0));
@@ -326,11 +321,22 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         });
     }
 
+    private Map<Component, HierarchyAccumulator> createAccumulatorMap(HierarchyAccumulator accumulator) {
+        DataStructure structure = getDataStructure();
+        ImmutableMap.Builder<Component, HierarchyAccumulator> builder = ImmutableMap.builder();
+        for (Component component : structure.values()) {
+            if (component.isMeasure()) {
+                builder.put(component, accumulator);
+            }
+        }
+        return builder.build();
+    }
+
     private Order computePredicate() {
         // Same as the groupOrder, but we exclude the hierarchy component.
         Order.Builder builder = Order.create(getDataStructure());
         for (Map.Entry<Component, Order.Direction> direction : computeOrder().entrySet()) {
-            if (!direction.getKey().equals(this.group)) {
+            if (!direction.getKey().equals(this.component)) {
                 builder.put(direction);
             }
         }
