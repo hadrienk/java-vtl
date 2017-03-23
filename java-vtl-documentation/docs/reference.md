@@ -265,8 +265,10 @@ NotNull , value
 
 ## Hierarchy operator
 
-The hierarchy operator replaces an identifier component by using a
-hierarchical structure.
+The hierarchy operator aggregates all measures of a dataset mapping one
+identifier with a hierarchy.
+
+For instance, consider the following hierarchy:
 
 - World
     - Europe
