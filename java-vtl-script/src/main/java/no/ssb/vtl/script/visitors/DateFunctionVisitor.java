@@ -9,6 +9,7 @@ import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.time.Instant;
 import java.util.Map;
@@ -18,7 +19,6 @@ import static java.lang.String.*;
 
 public class DateFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
 
-    private static final char QUOTE_CHAR = '\"';
     private final ReferenceVisitor referenceVisitor;
     private final DataStructure dataStructure;
 
@@ -31,15 +31,11 @@ public class DateFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
     public VTLExpression visitDateFromStringFunction(VTLParser.DateFromStringFunctionContext ctx) {
         ParamVisitor paramVisitor = new ParamVisitor(referenceVisitor);
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
-        String dateFormatQuoted = ctx.STRING_CONSTANT().getText();
+        TerminalNode dateFormat = ctx.STRING_CONSTANT();
 
-        if (!isQuoted(dateFormatQuoted)) {
-            throw new ParseCancellationException("The format parameter must be quoted");
-        }
+        String dateFormatStripped = VisitorUtil.stripQuotes(dateFormat);
 
-        String dateFormat = dateFormatQuoted.substring(1, dateFormatQuoted.length() - 1);
-
-        if (!VTLDate.canParse(dateFormat)) {
+        if (!VTLDate.canParse(dateFormatStripped)) {
             throw new ParseCancellationException(
                     format("Date format %s unsupported", dateFormat));
         }
@@ -60,13 +56,9 @@ public class DateFunctionVisitor extends VTLBaseVisitor<VTLExpression> {
                 return VTLObject.NULL;
             } else {
                 String dateAsString = (String) vtlObject.get().get();
-                return VTLDate.of(dateAsString, dateFormat, VTLScriptEngine.getTimeZone());
+                return VTLDate.of(dateAsString, dateFormatStripped, VTLScriptEngine.getTimeZone());
             }
         }).description(format("date_from_string(%s, %s)", input, dateFormat)).build();
-    }
-
-    private boolean isQuoted(String str) {
-        return str.charAt(0) == QUOTE_CHAR && str.charAt(str.length() - 1) == QUOTE_CHAR;
     }
 
 }

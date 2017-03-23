@@ -47,7 +47,7 @@ exprAtom : variableRef;
 
 checkExpression : 'check' '(' checkParam ')';
 
-checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
+checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
