@@ -70,6 +70,26 @@
         </dependency>
 
         <dependency>
+            <groupId>no.ssb.common.data</groupId>
+            <artifactId>data-vtl-connector</artifactId>
+            <version>0.3-DEV-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.security</groupId>
+                    <artifactId>spring-security-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.security.oauth</groupId>
+                    <artifactId>spring-security-oauth2</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.security</groupId>
+                    <artifactId>spring-security-jwt</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>io.termd</groupId>
             <artifactId>termd-core</artifactId>
             <version>1.0.0</version>
