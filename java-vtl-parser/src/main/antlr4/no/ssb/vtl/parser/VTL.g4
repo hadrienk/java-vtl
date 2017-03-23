@@ -29,6 +29,7 @@ block : '{' statement+ '}' ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
+           | hierarchyExpression                                    #withHierarchy
            | relationalExpression                                   #withRelational
            | getExpression                                          #withGet
            | putExpression                                          #withPut
@@ -36,6 +37,11 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | checkExpression                                        #withCheck
            ;
 
+hierarchyExpression :
+    HIERARCHY_FUNC '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' HIERARCHY_FLAGS )? ')' ;
+hierarchyReference : datasetRef ;
+HIERARCHY_FUNC : 'hierarchy' ;
+HIERARCHY_FLAGS : 'sum' | 'prod';
 
 getExpression : 'get' '(' datasetId ')';
 putExpression : 'put(todo)';
