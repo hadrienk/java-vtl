@@ -56,34 +56,35 @@ public class HierarchyOperationTest extends RandomizedTest {
     private static ObjectMapper MAPPER = new ObjectMapper();
 
     private static List<Object> createAggregatedPopulation() {
-        return Lists.newArrayList(Year.of(2000), "Austria", 2000,
-                Year.of(2000), "Belgium", 2000,
-                Year.of(2000), "European Union", 10000,
-                Year.of(2000), "Luxembourg", 2000,
-                Year.of(2000), "Benelux", 6000,
-                Year.of(2000), "Italy", 2000,
-                Year.of(2000), "Holland", 2000,
-                Year.of(2001), "Austria", 2001,
-                Year.of(2001), "Belgium", 2001,
-                Year.of(2001), "European Union", 10005,
-                Year.of(2001), "Luxembourg", 2001,
-                Year.of(2001), "Benelux", 6003,
-                Year.of(2001), "Italy", 2001,
-                Year.of(2001), "Holland", 2001,
-                Year.of(2002), "Austria", 2002,
-                Year.of(2002), "Belgium", 2002,
-                Year.of(2002), "European Union", 10010,
-                Year.of(2002), "Luxembourg", 2002,
-                Year.of(2002), "Benelux", 6006,
-                Year.of(2002), "Italy", 2002,
-                Year.of(2002), "Holland", 2002,
-                Year.of(2003), "Austria", 2003,
-                Year.of(2003), "Belgium", 2003,
-                Year.of(2003), "European Union", 10015,
-                Year.of(2003), "Luxembourg", 2003,
-                Year.of(2003), "Benelux", 6009,
-                Year.of(2003), "Italy", 2003,
-                Year.of(2003), "Holland", 2003
+        return Lists.newArrayList(
+                Year.of(2000), "Austria", 2000, -2000L,
+                Year.of(2000), "Belgium", 2000, -2000L,
+                Year.of(2000), "European Union", 10000, -10000L,
+                Year.of(2000), "Luxembourg", 2000, -2000L,
+                Year.of(2000), "Benelux", 6000, -6000L,
+                Year.of(2000), "Italy", 2000, -2000L,
+                Year.of(2000), "Holland", 2000, -2000L,
+                Year.of(2001), "Austria", 2001, -2001L,
+                Year.of(2001), "Belgium", 2001, -2001L,
+                Year.of(2001), "European Union", 10005, -10005L,
+                Year.of(2001), "Luxembourg", 2001, -2001L,
+                Year.of(2001), "Benelux", 6003, -6003L,
+                Year.of(2001), "Italy", 2001, -2001L,
+                Year.of(2001), "Holland", 2001, -2001L,
+                Year.of(2002), "Austria", 2002, -2002L,
+                Year.of(2002), "Belgium", 2002, -2002L,
+                Year.of(2002), "European Union", 10010, -10010L,
+                Year.of(2002), "Luxembourg", 2002, -2002L,
+                Year.of(2002), "Benelux", 6006, -6006L,
+                Year.of(2002), "Italy", 2002, -2002L,
+                Year.of(2002), "Holland", 2002, -2002L,
+                Year.of(2003), "Austria", 2003, -2003L,
+                Year.of(2003), "Belgium", 2003, -2003L,
+                Year.of(2003), "European Union", 10015, -10015L,
+                Year.of(2003), "Luxembourg", 2003, -2003L,
+                Year.of(2003), "Benelux", 6009, -6009L,
+                Year.of(2003), "Italy", 2003, -2003L,
+                Year.of(2003), "Holland", 2003, -2003L
         );
     }
 
@@ -187,6 +188,7 @@ public class HierarchyOperationTest extends RandomizedTest {
                 .put("Year", IDENTIFIER, Year.class)
                 .put("Country", IDENTIFIER, String.class)
                 .put("Population", MEASURE, Integer.class)
+                .put("OtherPopulation", MEASURE, Long.class)
                 .build();
 
         List<Year> years = Lists.newArrayList(
@@ -210,7 +212,8 @@ public class HierarchyOperationTest extends RandomizedTest {
                 DataPoint point = structure.wrap(ImmutableMap.of(
                         "Year", year,
                         "Country", country,
-                        "Population", year.getValue()//randomIntBetween(0, 20)
+                        "Population", year.getValue(), //randomIntBetween(0, 20)
+                        "OtherPopulation", (long) year.getValue() * -1
                 ));
                 data.add(point);
             }
@@ -495,12 +498,9 @@ public class HierarchyOperationTest extends RandomizedTest {
 
     }
 
-    @Test
+    //@Test
     public void testIntegration2016() throws IOException {
-        // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
-        //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
-        // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
-        // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
+        // See generate-data.sh
 
         Dataset testDataset = create0ADataset("kostra0a_grunnskole_driftregnskap_2016.json.bro");
 
@@ -519,12 +519,9 @@ public class HierarchyOperationTest extends RandomizedTest {
 
     }
 
-    @Test
+    //@Test
     public void testIntegration2015() throws IOException {
-        // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
-        //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
-        // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
-        // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
+        // See generate-data.sh
 
         Dataset testDataset = create0ADataset("kostra0a_grunnskole_driftregnskap_2015.json.bro");
         Dataset hierarchy = getAccountHierarchyDataset("account_hierarchy.json.bro");
@@ -576,7 +573,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Country is the identifier we operate on.
         DataStructure structure = population.getDataStructure();
         Component value = structure.get("Country");
-        HierarchyOperation result = new HierarchyOperation(population, graph,  value);
+        HierarchyOperation result = new HierarchyOperation(population, graph, value);
 
         PS.println(result);
 

@@ -9,11 +9,14 @@ import java.util.function.BiFunction;
  */
 public interface HierarchyAccumulator<T> {
 
-    public HierarchyAccumulator SUM = new SumHierarchyAccumulator();
     public HierarchyAccumulator PRODUCT = new ProductHierarchyAccumulator();
 
     VTLObject<T> identity();
 
     BiFunction<? super VTLObject, ? super VTLObject, ? extends VTLObject> accumulator(Composition sign);
+
+    public static HierarchyAccumulator sumAccumulatorFor(Class<?> clazz) {
+        return new SumHierarchyAccumulator(clazz);
+    }
 
 }

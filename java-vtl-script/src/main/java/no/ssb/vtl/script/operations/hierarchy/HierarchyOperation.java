@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
 import static java.util.stream.Collectors.*;
+import static no.ssb.vtl.script.operations.hierarchy.HierarchyAccumulator.*;
 
 public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
@@ -56,7 +57,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
     // The component
     private final Component component;
-    private final HierarchyAccumulator accumulator = HierarchyAccumulator.SUM;
 
     public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Component group) {
         super(dataset);
@@ -290,7 +290,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             // Optimization.
             if (dataPoints.size() > 1) {
 
-                Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap(accumulator);
+                Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
 
                 // Won't fail since we check size.
                 aggregate = DataPoint.create(dataPoints.get(0));
@@ -321,12 +321,12 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         });
     }
 
-    private Map<Component, HierarchyAccumulator> createAccumulatorMap(HierarchyAccumulator accumulator) {
+    private Map<Component, HierarchyAccumulator> createAccumulatorMap() {
         DataStructure structure = getDataStructure();
         ImmutableMap.Builder<Component, HierarchyAccumulator> builder = ImmutableMap.builder();
         for (Component component : structure.values()) {
             if (component.isMeasure()) {
-                builder.put(component, accumulator);
+                builder.put(component, sumAccumulatorFor(component.getType()));
             }
         }
         return builder.build();
