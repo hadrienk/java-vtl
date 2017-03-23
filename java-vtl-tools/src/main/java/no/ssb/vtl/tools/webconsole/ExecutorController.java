@@ -106,7 +106,7 @@ public class ExecutorController {
             return dataset.getData().map(dataPoints -> {
                 Map<String, Object> map = Maps.newHashMap();
                 for (Map.Entry<Component, VTLObject> entry : structure.asMap(dataPoints).entrySet()) {
-                    map.put(structure.getName(entry.getKey()), entry.getValue());
+                    map.put(structure.getName(entry.getKey()), entry.getValue().get());
                 }
                 return map;
             }).iterator();
