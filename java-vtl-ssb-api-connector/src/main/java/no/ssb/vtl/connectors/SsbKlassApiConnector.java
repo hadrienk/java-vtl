@@ -173,7 +173,7 @@ public class SsbKlassApiConnector implements Connector {
                     return datasets.stream()
                             .map(d -> Maps.filterKeys(d, codeFields::contains))
                             .map(d -> convertType(d))
-                            .map(dataStructure::wrap);
+                            .map(dataStructure::fromStringMap);
                 }
 
                 @Override

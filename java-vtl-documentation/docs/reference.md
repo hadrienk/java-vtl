@@ -261,4 +261,21 @@ NotNull , value
 </div>
 
 
+## String operators
 
+### date_from_string
+The operator date_from_string converts a string into a date.
+<div vtl-example>
+    <vtl-code>
+join := [left] {
+    b := date_from_string(M1, "YYYY")
+}
+    </vtl-code>
+    <vtl-dataset name="left">
+ID[I,String],M1[M,String]
+1 , 2016
+2 , 2017
+3 , null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>

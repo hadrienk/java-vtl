@@ -60,26 +60,26 @@ public class SsbKlassApiConnectorTest {
 
         Dataset dataset = this.connector.getDataset("http://data.ssb.no/api/klass/v1/classifications/131/codes?from=2013-01-01");
 
-        assertThat(dataset.getDataStructure().getRoles()).containsOnly(
+        assertThat(dataset.getDataStructure().getRoles()).containsExactly(
                 entry("code", Component.Role.IDENTIFIER),
-                entry("name", Component.Role.MEASURE),
                 entry("validFrom", Component.Role.IDENTIFIER),
-                entry("validTo", Component.Role.IDENTIFIER)
+                entry("validTo", Component.Role.IDENTIFIER),
+                entry("name", Component.Role.MEASURE)
         );
 
-        assertThat(dataset.getDataStructure().getTypes()).containsOnly(
+        assertThat(dataset.getDataStructure().getTypes()).containsExactly(
                 entry("code", String.class),
-                entry("name", String.class),
                 entry("validFrom", Instant.class),
-                entry("validTo", Instant.class)
+                entry("validTo", Instant.class),
+                entry("name", String.class)
         );
 
         assertThat(dataset.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsSequence(
-                        "0101", "Halden", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z"),
-                        "0104", "Moss", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z")
+                        "0101", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z"), "Halden",
+                        "0104", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z"), "Moss"
                 );
 
     }
