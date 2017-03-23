@@ -18,6 +18,10 @@ public class VisitorUtilTest {
 
         assertThat(VisitorUtil.stripQuotes(terminalNode)).isNull();
 
+        //VTL 1.1 Part 1, line 2907
+        token.setText("");
+        assertThat(VisitorUtil.stripQuotes(terminalNode)).isEqualTo("");
+
         token.setText("test");
         assertThat(VisitorUtil.stripQuotes(terminalNode)).isEqualTo("test");
 
