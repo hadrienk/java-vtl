@@ -11,7 +11,6 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
@@ -296,67 +295,7 @@ public class HierarchyOperationTest extends RandomizedTest {
                 }).collect(toList());
     }
 
-    @Test
-    public void testConstraintComponentIsInDataset() throws Exception {
-        // Component must part of the structure.
-        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
-        DataStructure structure = DataStructure.builder()
-                .put("id1", IDENTIFIER, String.class)
-                .put("id2", IDENTIFIER, String.class)
-                .put("m1", MEASURE, Integer.class)
-                .build();
-
-        DataStructure otherStructure = DataStructure.builder()
-                .put("id1", IDENTIFIER, String.class)
-                .put("id2", IDENTIFIER, String.class)
-                .put("m1", MEASURE, Integer.class)
-                .build();
-
-        Dataset dataset = createEmptyDataset(structure);
-
-        assertThatThrownBy(() -> {
-            new HierarchyOperation(dataset, graph, Sets.newHashSet(structure.get("id1")), otherStructure.get("m1"));
-        }).isNotNull().hasMessageContaining(otherStructure.get("m1").toString());
-    }
-
-    @Test
-    public void testConstraintComponentIsNumeric() throws Exception {
-        // Component must be an identifier.
-        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
-        DataStructure structure = DataStructure.builder()
-                .put("id1", IDENTIFIER, String.class)
-                .put("id2", IDENTIFIER, String.class)
-                .put("m1", MEASURE, Integer.class)
-                .build();
-
-        Dataset dataset = createEmptyDataset(structure);
-
-        assertThatThrownBy(() -> {
-            new HierarchyOperation(dataset, graph, Sets.newHashSet(structure.get("id1")), structure.get("m1"));
-        }).isNotNull().hasMessageContaining("m1");
-    }
-
-    @Test
-    public void testConstraintAllNumeric() {
-        // All measures must be numeric
-        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
-        DataStructure structure = DataStructure.builder()
-                .put("id1", IDENTIFIER, String.class)
-                .put("id2", IDENTIFIER, String.class)
-                .put("m1", MEASURE, Integer.class)
-                .put("m2", MEASURE, Double.class)
-                .put("m3", MEASURE, Float.class)
-                .put("m4", MEASURE, String.class)
-                .build();
-
-        Dataset dataset = createEmptyDataset(structure);
-
-        assertThatThrownBy(() -> {
-            new HierarchyOperation(dataset, graph, Sets.newHashSet(structure.get("id1")), structure.get("id2"));
-        }).isNotNull().hasMessageContaining("m4");
-    }
-
-    private Dataset createEmptyDataset(final DataStructure structure) {
+    private static Dataset createEmptyDataset(final DataStructure structure) {
         return new Dataset() {
             @Override
             public Stream<DataPoint> getData() {
@@ -378,6 +317,72 @@ public class HierarchyOperationTest extends RandomizedTest {
                 return structure;
             }
         };
+    }
+
+    @Test
+    public void testConstraintComponentIsInDataset() throws Exception {
+        // Component must part of the structure.
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        DataStructure structure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .build();
+
+        DataStructure otherStructure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .build();
+
+        Dataset dataset = createEmptyDataset(structure);
+
+        assertThatThrownBy(() -> {
+            new HierarchyOperation(dataset, graph, otherStructure.get("m1"));
+        }).isNotNull().hasMessageContaining(otherStructure.get("m1").toString());
+    }
+
+    @Test
+    public void testConstraintComponentIsNumeric() throws Exception {
+        // Component must be an identifier.
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        DataStructure structure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .build();
+
+        Dataset dataset = createEmptyDataset(structure);
+
+        assertThatThrownBy(() -> {
+            new HierarchyOperation(dataset, graph, structure.get("m1"));
+        }).isNotNull().hasMessageContaining("m1");
+    }
+
+    @Test
+    public void testConstraintAllNumeric() {
+        // All measures must be numeric
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        DataStructure structure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .put("m2", MEASURE, Double.class)
+                .put("m3", MEASURE, Float.class)
+                .put("m4", MEASURE, String.class)
+                .build();
+
+        Dataset dataset = createEmptyDataset(structure);
+
+        assertThatThrownBy(() -> {
+            new HierarchyOperation(dataset, graph, structure.get("id2"));
+        }).isNotNull().hasMessageContaining("m4");
+    }
+
+    @Test
+    public void testConstaintGraphType() throws Exception {
+        // The type of the graph should be the same as the component.
+        fail("TODO");
     }
 
     @Test
@@ -506,16 +511,8 @@ public class HierarchyOperationTest extends RandomizedTest {
         PS.println(hierarchy.getDataStructure());
 
         Component value = dataStructure.get("ART_SEKTOR");
-        Set<Component> group = Sets.newHashSet(
-                dataStructure.get("PERIODE"),
-                dataStructure.get("BYDEL"),
-                dataStructure.get("FUNKSJON_KAPITTEL"),
-                dataStructure.get("KONTOKLASSE"),
-                dataStructure.get("PERIODE"),
-                dataStructure.get("REGION") //,dataStructure.get("ART_SEKTOR")
-        );
 
-        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
+        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, value);
 
         PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_account_2016"));
         result.getData().forEach(file::println);
@@ -537,16 +534,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         PS.println(hierarchy.getDataStructure());
 
         Component value = dataStructure.get("ART_SEKTOR");
-        Set<Component> group = Sets.newHashSet(
-                dataStructure.get("PERIODE"),
-                dataStructure.get("BYDEL"),
-                dataStructure.get("FUNKSJON_KAPITTEL"),
-                dataStructure.get("KONTOKLASSE"),
-                dataStructure.get("PERIODE"),
-                dataStructure.get("REGION") //, dataStructure.get("ART_SEKTOR"),
-        );
-
-        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
+        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, value);
 
         //PS.println(result);
 
@@ -586,15 +574,9 @@ public class HierarchyOperationTest extends RandomizedTest {
         PS.println(population);
 
         // Country is the identifier we operate on.
-        // Population is the value we operate on.
         DataStructure structure = population.getDataStructure();
         Component value = structure.get("Country");
-        Set<Component> group = Sets.newHashSet(
-                structure.get("Year"),
-                structure.get("Country")
-        );
-
-        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
+        HierarchyOperation result = new HierarchyOperation(population, graph,  value);
 
         PS.println(result);
 
@@ -636,12 +618,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Population is the value we operate on.
         DataStructure structure = population.getDataStructure();
         Component value = structure.get("Country");
-        Set<Component> group = Sets.newHashSet(
-                structure.get("Year"),
-                structure.get("Country")
-        );
-
-        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
+        HierarchyOperation result = new HierarchyOperation(population, graph, value);
 
         PS.println(result);
 
@@ -680,12 +657,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Population is the value we operate on.
         DataStructure structure = population.getDataStructure();
         Component value = structure.get("Country");
-        Set<Component> group = Sets.newHashSet(
-                structure.get("Year"),
-                structure.get("Country")
-        );
-
-        HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
+        HierarchyOperation result = new HierarchyOperation(population, graph, value);
 
         PS.println(result);
 

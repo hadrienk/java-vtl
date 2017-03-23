@@ -54,25 +54,35 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
     private final ImmutableValueGraph<VTLObject, Composition> graph;
 
-    // The components to "group by"
-    private final Set<Component> group;
-
-    // The component to map with the hierarchy.
-    private final Component component;
+    // The component
+    private final Component group;
 
     // TODO: Error messages.
-    public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Set<Component> group, Component component) {
+    public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Component group) {
         super(dataset);
 
-        // TODO: Check that component are in structure in the computeStructure.
-        this.group = checkNotNull(group);
-        for (Component groupComponent : group) {
-            checkArgument(groupComponent.isIdentifier());
-        }
+        this.group = checkNotNull(group, "group cannot be null");
 
-        // TODO: Check that component are in structure in the computeStructure.
-        this.component = checkNotNull(component);
-        checkArgument(component.isIdentifier());
+        checkArgument(
+                group.isIdentifier(),
+                "%s was not an identifier",
+                group
+        );
+
+        checkArgument(
+                dataset.getDataStructure().containsValue(group),
+                "%s was not part of %s",
+                group, dataset
+        );
+
+        for (Component component : dataset.getDataStructure().values()) {
+            if (component.isMeasure()) {
+                checkArgument(
+                        component.getType().isAssignableFrom(Number.class),
+                        "all measure components must be numeric"
+                );
+            }
+        }
 
         // TODO: Hierarchy should be typed.
         checkNotNull(hierarchy);
@@ -81,8 +91,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         this.graph = ImmutableValueGraph.copyOf(hierarchy);
     }
 
-    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Set<Component> group, Component component) {
-        this(dataset, convertToHierarchy(hierarchy), group, component);
+    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component group) {
+        this(dataset, convertToHierarchy(hierarchy), group);
     }
 
     /**
@@ -192,13 +202,14 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     private Order computeOrder() {
         // Sort by all the identifiers we are grouping on but the hierarchy element.
         // The hierarchy element has to be the last one.
-        Order.Builder builder = Order.create(getDataStructure());
-        for (Component component : group) {
-            if (!component.equals(this.component)) {
+        DataStructure structure = getDataStructure();
+        Order.Builder builder = Order.create(structure);
+        for (Component component : structure.values()) {
+            if (!component.equals(this.group)) {
                 builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
             }
         }
-        builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
+        builder.put(group, Order.Direction.ASC); // TODO: Could be ASC or DESC
         return builder.build();
     }
 
@@ -221,18 +232,18 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         Stream<DataPoint> sortedData = getChild().getData(groupOrder)
                 .orElse(getChild().getData().sorted(groupOrder));
 
-        Stream<SignedDataPoint> streamToAggregate = StreamUtils.aggregate(
+        Stream<ComposedDataPoint> streamToAggregate = StreamUtils.aggregate(
                 sortedData,
                 (prev, current) -> groupPredicate.compare(prev, current) == 0
         ).map(dataPoints -> {
 
             // Organize the data points in "buckets" for each group. Here we add "sign" information
             // to the data points so that we can use it later when we aggregate.
-            Multimap<VTLObject, SignedDataPoint> buckets = ArrayListMultimap.create();
+            Multimap<VTLObject, ComposedDataPoint> buckets = ArrayListMultimap.create();
             for (DataPoint dataPoint : dataPoints) {
                 Map<Component, VTLObject> map = structure.asMap(dataPoint);
-                VTLObject group = map.get(this.component);
-                buckets.put(group, new SignedDataPoint(dataPoint, Composition.UNION));
+                VTLObject group = map.get(this.group);
+                buckets.put(group, new ComposedDataPoint(dataPoint, Composition.UNION));
             }
 
             // TODO: Filter the nodes by the keys of the bucket (and check that it is faster)
@@ -241,24 +252,24 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             for (VTLObject node : sorted) {
                 for (VTLObject successor : graph.successors(node)) {
                     Composition sign = graph.edgeValue(node, successor);
-                    for (SignedDataPoint point : buckets.get(node)) {
+                    for (ComposedDataPoint point : buckets.get(node)) {
                         if (Composition.COMPLEMENT.equals(sign)) {
                             // Invert if complement.
-                            buckets.put(successor, SignedDataPoint.invert(point));
+                            buckets.put(successor, ComposedDataPoint.invert(point));
                         } else {
-                            buckets.put(successor, new SignedDataPoint(point, point.sign));
+                            buckets.put(successor, new ComposedDataPoint(point, point.sign));
                         }
                     }
                 }
             }
 
             // Put the new "mapped" component
-            List<SignedDataPoint> result = Lists.newArrayList();
-            for (Map.Entry<VTLObject, SignedDataPoint> entry : buckets.entries()) {
+            List<ComposedDataPoint> result = Lists.newArrayList();
+            for (Map.Entry<VTLObject, ComposedDataPoint> entry : buckets.entries()) {
                 VTLObject group = entry.getKey();
-                SignedDataPoint point = entry.getValue();
+                ComposedDataPoint point = entry.getValue();
                 result.add(point);
-                structure.asMap(point).put(this.component, group);
+                structure.asMap(point).put(this.group, group);
             }
 
             // Not needed since we are constructing the result by group.
@@ -278,34 +289,34 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             // Optimization.
             if (dataPoints.size() > 1) {
 
-
                 // TODO: extract merge function. Use static for now.
-                Component value = structure.get("BELOP");
+
+                Component belop = structure.get("BELOP");
+                Map<Component, HierarchyAccumulator> accumulators = ImmutableMap.of(
+                        belop,
+                        new SumHierarchyAccumulator()
+                );
 
                 // Won't fail since we check size.
                 aggregate = DataPoint.create(dataPoints.get(0));
                 Map<Component, VTLObject> result = structure.asMap(aggregate);
-                result.put(value, null);
 
+                for (Map.Entry<Component, HierarchyAccumulator> entry : accumulators.entrySet()) {
+                    result.put(entry.getKey(), entry.getValue().identity());
+                }
 
-                Iterator<SignedDataPoint> iterator = dataPoints.iterator();
+                Iterator<ComposedDataPoint> iterator = dataPoints.iterator();
                 while (iterator.hasNext()) {
-                    SignedDataPoint signedDataPoint = iterator.next();
+                    ComposedDataPoint composedDataPoint = iterator.next();
+                    Map<Component, VTLObject> next = structure.asMap(composedDataPoint);
 
-                    Map<Component, VTLObject> next = structure.asMap(signedDataPoint);
-                    VTLObject objectValue = next.get(value);
-                    if (Composition.COMPLEMENT.equals(signedDataPoint.getSign())) {
-                        objectValue = new VTLObject() {
-                            @Override
-                            public Object get() {
-                                Integer integer = (Integer) next.get(value).get();
-                                return -1 * integer;
-                            }
-                        };
+                    for (Map.Entry<Component, HierarchyAccumulator> accumulator : accumulators.entrySet()) {
+                        Component component = accumulator.getKey();
+                        VTLObject objectValue = next.get(component);
+                        HierarchyAccumulator value = accumulator.getValue();
+                        result.merge(component, objectValue, value.accumulator(composedDataPoint.getSign()));
                     }
-                    result.merge(value, objectValue, (vtlObject, vtlObject2) -> {
-                        return VTLObject.of(Integer.sum((Integer) vtlObject.get(), (Integer) vtlObject2.get()));
-                    });
+
                 }
             } else {
                 aggregate = dataPoints.get(0);
@@ -319,7 +330,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         // Same as the groupOrder, but we exclude the hierarchy component.
         Order.Builder builder = Order.create(getDataStructure());
         for (Map.Entry<Component, Order.Direction> direction : computeOrder().entrySet()) {
-            if (!direction.getKey().equals(this.component)) {
+            if (!direction.getKey().equals(this.group)) {
                 builder.put(direction);
             }
         }
@@ -336,20 +347,20 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return Optional.empty();
     }
 
-    static class SignedDataPoint extends DataPoint {
+    static class ComposedDataPoint extends DataPoint {
         private final Composition sign;
 
-        public SignedDataPoint(Collection<? extends VTLObject> c, Composition sign) {
+        public ComposedDataPoint(Collection<? extends VTLObject> c, Composition sign) {
             super(c);
             this.sign = checkNotNull(sign);
         }
 
-        static SignedDataPoint invert(SignedDataPoint original) {
+        static ComposedDataPoint invert(ComposedDataPoint original) {
             switch (original.getSign()) {
                 case COMPLEMENT:
-                    return new SignedDataPoint(original, Composition.UNION);
+                    return new ComposedDataPoint(original, Composition.UNION);
                 case UNION:
-                    return new SignedDataPoint(original, Composition.COMPLEMENT);
+                    return new ComposedDataPoint(original, Composition.COMPLEMENT);
                 default:
                     throw new IllegalArgumentException("unknown sign");
             }
