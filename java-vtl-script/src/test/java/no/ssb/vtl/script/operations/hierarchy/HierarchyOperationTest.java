@@ -53,8 +53,332 @@ import static org.assertj.core.api.Assertions.*;
 
 public class HierarchyOperationTest extends RandomizedTest {
 
-    private VTLPrintStream printStream = new VTLPrintStream(System.out);
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private static VTLPrintStream PS = new VTLPrintStream(System.out);
+    private static ObjectMapper MAPPER = new ObjectMapper();
+
+    private static List<Object> createAggregatedPopulation() {
+        return Lists.newArrayList(Year.of(2000), "Austria", 2000,
+                Year.of(2000), "Belgium", 2000,
+                Year.of(2000), "European Union", 10000,
+                Year.of(2000), "Luxembourg", 2000,
+                Year.of(2000), "Benelux", 6000,
+                Year.of(2000), "Italy", 2000,
+                Year.of(2000), "Holland", 2000,
+                Year.of(2001), "Austria", 2001,
+                Year.of(2001), "Belgium", 2001,
+                Year.of(2001), "European Union", 10005,
+                Year.of(2001), "Luxembourg", 2001,
+                Year.of(2001), "Benelux", 6003,
+                Year.of(2001), "Italy", 2001,
+                Year.of(2001), "Holland", 2001,
+                Year.of(2002), "Austria", 2002,
+                Year.of(2002), "Belgium", 2002,
+                Year.of(2002), "European Union", 10010,
+                Year.of(2002), "Luxembourg", 2002,
+                Year.of(2002), "Benelux", 6006,
+                Year.of(2002), "Italy", 2002,
+                Year.of(2002), "Holland", 2002,
+                Year.of(2003), "Austria", 2003,
+                Year.of(2003), "Belgium", 2003,
+                Year.of(2003), "European Union", 10015,
+                Year.of(2003), "Luxembourg", 2003,
+                Year.of(2003), "Benelux", 6009,
+                Year.of(2003), "Italy", 2003,
+                Year.of(2003), "Holland", 2003
+        );
+    }
+
+    private static Dataset create0ADataset(String file) {
+        DataStructure structure = create0AStructure();
+        return new Dataset() {
+            @Override
+            public Stream<DataPoint> getData() {
+                return create0AData(structure, file);
+            }
+
+            @Override
+            public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+                return Optional.of(getData());
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return structure;
+            }
+        };
+    }
+
+    private static DataStructure create0AStructure() {
+        return DataStructure.builder()
+                .put("PERIODE", IDENTIFIER, String.class)
+                .put("ART_SEKTOR", IDENTIFIER, String.class)
+                .put("BYDEL", IDENTIFIER, String.class)
+                .put("FUNKSJON_KAPITTEL", IDENTIFIER, String.class)
+                .put("KONTOKLASSE", IDENTIFIER, String.class)
+                .put("REGION", IDENTIFIER, String.class)
+                .put("BELOP", MEASURE, Integer.class)
+                .build();
+    }
+
+    private static Stream<DataPoint> create0AData(DataStructure structure, String file) {
+
+        try {
+            InputStream stream = openBroFile(file);
+
+            JsonFactory factory = MAPPER.getFactory();
+            JsonParser parser = factory.createParser(stream);
+
+            parser.nextValue();
+            parser.nextValue();
+            MappingIterator<List<Object>> rows = MAPPER.readValues(parser, new TypeReference<List<Object>>() {
+            });
+
+            // Needed so that we can filter null ids.
+            List<Component> ids = structure.values().stream()
+                    .filter(Component::isIdentifier)
+                    .collect(toList());
+
+            return Streams.stream(rows).map(list -> {
+
+                checkArgument(list.size() == structure.size());
+                DataPoint dataPoint = structure.wrap();
+
+                Iterator<Component> components = structure.values().iterator();
+                for (int i = 0; i < list.size(); i++) {
+                    VTLObject vtlObject = VTLObject.of(MAPPER.convertValue(list.get(i), components.next().getType()));
+                    dataPoint.set(i, vtlObject);
+                }
+                return dataPoint;
+
+            }).filter(dataPoint -> {
+                Map<Component, VTLObject> asMap = structure.asMap(dataPoint);
+                for (Component id : ids) {
+                    if (asMap.get(id).get() == null) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+    }
+
+    private static InputStream openBroFile(String file) throws IOException {
+        InputStream stream = Resources.getResource(HierarchyOperation.class, file).openStream();
+        if (file.endsWith(".bro"))
+            stream = new BrotliInputStream(stream);
+        return stream;
+    }
+
+    private static Dataset createPopulationDataset() {
+        DataStructure structure = DataStructure.builder()
+                .put("Year", IDENTIFIER, Year.class)
+                .put("Country", IDENTIFIER, String.class)
+                .put("Population", MEASURE, Integer.class)
+                .build();
+
+        List<Year> years = Lists.newArrayList(
+                Year.of(2000),
+                Year.of(2001),
+                Year.of(2002),
+                Year.of(2003)
+        );
+
+        List<String> countries = Lists.newArrayList(
+                "Austria",
+                "Belgium",
+                "Holland",
+                "Italy",
+                "Luxembourg"
+        );
+
+        ArrayList<DataPoint> data = Lists.newArrayList();
+        for (Year year : years) {
+            for (String country : countries) {
+                DataPoint point = structure.wrap(ImmutableMap.of(
+                        "Year", year,
+                        "Country", country,
+                        "Population", year.getValue()//randomIntBetween(0, 20)
+                ));
+                data.add(point);
+            }
+        }
+        Collections.shuffle(data, new Random(randomLong()));
+
+        return new Dataset() {
+            @Override
+            public Stream<DataPoint> getData() {
+                return data.stream();
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.of((long) data.size());
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return structure;
+            }
+        };
+    }
+
+    private static Dataset getAccountHierarchyDataset(String file) throws IOException {
+        DataStructure hierarchyStructure = createAccountHierarchyStructure();
+        List<DataPoint> hierarchyDataset = createAccountHierarchy(hierarchyStructure, file);
+        return new Dataset() {
+
+            @Override
+            public Stream<DataPoint> getData() {
+                return hierarchyDataset.stream();
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return hierarchyStructure;
+            }
+        };
+    }
+
+    private static DataStructure createAccountHierarchyStructure() {
+        return DataStructure.builder()
+                .put("to", IDENTIFIER, String.class)
+                .put("from", IDENTIFIER, String.class)
+                .put("sign", MEASURE, String.class)
+                .build();
+    }
+
+    private static List<DataPoint> createAccountHierarchy(DataStructure hierarchyStructure, String file) throws IOException {
+        InputStream stream = openBroFile(file);
+
+        JsonFactory factory = MAPPER.getFactory();
+        JsonParser parser = factory.createParser(stream);
+
+        parser.nextValue();
+        parser.nextValue();
+        MappingIterator<Map<String, Object>> rows = MAPPER.readValues(parser, new TypeReference<Map<String, Object>>() {
+        });
+
+
+        return Streams.stream(rows)
+                .filter(map -> !map.get("from").toString().isEmpty())
+                .filter(map -> !map.get("to").toString().isEmpty())
+                .map((map) -> {
+                    return hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey));
+                }).collect(toList());
+    }
+
+    @Test
+    public void testConstraintComponentIsInDataset() throws Exception {
+        // Component must part of the structure.
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        DataStructure structure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .build();
+
+        DataStructure otherStructure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .build();
+
+        Dataset dataset = createEmptyDataset(structure);
+
+        assertThatThrownBy(() -> {
+            new HierarchyOperation(dataset, graph, Sets.newHashSet(structure.get("id1")), otherStructure.get("m1"));
+        }).isNotNull().hasMessageContaining(otherStructure.get("m1").toString());
+    }
+
+    @Test
+    public void testConstraintComponentIsNumeric() throws Exception {
+        // Component must be an identifier.
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        DataStructure structure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .build();
+
+        Dataset dataset = createEmptyDataset(structure);
+
+        assertThatThrownBy(() -> {
+            new HierarchyOperation(dataset, graph, Sets.newHashSet(structure.get("id1")), structure.get("m1"));
+        }).isNotNull().hasMessageContaining("m1");
+    }
+
+    @Test
+    public void testConstraintAllNumeric() {
+        // All measures must be numeric
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        DataStructure structure = DataStructure.builder()
+                .put("id1", IDENTIFIER, String.class)
+                .put("id2", IDENTIFIER, String.class)
+                .put("m1", MEASURE, Integer.class)
+                .put("m2", MEASURE, Double.class)
+                .put("m3", MEASURE, Float.class)
+                .put("m4", MEASURE, String.class)
+                .build();
+
+        Dataset dataset = createEmptyDataset(structure);
+
+        assertThatThrownBy(() -> {
+            new HierarchyOperation(dataset, graph, Sets.newHashSet(structure.get("id1")), structure.get("id2"));
+        }).isNotNull().hasMessageContaining("m4");
+    }
+
+    private Dataset createEmptyDataset(final DataStructure structure) {
+        return new Dataset() {
+            @Override
+            public Stream<DataPoint> getData() {
+                return Stream.empty();
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.empty();
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return structure;
+            }
+        };
+    }
 
     @Test
     public void testAlgo() throws Exception {
@@ -167,7 +491,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testIntegration() throws IOException {
+    public void testIntegration2016() throws IOException {
         // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
         //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
         // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
@@ -178,43 +502,8 @@ public class HierarchyOperationTest extends RandomizedTest {
         Dataset hierarchy = getAccountHierarchyDataset("account_hierarchy.json.bro");
 
         DataStructure dataStructure = testDataset.getDataStructure();
-        printStream.println(dataStructure);
-        printStream.println(hierarchy.getDataStructure());
-
-        Component value = dataStructure.get("ART");
-        Set<Component> group = Sets.newHashSet(
-                dataStructure.get("AARGANG"),
-                //dataStructure.get("ART_SEKTOR"),
-                dataStructure.get("BYDEL"),
-                dataStructure.get("FUNKSJON_KAPITTEL"),
-                //dataStructure.get("KONTOKLASSE"),
-                dataStructure.get("PERIODE"),
-                dataStructure.get("REGION"),
-                dataStructure.get("ART")
-                //dataStructure.get("BELOP")
-        );
-
-        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
-
-        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_account"));
-        result.getData().forEach(file::println);
-
-    }
-
-    @Test
-    public void testIntegrationAgim() throws IOException {
-        // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
-        //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
-        // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
-        // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
-
-        Dataset testDataset = create0ADataset("kostra0a_2016.json.bro");
-
-        Dataset hierarchy = getAccountHierarchyDataset("hierarchy_agim.json");
-
-        DataStructure dataStructure = testDataset.getDataStructure();
-        printStream.println(dataStructure);
-        printStream.println(hierarchy.getDataStructure());
+        PS.println(dataStructure);
+        PS.println(hierarchy.getDataStructure());
 
         Component value = dataStructure.get("ART_SEKTOR");
         Set<Component> group = Sets.newHashSet(
@@ -223,15 +512,45 @@ public class HierarchyOperationTest extends RandomizedTest {
                 dataStructure.get("FUNKSJON_KAPITTEL"),
                 dataStructure.get("KONTOKLASSE"),
                 dataStructure.get("PERIODE"),
-                dataStructure.get("REGION")
-                //dataStructure.get("ART_SEKTOR"),
+                dataStructure.get("REGION") //,dataStructure.get("ART_SEKTOR")
         );
 
         HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
 
-        //printStream.println(result);
+        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_account_2016"));
+        result.getData().forEach(file::println);
 
-        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_agim"));
+    }
+
+    @Test
+    public void testIntegration2015() throws IOException {
+        // curl commongui:commonguisecret@al-kostra-app-utv:7200/authserver/oauth/token -d grant_type=password -d username=admin -d password=admin
+        //http://localhost:7080/api/v2/data/KOSTRA0A:425215?access_token=
+        // columns=PERIODE,AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR,BELOP
+        // sort=PERIODE&sort=PERIODE&AARGANG,BYDEL,REGION,KONTOKLASSE,FUNKSJON_KAPITTEL,ART_SEKTOR
+
+        Dataset testDataset = create0ADataset("kostra0a_grunnskole_driftregnskap_2015.json.bro");
+        Dataset hierarchy = getAccountHierarchyDataset("account_hierarchy.json.bro");
+
+        DataStructure dataStructure = testDataset.getDataStructure();
+        PS.println(dataStructure);
+        PS.println(hierarchy.getDataStructure());
+
+        Component value = dataStructure.get("ART_SEKTOR");
+        Set<Component> group = Sets.newHashSet(
+                dataStructure.get("PERIODE"),
+                dataStructure.get("BYDEL"),
+                dataStructure.get("FUNKSJON_KAPITTEL"),
+                dataStructure.get("KONTOKLASSE"),
+                dataStructure.get("PERIODE"),
+                dataStructure.get("REGION") //, dataStructure.get("ART_SEKTOR"),
+        );
+
+        HierarchyOperation result = new HierarchyOperation(testDataset, hierarchy, group, value);
+
+        //PS.println(result);
+
+        PrintStream file = new PrintStream(new FileOutputStream("/Users/hadrien/Projects/java-vtl/result_account_2015"));
         result.getData().forEach(file::println);
 
     }
@@ -264,7 +583,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Year, Country, Pop
         Dataset population = createPopulationDataset();
 
-        printStream.println(population);
+        PS.println(population);
 
         // Country is the identifier we operate on.
         // Population is the value we operate on.
@@ -277,41 +596,14 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
 
-        printStream.println(result);
+        PS.println(result);
+
+        List<Object> aggregatedPopulation = createAggregatedPopulation();
 
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactlyInAnyOrder(
-                        Year.of(2000), "Austria", 2000,
-                        Year.of(2000), "Belgium", 2000,
-                        Year.of(2000), "European Union", 10000,
-                        Year.of(2000), "Luxembourg", 2000,
-                        Year.of(2000), "Benelux", 6000,
-                        Year.of(2000), "Italy", 2000,
-                        Year.of(2000), "Holland", 2000,
-                        Year.of(2001), "Austria", 2001,
-                        Year.of(2001), "Belgium", 2001,
-                        Year.of(2001), "European Union", 10005,
-                        Year.of(2001), "Luxembourg", 2001,
-                        Year.of(2001), "Benelux", 6003,
-                        Year.of(2001), "Italy", 2001,
-                        Year.of(2001), "Holland", 2001,
-                        Year.of(2002), "Austria", 2002,
-                        Year.of(2002), "Belgium", 2002,
-                        Year.of(2002), "European Union", 10010,
-                        Year.of(2002), "Luxembourg", 2002,
-                        Year.of(2002), "Benelux", 6006,
-                        Year.of(2002), "Italy", 2002,
-                        Year.of(2002), "Holland", 2002,
-                        Year.of(2003), "Austria", 2003,
-                        Year.of(2003), "Belgium", 2003,
-                        Year.of(2003), "European Union", 10015,
-                        Year.of(2003), "Luxembourg", 2003,
-                        Year.of(2003), "Benelux", 6009,
-                        Year.of(2003), "Italy", 2003,
-                        Year.of(2003), "Holland", 2003
-                );
+                .containsExactlyElementsOf(aggregatedPopulation);
 
     }
 
@@ -338,7 +630,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Year, Country, Pop
         Dataset population = createPopulationDataset();
 
-        printStream.println(population);
+        PS.println(population);
 
         // Country is the identifier we operate on.
         // Population is the value we operate on.
@@ -351,41 +643,14 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
 
-        printStream.println(result);
+        PS.println(result);
+
+        List<Object> aggregatedPopulation = createAggregatedPopulation();
 
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactlyInAnyOrder(
-                        Year.of(2000), "Austria", 2000,
-                        Year.of(2000), "Belgium", 2000,
-                        Year.of(2000), "European Union", 10000,
-                        Year.of(2000), "Luxembourg", 2000,
-                        Year.of(2000), "Benelux", 6000,
-                        Year.of(2000), "Italy", 2000,
-                        Year.of(2000), "Holland", 2000,
-                        Year.of(2001), "Austria", 2001,
-                        Year.of(2001), "Belgium", 2001,
-                        Year.of(2001), "European Union", 10005,
-                        Year.of(2001), "Luxembourg", 2001,
-                        Year.of(2001), "Benelux", 6003,
-                        Year.of(2001), "Italy", 2001,
-                        Year.of(2001), "Holland", 2001,
-                        Year.of(2002), "Austria", 2002,
-                        Year.of(2002), "Belgium", 2002,
-                        Year.of(2002), "European Union", 10010,
-                        Year.of(2002), "Luxembourg", 2002,
-                        Year.of(2002), "Benelux", 6006,
-                        Year.of(2002), "Italy", 2002,
-                        Year.of(2002), "Holland", 2002,
-                        Year.of(2003), "Austria", 2003,
-                        Year.of(2003), "Belgium", 2003,
-                        Year.of(2003), "European Union", 10015,
-                        Year.of(2003), "Luxembourg", 2003,
-                        Year.of(2003), "Benelux", 6009,
-                        Year.of(2003), "Italy", 2003,
-                        Year.of(2003), "Holland", 2003
-                );
+                .containsExactlyElementsOf(aggregatedPopulation);
 
     }
 
@@ -409,7 +674,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         // Year, Country, Pop
         Dataset population = createPopulationDataset();
 
-        printStream.println(population);
+        PS.println(population);
 
         // Country is the identifier we operate on.
         // Population is the value we operate on.
@@ -422,271 +687,14 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         HierarchyOperation result = new HierarchyOperation(population, graph, group, value);
 
-        printStream.println(result);
+        PS.println(result);
+
+        List<Object> aggregatedPopulation = createAggregatedPopulation();
 
         assertThat(result.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactlyInAnyOrder(
-                        Year.of(2000), "Austria", 2000,
-                        Year.of(2000), "Belgium", 2000,
-                        Year.of(2000), "European Union", 10000,
-                        Year.of(2000), "Luxembourg", 2000,
-                        Year.of(2000), "Benelux", 6000,
-                        Year.of(2000), "Italy", 2000,
-                        Year.of(2000), "Holland", 2000,
-                        Year.of(2001), "Austria", 2001,
-                        Year.of(2001), "Belgium", 2001,
-                        Year.of(2001), "European Union", 10005,
-                        Year.of(2001), "Luxembourg", 2001,
-                        Year.of(2001), "Benelux", 6003,
-                        Year.of(2001), "Italy", 2001,
-                        Year.of(2001), "Holland", 2001,
-                        Year.of(2002), "Austria", 2002,
-                        Year.of(2002), "Belgium", 2002,
-                        Year.of(2002), "European Union", 10010,
-                        Year.of(2002), "Luxembourg", 2002,
-                        Year.of(2002), "Benelux", 6006,
-                        Year.of(2002), "Italy", 2002,
-                        Year.of(2002), "Holland", 2002,
-                        Year.of(2003), "Austria", 2003,
-                        Year.of(2003), "Belgium", 2003,
-                        Year.of(2003), "European Union", 10015,
-                        Year.of(2003), "Luxembourg", 2003,
-                        Year.of(2003), "Benelux", 6009,
-                        Year.of(2003), "Italy", 2003,
-                        Year.of(2003), "Holland", 2003
-                );
+                .containsExactlyElementsOf(aggregatedPopulation);
 
-    }
-
-    private Dataset getAccountHierarchyDataset(String file) throws IOException {
-        DataStructure hierarchyStructure = createAccountHierarchyStructure();
-        List<DataPoint> hierarchyDataset = createAccountHierarchy(hierarchyStructure, file);
-        return new Dataset() {
-
-            @Override
-            public Stream<DataPoint> getData() {
-                return hierarchyDataset.stream();
-            }
-
-            @Override
-            public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<Long> getSize() {
-                return Optional.empty();
-            }
-
-            @Override
-            public DataStructure getDataStructure() {
-                return hierarchyStructure;
-            }
-        };
-    }
-
-    private DataStructure createAccountHierarchyStructure() {
-        return DataStructure.builder()
-                .put("to", IDENTIFIER, String.class)
-                .put("from", IDENTIFIER, String.class)
-                .put("sign", MEASURE, String.class)
-                .build();
-    }
-
-    private List<DataPoint> createAccountHierarchy(DataStructure hierarchyStructure, String file) throws IOException {
-        InputStream stream = openBroFile(file);
-
-        JsonFactory factory = objectMapper.getFactory();
-        JsonParser parser = factory.createParser(stream);
-
-        parser.nextValue();
-        parser.nextValue();
-        MappingIterator<Map<String, Object>> rows = objectMapper.readValues(parser, new TypeReference<Map<String, Object>>() {
-        });
-
-
-        return Streams.stream(rows)
-                .filter(map -> !map.get("from").toString().isEmpty())
-                .filter(map -> !map.get("to").toString().isEmpty())
-                .map((map) -> {
-                    return hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey));
-                }).collect(toList());
-    }
-
-    private List<DataPoint> createAgimHierarchy(DataStructure hierarchyStructure) throws IOException {
-        InputStream compressedStream = Resources.getResource(this.getClass(), "agim_hierarchy.json").openStream();
-        //InputStream stream = new BrotliInputStream(compressedStream);
-        InputStream stream = compressedStream;
-
-        JsonFactory factory = objectMapper.getFactory();
-        JsonParser parser = factory.createParser(stream);
-
-        parser.nextValue();
-        parser.nextValue();
-        MappingIterator<Map<String, Object>> rows = objectMapper.readValues(parser, new TypeReference<Map<String, Object>>() {
-        });
-
-
-        return Streams.stream(rows)
-                .filter(map -> !map.get("from").toString().isEmpty())
-                .filter(map -> !map.get("to").toString().isEmpty())
-                .map((map) -> {
-                    return hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey));
-                }).collect(toList());
-    }
-
-    private Dataset create0ADataset(String file) {
-        DataStructure structure = create0AStructure();
-        return new Dataset() {
-            @Override
-            public Stream<DataPoint> getData() {
-                return create0AData(structure, file);
-            }
-
-            @Override
-            public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
-                return Optional.of(getData());
-            }
-
-            @Override
-            public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<Long> getSize() {
-                return Optional.empty();
-            }
-
-            @Override
-            public DataStructure getDataStructure() {
-                return structure;
-            }
-        };
-    }
-
-    private DataStructure create0AStructure() {
-        return DataStructure.builder()
-                .put("PERIODE", IDENTIFIER, String.class)
-                .put("ART_SEKTOR", IDENTIFIER, String.class)
-                .put("BYDEL", IDENTIFIER, String.class)
-                .put("FUNKSJON_KAPITTEL", IDENTIFIER, String.class)
-                .put("KONTOKLASSE", IDENTIFIER, String.class)
-                .put("REGION", IDENTIFIER, String.class)
-                .put("BELOP", MEASURE, Integer.class)
-                .build();
-    }
-
-    private Stream<DataPoint> create0AData(DataStructure structure, String file) {
-
-        try {
-            InputStream stream = openBroFile(file);
-
-            JsonFactory factory = objectMapper.getFactory();
-            JsonParser parser = factory.createParser(stream);
-
-            parser.nextValue();
-            parser.nextValue();
-            MappingIterator<List<Object>> rows = objectMapper.readValues(parser, new TypeReference<List<Object>>() {
-            });
-
-            // Needed so that we can filter null ids.
-            List<Component> ids = structure.values().stream()
-                    .filter(Component::isIdentifier)
-                    .collect(toList());
-
-            return Streams.stream(rows).map(list -> {
-
-                checkArgument(list.size() == structure.size());
-                DataPoint dataPoint = structure.wrap();
-
-                Iterator<Component> components = structure.values().iterator();
-                for (int i = 0; i < list.size(); i++) {
-                    VTLObject vtlObject = VTLObject.of(objectMapper.convertValue(list.get(i), components.next().getType()));
-                    dataPoint.set(i, vtlObject);
-                }
-                return dataPoint;
-
-            }).filter(dataPoint -> {
-                Map<Component, VTLObject> asMap = structure.asMap(dataPoint);
-                for (Component id : ids) {
-                    if (asMap.get(id).get() == null) {
-                        return false;
-                    }
-                }
-                return true;
-            });
-
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-    }
-
-    private InputStream openBroFile(String file) throws IOException {
-        InputStream stream = Resources.getResource(this.getClass(), file).openStream();
-        if (file.endsWith(".bro"))
-            stream = new BrotliInputStream(stream);
-        return stream;
-    }
-
-    private Dataset createPopulationDataset() {
-        DataStructure structure = DataStructure.builder()
-                .put("Year", IDENTIFIER, Year.class)
-                .put("Country", IDENTIFIER, String.class)
-                .put("Population", MEASURE, Integer.class)
-                .build();
-
-        List<Year> years = Lists.newArrayList(
-                Year.of(2000),
-                Year.of(2001),
-                Year.of(2002),
-                Year.of(2003)
-        );
-
-        List<String> countries = Lists.newArrayList(
-                "Austria",
-                "Belgium",
-                "Holland",
-                "Italy",
-                "Luxembourg"
-        );
-
-        ArrayList<DataPoint> data = Lists.newArrayList();
-        for (Year year : years) {
-            for (String country : countries) {
-                DataPoint point = structure.wrap(ImmutableMap.of(
-                        "Year", year,
-                        "Country", country,
-                        "Population", year.getValue()//randomIntBetween(0, 20)
-                ));
-                data.add(point);
-            }
-        }
-        Collections.shuffle(data, new Random(randomLong()));
-
-        return new Dataset() {
-            @Override
-            public Stream<DataPoint> getData() {
-                return data.stream();
-            }
-
-            @Override
-            public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<Long> getSize() {
-                return Optional.of((long) data.size());
-            }
-
-            @Override
-            public DataStructure getDataStructure() {
-                return structure;
-            }
-        };
     }
 }

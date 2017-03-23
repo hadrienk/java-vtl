@@ -12,4 +12,4 @@ bro --quality 9 < kostra0a_2015.json > kostra0a_2015.json.bro
 bro --quality 9 < kostra0a_2016.json > kostra0a_2016.json.bro
 bro --quality 9 < kostra0a_grunnskole_driftregnskap_2016.json > kostra0a_grunnskole_driftregnskap_2016.json.bro
 bro --quality 9 < kostra0a_grunnskole_driftregnskap_2015.json > kostra0a_grunnskole_driftregnskap_2015.json.bro
-bro --quality 9 < hierarchy_agim.json > hierarchy_agim.json.bro
+bro --quality 9 < account_hierarchy.json > account_hierarchy.json.bro
