@@ -37,6 +37,8 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -629,7 +631,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", Instant.parse("2016-12-31T23:00:00Z"),
+                        "1", ZonedDateTime.of(2017,1,1,0,0,0,0, ZoneId.systemDefault()).toInstant(),
                         "2", null
                 );
 
