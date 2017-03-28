@@ -330,6 +330,28 @@ public class DataStructure extends ForwardingMap<String, Component> {
 
     }
 
+    /**
+     * Creates a new {@link DataPoint} for the given names and values.
+     * <p>
+     * This method uses the {@link #asMap(DataPoint)} method to convert each value and returns
+     * a {@link DataPoint}.
+     *
+     * @param map a map of name and values
+     * @return the corresponding DataPoint (row)
+     */
+    public DataPoint fromStringMap(Map<String, Object> map) {
+        DataPoint dataPoint = DataPoint.create(map.size());
+        Map<Component, VTLObject> dataPointAsMap = asMap(dataPoint);
+        for (Entry<String, Object> entry : map.entrySet()) {
+            dataPointAsMap.put(
+                    get(entry.getKey()),
+                    VTLObject.of(entry.getValue())
+            );
+        }
+        return dataPoint;
+    }
+
+    @Deprecated
     public DataPoint wrap() {
         return DataPoint.create(this.size());
 

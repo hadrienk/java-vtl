@@ -16,6 +16,19 @@
         <java.version>1.8</java.version>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>SSB Nexus Releases</name>
+            <url>http://kodehus.ssb.no/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>SSB Snapshot Repository</name>
+            <url>http://kodehus.ssb.no/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <modules>
         <module>java-vtl-model</module>
         <module>java-vtl-parser</module>
