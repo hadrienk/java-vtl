@@ -6,11 +6,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Streams;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
@@ -36,12 +35,12 @@ import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -389,45 +388,6 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testAlgo() throws Exception {
-
-        MutableValueGraph<String, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
-
-        graph.putEdgeValue("A", "B", Composition.UNION);
-        graph.putEdgeValue("A", "C", Composition.UNION);
-
-        graph.putEdgeValue("B", "C", Composition.COMPLEMENT);
-
-        graph.putEdgeValue("D", "B", Composition.UNION);
-        graph.putEdgeValue("E", "C", Composition.UNION);
-
-        graph.putEdgeValue("F", "B", Composition.UNION);
-        graph.putEdgeValue("F", "C", Composition.UNION);
-
-        graph.putEdgeValue("G", "C", Composition.COMPLEMENT);
-        graph.putEdgeValue("G", "E", Composition.UNION);
-
-        graph.putEdgeValue("H", "E", Composition.UNION);
-
-        graph.putEdgeValue("I", "C", Composition.UNION);
-        graph.putEdgeValue("I", "F", Composition.UNION);
-
-        graph.putEdgeValue("J", "F", Composition.COMPLEMENT);
-
-        assertThat(Graphs.hasCycle(graph)).isFalse();
-
-        ImmutableMap<String, Integer> allNodeValues = ImmutableMap.<String, Integer>builder()
-                .put("A", 1).put("B", 2).put("C", 4)
-                .put("D", 8).put("E", 16).put("F", 32)
-                .put("G", 64).put("H", 128).put("I", 256)
-                .put("J", 512).build();
-
-        ImmutableMap<String, Integer> leavesValues = ImmutableMap.<String, Integer>builder()
-                .put("A", 1).put("D", 8).put("G", 64)
-                .put("H", 128).put("I", 256).put("J", 512)
-                .build();
-
-    @Test
     public void testTopologicalSort() throws Exception {
         MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
         graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
@@ -436,23 +396,23 @@ public class HierarchyOperationTest extends RandomizedTest {
         graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("European Union"), Composition.UNION);
         graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("European Union"), Composition.UNION);
 
-        LinkedList<String> sorted = sortTopologically(graph);
+        graph.putEdgeValue(VTLObject.of("European Union"), VTLObject.of("Benelux"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("Benelux"), Composition.COMPLEMENT);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("Benelux"), Composition.COMPLEMENT);
 
-        // Go through the list, duplicating elements if union.
-        Multimap<String, Integer> merged = LinkedHashMultimap.create();
-        for (Map.Entry<String, Integer> entry : leavesValues.entrySet()) {
-            merged.put(entry.getKey(), entry.getValue());
-        }
-        for (String node : sorted) {
-            for (String successor : graph.successors(node)) {
-                if (graph.edgeValue(node, successor) != Composition.UNION)
-                    continue;
+        List<VTLObject> sort = sortTopologically(graph);
 
-                merged.putAll(successor, merged.get(node));
-            }
-        }
+        assertThat(sort).extracting(VTLObject::get)
+                .containsExactly(
+                        "Austria",
+                        "Italy",
+                        "Holland",
+                        "Belgium",
+                        "Luxembourg",
+                        "European Union",
+                        "Benelux"
+                );
 
-        System.out.println(merged);
     }
 
     @Test
