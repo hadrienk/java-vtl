@@ -55,19 +55,20 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> getData() {
         Dataset childDataset = getChild();
-        DataStructure structure = getDataStructure();
+        DataStructure newStructure = getDataStructure();
         DataStructure previousStructure = childDataset.getDataStructure();
-        Component conditionComponent = getConditionComponent(structure);
+        Component conditionComponent = getConditionComponent(newStructure);
 
         return childDataset.getData().map(dataPoint -> {
 
-            DataPoint resultDataPoint = structure.wrap();
+            DataPoint resultDataPoint = newStructure.wrap();
             Map<Component, VTLObject> originalMap = previousStructure.asMap(dataPoint);
-            Map<Component, VTLObject> resultMap = structure.asMap(resultDataPoint);
+            Map<Component, VTLObject> resultMap = newStructure.asMap(resultDataPoint);
 
             for (Component component : resultMap.keySet()) {
-                if (originalMap.containsKey(component))
+                if (originalMap.containsKey(component)) {
                     resultMap.put(component, originalMap.get(component));
+                }
             }
 
             // Optimized and.
@@ -88,16 +89,16 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
             //... then filter rows
             if (rowsToReturn != RowsToReturn.ALL) {
-                if (rowsToReturn == RowsToReturn.VALID && !combinedCondition)
+                if (rowsToReturn == RowsToReturn.VALID && !combinedCondition) {
                     return null;
-                if (rowsToReturn == RowsToReturn.NOT_VALID && combinedCondition)
+                }
+                if (rowsToReturn == RowsToReturn.NOT_VALID && combinedCondition) {
                     return null;
+                }
             }
 
-            if (combinedCondition) {
-                resultMap.computeIfPresent(getErrorCodeComponent(), (k, v) -> VTLObject.of(errorCode));
-                resultMap.computeIfPresent(getErrorLevelComponent(), (k, v) -> VTLObject.of(errorLevel));
-            }
+            resultMap.computeIfPresent(getErrorCodeComponent(), (k, v) -> VTLObject.of(errorCode));
+            resultMap.computeIfPresent(getErrorLevelComponent(), (k, v) -> VTLObject.of(errorLevel));
 
             Boolean finalPrevious = combinedCondition;
             resultMap.computeIfPresent(conditionComponent, (k, v) -> VTLObject.of(finalPrevious));

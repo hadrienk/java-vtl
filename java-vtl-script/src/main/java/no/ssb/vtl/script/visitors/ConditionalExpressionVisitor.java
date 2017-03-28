@@ -36,7 +36,11 @@ public class ConditionalExpressionVisitor extends VTLBaseVisitor<VTLExpression> 
         return new VTLExpression.Builder(input.getType(), dataPoint -> {
             Map<Component, VTLObject> map = dataStructure.asMap(dataPoint);
             Optional<VTLObject> vtlObject = Optional.ofNullable(map.get(input));
-            if (!vtlObject.isPresent() || vtlObject.get().get() == null) {
+            if (!vtlObject.isPresent()) {
+                throw new RuntimeException(
+                        format("Component %s not found in data structure", input));
+            }
+            if (vtlObject.get().get() == null) {
                 return VTLObject.of(repValue);
             } else {
                 return vtlObject.get();

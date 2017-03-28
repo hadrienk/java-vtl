@@ -36,12 +36,14 @@ import javax.script.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.TimeZone;
 
 /**
  * A VTL {@link ScriptEngine} implementation.
  */
 public class VTLScriptEngine extends AbstractScriptEngine {
 
+    private TimeZone timeZone = TimeZone.getDefault();
     private final ImmutableList<Connector> connectors;
 
     /**
@@ -66,6 +68,34 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         context = new VTLScriptContext();
     }
 
+    /**
+     * Returns the default time zone of the JVM.
+     * //TODO use non-static method to be able to set up time zone per VTLScriptEngine instance. Need to also expose in Visitors
+     *
+     * @return the default time zone of the JVM.
+     */
+    public static TimeZone getTimeZone() {
+        return TimeZone.getDefault();
+    }
+
+    /**
+     * Sets a different global timezone.
+     *
+     * The engine will use a different global time zone in situations no implicit time
+     * zone is defined in date conversion operations. For example:
+     * <pre>
+     *     osloTz = TimeZone.getTimeZone("Europe/Oslo");
+     *     vtlEngine.setTimeZone(osloTz);
+     *
+     *     // date will be 1999-12-31T23:00:00.000Z
+     *     vtlEngine.eval("date := date_from_string(\"2000\", \"YYYY\")");
+     *
+     * </pre>
+     * @param tz the time zone
+     */
+    public void setTimeZone(TimeZone tz) {
+        timeZone = tz;
+    }
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException {
         return eval(new StringReader(script), context);
