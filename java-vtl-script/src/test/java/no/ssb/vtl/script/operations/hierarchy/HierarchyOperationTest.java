@@ -427,6 +427,14 @@ public class HierarchyOperationTest extends RandomizedTest {
                 .put("H", 128).put("I", 256).put("J", 512)
                 .build();
 
+    @Test
+    public void testTopologicalSort() throws Exception {
+        MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
+        graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Holland"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Belgium"), VTLObject.of("European Union"), Composition.UNION);
+        graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("European Union"), Composition.UNION);
 
         LinkedList<String> sorted = sortTopologically(graph);
 
@@ -467,34 +475,38 @@ public class HierarchyOperationTest extends RandomizedTest {
         graph.putEdge("b3", "e2");
         graph.putEdge("b3", "e3");
 
-
-        //graph.putEdge(graph, "a", "e1");
-
         assertThat(findPaths(graph, "e1", "a")).isEmpty();
-        long sum = 0;
         final int loops = 100000;
+
+        Stopwatch findPathWatch = Stopwatch.createUnstarted();
         for (int i = 0; i < loops; i++) {
-            long then = System.nanoTime();
+            findPathWatch.start();
             findPaths(graph, "e1", "a");
-            sum += System.nanoTime() - then;
+            findPathWatch.stop();
         }
-        System.out.println("findPaths(): " + sum / loops);
+        System.out.println("findPaths(): " + findPathWatch.elapsed(TimeUnit.NANOSECONDS) / loops);
 
-
-        assertThat(findPaths(graph, "a", "e1")).isNotEmpty();
+        //assertThat(findPaths(graph, "a", "e1")).isNotEmpty();
 
         graph.putEdge("a", "e2");
         assertThat(Graphs.hasCycle(graph)).isFalse();
+        assertThat(findPaths(graph, "e2", "a")).isEmpty();
+
         graph.putEdge("e1", "a");
         assertThat(Graphs.hasCycle(graph)).isTrue();
+        assertThat(findPaths(graph, "e1", "a")).isNotEmpty();
 
-        sum = 0;
+        Stopwatch hasCyclePathWatch = Stopwatch.createUnstarted();
         for (int i = 0; i < loops; i++) {
-            long then = System.nanoTime();
+            hasCyclePathWatch.start();
             Graphs.hasCycle(graph);
-            sum += System.nanoTime() - then;
+            hasCyclePathWatch.stop();
         }
-        System.out.println("Graphs.hasCycle(): " + sum / loops);
+        System.out.println("Graphs.hasCycle(): " + hasCyclePathWatch.elapsed(TimeUnit.NANOSECONDS) / loops);
+
+        assertThat(hasCyclePathWatch.elapsed(TimeUnit.NANOSECONDS) / loops)
+                .describedAs("time per guava Graph.hasCycle() call")
+                .isGreaterThan(findPathWatch.elapsed(TimeUnit.NANOSECONDS) / loops);
 
     }
 

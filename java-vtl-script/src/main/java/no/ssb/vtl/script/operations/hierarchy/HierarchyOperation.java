@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations.hierarchy;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -137,6 +138,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return graph;
     }
 
+    @VisibleForTesting
     static <T> LinkedList<T> sortTopologically(ValueGraph<T, Composition> graph) {
         // Kahn's algorithm
         MutableValueGraph<T, Composition> g = Graphs.copyOf(graph);
@@ -167,6 +169,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
      *
      * @return a list (possibly empty) of paths
      */
+    @VisibleForTesting
     static <T> List<List<T>> findPaths(Graph<T> graph, T from, T to) {
         List<List<T>> paths = Lists.newArrayList();
         if (graph.nodes().contains(from) && graph.nodes().contains(to)) {
