@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.visitors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
@@ -59,14 +60,16 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
                 throw new IllegalArgumentException("Unrecognized token: " + clause);
         }
     }
-    
+
+    @VisibleForTesting
     AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy) {
         Component component = dataset.getDataStructure().values().stream()
                 .filter(Component::isMeasure)
                 .collect(MoreCollectors.onlyElement());
         return getSumOperation(dataset, groupBy, component);
     }
-    
+
+    @VisibleForTesting
     AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, Component aggregationComponent) {
         return new AggregationOperation(dataset, groupBy, aggregationComponent,
                 vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).get());
