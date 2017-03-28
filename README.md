@@ -21,6 +21,8 @@ The Java VTL project is an open source java implementation of the
 the JSR-223 Java Scripting API and exposes a simple connector interface
 one can implement in order to integrate with any data stores.
 
+Visit the [interactive reference manual](https://statisticsnorway.github.io/java-vtl/reference/) for more information.
+
 ## Modules
 
 The project is divided in modules;
