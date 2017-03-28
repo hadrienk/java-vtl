@@ -63,7 +63,7 @@ System.out.println(bindings.get("ds3"))
 ## Connect to external systems
 
 VTL Java uses the `no.ssb.vtl.connector.Connector` interface to access and
-export data to external systems.
+export data from and to external systems.
 
 The Connector interface defines three methods:
 
@@ -135,57 +135,67 @@ class StaticDataset implements Dataset {
 This is an overview of the implementation progress.
 
 [done]: http://progressed.io/bar/100?title=done "Done"
+[todo]: http://progressed.io/bar/0 "Done"
 
 Group|Operators|Progress|Comment
 ---|---|---|---
-General purpose|round parenthesis|
-General purpose|assignment|![done][done]
+General purpose|round parenthesis|![todo][todo]
+General purpose|:= (assignment)|![todo][todo]
 General purpose|membership|![done][done]
 General purpose|get|![usable](http://progressed.io/bar/20)|The keep, filter and aggregate are not yet reflected in the connector interface.
 General purpose|put|![usable](http://progressed.io/bar/90)|The Connector interface is defined but expressions are not recognized yet.
+Join expression|[]{}|![done][done]
+Join clause|filter|![done][done]
+Join clause|keep|![done][done]
+Join clause|drop|![done][done]
+Join clause|fold|![done][done]
+Join clause|unfold|![done][done]
+Join clause|rename|![done][done]
+Join clause|:= (assignment)|![done][done]
+Join clause|. (membership)|![done][done]
 Clauses|rename|![done][done]
-Clauses|filter|
-Clauses|keep|
-Clauses|calc|
-Clauses|attrcalc|
-Clauses|aggregate|
-Conditional|if-then-else|
+Clauses|filter|![done][done]
+Clauses|keep|![done][done]
+Clauses|calc|![todo][todo]
+Clauses|attrcalc|![todo][todo]
+Clauses|aggregate|![todo][todo]
+Conditional|if-then-else|![todo][todo]
 Conditional|nvl|![usable](http://progressed.io/bar/50)|Dataset as input not implemented.
-Validation|Comparisons (>,<,>=,<=,=,<>)|
-Validation|in,not in, between|
+Validation|Comparisons (>,<,>=,<=,=,<>)|![usable](http://progressed.io/bar/30)|Only inside join expression (no lifting).
+Validation|in,not in, between|![todo][todo]
 Validation|isnull|![done][done]|Implemented syntax are `isnull(value)`, `value is null` and `value is not null`|
-Validation|exist_in, not_exist_in|
-Validation|exist_in_all, not_exist_in_all|
-Validation|check|
-Validation|match_characters|
-Validation|match_values|
-Statistical|min, max|
-Statistical|hierarchy|
-Statistical|aggregate|
-Relational|union|
-Relational|intersect|
-Relational|symdiff|
-Relational|setdiff|
-Relational|merge|
-Boolean|and|
-Boolean|or|
-Boolean|xor|
-Boolean|not|
-Mathematical|unary plus and minus|
-Mathematical|addition, substraction|
-Mathematical|multiplication, division|
-Mathematical|round|
-Mathematical|abs|
-Mathematical|trunc|
-Mathematical|power, exp, nroot|
-Mathematical|in, log|
-Mathematical|mod|
-String|length|
-String|concatenation|
-String|trim|
-String|upper/lower case|
-String|substring|
-String|indexof|
+Validation|exist_in, not_exist_in|![todo][todo]
+Validation|exist_in_all, not_exist_in_all|![todo][todo]
+Validation|check|![usable](http://progressed.io/bar/50)|The boolean dataset must be built manually (no lifting).
+Validation|match_characters|![todo][todo]
+Validation|match_values|![todo][todo]
+Statistical|min, max|![todo][todo]
+Statistical|hierarchy|![usable](http://progressed.io/bar/80)|The inline definition is not supported. A dataset that has a correct structure can be used instead.
+Statistical|aggregate|![todo][todo]
+Relational|union|![done][done]
+Relational|intersect|![todo][todo]
+Relational|symdiff|![todo][todo]
+Relational|setdiff|![todo][todo]
+Relational|merge|![todo][todo]
+Boolean|and|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Boolean|or|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Boolean|xor|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Boolean|not|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Mathematical|unary plus and minus|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Mathematical|addition, substraction|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Mathematical|multiplication, division|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Mathematical|round|![todo][todo]
+Mathematical|abs|![todo][todo]
+Mathematical|trunc|![todo][todo]
+Mathematical|power, exp, nroot|![todo][todo]
+Mathematical|in, log|![todo][todo]
+Mathematical|mod|![todo][todo]
+String|length|![todo][todo]
+String|concatenation|![todo][todo]
+String|trim|![todo][todo]
+String|upper/lower case|![todo][todo]
+String|substring|![todo][todo]
+String|indexof|![todo][todo]
 String|date_from_string|![usable](http://progressed.io/bar/25)|Dataset as input not implemented. Only YYYY date format accepted.
 
 
