@@ -70,6 +70,12 @@ define(['angular'], function (angular) {
 
                 for (var len = lines.length, i = 0; i < len; ++i) {
                     cells = lines[i].trim().split(',');
+                    for (var cellIndex = 0; cellIndex < cells.length; ++cellIndex) {
+                        cells[cellIndex] = cells[cellIndex].trim()
+                        if (cells[cellIndex] === "null") {
+                            cells[cellIndex] = null;
+                        }
+                    }
                     if (cells.length != dataset.structure.length)
                         throw new Error("row size inconsistent with header");
 
