@@ -1,4 +1,3 @@
-
 [codacy-link]: https://www.codacy.com/app/hadrien-kohl/ssb-java-vtl/dashboard
 [travis-link]: https://travis-ci.org/statisticsnorway/java-vtl/branches
 [gitter-link]: https://gitter.im/java-vtl/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link
@@ -199,6 +198,8 @@ String|upper/lower case|![todo][todo]
 String|substring|![todo][todo]
 String|indexof|![todo][todo]
 String|date_from_string|![usable](http://progressed.io/bar/25)|Dataset as input not implemented. Only YYYY date format accepted.
+
+[![Analytics](https://ga-beacon.appspot.com/UA-85245041-2/readme)](https://github.com/igrigorik/ga-beacon)
 
 
 
