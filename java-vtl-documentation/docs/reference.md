@@ -252,11 +252,19 @@ Null in boolean operators evaluates to false. In order to test whether
 
 <div vtl-example>
     <vtl-code>
-isnotnull := [data] {
+postfixIsNull := [data] {
+    filter value is null
+}
+postfixIsNotNull := [data] {
     filter value is not null
 }
-isnull := {
-    filter value is null
+
+functionalIsNull := [data] {
+	filter isnull(value) 
+}
+
+functionalIsNotNull := [data] {
+	filter not(isnull(value))
 }
     </vtl-code>
     <vtl-dataset name="data">
