@@ -199,16 +199,23 @@ Sweden , 9M
 The operator nvl replaces null values with a value given as a parameter.
 <div vtl-example>
     <vtl-code>
-join := [left, left] {
-    b = nvl(population, 0)
+join := [outer left, right] {
+    nvl_result := nvl(right.measure, "was null")
 }
     </vtl-code>
     <vtl-dataset name="left">
-country[I,String],population[M,String]
-France , 64M
-Norway , 5M
-Italy  , null
-Sweden , 9M
+id1[I,String],id2[I,String],measure[M,String],attribute[A,String]
+1,3,left value 3, left attribute 3
+1,4,left value 4, left attribute 4
+1,5,left value 5, left attribute 5
+1,6,left value 6, left attribute 6
+    </vtl-dataset>
+    <vtl-dataset name="right">
+id1[I,String],id2[I,String],measure[M,String],attribute[A,String]
+1,1,right value 1, right attribute 1
+1,2,right value 2, right attribute 2
+1,3,right value 3, right attribute 3
+1,4,right value 4, right attribute 4
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
