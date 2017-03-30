@@ -30,7 +30,8 @@ public class ConditionalExpressionVisitor extends VTLBaseVisitor<VTLExpression> 
         Object repValue = paramVisitor.visit(ctx.nvlRepValue);
 
         if (input.getType() != repValue.getClass()) {
-            throw new ParseCancellationException("The value to replace null must be of type " + input.getType());
+            throw new ParseCancellationException("The value to replace null must be of type " + input.getType()
+            + ", but was: " + repValue.getClass() + ". Replacement value was: " + repValue);
         }
 
         return new VTLExpression.Builder(input.getType(), dataPoint -> {
