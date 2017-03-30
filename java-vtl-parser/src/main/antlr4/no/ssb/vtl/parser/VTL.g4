@@ -61,7 +61,7 @@ variableRef : identifier;
 
 identifier : IDENTIFIER ;
 
-constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
+constant : INTEGER_CONSTANT | DOUBLE_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
 
 clauseExpression      : '[' clause ']' ;
@@ -210,8 +210,8 @@ INTEGER_CONSTANT  : DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
 STRING_CONSTANT   :'"' (~'"')* '"';
 
-FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
-                  | (DIGIT)+ FLOATEXP
+DOUBLE_CONSTANT    : (DIGIT)+ '.' (DIGIT)* DOUBLEEXP?
+                  | (DIGIT)+ DOUBLEEXP
                   ;
 
 NULL_CONSTANT     : 'null';
@@ -227,7 +227,7 @@ PLUS : '+';
 MINUS : '-';
 
 fragment DIGIT    : '0'..'9' ;
-fragment FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
+fragment DOUBLEEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
 fragment LETTER   : 'A'..'Z' | 'a'..'z';
 
 WS : [ \n\r\t\u000C] -> skip ;
