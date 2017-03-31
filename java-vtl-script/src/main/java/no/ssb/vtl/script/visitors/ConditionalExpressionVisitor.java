@@ -7,6 +7,7 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.apache.commons.lang3.ClassUtils;
 
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +30,7 @@ public class ConditionalExpressionVisitor extends VTLBaseVisitor<VTLExpression> 
         Component input = (Component) paramVisitor.visit(ctx.componentRef());
         Object repValue = paramVisitor.visit(ctx.nvlRepValue);
 
-        if (input.getType() != repValue.getClass()) {
+        if (!ClassUtils.isAssignable(repValue.getClass(), input.getType())) {
             throw new ParseCancellationException("The value to replace null must be of type " + input.getType()
             + ", but was: " + repValue.getClass() + ". Replacement value was: " + repValue);
         }
