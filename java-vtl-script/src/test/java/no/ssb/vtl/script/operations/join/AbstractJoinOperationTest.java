@@ -1,6 +1,5 @@
 package no.ssb.vtl.script.operations.join;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
@@ -25,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
-
 
     /**
      * The specification states:
@@ -98,12 +96,9 @@ public class AbstractJoinOperationTest {
 
         Dataset ds1 = mock(Dataset.class);
 
-        DataStructure ds1Struct = DataStructure.of(
-                mapper::convertValue,
-                "m",
-                Component.Role.IDENTIFIER,
-                Integer.class
-        );
+        DataStructure ds1Struct = DataStructure.builder()
+                .put("m", Component.Role.IDENTIFIER, Integer.class)
+                .build();
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
         given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
