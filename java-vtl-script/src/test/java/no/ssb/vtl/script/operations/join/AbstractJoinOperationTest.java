@@ -4,19 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.script.support.JoinSpliterator;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
 
-    ObjectMapper mapper = new ObjectMapper();
 
     /**
      * The specification states:
@@ -42,12 +41,9 @@ public class AbstractJoinOperationTest {
             Dataset ds1 = mock(Dataset.class);
             Dataset ds2 = mock(Dataset.class);
 
-            DataStructure structure = DataStructure.of(
-                    mapper::convertValue,
-                    "m",
-                    Component.Role.IDENTIFIER,
-                    Integer.class
-            );
+            DataStructure structure = DataStructure.builder()
+                    .put("m", Component.Role.IDENTIFIER, Integer.class)
+                    .build();
 
             when(ds1.getDataStructure()).thenReturn(structure);
             when(ds2.getDataStructure()).thenReturn(structure);
@@ -98,7 +94,7 @@ public class AbstractJoinOperationTest {
     }
 
     @Test
-    public void testSimple() throws Exception {
+    public void testOptimization() throws Exception {
 
         Dataset ds1 = mock(Dataset.class);
 
@@ -121,32 +117,6 @@ public class AbstractJoinOperationTest {
             );
         });
         AbstractJoinOperation result = new TestAbstractJoinOperation(ImmutableMap.of("ds1", ds1)) {
-
-            @Override
-            public WorkingDataset workDataset() {
-                return new WorkingDataset() {
-                    @Override
-                    public Stream<DataPoint> getData() {
-                        return ds1.getData();
-                    }
-
-                    @Override
-                    public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                        return null;
-                    }
-
-                    @Override
-                    public Optional<Long> getSize() {
-                        return null;
-                    }
-
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return ds1.getDataStructure();
-                    }
-
-                };
-            }
 
         };
 
@@ -175,11 +145,6 @@ public class AbstractJoinOperationTest {
 
         @Override
         protected ImmutableSet<Component> getIdentifiers() {
-            return null;
-        }
-
-        @Override
-        public WorkingDataset workDataset() {
             return null;
         }
 

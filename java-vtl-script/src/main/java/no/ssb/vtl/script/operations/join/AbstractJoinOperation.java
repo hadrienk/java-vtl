@@ -256,9 +256,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return joinScope;
     }
 
-    @Deprecated
-    public abstract WorkingDataset workDataset();
-
     protected Comparator<List<VTLObject>> getKeyComparator() {
         return (l, r) -> {
             checkArgument(l.size() == r.size());

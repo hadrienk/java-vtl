@@ -91,12 +91,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public WorkingDataset workDataset() {
-        // TODO: Remove this method.
-        return this;
-    }
-
-    @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
         if (getChildren().size() == 1) {
             return getChildren().get(0).getDistinctValuesCount();

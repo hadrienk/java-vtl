@@ -45,12 +45,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public WorkingDataset workDataset() {
-        // TODO: Remove
-        return this;
-    }
-
-    @Override
     protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
             final DataStructure leftStructure, final DataStructure rightStructure
     ) {
