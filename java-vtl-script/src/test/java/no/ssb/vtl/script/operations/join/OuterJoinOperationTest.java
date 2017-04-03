@@ -115,7 +115,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
 
 
         Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,

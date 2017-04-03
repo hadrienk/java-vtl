@@ -42,8 +42,10 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.Function;
@@ -147,20 +149,39 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return builder.build();
     }
 
-    private Stream<DataPoint> getSorted(Dataset dataset, DataStructure structure) {
-        // Need to be sorted by common ids.
+    private Stream<DataPoint> getSorted(Dataset dataset, Order requiredOrder) {
+        // We are just making sure all common identifier are sorted.
+        LinkedHashSet<String> identifiersOrder = Sets.newLinkedHashSet(
+                createCommonIdentifiers().keySet()
+        );
+        System.out.printf("Asking for %s sorted with %s", dataset, identifiersOrder);
+
+        DataStructure structure = dataset.getDataStructure();
         Order.Builder builder = Order.create(structure);
-        for (String id : createCommonIdentifiers().keySet()) {
-            builder.put(id, Order.Direction.ASC);
+        for (Map.Entry<Component, Order.Direction> order : requiredOrder.entrySet()) {
+            if (structure.containsValue(order.getKey())) {
+                String name = structure.getName(order.getKey());
+                identifiersOrder.remove(name);
+                builder.put(name, order.getValue());
+            }
+        }
+        for (String id : identifiersOrder) {
+            if (structure.containsKey(id))
+                builder.put(id, Order.Direction.ASC);
         }
         return dataset.getData(builder.build()).orElse(dataset.getData().sorted(builder.build()));
     }
 
     @Override
-    public Stream<DataPoint> getData() {
+    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Filtering filtering, Set<String> components) {
+
+        // TODO: Filtering
+        // TODO: Components
+
         // Optimization.
         if (datasets.size() == 1) {
-            return datasets.values().iterator().next().getData();
+            Dataset dataset = datasets.values().iterator().next();
+            return Optional.of(getSorted(dataset, requestedOrder));
         }
 
         Iterator<Dataset> iterator = datasets.values().iterator();
@@ -170,7 +191,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         // Create the resulting data points.
         final DataStructure joinStructure = getDataStructure();
         final DataStructure structure = dataset.getDataStructure();
-        Stream<JoinDataPoint> result = getSorted(dataset, structure)
+        Stream<JoinDataPoint> result = getSorted(dataset, requestedOrder)
                 .map(dataPoint -> {
                     return joinStructure.fromMap(
                             structure.asMap(dataPoint)
@@ -183,14 +204,19 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                     new JoinSpliterator<>(
                             getKeyComparator(),
                             result.spliterator(),
-                            getSorted(dataset, dataset.getDataStructure()).map(JoinDataPoint::new).spliterator(),
+                            getSorted(dataset, requestedOrder).map(JoinDataPoint::new).spliterator(),
                             getKeyExtractor(joinStructure),
                             getKeyExtractor(dataset.getDataStructure()),
                             getMerger(joinStructure, dataset.getDataStructure())
                     ), false
             );
         }
-        return result.map(tuple -> tuple);
+        return Optional.of(result.map(tuple -> tuple));
+    }
+
+    @Override
+    public Stream<DataPoint> getData() {
+        return getData(Order.createDefault(getDataStructure()), null, null).get();
     }
 
     private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor(final DataStructure structure) {

@@ -47,12 +47,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.*;
-import static no.ssb.vtl.test.ComponentConditions.*;
-import static org.assertj.core.api.Assertions.*;
+import static no.ssb.vtl.model.Component.Role;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VTLScriptEngineTest {
 
@@ -185,14 +186,6 @@ public class VTLScriptEngineTest {
                 "boolTest"
         );
 
-        assertThat(ds3.getDataStructure().values())
-                .haveAtLeastOne(componentWith("renamedId1", Role.IDENTIFIER))
-                .haveAtLeastOne(componentWith("id2", Role.IDENTIFIER))
-                .haveAtLeastOne(componentWith("m2", Role.MEASURE))
-                .haveAtLeastOne(componentWith("m1", Role.MEASURE))
-                .haveAtLeastOne(componentWith("ident", Role.MEASURE))
-                .haveAtLeastOne(componentWith("boolTest", Role.MEASURE));
-
         assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
@@ -275,6 +268,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
                         "id1", "1",
@@ -532,6 +526,7 @@ public class VTLScriptEngineTest {
                 "m2", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 tuple(
                         ds.wrap("id1", "1"),
@@ -617,6 +612,7 @@ public class VTLScriptEngineTest {
                 "m1", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 tuple(
                         ds.wrap("id1", "1"),

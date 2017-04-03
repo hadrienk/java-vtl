@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +110,7 @@ public class AbstractJoinOperationTest {
         );
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
         given(ds1.getData()).will(invocation -> {
             return IntStream.rangeClosed(0, 10).boxed().map(
                     integer -> ds1Struct.wrap(

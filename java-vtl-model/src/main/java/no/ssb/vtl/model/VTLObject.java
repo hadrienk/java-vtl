@@ -94,6 +94,13 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         } else {
             other = o;
         }
+
+        if (value == null) {
+            return (other == null) ? 0 : -1;
+        } else if (other == null) {
+            return 1;
+        }
+
         if (value instanceof Comparable && other.getClass() == value.getClass()) {
             return ((Comparable) value).compareTo(other);
         }
