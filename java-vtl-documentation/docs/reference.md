@@ -133,6 +133,9 @@ the unfolded Dataset does not recreate exactly the original Dataset
 folded := [population] {
     fold '0-14', '15-24', '25-64', '65+' to age, percent
 }
+unfolded := [folded] {
+    unfold age, percent to "0-14", "15-24"
+}
     </vtl-code>
     <vtl-dataset name="population">
 country[I,String],0-14[M,String],15-24[M,String],25-64[M,String],65+[M,String]
@@ -148,7 +151,7 @@ Sweden ,17.3%,12.2%,50.5%,20.0%
 
 <div vtl-example>
     <vtl-code>
-folded := [colors] {
+unfolded := [colors] {
     unfold color, wavelength to "indigo", "blue", "yellow"
 }
     </vtl-code>
@@ -275,6 +278,110 @@ NotNull , value
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
+## Hierarchy operator
+
+The hierarchy operator aggregates all measures of a dataset mapping one
+identifier with a hierarchy.
+
+For instance, consider the following hierarchy:
+
+- World
+    - Europe
+        - Eastern Europe
+            - Poland
+            - Ukraine
+            - Romania
+            - Hungary
+            - Slovakia
+            - ...
+        - Northern Europe
+            - Denmark
+            - Norway
+            - Sweden
+            - Iceland
+            - ...
+        - Southern Europe
+            - Italy
+            - Spain
+            - Portugal
+            - ...
+        - Western Europe
+            - Belgium
+            - France
+            - ...
+
+<div vtl-example>
+    <vtl-code>
+result := hierarchy(data, data.region, world, true)
+    </vtl-code>
+    <vtl-dataset name="data">
+year[I,String],region[I,String],pop[M,Integer]
+2000,Belgium,2000
+2000,Denmark,2000
+2000,France,2000
+2000,Hungary,2000
+2000,Iceland,2000
+2000,Italy,2000
+2000,Norway,2000
+2000,Poland,2000
+2000,Portugal,2000
+2000,Romania,2000
+2000,Slovakia,2000
+2000,Spain,2000
+2000,Sweden,2000
+2000,Ukraine,2000
+2002,Belgium,2002
+2002,Denmark,2002
+2002,France,2002
+2002,Hungary,2002
+2002,Iceland,2002
+2002,Italy,2002
+2002,Norway,2002
+2002,Poland,2002
+2002,Portugal,2002
+2002,Romania,2002
+2002,Slovakia,2002
+2002,Spain,2002
+2002,Sweden,2002
+2002,Ukraine,2002
+2004,Belgium,2004
+2004,Denmark,2004
+2004,France,2004
+2004,Hungary,2004
+2004,Iceland,2004
+2004,Italy,2004
+2004,Norway,2004
+2004,Poland,2004
+2004,Portugal,2004
+2004,Romania,2004
+2004,Slovakia,2004
+2004,Spain,2004
+2004,Sweden,2004
+2004,Ukraine,2004
+    </vtl-dataset>
+    <vtl-dataset name="world">
+from[I,String],to[I,String],sign[M,String]
+Western Europe,Europe,+
+Eastern Europe,Europe,+
+Southern Europe,Europe,+
+Northern Europe,Europe,+
+Belgium,Western Europe,+
+Denmark,Northern Europe,+
+France,Western Europe,+
+Hungary,Eastern Europe,+
+Iceland,Northern Europe,+
+Italy,Southern Europe,+
+Norway,Northern Europe,+
+Poland,Eastern Europe,+
+Portugal,Southern Europe,+
+Romania,Eastern Europe,+
+Slovakia,Eastern Europe,+
+Spain,Southern Europe,+
+Sweden,Northern Europe,+
+Ukraine,Eastern Europe,+
+        </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
 
 ## String operators
 

@@ -193,14 +193,6 @@ public class VTLScriptEngineTest {
                 .haveAtLeastOne(componentWith("ident", Role.MEASURE))
                 .haveAtLeastOne(componentWith("boolTest", Role.MEASURE));
 
-
-        assertThat(ds3.getData())
-                .flatExtracting(input -> input)
-                .extracting((vtlObject) -> vtlObject.getComponent().getName())
-                .containsExactly(
-                        "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
-                );
-
         assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
