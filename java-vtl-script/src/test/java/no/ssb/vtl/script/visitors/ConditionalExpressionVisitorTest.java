@@ -54,7 +54,7 @@ public class ConditionalExpressionVisitorTest {
     }
 
     @Test
-    public void visitNvlExpression() throws Exception {
+    public void visitNvlExpressionWithDouble() throws Exception {
         VTLParser parser = parse("nvl(m1, 0.0)");
 
         //no exception
@@ -62,7 +62,7 @@ public class ConditionalExpressionVisitorTest {
     }
 
     @Test
-    public void visitNvlExpression2() throws Exception {
+    public void visitNvlExpressionWithInt() throws Exception {
         VTLParser parser = parse("nvl(m1, 0)");
 
         //no exception
