@@ -22,12 +22,11 @@ package no.ssb.vtl.script.operations.join;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 public class CrossJoinOperation extends InnerJoinOperation {
 
@@ -40,11 +39,12 @@ public class CrossJoinOperation extends InnerJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+    protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
             final DataStructure leftStructure, final DataStructure rightStructure
     ) {
-        return (left, right, compare) -> {
+        return (left, right) -> {
             JoinDataPoint tuple = new JoinDataPoint(Collections.emptyList());
+            int compare = 0;
             if (compare == 0) {
                 tuple.addAll(left);
                 tuple.addAll(right);
@@ -53,7 +53,7 @@ public class CrossJoinOperation extends InnerJoinOperation {
             } else /* if (compare > 0) */ {
                 tuple.addAll(right);
             }
-            return Collections.singletonList(tuple);
+            return tuple;
         };
     }
 }

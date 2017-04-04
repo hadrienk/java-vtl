@@ -23,13 +23,12 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Represent an inner join on datasets.
@@ -45,12 +44,13 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+    protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
             final DataStructure leftStructure, final DataStructure rightStructure
     ) {
         final Set<Component> identifiers = getIdentifiers();
-        return (left, right, compare) -> {
-            if (compare != 0)
+        return (left, right) -> {
+
+            if (left == null || right == null)
                 return null;
 
             Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
@@ -59,7 +59,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                     leftMap.put(entry.getKey(), entry.getValue());
                 }
             }
-            return Collections.singletonList(left);
+            return left;
         };
     }
 

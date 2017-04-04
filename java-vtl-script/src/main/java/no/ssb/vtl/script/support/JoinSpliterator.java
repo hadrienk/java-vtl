@@ -1,8 +1,8 @@
 package no.ssb.vtl.script.support;
 
 import java.util.Comparator;
-import java.util.List;
 import java.util.Spliterator;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -13,7 +13,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     final private Spliterator<R> right;
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
-    final private TriFunction<L, R, Integer, List<O>> compute;
+    final private BiFunction<L, R, O> compute;
     private boolean hadLeft = false;
     private boolean hadRight = false;
     private Pair pair = null;
@@ -24,7 +24,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Spliterator<R> right,
             Function<L, K> leftKey,
             Function<R, K> rightKey,
-            TriFunction<L, R, Integer, List<O>> compute) {
+            BiFunction<L, R, O> compute) {
         this.comparator = comparator;
         this.right = right;
         this.left = left;
@@ -64,13 +64,9 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             );
         }
 
-        // TODO: Might be not needed to return a list.
-        List<? extends O> apply = compute.apply(pair.left, pair.right, compare);
-        if (apply != null) {
-            for (O o : apply) {
-                action.accept(o);
-            }
-        }
+        O apply = compute.apply(pair.left, pair.right);
+        if (apply != null)
+                action.accept(apply);
 
         if (compare == 0) {
             hadLeft = advanceLeft();

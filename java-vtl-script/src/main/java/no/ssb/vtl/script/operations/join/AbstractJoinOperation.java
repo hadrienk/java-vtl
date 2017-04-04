@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -191,7 +192,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return result;
     }
 
-    protected abstract JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
+    protected abstract BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
             final DataStructure leftStructure, final DataStructure rightStructure
     );
 
