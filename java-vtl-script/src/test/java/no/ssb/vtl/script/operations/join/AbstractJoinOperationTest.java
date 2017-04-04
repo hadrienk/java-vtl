@@ -2,7 +2,10 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.Component.Role;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
@@ -18,12 +21,73 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.guava.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
+
+    @Test
+    public void testCreateComponentTable() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure s1 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Integer.class)
+                .put("id2", Role.IDENTIFIER, Integer.class)
+                .put("id4", Role.IDENTIFIER, Integer.class)
+                .put("me1", Role.MEASURE, Integer.class)
+                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .build();
+        when(ds1.getDataStructure()).thenReturn(s1);
+
+        Dataset ds2 = mock(Dataset.class);
+        DataStructure s2 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Integer.class)
+                .put("id3", Role.IDENTIFIER, Integer.class)
+                .put("id4", Role.IDENTIFIER, Integer.class)
+                .put("me1", Role.MEASURE, Integer.class)
+                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .build();
+        when(ds2.getDataStructure()).thenReturn(s2);
+
+        Dataset ds3 = mock(Dataset.class);
+        DataStructure s3 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Integer.class)
+                .put("id4", Role.IDENTIFIER, Integer.class)
+                .put("me1", Role.MEASURE, Integer.class)
+                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .build();
+        when(ds3.getDataStructure()).thenReturn(s3);
+
+        Table<Component, Dataset, Component> componentTable = AbstractJoinOperation.createComponentTable(
+                Lists.newArrayList(ds1, ds3, ds2)
+        );
+
+        assertThat(componentTable).hasRowCount(10).hasColumnCount(3)
+
+                .containsCell(s1.get("id1"), ds1, s1.get("id1"))
+                .containsCell(s1.get("id1"), ds2, s2.get("id1"))
+                .containsCell(s1.get("id1"), ds3, s3.get("id1"))
+
+                .containsCell(s1.get("id2"), ds1, s1.get("id2"))
+
+                .containsCell(s2.get("id3"), ds2, s2.get("id3"))
+
+                .containsCell(s1.get("id4"), ds1, s1.get("id4"))
+                .containsCell(s1.get("id4"), ds2, s2.get("id4"))
+                .containsCell(s1.get("id4"), ds3, s3.get("id4"))
+
+                .containsCell(s1.get("me1"), ds1, s1.get("me1"))
+                .containsCell(s2.get("me1"), ds2, s2.get("me1"))
+                .containsCell(s3.get("me1"), ds3, s3.get("me1"))
+
+                .containsCell(s1.get("at1"), ds1, s1.get("at1"))
+                .containsCell(s2.get("at1"), ds2, s2.get("at1"))
+                .containsCell(s3.get("at1"), ds3, s3.get("at1"));
+
+    }
 
     /**
      * The specification states:
@@ -40,7 +104,7 @@ public class AbstractJoinOperationTest {
             Dataset ds2 = mock(Dataset.class);
 
             DataStructure structure = DataStructure.builder()
-                    .put("m", Component.Role.IDENTIFIER, Integer.class)
+                    .put("m", Role.IDENTIFIER, Integer.class)
                     .build();
 
             when(ds1.getDataStructure()).thenReturn(structure);
@@ -97,7 +161,7 @@ public class AbstractJoinOperationTest {
         Dataset ds1 = mock(Dataset.class);
 
         DataStructure ds1Struct = DataStructure.builder()
-                .put("m", Component.Role.IDENTIFIER, Integer.class)
+                .put("m", Role.IDENTIFIER, Integer.class)
                 .build();
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
@@ -130,11 +194,6 @@ public class AbstractJoinOperationTest {
         protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
                 final DataStructure leftStructure, final DataStructure rightStructure
         ) {
-            return null;
-        }
-
-        @Override
-        protected Comparator<List<VTLObject>> getKeyComparator() {
             return null;
         }
 

@@ -19,15 +19,18 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -48,24 +51,33 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.Order.Direction.ASC;
 
 /**
  * Abstract join operation.
+ * <p>
+ * Contains the base logic for inner join and outer join operations.
  */
 public abstract class AbstractJoinOperation extends AbstractDatasetOperation implements WorkingDataset {
 
     // The datasets the join operates on.
     private final Bindings joinScope;
+
     private final ImmutableMap<String, Dataset> datasets;
+
+    @Deprecated
     private final ImmutableSet<Component> identifiers;
+
+    private final Table<Component, Dataset, Component> identifierTable;
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(Lists.newArrayList(namedDatasets.values()));
+
         this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
 
         checkNotNull(identifiers);
@@ -78,8 +90,78 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         this.identifiers = createIdentifierSet(identifiers);
 
+        this.identifierTable = this.createIdentifierTable(this.datasets.values(), this.identifiers);
+
     }
 
+    @VisibleForTesting
+    static Table<Component, Dataset, Component> createComponentTable(Iterable<Dataset> datasets) {
+
+        Map<String, Component> seen = Maps.newHashMap();
+
+        ImmutableTable.Builder<Component, Dataset, Component> table;
+        table = ImmutableTable.builder();
+
+        for (Dataset dataset : datasets) {
+            DataStructure structure = dataset.getDataStructure();
+            for (Map.Entry<String, Component> entry : structure.entrySet()) {
+                Component component;
+
+                if (entry.getValue().isIdentifier())
+                    component = seen.computeIfAbsent(entry.getKey(), s -> entry.getValue());
+                else
+                    component = entry.getValue();
+
+                table.put(component, dataset, entry.getValue());
+            }
+        }
+
+        return table.build();
+    }
+
+    @VisibleForTesting
+    Table<Component, Dataset, Component> createIdentifierTable(Iterable<Dataset> datasets, Iterable<Component> identifiers) {
+
+        // Create a table that maps the identifier of the resulting dataset to the identifiers of the underlying
+        // datasets
+        //
+        // +------+-----------------+
+        // |  re  |     Dataset     |
+        // |  su  +-----+-----+-----+
+        // |  lt  | ds1 | dsN | ... |
+        // +------+-----+-----+-----+
+        // | ref  | ref | ref |     |
+        // +------+-----+-----+     +
+        // | ref  | ref | ref |     |
+        // +------+-----+-----+     +
+        // | ...  |                 |
+        // +------+-----+-----+-----+
+        //
+        //
+
+        ImmutableTable.Builder<Component, Dataset, Component> table = ImmutableTable.builder();
+        Set<Component> identifiersCopy = Sets.newHashSet(identifiers);
+
+        DataStructure structure = getDataStructure();
+
+        for (Iterator<Component> iterator = identifiersCopy.iterator(); iterator.hasNext(); ) {
+            Component identifier = iterator.next();
+            for (Dataset dataset : datasets) {
+                if (dataset.getDataStructure().containsValue(identifier)) {
+                    String name = dataset.getDataStructure().getName(identifier);
+                    table.put(structure.get(name), dataset, identifier);
+                    iterator.remove();
+                    break;
+                }
+            }
+        }
+
+        // TODO: Error message.
+        checkArgument(identifiersCopy.isEmpty());
+        return table.build();
+    }
+
+    @Deprecated
     private ImmutableSet<Component> createIdentifierSet(Set<Component> identifiers) {
         ImmutableMultimap<String, Component> superSet = createCommonIdentifiers();
 
@@ -113,6 +195,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             final DataStructure leftStructure, final DataStructure rightStructure
     );
 
+    @Deprecated
     protected ImmutableSet<Component> getIdentifiers() {
         return this.identifiers;
     }
@@ -150,11 +233,48 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     private Stream<DataPoint> getSorted(Dataset dataset, Order requiredOrder) {
+        Order.Builder builder = createOrder(dataset, requiredOrder);
+
+        return dataset.getData(builder.build()).orElse(dataset.getData().sorted(builder.build()));
+    }
+
+    private Comparator<Map<Component, VTLObject>> createKeyComparator(
+            Dataset leftDataset, Dataset rightDataset,
+            Order order
+    ) {
+
+        // Only check the values of the common identifiers.
+        HashSet<Component> commonComponents = Sets.newHashSet(createCommonIdentifiers().values());
+        final Map<Component, Order.Direction> commonOrder = Maps.filterKeys(order, commonComponents::contains);
+        return (left, right) -> {
+            int result;
+            for (Map.Entry<Component, Order.Direction> entry : commonOrder.entrySet()) {
+                Component component = entry.getKey();
+                Order.Direction direction = entry.getValue();
+
+                Map<Dataset, Component> map = identifierTable.row(component);
+                Component leftComponent = map.get(leftDataset);
+                Component rightComponent = map.get(rightDataset);
+
+                VTLObject leftValue = left.get(leftComponent);
+                VTLObject rightValue = right.get(rightComponent);
+
+                result = Order.NULLS_FIRST.compare(leftValue, rightValue);
+
+                if (result != 0)
+                    return direction == ASC ? result : -1 * result;
+
+            }
+            return 0;
+        };
+    }
+
+    private Order.Builder createOrder(Dataset dataset, Order requiredOrder) {
         // We are just making sure all common identifier are sorted.
         LinkedHashSet<String> identifiersOrder = Sets.newLinkedHashSet(
                 createCommonIdentifiers().keySet()
         );
-        System.out.printf("Asking for %s sorted with %s", dataset, identifiersOrder);
+        System.out.printf("Asking for %s sorted with %s\n", dataset, identifiersOrder);
 
         DataStructure structure = dataset.getDataStructure();
         Order.Builder builder = Order.create(structure);
@@ -169,7 +289,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             if (structure.containsKey(id))
                 builder.put(id, Order.Direction.ASC);
         }
-        return dataset.getData(builder.build()).orElse(dataset.getData().sorted(builder.build()));
+        return builder;
     }
 
     @Override
@@ -186,12 +306,13 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         Iterator<Dataset> iterator = datasets.values().iterator();
 
-        Dataset dataset = iterator.next();
+        Dataset left = iterator.next();
+        Dataset right = left;
 
         // Create the resulting data points.
         final DataStructure joinStructure = getDataStructure();
-        final DataStructure structure = dataset.getDataStructure();
-        Stream<JoinDataPoint> result = getSorted(dataset, requestedOrder)
+        final DataStructure structure = left.getDataStructure();
+        Stream<JoinDataPoint> result = getSorted(left, requestedOrder)
                 .map(dataPoint -> {
                     return joinStructure.fromMap(
                             structure.asMap(dataPoint)
@@ -199,15 +320,16 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 }).map(JoinDataPoint::new);
 
         while (iterator.hasNext()) {
-            dataset = iterator.next();
+            left = right;
+            right = iterator.next();
             result = StreamSupport.stream(
                     new JoinSpliterator<>(
-                            getKeyComparator(),
+                            createKeyComparator(left, right, requestedOrder),
                             result.spliterator(),
-                            getSorted(dataset, requestedOrder).map(JoinDataPoint::new).spliterator(),
-                            getKeyExtractor(joinStructure),
-                            getKeyExtractor(dataset.getDataStructure()),
-                            getMerger(joinStructure, dataset.getDataStructure())
+                            getSorted(right, requestedOrder).map(JoinDataPoint::new).spliterator(),
+                            left.getDataStructure()::asMap,
+                            right.getDataStructure()::asMap,
+                            getMerger(joinStructure, right.getDataStructure())
                     ), false
             );
         }
@@ -217,15 +339,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     @Override
     public Stream<DataPoint> getData() {
         return getData(Order.createDefault(getDataStructure()), null, null).get();
-    }
-
-    private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor(final DataStructure structure) {
-        // Filter by common ids.
-        final Set<Component> components = Sets.intersection(
-                getIdentifiers(),
-                Sets.newHashSet(structure.values())
-        );
-        return dataPoint -> Lists.newArrayList(Maps.filterKeys(structure.asMap(dataPoint), components::contains).values());
     }
 
     @Override
@@ -256,17 +369,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return joinScope;
     }
 
-    protected Comparator<List<VTLObject>> getKeyComparator() {
-        return (l, r) -> {
-            checkArgument(l.size() == r.size());
-            for (int i = 0; i < l.size(); i++) {
-                int res = l.get(i).compareTo(r.get(i));
-                if (res != 0)
-                    return res;
-            }
-            return 0;
-        };
-    }
 
     /**
      * Wrapper that helps with superset calculation.
