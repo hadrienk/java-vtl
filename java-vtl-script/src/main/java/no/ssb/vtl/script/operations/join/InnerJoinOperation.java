@@ -19,6 +19,10 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -45,21 +49,55 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
     @Override
     protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
-            final DataStructure leftStructure, final DataStructure rightStructure
+            final Dataset leftDataset, final Dataset rightDataset
     ) {
         final Set<Component> identifiers = getIdentifiers();
+
+        final DataStructure leftStructure = leftDataset.getDataStructure();
+        final DataStructure rightStructure = rightDataset.getDataStructure();
+        final DataStructure structure = getDataStructure();
+
+        // Create final collection to improve performances.
+        final Table<Component, Dataset, Component> tableMap = this.identifierTable2;
+
+        final Map<Component, Component> identifiersMapping = ImmutableBiMap.copyOf(
+                Maps.filterKeys(
+                        tableMap.column(leftDataset),
+                        identifiers::contains
+                )
+        ).inverse();
+
+        final Map<Component, Component> leftValuesMapping = ImmutableBiMap.copyOf(
+                Maps.filterKeys(
+                        tableMap.column(leftDataset),
+                        Predicates.not(identifiers::contains)
+                )
+        ).inverse();
+
+        final Map<Component, Component> rightValuesMapping = ImmutableBiMap.copyOf(
+                Maps.filterKeys(
+                        tableMap.column(rightDataset),
+                        Predicates.not(identifiers::contains)
+                )
+        ).inverse();
+
         return (left, right) -> {
 
             if (left == null || right == null)
                 return null;
 
-            Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
-            for (Map.Entry<Component, VTLObject> entry : rightStructure.asMap(right).entrySet()) {
-                if (!identifiers.contains(entry.getKey())) {
-                    leftMap.put(entry.getKey(), entry.getValue());
-                }
+            // Put the measures and attributes of the right data point
+            // in the left data point.
+
+            Map<Component, VTLObject> leftMap = structure.asMap(left);
+            Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
+            for (Map.Entry<Component, Component> mapping : rightValuesMapping.entrySet()) {
+                Component from = mapping.getKey();
+                Component to = mapping.getValue();
+                leftMap.put(to, rightMap.get(from));
             }
-            return left;
+
+            return new JoinDataPoint(left);
         };
     }
 

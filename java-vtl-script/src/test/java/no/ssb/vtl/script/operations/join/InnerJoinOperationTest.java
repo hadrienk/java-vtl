@@ -183,7 +183,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                             .map(rowNum ->
                                     tuple(
                                             structure.wrap("id1", Year.of(2000)),
-                                            structure.wrap("id2", "id"),
+                                            structure.wrap("id2", "id" + rowNum),
                                             structure.wrap("id3", Instant.ofEpochMilli(60 * 60 * 24 * 100)),
                                             structure.wrap("measure", "measure-" + j + "-" + rowNum),
                                             structure.wrap("attribute", "attribute-" + j + "-" + rowNum)
@@ -191,9 +191,12 @@ public class InnerJoinOperationTest extends RandomizedTest {
                             )
             );
             when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
+            new VTLPrintStream(System.out).println(dataset);
         }
 
         InnerJoinOperation result = new InnerJoinOperation(datasets);
+
+        new VTLPrintStream(System.out).println(result);
 
         assertThat(result.getDataStructure())
                 .describedAs("data structure of the inner join")

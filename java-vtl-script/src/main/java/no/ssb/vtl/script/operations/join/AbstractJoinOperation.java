@@ -52,6 +52,7 @@ import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -66,37 +67,61 @@ import static no.ssb.vtl.model.Order.Direction.ASC;
  */
 public abstract class AbstractJoinOperation extends AbstractDatasetOperation implements WorkingDataset {
 
+    protected final Table<Component, Dataset, Component> identifierTable;
+    final Table<Component, Dataset, Component> identifierTable2;
+
     // The datasets the join operates on.
     private final Bindings joinScope;
-
     private final ImmutableMap<String, Dataset> datasets;
-
     @Deprecated
     private final ImmutableSet<Component> identifiers;
 
-    private final Table<Component, Dataset, Component> identifierTable;
-
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
-        super(Lists.newArrayList(namedDatasets.values()));
+        super(Lists.newArrayList(checkNotNull(namedDatasets).values()));
 
-        this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
-
-        checkNotNull(identifiers);
         checkArgument(
                 !namedDatasets.isEmpty(),
                 "join operation impossible on empty dataset list"
         );
+        this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
+
+        checkNotNull(identifiers);
 
         this.joinScope = new JoinScopeBindings(this.datasets);
 
         this.identifiers = createIdentifierSet(identifiers);
 
         this.identifierTable = this.createIdentifierTable(this.datasets.values(), this.identifiers);
-
+        this.identifierTable2 = createComponentTable(this.datasets.values(), this.identifiers::contains);
     }
 
+
+    /**
+     * Create a table that maps the components of the resulting dataset to the component of the underlying
+     * datasets.
+     * <p>
+     * The components that are
+     * <p>
+     * <pre>
+     * +------+-----------------+
+     * |  re  |     Dataset     |
+     * |  su  +-----+-----+-----+
+     * |  lt  | ds1 | dsN | ... |
+     * +------+-----+-----+-----+
+     * | ref  | ref | ref |     |
+     * +------+-----+-----+     +
+     * | ref  | ref | ref |     |
+     * +------+-----+-----+     +
+     * | ...  |                 |
+     * +------+-----+-----+-----+
+     * </pre>
+     *
+     * @param datasets
+     * @param isIdentifier
+     * @return
+     */
     @VisibleForTesting
-    static Table<Component, Dataset, Component> createComponentTable(Iterable<Dataset> datasets) {
+    static Table<Component, Dataset, Component> createComponentTable(Iterable<Dataset> datasets, Predicate<Component> isIdentifier) {
 
         Map<String, Component> seen = Maps.newHashMap();
 
@@ -108,7 +133,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             for (Map.Entry<String, Component> entry : structure.entrySet()) {
                 Component component;
 
-                if (entry.getValue().isIdentifier())
+                if (isIdentifier.test(entry.getValue()))
                     component = seen.computeIfAbsent(entry.getKey(), s -> entry.getValue());
                 else
                     component = entry.getValue();
@@ -121,9 +146,14 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     @VisibleForTesting
+    static Table<Component, Dataset, Component> createComponentTable(Iterable<Dataset> datasets) {
+        return createComponentTable(datasets, Component::isIdentifier);
+    }
+
+    @VisibleForTesting
     Table<Component, Dataset, Component> createIdentifierTable(Iterable<Dataset> datasets, Iterable<Component> identifiers) {
 
-        // Create a table that maps the identifier of the resulting dataset to the identifiers of the underlying
+        // Create a table that maps the components of the resulting dataset to the component of the underlying
         // datasets
         //
         // +------+-----------------+
@@ -193,7 +223,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     protected abstract BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
-            final DataStructure leftStructure, final DataStructure rightStructure
+            Dataset leftDataset, Dataset rightDataset
     );
 
     @Deprecated
@@ -279,18 +309,24 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         DataStructure structure = dataset.getDataStructure();
         Order.Builder builder = Order.create(structure);
-        for (Map.Entry<Component, Order.Direction> order : requiredOrder.entrySet()) {
-            if (structure.containsValue(order.getKey())) {
-                String name = structure.getName(order.getKey());
-                identifiersOrder.remove(name);
-                builder.put(name, order.getValue());
-            }
-        }
-        for (String id : identifiersOrder) {
-            if (structure.containsKey(id))
-                builder.put(id, Order.Direction.ASC);
-        }
+
+        for (String id : identifiersOrder)
+            builder.put(id, Order.Direction.ASC); // TODO: Can fail.
+
         return builder;
+
+//        for (Map.Entry<Component, Order.Direction> order : requiredOrder.entrySet()) {
+//            if (structure.containsValue(order.getKey())) {
+//                String name = structure.getName(order.getKey());
+//                identifiersOrder.remove(name);
+//                builder.put(name, order.getValue());
+//            }
+//        }
+//        for (String id : identifiersOrder) {
+//            if (structure.containsKey(id))
+//                builder.put(id, Order.Direction.ASC);
+//        }
+        //return builder;
     }
 
     @Override
@@ -330,7 +366,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                             getSorted(right, requestedOrder).map(JoinDataPoint::new).spliterator(),
                             left.getDataStructure()::asMap,
                             right.getDataStructure()::asMap,
-                            getMerger(joinStructure, right.getDataStructure())
+                            getMerger(left, right)
                     ), false
             );
         }

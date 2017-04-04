@@ -1,22 +1,29 @@
 package no.ssb.vtl.script.support;
 
+import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     final private Comparator<K> comparator;
-    final private Spliterator<L> left;
-    final private Spliterator<R> right;
+    final private Spliterator<L> leftSpliterator;
+    final private Spliterator<R> rightSpliterator;
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
     final private BiFunction<L, R, O> compute;
+
     private boolean hadLeft = false;
     private boolean hadRight = false;
-    private Pair pair = null;
+    private Cursor cursor = null;
 
     public JoinSpliterator(
             Comparator<K> comparator,
@@ -26,58 +33,92 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Function<R, K> rightKey,
             BiFunction<L, R, O> compute) {
         this.comparator = comparator;
-        this.right = right;
-        this.left = left;
+        this.rightSpliterator = right;
+        this.leftSpliterator = left;
         this.leftKey = leftKey;
         this.rightKey = rightKey;
         this.compute = compute;
     }
 
-    boolean advanceLeft() {
-        return left.tryAdvance(v -> pair.left = v);
-    }
-
-    boolean advanceRight() {
-        return right.tryAdvance(v -> pair.right = v);
-    }
-
     @Override
     public boolean tryAdvance(Consumer<? super O> action) {
 
-        if (pair == null) {
-            pair = new Pair();
-            hadLeft = advanceLeft();
-            hadRight = advanceRight();
+        if (cursor == null) {
+            cursor = new Cursor();
+            cursor.leftBuf.next();
+            cursor.rightBuf.next();
         }
 
-        if (!hadLeft && !hadRight)
+        Buffer<L> lb = cursor.leftBuf;
+        Buffer<R> rb = cursor.rightBuf;
+
+        if (!lb.hasMore() || !rb.hasMore()) {
+
+            // Handle end conditions.
+            while (!lb.isEmpty() && lb.next())
+                output(lb.pop(), null, action);
+            while (!rb.isEmpty() && rb.next())
+                output(null, rb.pop(), action);
             return false;
-
-        int compare = 0;
-        if (!hadLeft && hadRight) {
-            compare = 1;
-        } else if (hadLeft && !hadRight) {
-            compare = -1;
-        } else {
-            compare = comparator.compare(
-                    leftKey.apply(pair.left), rightKey.apply(pair.right)
-            );
         }
 
-        O apply = compute.apply(pair.left, pair.right);
-        if (apply != null)
-                action.accept(apply);
+        if (lb.isEmpty() && lb.next())
+            return rb.hasMore();
+
+        if (rb.isEmpty() && rb.next())
+            return rb.hasMore();
+
+        int compare = compare(lb.current(), rb.current());
+
+        // TODO: Use a consumer in the merge function?
 
         if (compare == 0) {
-            hadLeft = advanceLeft();
-            hadRight = advanceRight();
-        } else if (compare < 0) {
-            hadLeft = advanceLeft();
-        } else /* if (compare > 0) */ {
-            hadRight = advanceRight();
+
+            // Replay left and right for outer joins.
+            while (lb.first() != lb.current())
+                output(lb.pop(), null, action);
+            while (rb.first() != rb.current())
+                output(null, rb.pop(), action);
+
+
+            List<L> left = Lists.newArrayList(lb.pop());
+            List<R> right = Lists.newArrayList(rb.pop());
+
+                /* Check if the next tuples are identical */
+
+            while (lb.next() && compare(lb.current(), right.get(0)) == 0)
+                left.add(lb.pop());
+
+            while (rb.next() && compare(left.get(0), rb.current()) == 0)
+                right.add(rb.pop());
+
+            for (int i = 0; i < left.size(); i++) {
+                for (int j = 0; j < right.size(); j++) {
+                    output(left.get(i), right.get(j), action);
+                }
+            }
+
+        } else {
+            if (compare > 0) {
+                // left > right (right is behind)
+                rb.next();
+            } else {
+                // left < right (left is behind)
+                lb.next();
+            }
         }
         return true;
 
+    }
+
+    private int compare(L left, R right) {
+        return comparator.compare(leftKey.apply(left), rightKey.apply(right));
+    }
+
+    private void output(L left, R right, Consumer<? super O> destination) {
+        O apply = compute.apply(left, right);
+        if (apply != null)
+            destination.accept(apply);
     }
 
     @Override
@@ -87,7 +128,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     @Override
     public long estimateSize() {
-        return Long.max(left.estimateSize(), right.estimateSize());
+        return Long.max(leftSpliterator.estimateSize(), rightSpliterator.estimateSize());
     }
 
     @Override
@@ -95,19 +136,87 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
         return 0;
     }
 
-    @FunctionalInterface
-    public interface TriFunction<A, B, C, R> {
+    private class Buffer<T> extends ArrayList<T> {
 
-        R apply(A a, B b, C c);
+        private final Spliterator<T> source;
+        private boolean end = false;
+        private int pos = -1;
+        private int mark = -1;
 
-        default <V> TriFunction<A, B, C, V> andThen(
-                Function<? super R, ? extends V> after) {
-            return (A a, B b, C c) -> after.apply(apply(a, b, c));
+        private Buffer(Spliterator<T> source) {
+            this.source = checkNotNull(source);
+        }
+
+        public void reset() {
+            if (mark >= 0)
+                pos = mark;
+        }
+
+        public void mark() {
+            mark = pos;
+        }
+
+        public boolean hasMore() {
+            return !end;
+        }
+
+        public boolean next() {
+            if (++pos >= size()) {
+                end = !source.tryAdvance(this::add);
+                if (end)
+                    pos--;
+            }
+            return !end || !isEmpty();
+        }
+
+        public T current() {
+            if (pos < 0 || size() <= pos)
+                return null;
+            return get(pos);
+        }
+
+        public T first() {
+            if (isEmpty())
+                return null;
+            if (mark < 0)
+                return get(0);
+            return get(mark);
+        }
+
+        public T remove() {
+            if (isEmpty())
+                return null;
+            return remove(pos);
+
+        }
+
+        public T pop() {
+            if (isEmpty())
+                return null;
+            if (mark < 0)
+                return remove(0);
+            return remove(mark);
+        }
+
+        @Override
+        public T remove(int index) {
+            T removed = super.remove(index);
+            if (index <= pos)
+                pos--;
+            if (index < mark)
+                mark--;
+            return removed;
+        }
+
+        public T last() {
+            if (isEmpty())
+                return null;
+            return get(size() - 1);
         }
     }
 
-    private class Pair {
-        L left;
-        R right;
+    private class Cursor {
+        Buffer<L> leftBuf = new Buffer<>(leftSpliterator);
+        Buffer<R> rightBuf = new Buffer<>(rightSpliterator);
     }
 }

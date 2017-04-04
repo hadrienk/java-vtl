@@ -19,7 +19,7 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -44,51 +44,35 @@ public class OuterJoinOperation extends AbstractJoinOperation {
 
     @Override
     protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
-            final DataStructure leftStructure, final DataStructure rightStructure
+            final Dataset leftDataset, final Dataset rightDataset
     ) {
-        final Map<Component, Component> leftToRightIds = Maps.newHashMap();
-        final Map<Component, Component> rightToLeftIds = Maps.newHashMap();
-        for (Component component : getIdentifiers()) {
-            if (leftStructure.containsValue(component)) {
-                leftToRightIds.put(component, rightStructure.get(leftStructure.getName(component)));
-            }
-            if (rightStructure.containsValue(component)) {
-                rightToLeftIds.put(component, leftStructure.get(rightStructure.getName(component)));
-            }
-        }
+
+        final Table<Component, Dataset, Component> tableMap = this.identifierTable2;
+        final DataStructure structure = getDataStructure();
+        final DataStructure rightStructure = rightDataset.getDataStructure();
+
         return (left, right) -> {
 
-            // Need to operate on a copy
-            DataPoint result = leftStructure.wrap();
-            Map<Component, VTLObject> resultMap = leftStructure.asMap(result);
-
-            Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
-            Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
-
-            int compare = 0;
-            // TODO: Check if left is null.
-            if (compare <= 0) {
-                resultMap.putAll(leftMap);
+            DataPoint result;
+            if (left != null) {
+                result = DataPoint.create(left);
+            } else {
+                result = DataPoint.create(structure.size());
             }
-            if (compare > 0) {
-                for (Map.Entry<Component, VTLObject> entry : rightMap.entrySet()) {
-                    resultMap.put(rightToLeftIds.getOrDefault(entry.getKey(), entry.getKey()), entry.getValue());
-                }
-            }
-            if (compare == 0) {
-                for (Map.Entry<Component, VTLObject> entry : rightMap.entrySet()) {
-                    if (!rightToLeftIds.containsKey(entry.getKey())) {
-                        resultMap.put(entry.getKey(), entry.getValue());
-                    }
+
+            if (right != null) {
+                Map<Component, VTLObject> leftMap = structure.asMap(result);
+                Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
+                for (Map.Entry<Component, Component> mapping : tableMap.column(rightDataset).entrySet()) {
+                    Component to = mapping.getKey();
+                    Component from = mapping.getValue();
+                    //if (left != null && !identifiers.contains(to))
+                    leftMap.put(to, rightMap.get(from));
                 }
             }
 
             return new JoinDataPoint(result);
         };
-    }
-
-    private VTLObject createNull(final VTLObject point) {
-        return VTLObject.of(point.getComponent(), null);
     }
 
     @Override

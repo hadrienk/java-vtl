@@ -19,16 +19,24 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.collect.Streams;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
-public class CrossJoinOperation extends InnerJoinOperation {
+/**
+ * TODO(hk): Finish this.
+ */
+public class CrossJoinOperation extends OuterJoinOperation {
 
     CrossJoinOperation(Map<String, Dataset> namedDatasets) {
         super(namedDatasets, Collections.emptySet());
@@ -39,21 +47,40 @@ public class CrossJoinOperation extends InnerJoinOperation {
     }
 
     @Override
-    protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
-            final DataStructure leftStructure, final DataStructure rightStructure
-    ) {
-        return (left, right) -> {
-            JoinDataPoint tuple = new JoinDataPoint(Collections.emptyList());
-            int compare = 0;
-            if (compare == 0) {
-                tuple.addAll(left);
-                tuple.addAll(right);
-            } else if (compare < 0) {
-                tuple.addAll(left);
-            } else /* if (compare > 0) */ {
-                tuple.addAll(right);
-            }
-            return tuple;
-        };
+    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Filtering filtering, Set<String> components) {
+        Iterator<Dataset> iterator = getChildren().iterator();
+
+        // Optimization
+        if (getChildren().size() == 1)
+            return Optional.of(order(requestedOrder, filtering, components, iterator.next()));
+
+        Dataset left = iterator.next();
+        Dataset right = left;
+
+        // Create the resulting data points.
+        final DataStructure joinStructure = getDataStructure();
+        final DataStructure structure = left.getDataStructure();
+        Stream<JoinDataPoint> result = order(requestedOrder, filtering, components, left)
+                .map(dataPoint -> joinStructure.fromMap(
+                        structure.asMap(dataPoint)
+                )).map(JoinDataPoint::new);
+
+        while (iterator.hasNext()) {
+            left = right;
+            right = iterator.next();
+            result = Streams.zip(
+                    result,
+                    order(requestedOrder, filtering, components, right)
+                            .map(JoinDataPoint::new),
+                    getMerger(left, right)
+            );
+        }
+
+        return Optional.of(result.map(jdp -> jdp));
+    }
+
+    private Stream<DataPoint> order(Order requestedOrder, Filtering filtering, Set<String> components, Dataset first) {
+        return first.getData(requestedOrder, filtering, components).orElse(
+                first.getData().sorted(requestedOrder).filter(filtering));
     }
 }

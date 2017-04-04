@@ -6,13 +6,17 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -27,6 +31,57 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
+
+    @Test
+    public void testSortMerge() throws Exception {
+
+        ArrayList<Integer> leftData = Lists.newArrayList(
+                1, 3, 3, 3, 3, 4, 5, 6, 8, 9, 9, 9, 10
+        );
+
+        ArrayList<Integer> rightData = Lists.newArrayList(
+                1, 1, 1, 2, 3, 5, 7, 7, 8, 8, 9, 9, 9, 10
+        );
+
+        Dataset left = mock(Dataset.class);
+        when(left.getDataStructure()).thenReturn(
+                DataStructure.builder()
+                        .put("id", Role.IDENTIFIER, Integer.class)
+                        .put("m", Role.MEASURE, String.class)
+                        .build()
+        );
+        when(left.getData()).then(o -> leftData.stream()
+                .map(integer -> Lists.newArrayList(VTLObject.of(integer), VTLObject.of("left")))
+                .map(DataPoint::create)
+        );
+        when(left.getData(any(Order.class))).thenReturn(Optional.empty());
+
+        Dataset right = mock(Dataset.class);
+        when(right.getDataStructure()).thenReturn(
+                DataStructure.builder()
+                        .put("id", Role.IDENTIFIER, Integer.class)
+                        .put("m", Role.MEASURE, String.class)
+                        .build()
+        );
+        when(right.getData()).then(o -> rightData.stream()
+                .map(integer -> Lists.newArrayList(VTLObject.of(integer), VTLObject.of("right")))
+                .map(DataPoint::create)
+        );
+        when(right.getData(any(Order.class))).thenReturn(Optional.empty());
+
+        TestAbstractJoinOperation result = new TestAbstractJoinOperation(ImmutableMap.of("left", left, "right", right));
+        result.getData().forEach(System.out::println);
+
+        System.out.println("left:");
+        result.leftMiss.forEach(System.out::println);
+        System.out.println("right:");
+        result.rightMiss.forEach(System.out::println);
+        System.out.println("match:");
+        result.hits.forEach(System.out::println);
+        //assertThat(result.leftMiss).isEmpty();
+        //assertThat(result.rightMiss).isEmpty();
+
+    }
 
     @Test
     public void testCreateComponentTable() throws Exception {
@@ -88,13 +143,6 @@ public class AbstractJoinOperationTest {
 
     }
 
-    /**
-     * The specification states:
-     * "A Dataset ds should appear only once in the list of Datasets"
-     * <p>
-     * This is preventing self joins. Which are very useful. This
-     * test is therefore not asserting the specified behaviour.
-     */
     @Test
     public void testSameDatasetShouldFail() throws Exception {
         SoftAssertions softly = new SoftAssertions();
@@ -131,9 +179,7 @@ public class AbstractJoinOperationTest {
             softly.assertThat(ex)
                     .as("exception thrown when using same dataset" +
                             " more than once in a join operation")
-                    // TODO: Reevaluate after the 1.1 release of the spec.
-                    //.isNotNull();
-                    .isNull();
+                    .isNotNull();
 
         } finally {
             softly.assertAll();
@@ -185,13 +231,28 @@ public class AbstractJoinOperationTest {
 
     private static class TestAbstractJoinOperation extends AbstractJoinOperation {
 
+        List<List<JoinDataPoint>> leftMiss = Lists.newArrayList();
+        List<List<JoinDataPoint>> rightMiss = Lists.newArrayList();
+        List<List<JoinDataPoint>> hits = Lists.newArrayList();
+
+
         public TestAbstractJoinOperation(Map<String, Dataset> namedDatasets) {
             super(namedDatasets, Collections.emptySet());
         }
 
         @Override
-        protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(DataStructure leftStructure, DataStructure rightStructure) {
-            return null;
+        protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
+            return (left, right) -> {
+                if (left != null && right != null) {
+                    hits.add(Lists.newArrayList(left, right));
+                } else {
+                    if (left != null)
+                        leftMiss.add(Lists.newArrayList(left, null));
+                    if (right != null)
+                        rightMiss.add(Lists.newArrayList(null, right));
+                }
+                return null;
+            };
         }
 
         @Override
