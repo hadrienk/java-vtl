@@ -305,7 +305,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         LinkedHashSet<String> identifiersOrder = Sets.newLinkedHashSet(
                 createCommonIdentifiers().keySet()
         );
-        System.out.printf("Asking for %s sorted with %s\n", dataset, identifiersOrder);
 
         DataStructure structure = dataset.getDataStructure();
         Order.Builder builder = Order.create(structure);
