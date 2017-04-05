@@ -21,8 +21,6 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     final private Function<R, K> rightKey;
     final private BiFunction<L, R, O> compute;
 
-    private boolean hadLeft = false;
-    private boolean hadRight = false;
     private Cursor cursor = null;
 
     public JoinSpliterator(
@@ -141,19 +139,9 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
         private final Spliterator<T> source;
         private boolean end = false;
         private int pos = -1;
-        private int mark = -1;
 
         private Buffer(Spliterator<T> source) {
             this.source = checkNotNull(source);
-        }
-
-        public void reset() {
-            if (mark >= 0)
-                pos = mark;
-        }
-
-        public void mark() {
-            mark = pos;
         }
 
         public boolean hasMore() {
@@ -178,24 +166,13 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
         public T first() {
             if (isEmpty())
                 return null;
-            if (mark < 0)
-                return get(0);
-            return get(mark);
-        }
-
-        public T remove() {
-            if (isEmpty())
-                return null;
-            return remove(pos);
-
+            return get(0);
         }
 
         public T pop() {
             if (isEmpty())
                 return null;
-            if (mark < 0)
-                return remove(0);
-            return remove(mark);
+            return remove(0);
         }
 
         @Override
@@ -203,16 +180,9 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             T removed = super.remove(index);
             if (index <= pos)
                 pos--;
-            if (index < mark)
-                mark--;
             return removed;
         }
 
-        public T last() {
-            if (isEmpty())
-                return null;
-            return get(size() - 1);
-        }
     }
 
     private class Cursor {
