@@ -21,7 +21,7 @@ public class ParamVisitor extends VTLBaseVisitor<Object> {
         String constant = ctx.getText();
         if (ctx.BOOLEAN_CONSTANT() != null) {
             return Boolean.valueOf(constant);
-        } else if (ctx.DOUBLE_CONSTANT() != null) {
+        } else if (ctx.FLOAT_CONSTANT() != null) {
             return Double.valueOf(constant);
         } else if (ctx.INTEGER_CONSTANT() != null) {
             return Long.valueOf(constant);
