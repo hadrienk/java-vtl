@@ -160,8 +160,8 @@ public class AbstractJoinOperationTest {
                         Arrays.asList("left 5", "right 5"),
 
                         Arrays.asList("left 7", "right 6"),
+                        Arrays.asList("left 9", "right 9"),  // TODO: Those two sometimes swap?
                         Arrays.asList("left 9", "right 10"), // ???
-                        Arrays.asList("left 9", "right 9"),  // ???
                         Arrays.asList("left 10", "right 11"),
                         Arrays.asList("left 10", "right 12"),
                         Arrays.asList("left 10", "right 13"),

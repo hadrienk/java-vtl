@@ -52,13 +52,10 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             initialized = true;
         }
 
-        if (!lb.hasMore() || !rb.hasMore()) {
-
-            // Handle end conditions.
-            while (!lb.isEmpty() && lb.next())
-                output(lb.pop(), null, action);
-            while (!rb.isEmpty() && rb.next())
-                output(null, rb.pop(), action);
+        // one buffer reached the end.
+        if (!(lb.hasMore() && rb.hasMore())) {
+            // empty both buffers
+            outputAll(action);
             return false;
         }
 
@@ -68,47 +65,54 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
         if (rb.isEmpty() && rb.next())
             return rb.hasMore();
 
-        int compare = compare(lb.current(), rb.current());
-
         // TODO: Use a consumer in the merge function?
 
-        if (compare == 0) {
-
-            // Replay left and right for outer joins.
-            while (lb.first() != lb.current())
-                output(lb.pop(), null, action);
-            while (rb.first() != rb.current())
-                output(null, rb.pop(), action);
-
-
-            List<L> left = Lists.newArrayList(lb.pop());
-            List<R> right = Lists.newArrayList(rb.pop());
-
-                /* Check if the next tuples are identical */
-
-            while (lb.next() && compare(lb.current(), right.get(0)) == 0)
-                left.add(lb.pop());
-
-            while (rb.next() && compare(left.get(0), rb.current()) == 0)
-                right.add(rb.pop());
-
-            for (int i = 0; i < left.size(); i++) {
-                for (int j = 0; j < right.size(); j++) {
-                    output(left.get(i), right.get(j), action);
-                }
-            }
-
+        int compare = compare(lb.current(), rb.current());
+        if (0 < compare) {
+            rb.next(); // left > right (right is behind)
+        } else if (compare < 0) {
+            lb.next(); // left < right (left is behind)
         } else {
-            if (compare > 0) {
-                // left > right (right is behind)
-                rb.next();
-            } else {
-                // left < right (left is behind)
-                lb.next();
-            }
+            outputMiss(action); // output left(s) and right(s) we missed
+            outputHit(action); // output hit(s)
         }
+
         return true;
 
+    }
+
+    private void outputAll(Consumer<? super O> action) {
+        while (!lb.isEmpty() && lb.next())
+            output(lb.pop(), null, action);
+        while (!rb.isEmpty() && rb.next())
+            output(null, rb.pop(), action);
+    }
+
+    private void outputHit(Consumer<? super O> action) {
+
+        List<L> left = Lists.newArrayList(lb.pop());
+        List<R> right = Lists.newArrayList(rb.pop());
+
+        // check if the next tuples are identical
+        while (lb.next() && compare(lb.current(), right.get(0)) == 0)
+            left.add(lb.pop());
+
+        while (rb.next() && compare(left.get(0), rb.current()) == 0)
+            right.add(rb.pop());
+
+        // cartesian product
+        for (L l : left) {
+            for (R r : right) {
+                output(l, r, action);
+            }
+        }
+    }
+
+    private void outputMiss(Consumer<? super O> action) {
+        while (lb.first() != lb.current())
+            output(lb.pop(), null, action);
+        while (rb.first() != rb.current())
+            output(null, rb.pop(), action);
     }
 
     private int compare(L left, R right) {
@@ -123,6 +127,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     @Override
     public Spliterator<O> trySplit() {
+        // prevent split
         return null;
     }
 
@@ -137,6 +142,8 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     }
 
     private class Buffer<T> extends ArrayList<T> {
+
+        private static final long serialVersionUID = -1744403577043659072L;
 
         private final Spliterator<T> source;
         private boolean end = false;

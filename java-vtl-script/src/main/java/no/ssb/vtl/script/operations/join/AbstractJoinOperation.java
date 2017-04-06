@@ -190,8 +190,10 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 continue;
 
             Component component = rowMapping.get(dataset);
-            Order.Direction direction = orderEntry.getValue();
-            adjustedOrder.put(component, direction);
+            if (component.isIdentifier()) {
+                Order.Direction direction = orderEntry.getValue();
+                adjustedOrder.put(component, direction);
+            }
         }
         //Order.Builder minimalOrder = Order.createCopyOf(order);
         return dataset.getData(adjustedOrder.build()).orElse(dataset.getData().sorted(adjustedOrder.build()));
@@ -319,17 +321,15 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     @VisibleForTesting
     Optional<Order> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Order requestedOrder) {
 
-        Set<Component> commonIt = Sets.newHashSet(firstComponents);
+        Set<Component> identifiers = Sets.newHashSet(firstComponents);
 
         Order.Builder compatibleOrder = Order.create(structure);
         for (Map.Entry<Component, Order.Direction> order : requestedOrder.entrySet()) {
             Component key = order.getKey();
             Order.Direction direction = order.getValue();
 
-            if (!commonIt.isEmpty()) {
-                if (!commonIt.remove(key))
-                    return Optional.empty();
-            }
+            if (!identifiers.isEmpty() && !identifiers.remove(key))
+                return Optional.empty();
 
             compatibleOrder.put(key, direction);
         }
