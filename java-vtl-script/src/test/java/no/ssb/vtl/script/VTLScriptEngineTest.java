@@ -197,7 +197,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "1", 10L, 40, 0, true
+                        "1", "1", 10L, 40, 0L, true
                 );
     }
 
@@ -213,9 +213,9 @@ public class VTLScriptEngineTest {
         );
         when(ds1.getDataStructure()).thenReturn(ds);
         when(ds1.getData()).then(invocation -> Stream.of(
-                Arrays.asList("1", 101, 102, 103),
-                Arrays.asList("2", 201, 202, 203),
-                Arrays.asList("3", 301, 302, 303)
+                Arrays.asList("1", 101L, 102L, 103L),
+                Arrays.asList("2", 201L, 202L, 203L),
+                Arrays.asList("3", 301L, 302L, 303L)
         ).map(list -> {
             Iterator<?> it = list.iterator();
             List<VTLObject> points = Lists.newArrayList();
@@ -246,20 +246,20 @@ public class VTLScriptEngineTest {
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "m1", 101,
-                        "1", "m2", 102,
-                        "1", "m3", 103,
-                        "1", "total", 101 + 102 + 103,
+                        "1", "m1", 101L,
+                        "1", "m2", 102L,
+                        "1", "m3", 103L,
+                        "1", "total", 101L + 102L + 103L,
 
-                        "2", "m1", 201,
-                        "2", "m2", 202,
-                        "2", "m3", 203,
-                        "2", "total", 201 + 202 + 203,
+                        "2", "m1", 201L,
+                        "2", "m2", 202L,
+                        "2", "m3", 203L,
+                        "2", "total", 201L + 202L + 203L,
 
-                        "3", "m1", 301,
-                        "3", "m2", 302,
-                        "3", "m3", 303,
-                        "3", "total", 301 + 302 + 303
+                        "3", "m1", 301L,
+                        "3", "m2", 302L,
+                        "3", "m3", 303L,
+                        "3", "total", 301L + 302L + 303L
                 );
     }
 

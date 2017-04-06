@@ -370,7 +370,6 @@ public class HierarchyOperationTest extends RandomizedTest {
                 .put("id2", IDENTIFIER, String.class)
                 .put("m1", MEASURE, Long.class)
                 .put("m2", MEASURE, Double.class)
-                .put("m3", MEASURE, Float.class)
                 .put("m4", MEASURE, String.class)
                 .build();
 

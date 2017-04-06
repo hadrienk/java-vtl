@@ -15,8 +15,6 @@ import static com.google.common.base.Preconditions.*;
 public class SumHierarchyAccumulator implements HierarchyAccumulator {
 
     private static Map<Class<?>, Object> TYPEMAP = ImmutableMap.<Class<?>, Object>builder()
-            .put(Integer.class, 0)
-            .put(Float.class, 0F)
             .put(Long.class, 0L)
             .put(Double.class, 0D)
             .build();
