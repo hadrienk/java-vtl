@@ -111,9 +111,9 @@ public class AbstractJoinOperationTest {
         given(ds1.getDataStructure()).willReturn(ds1Struct);
         given(ds1.getData()).will(invocation -> {
             return LongStream.rangeClosed(0, 10).boxed().map(
-                    integer -> ds1Struct.wrap(
+                    aLong -> ds1Struct.wrap(
                             ImmutableMap.of(
-                                    "m", integer
+                                    "m", aLong
                             )
                     )
             );

@@ -143,7 +143,7 @@ public class JoinCalcClauseVisitorTest {
 
     }
 
-    private VTLObject createNumericalDataPoint(Integer value) {
+    private VTLObject createNumericalDataPoint(Long value) {
         DataStructure structure = DataStructure.of(
                 (o, aClass) -> o,
                 "value",
