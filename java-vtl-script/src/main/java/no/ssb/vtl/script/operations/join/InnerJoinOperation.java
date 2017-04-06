@@ -54,26 +54,11 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     ) {
         final Set<Component> identifiers = getIdentifiers();
 
-        final DataStructure leftStructure = leftDataset.getDataStructure();
         final DataStructure rightStructure = rightDataset.getDataStructure();
         final DataStructure structure = getDataStructure();
 
         // Create final collection to improve performances.
         final Table<Component, Dataset, Component> tableMap = this.identifierTable2;
-
-        final Map<Component, Component> identifiersMapping = ImmutableBiMap.copyOf(
-                Maps.filterKeys(
-                        tableMap.column(leftDataset),
-                        identifiers::contains
-                )
-        ).inverse();
-
-        final Map<Component, Component> leftValuesMapping = ImmutableBiMap.copyOf(
-                Maps.filterKeys(
-                        tableMap.column(leftDataset),
-                        Predicates.not(identifiers::contains)
-                )
-        ).inverse();
 
         final Map<Component, Component> rightValuesMapping = ImmutableBiMap.copyOf(
                 Maps.filterKeys(
