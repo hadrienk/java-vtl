@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
@@ -48,7 +49,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
+    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
         final Set<Component> identifiers = getIdentifiers();
@@ -97,7 +98,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 leftMap.put(to, rightMap.get(from));
             }
 
-            return new JoinDataPoint(left);
+            return left;
         };
     }
 

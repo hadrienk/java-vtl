@@ -231,9 +231,9 @@ public class AbstractJoinOperationTest {
 
     private static class TestAbstractJoinOperation extends AbstractJoinOperation {
 
-        List<List<JoinDataPoint>> leftMiss = Lists.newArrayList();
-        List<List<JoinDataPoint>> rightMiss = Lists.newArrayList();
-        List<List<JoinDataPoint>> hits = Lists.newArrayList();
+        List<List<DataPoint>> leftMiss = Lists.newArrayList();
+        List<List<DataPoint>> rightMiss = Lists.newArrayList();
+        List<List<DataPoint>> hits = Lists.newArrayList();
 
 
         public TestAbstractJoinOperation(Map<String, Dataset> namedDatasets) {
@@ -241,7 +241,7 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
+        protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
             return (left, right) -> {
                 if (left != null && right != null) {
                     hits.add(Lists.newArrayList(left, right));

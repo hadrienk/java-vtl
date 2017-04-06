@@ -43,7 +43,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
+    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
 
@@ -71,7 +71,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                 }
             }
 
-            return new JoinDataPoint(result);
+            return result;
         };
     }
 

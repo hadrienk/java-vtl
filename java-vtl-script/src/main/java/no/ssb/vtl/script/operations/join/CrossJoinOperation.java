@@ -60,18 +60,17 @@ public class CrossJoinOperation extends OuterJoinOperation {
         // Create the resulting data points.
         final DataStructure joinStructure = getDataStructure();
         final DataStructure structure = left.getDataStructure();
-        Stream<JoinDataPoint> result = order(requestedOrder, filtering, components, left)
+        Stream<DataPoint> result = order(requestedOrder, filtering, components, left)
                 .map(dataPoint -> joinStructure.fromMap(
                         structure.asMap(dataPoint)
-                )).map(JoinDataPoint::new);
+                ));
 
         while (iterator.hasNext()) {
             left = right;
             right = iterator.next();
             result = Streams.zip(
                     result,
-                    order(requestedOrder, filtering, components, right)
-                            .map(JoinDataPoint::new),
+                    order(requestedOrder, filtering, components, right),
                     getMerger(left, right)
             );
         }

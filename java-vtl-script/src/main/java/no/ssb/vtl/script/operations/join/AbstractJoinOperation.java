@@ -46,10 +46,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -222,7 +220,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return result;
     }
 
-    protected abstract BiFunction<JoinDataPoint, JoinDataPoint, JoinDataPoint> getMerger(
+    protected abstract BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             Dataset leftDataset, Dataset rightDataset
     );
 
@@ -348,12 +346,11 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         // Create the resulting data points.
         final DataStructure joinStructure = getDataStructure();
         final DataStructure structure = left.getDataStructure();
-        Stream<JoinDataPoint> result = getSorted(left, requestedOrder)
-                .map(dataPoint -> {
-                    return joinStructure.fromMap(
-                            structure.asMap(dataPoint)
-                    );
-                }).map(JoinDataPoint::new);
+
+        Stream<DataPoint> result = getSorted(left, requestedOrder)
+                .map(dataPoint -> joinStructure.fromMap(
+                        structure.asMap(dataPoint)
+                ));
 
         while (iterator.hasNext()) {
             left = right;
@@ -362,7 +359,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                     new JoinSpliterator<>(
                             createKeyComparator(left, right, requestedOrder),
                             result.spliterator(),
-                            getSorted(right, requestedOrder).map(JoinDataPoint::new).spliterator(),
+                            getSorted(right, requestedOrder).spliterator(),
                             left.getDataStructure()::asMap,
                             right.getDataStructure()::asMap,
                             getMerger(left, right)
@@ -432,18 +429,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         public int hashCode() {
             return Objects.hashCode(clazz, name);
         }
-    }
-
-    /**
-     * Holds the "working dataset" dataPoint.
-     */
-    static final class JoinDataPoint extends DataPoint implements RandomAccess {
-
-        public JoinDataPoint(List<VTLObject> ids) {
-            super(ids);
-        }
-
-
     }
 
 }
