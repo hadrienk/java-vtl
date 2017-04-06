@@ -49,7 +49,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
-        //final Set<Component> identifiers = getIdentifiers();
 
         final DataStructure rightStructure = rightDataset.getDataStructure();
         final DataStructure structure = getDataStructure();
@@ -57,20 +56,15 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         // Create final collection to improve performances.
         final Table<Component, Dataset, Component> componentMap = getComponentMapping();
 
-//        final Map<Component, Component> rightValuesMapping = ImmutableBiMap.copyOf(
-//                Maps.filterKeys(
-//                        tableMap.column(rightDataset),
-//                        Predicates.not(identifiers::contains)
-//                )
-//        ).inverse();
-
         return (left, right) -> {
 
             if (left == null || right == null)
                 return null;
 
-            // Put the measures and attributes of the right data point
-            // in the left data point.
+            /*
+             * Put the measures and attributes of the right data point
+             * in the left data point.
+             */
 
             Map<Component, VTLObject> leftMap = structure.asMap(left);
             Map<Component, VTLObject> rightMap = rightStructure.asMap(right);

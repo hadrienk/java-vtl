@@ -15,13 +15,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     final private Comparator<K> comparator;
-    final private Spliterator<L> leftSpliterator;
-    final private Spliterator<R> rightSpliterator;
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
     final private BiFunction<L, R, O> compute;
 
-    private Cursor cursor = null;
+    final private Buffer<L> lb;
+    final private Buffer<R> rb;
+
+    private final long size;
+
+    private boolean initialized = false;
 
     public JoinSpliterator(
             Comparator<K> comparator,
@@ -31,8 +34,9 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Function<R, K> rightKey,
             BiFunction<L, R, O> compute) {
         this.comparator = comparator;
-        this.rightSpliterator = right;
-        this.leftSpliterator = left;
+        this.lb = new Buffer<>(left);
+        this.rb = new Buffer<>(right);
+        this.size = Long.max(left.estimateSize(), right.estimateSize());
         this.leftKey = leftKey;
         this.rightKey = rightKey;
         this.compute = compute;
@@ -41,14 +45,12 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
     @Override
     public boolean tryAdvance(Consumer<? super O> action) {
 
-        if (cursor == null) {
-            cursor = new Cursor();
-            cursor.leftBuf.next();
-            cursor.rightBuf.next();
+        // Needed to avoid starting the stream too early.
+        if (!initialized) {
+            lb.next();
+            rb.next();
+            initialized = true;
         }
-
-        Buffer<L> lb = cursor.leftBuf;
-        Buffer<R> rb = cursor.rightBuf;
 
         if (!lb.hasMore() || !rb.hasMore()) {
 
@@ -126,7 +128,7 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     @Override
     public long estimateSize() {
-        return Long.max(leftSpliterator.estimateSize(), rightSpliterator.estimateSize());
+        return this.size;
     }
 
     @Override
@@ -183,10 +185,5 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             return removed;
         }
 
-    }
-
-    private class Cursor {
-        Buffer<L> leftBuf = new Buffer<>(leftSpliterator);
-        Buffer<R> rightBuf = new Buffer<>(rightSpliterator);
     }
 }

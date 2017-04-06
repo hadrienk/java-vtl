@@ -53,6 +53,9 @@ public class OuterJoinOperation extends AbstractJoinOperation {
 
         return (left, right) -> {
 
+            /*
+             * We overwrite the ids if right != null for simplicity.
+             */
             DataPoint result;
             if (left != null) {
                 result = DataPoint.create(left);
@@ -66,7 +69,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                 for (Map.Entry<Component, Component> mapping : componentMapping.column(rightDataset).entrySet()) {
                     Component to = mapping.getKey();
                     Component from = mapping.getValue();
-                    //if (left != null && !identifiers.contains(to))
                     leftMap.put(to, rightMap.get(from));
                 }
             }
