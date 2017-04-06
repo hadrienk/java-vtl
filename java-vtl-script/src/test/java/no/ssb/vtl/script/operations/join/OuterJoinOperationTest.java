@@ -67,16 +67,21 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 Long.class, Integer::longValue
         );
 
+        DataStructure.Builder identifiers = DataStructure.builder();
+        List<Class<?>> typeList = types.keySet().asList();
+        for (int i = 0; i < identifierAmount; i++) {
+            identifiers.put("i-" + i, IDENTIFIER, randomFrom(typeList));
+        }
+
         for (int i = 0; i < datasetAmount; i++) {
             String datasetName = "ds" + i;
 
-            List<Class<?>> typeList = types.keySet().asList();
             DataStructure.Builder dataStructureBuilder = DataStructure.builder();
             dataStructureBuilder.put("rowNum", IDENTIFIER, String.class);
-            for (int j = 0; j < identifierAmount + componentAmount; j++) {
-                if (j < identifierAmount) {
-                    dataStructureBuilder.put("i-" + j, IDENTIFIER, randomFrom(typeList));
-                } else if (rarely()) {
+
+            dataStructureBuilder.putAll(identifiers.build());
+            for (int j = identifierAmount; j < identifierAmount + componentAmount; j++) {
+                if (rarely()) {
                     dataStructureBuilder.put(datasetName + "-a-" + j, ATTRIBUTE, randomFrom(typeList));
                 } else {
                     dataStructureBuilder.put(datasetName + "-m-" + j, MEASURE, randomFrom(typeList));

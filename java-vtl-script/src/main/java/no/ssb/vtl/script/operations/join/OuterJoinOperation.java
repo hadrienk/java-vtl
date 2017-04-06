@@ -47,7 +47,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
             final Dataset leftDataset, final Dataset rightDataset
     ) {
 
-        final Table<Component, Dataset, Component> tableMap = this.identifierTable2;
+        final Table<Component, Dataset, Component> componentMapping = getComponentMapping();
         final DataStructure structure = getDataStructure();
         final DataStructure rightStructure = rightDataset.getDataStructure();
 
@@ -63,7 +63,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
             if (right != null) {
                 Map<Component, VTLObject> leftMap = structure.asMap(result);
                 Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
-                for (Map.Entry<Component, Component> mapping : tableMap.column(rightDataset).entrySet()) {
+                for (Map.Entry<Component, Component> mapping : componentMapping.column(rightDataset).entrySet()) {
                     Component to = mapping.getKey();
                     Component from = mapping.getValue();
                     //if (left != null && !identifiers.contains(to))

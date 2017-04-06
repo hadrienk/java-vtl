@@ -19,9 +19,6 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -52,20 +49,20 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
-        final Set<Component> identifiers = getIdentifiers();
+        //final Set<Component> identifiers = getIdentifiers();
 
         final DataStructure rightStructure = rightDataset.getDataStructure();
         final DataStructure structure = getDataStructure();
 
         // Create final collection to improve performances.
-        final Table<Component, Dataset, Component> tableMap = this.identifierTable2;
+        final Table<Component, Dataset, Component> componentMap = getComponentMapping();
 
-        final Map<Component, Component> rightValuesMapping = ImmutableBiMap.copyOf(
-                Maps.filterKeys(
-                        tableMap.column(rightDataset),
-                        Predicates.not(identifiers::contains)
-                )
-        ).inverse();
+//        final Map<Component, Component> rightValuesMapping = ImmutableBiMap.copyOf(
+//                Maps.filterKeys(
+//                        tableMap.column(rightDataset),
+//                        Predicates.not(identifiers::contains)
+//                )
+//        ).inverse();
 
         return (left, right) -> {
 
@@ -77,7 +74,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
             Map<Component, VTLObject> leftMap = structure.asMap(left);
             Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
-            for (Map.Entry<Component, Component> mapping : rightValuesMapping.entrySet()) {
+            for (Map.Entry<Component, Component> mapping : componentMap.column(rightDataset).entrySet()) {
                 Component from = mapping.getKey();
                 Component to = mapping.getValue();
                 leftMap.put(to, rightMap.get(from));
