@@ -1,5 +1,7 @@
 package no.ssb.vtl.script;
 
+import com.google.common.collect.Maps;
+
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
@@ -17,13 +19,14 @@ public class VTLScriptContext extends SimpleScriptContext{
     @SuppressWarnings("WeakerAccess")
     public VTLScriptContext() {
         super();
+        engineScope = new SimpleBindings(Maps.newLinkedHashMap());
         scopes = new HashMap<>(2);
         scopes.put(ENGINE_SCOPE, engineScope);
-        scopes.put(GLOBAL_SCOPE, new SimpleBindings());
+        scopes.put(GLOBAL_SCOPE, new SimpleBindings(Maps.newLinkedHashMap()));
     }
     
     public void addScope(int scope) {
-        scopes.put(scope, new SimpleBindings());
+        scopes.put(scope, new SimpleBindings(Maps.newLinkedHashMap()));
     }
     
     
