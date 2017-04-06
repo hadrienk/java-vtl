@@ -9,6 +9,7 @@ import no.ssb.vtl.parser.VTLParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,7 +24,6 @@ public class ConditionalExpressionVisitorTest {
     private DataStructure dataStructure;
     private SimpleBindings bindings;
     private Dataset dataset;
-    private Component component;
 
     private static VTLParser parse(String expression) {
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
@@ -37,13 +37,13 @@ public class ConditionalExpressionVisitorTest {
         dataStructure = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Number.class,
-                "m2", Component.Role.MEASURE, Double.class);
+                "m2Double", Component.Role.MEASURE, Double.class,
+                "m2Long", Component.Role.MEASURE, Long.class);
 
-        component = dataStructure.get("m1");
         dataset = mock(Dataset.class);
         bindings = new SimpleBindings(ImmutableMap.of(
-                "m1", component,
+                "m2Double", dataStructure.get("m2Double"),
+                "m2Long", dataStructure.get("m2Long"),
                 "dataset", dataset
         ));
 
@@ -54,18 +54,27 @@ public class ConditionalExpressionVisitorTest {
     }
 
     @Test
-    public void visitNvlExpressionWithDouble() throws Exception {
-        VTLParser parser = parse("nvl(m1, 0.0)");
+    public void visitNvlExpressionDoubleToReplaceDoubleNoException() throws Exception {
+        VTLParser parser = parse("nvl(m2Double, 0.0)");
+        visitor.visitNvlExpression(parser.nvlExpression());
+    }
 
-        //no exception
+    @Test(expected = ParseCancellationException.class)
+    public void visitNvlExpressionLongToReplaceDouble() throws Exception {
+        VTLParser parser = parse("nvl(m2Double, 0)");
         visitor.visitNvlExpression(parser.nvlExpression());
     }
 
     @Test
-    public void visitNvlExpressionWithInt() throws Exception {
-        VTLParser parser = parse("nvl(m1, 0)");
-
-        //no exception
+    public void visitNvlExpressionLongToReplaceLongNoException() throws Exception {
+        VTLParser parser = parse("nvl(m2Long, 0)");
         visitor.visitNvlExpression(parser.nvlExpression());
     }
+
+    @Test(expected = ParseCancellationException.class)
+    public void visitNvlExpressionDoubleToReplaceLong() throws Exception {
+        VTLParser parser = parse("nvl(m2Long, 0.0)");
+        visitor.visitNvlExpression(parser.nvlExpression());
+    }
+
 }

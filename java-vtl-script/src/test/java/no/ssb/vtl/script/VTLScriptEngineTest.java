@@ -105,7 +105,7 @@ public class VTLScriptEngineTest {
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "m2", Role.MEASURE, Double.class,
                 "at1", Role.MEASURE, String.class
         );
@@ -113,7 +113,7 @@ public class VTLScriptEngineTest {
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "m2", Role.MEASURE, Double.class,
                 "at2", Role.MEASURE, String.class
         );
@@ -124,14 +124,14 @@ public class VTLScriptEngineTest {
                 structure1.wrap(ImmutableMap.of(
                         "id1", "1",
                         "id2", "1",
-                        "m1", 10,
+                        "m1", 10L,
                         "m2", 20,
                         "at1", "attr1-1"
                 )),
                 structure1.wrap(ImmutableMap.of(
                         "id1", "2",
                         "id2", "2",
-                        "m1", 100,
+                        "m1", 100L,
                         "m2", 200,
                         "at1", "attr1-2"
                 ))
@@ -142,14 +142,14 @@ public class VTLScriptEngineTest {
                 structure2.wrap(ImmutableMap.of(
                         "id1", "1",
                         "id2", "1",
-                        "m1", 30,
+                        "m1", 30L,
                         "m2", 40,
                         "at2", "attr2-1"
                 )),
                 structure2.wrap(ImmutableMap.of(
                         "id1", "2",
                         "id2", "2",
-                        "m1", 300,
+                        "m1", 300L,
                         "m2", 400,
                         "at2", "attr2-2"
                 ))
@@ -197,7 +197,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "1", 10, 40, 0, true
+                        "1", "1", 10L, 40, 0, true
                 );
     }
 
@@ -270,7 +270,7 @@ public class VTLScriptEngineTest {
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "m2", Role.MEASURE, Double.class,
                 "at1", Role.MEASURE, String.class
         );
@@ -279,27 +279,27 @@ public class VTLScriptEngineTest {
                 (Map) ImmutableMap.of(
                         "id1", "1",
                         "id2", "one",
-                        "m1", 101,
+                        "m1", 101L,
                         "m2", 1.1,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
                         "id1", "1",
                         "id2", "two",
-                        "m1", 102,
+                        "m1", 102L,
                         "m2", 1.1,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
                         "id1", "2",
                         "id2", "one",
-                        "m1", 201,
+                        "m1", 201L,
                         "m2", 1.1,
                         "at1", "attr2"
                 ), ImmutableMap.of(
                         "id1", "2",
                         "id2", "two",
-                        "m1", 202,
+                        "m1", 202L,
                         "m2", 1.1,
                         "at1", "attr2"
                 )
@@ -325,8 +325,8 @@ public class VTLScriptEngineTest {
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 101, 102, 101 + 102,
-                        "2", 201, 202, 201 + 202
+                        "1", 101L, 102L, 101L + 102L,
+                        "2", 201L, 202L, 201L + 202L
                 );
     }
 
@@ -368,7 +368,7 @@ public class VTLScriptEngineTest {
                 (o, aClass) -> o,
                 "kommune_nr", Role.IDENTIFIER, String.class,
                 "periode", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "at1", Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
@@ -376,19 +376,19 @@ public class VTLScriptEngineTest {
                 (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
                         "periode", "2015",
-                        "m1", 100,
+                        "m1", 100L,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
                         "kommune_nr", "0111",
                         "periode", "2014",
-                        "m1", 101,
+                        "m1", 101L,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
                         "kommune_nr", "9000",
                         "periode", "2014",
-                        "m1", 102,
+                        "m1", 102L,
                         "at1", "attr3"
                 )
         ).map(structure1::wrap));
@@ -485,7 +485,7 @@ public class VTLScriptEngineTest {
         Map<Component, VTLObject> map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(0));
         assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0111");
         assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(101);
+        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(101L);
         assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr2");
         assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isEqualTo("Hvaler");
         assertThat(map.get(ds3InvalidDataStruct.get("validFrom")).get()).isEqualTo(year2015Utc);
@@ -495,7 +495,7 @@ public class VTLScriptEngineTest {
         map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(1));
         assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
         assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(102);
+        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(102L);
         assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr3");
         assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isEqualTo(null);
         assertThat(map.get(ds3InvalidDataStruct.get("validFrom")).get()).isEqualTo(null);
@@ -512,7 +512,7 @@ public class VTLScriptEngineTest {
         map = ds3ValidDataStruct.asMap(ds3ValidDataPoints.get(0));
         assertThat(map.get(ds3ValidDataStruct.get("kommune_nr")).get()).isEqualTo("0101");
         assertThat(map.get(ds3ValidDataStruct.get("periode")).get()).isEqualTo("2015");
-        assertThat(map.get(ds3ValidDataStruct.get("ds1_m1")).get()).isEqualTo(100);
+        assertThat(map.get(ds3ValidDataStruct.get("ds1_m1")).get()).isEqualTo(100L);
         assertThat(map.get(ds3ValidDataStruct.get("ds1_at1")).get()).isEqualTo("attr1");
         assertThat(map.get(ds3ValidDataStruct.get("ds2r_name")).get()).isEqualTo("Halden");
         assertThat(map.get(ds3ValidDataStruct.get("validFrom")).get()).isEqualTo(year2013Utc);
@@ -528,14 +528,14 @@ public class VTLScriptEngineTest {
         DataStructure ds = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "m2", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
         when(ds1.getData()).then(invocation -> Stream.of(
                 tuple(
                         ds.wrap("id1", "1"),
-                        ds.wrap("m1", 1),
+                        ds.wrap("m1", 1L),
                         ds.wrap("m2", null)
                 ),
                 tuple(
@@ -569,7 +569,7 @@ public class VTLScriptEngineTest {
 
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
                 entry("id1", String.class),
-                entry("m11", Integer.class),
+                entry("m11", Long.class),
                 entry("m22", String.class)
         );
 
@@ -577,9 +577,9 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 1, "constant",
-                        "2", 0, "str2",
-                        "3", 0, "constant"
+                        "1", 1L, "constant",
+                        "2", 0L, "str2",
+                        "3", 0L, "constant"
                 );
     }
 
@@ -590,7 +590,7 @@ public class VTLScriptEngineTest {
         DataStructure ds = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class
+                "m1", Role.MEASURE, Long.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
         when(ds1.getData()).then(invocation -> Stream.of(

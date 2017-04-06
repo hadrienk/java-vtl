@@ -34,18 +34,18 @@ public class JoinFilterClauseVisitorTest {
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Integer.class
+                "m1", Component.Role.MEASURE, Long.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
     
         when(ds1.getData()).then(invocation -> Stream.of(
                 structure1.wrap(ImmutableMap.of(
                         "id1", "1",
-                        "m1", 10
+                        "m1", 10L
                 )),
                 structure1.wrap(ImmutableMap.of(
                         "id1", "2",
-                        "m1", 100
+                        "m1", 100L
                 ))
         ));
         
@@ -54,8 +54,8 @@ public class JoinFilterClauseVisitorTest {
         DataStructure structure2 = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Integer.class,
-                "m2", Component.Role.MEASURE, Integer.class,
+                "m1", Component.Role.MEASURE, Long.class,
+                "m2", Component.Role.MEASURE, Long.class,
                 "a1", Component.Role.ATTRIBUTE, String.class
         );
         when(ds2.getDataStructure()).thenReturn(structure2);
@@ -63,14 +63,14 @@ public class JoinFilterClauseVisitorTest {
         when(ds2.getData()).then(invocation -> Stream.of(
                 structure2.wrap(ImmutableMap.of(
                         "id1", "1",
-                        "m1", 10,
-                        "m2", 10,
+                        "m1", 10L,
+                        "m2", 10L,
                         "a1", "test"
                 )),
                 structure2.wrap(ImmutableMap.of(
                         "id1", "2",
-                        "m1", 100,
-                        "m2", 10,
+                        "m1", 100L,
+                        "m2", 10L,
                         "a1", "2"
                 ))
         ));
@@ -96,7 +96,7 @@ public class JoinFilterClauseVisitorTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 10
+                        "1", 10L
                 );
     }
     
@@ -121,7 +121,7 @@ public class JoinFilterClauseVisitorTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "2", 100, 10, "2"
+                        "2", 100L, 10L, "2"
                 );
         
     }

@@ -23,9 +23,9 @@ import static no.ssb.vtl.model.Component.Role.*;
 public class DatasetTest extends RandomizedTest {
 
     private final DataStructure structure = DataStructure.builder()
-            .put("id1", IDENTIFIER, Integer.class)
-            .put("id2", IDENTIFIER, Integer.class)
-            .put("id3", IDENTIFIER, Integer.class)
+            .put("id1", IDENTIFIER, Long.class)
+            .put("id2", IDENTIFIER, Long.class)
+            .put("id3", IDENTIFIER, Long.class)
             .put("me1", MEASURE, String.class)
             .put("me2", MEASURE, String.class)
             .put("me3", MEASURE, String.class)

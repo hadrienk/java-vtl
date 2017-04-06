@@ -26,12 +26,12 @@ public class BooleanExpressionVisitorTest {
         dataStructure = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Integer.class,
+                "m1", Component.Role.MEASURE, Long.class,
                 "m2", Component.Role.MEASURE, Double.class,
-                "m3", Component.Role.MEASURE, Integer.class,
+                "m3", Component.Role.MEASURE, Long.class,
                 "at1", Component.Role.ATTRIBUTE, String.class);
         visitor = new BooleanExpressionVisitor(null, dataStructure);
-        dataPointWithValues = dataStructure.wrap(ImmutableMap.of("id1", "1", "m1", 20, "m2", 10.0, "m3", 10, "at1", "blabla"));
+        dataPointWithValues = dataStructure.wrap(ImmutableMap.of("id1", "1", "m1", 20L, "m2", 10.0, "m3", 10L, "at1", "blabla"));
         dataPointWithNull = dataStructure.wrap();
         
         

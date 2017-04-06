@@ -61,7 +61,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 "time", IDENTIFIER, Year.class,
                 "ref_area", IDENTIFIER, String.class,
                 "partner", IDENTIFIER, String.class,
-                "obs_value", MEASURE, Integer.class,
+                "obs_value", MEASURE, Long.class,
                 "obs_status", ATTRIBUTE, String.class
         );
 
@@ -70,7 +70,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 "time", IDENTIFIER, Year.class,
                 "ref_area", IDENTIFIER, String.class,
                 "partner", IDENTIFIER, String.class,
-                "obs_value", MEASURE, Integer.class,
+                "obs_value", MEASURE, Long.class,
                 "obs_status", ATTRIBUTE, String.class
         );
 
@@ -82,19 +82,19 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "CA"),
-                        structure1.wrap("obs_value", "20"),
+                        structure1.wrap("obs_value", 20L),
                         structure1.wrap("obs_status", "E")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "BG"),
-                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_value", 2L),
                         structure1.wrap("obs_status", "P")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "RO"),
-                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_value", 2L),
                         structure1.wrap("obs_status", "P")
                 )
         ));
@@ -105,7 +105,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure2.wrap("time", Year.of(2010)),
                         structure2.wrap("ref_area", "EU25"),
                         structure2.wrap("partner", "CA"),
-                        structure2.wrap("obs_value", "10"),
+                        structure2.wrap("obs_value", 10L),
                         structure2.wrap("obs_status", "P")
                 )
         ));
@@ -137,9 +137,9 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         IDENTIFIER, structure1.get("time"), Year.of(2010),
                         IDENTIFIER, structure1.get("ref_area"), "EU25",
                         IDENTIFIER, structure1.get("partner"), "CA",
-                        MEASURE, structure1.get("obs_value"), "20",
+                        MEASURE, structure1.get("obs_value"), 20L,
                         ATTRIBUTE, structure1.get("obs_status"), "E",
-                        MEASURE, structure2.get("obs_value"), "10",
+                        MEASURE, structure2.get("obs_value"), 10L,
                         ATTRIBUTE, structure2.get("obs_status"), "P"
                 );
     }
@@ -167,7 +167,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                     "id1", IDENTIFIER, Year.class,
                     "id2", IDENTIFIER, String.class,
                     "id3", IDENTIFIER, Instant.class,
-                    "measure", MEASURE, Integer.class,
+                    "measure", MEASURE, Long.class,
                     "attribute", ATTRIBUTE, String.class
             );
             Dataset dataset = mock(Dataset.class, "Mocked dataset" + i);
@@ -185,7 +185,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                                             structure.wrap("id1", Year.of(2000)),
                                             structure.wrap("id2", "id"),
                                             structure.wrap("id3", Instant.ofEpochMilli(60 * 60 * 24 * 100)),
-                                            structure.wrap("measure", "measure-" + j + "-" + rowNum),
+                                            structure.wrap("measure", (long) (j + rowNum)),
                                             structure.wrap("attribute", "attribute-" + j + "-" + rowNum)
                                     )
                             )
@@ -227,7 +227,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 (o, aClass) -> o,
                 "kommune_nr", Component.Role.IDENTIFIER, String.class,
                 "periode", Component.Role.IDENTIFIER, Instant.class, //TODO String?
-                "m1", Component.Role.MEASURE, Integer.class,
+                "m1", Component.Role.MEASURE, Long.class,
                 "at1", Component.Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
@@ -235,19 +235,19 @@ public class InnerJoinOperationTest extends RandomizedTest {
                  (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
                         "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
-                        "m1", 100,
+                        "m1", 100L,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
                         "kommune_nr", "0111",
                         "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
-                        "m1", 101,
+                        "m1", 101L,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
                         "kommune_nr", "9000",
                         "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
-                        "m1", 102,
+                        "m1", 102L,
                         "at1", "attr3"
                 )
         ).map(structure1::wrap));
@@ -304,8 +304,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
         assertThat(ds3.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
-                        "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
+                        "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100L, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
+                        "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101L, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
                 );
     }
 

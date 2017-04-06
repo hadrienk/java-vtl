@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +45,7 @@ public class AbstractJoinOperationTest {
                     mapper::convertValue,
                     "m",
                     Component.Role.IDENTIFIER,
-                    Integer.class
+                    Long.class
             );
 
             when(ds1.getDataStructure()).thenReturn(structure);
@@ -104,12 +105,12 @@ public class AbstractJoinOperationTest {
                 mapper::convertValue,
                 "m",
                 Component.Role.IDENTIFIER,
-                Integer.class
+                Long.class
         );
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
         given(ds1.getData()).will(invocation -> {
-            return IntStream.rangeClosed(0, 10).boxed().map(
+            return LongStream.rangeClosed(0, 10).boxed().map(
                     integer -> ds1Struct.wrap(
                             ImmutableMap.of(
                                     "m", integer

@@ -30,7 +30,7 @@ public class CrossJoinOperationTest {
                 "time", IDENTIFIER, Year.class,
                 "ref_area", IDENTIFIER, String.class,
                 "partner", IDENTIFIER, String.class,
-                "obs_value", MEASURE, Integer.class,
+                "obs_value", MEASURE, Long.class,
                 "obs_status", ATTRIBUTE, String.class
         );
 
@@ -39,7 +39,7 @@ public class CrossJoinOperationTest {
                 "time", IDENTIFIER, Year.class,
                 "ref_area", IDENTIFIER, String.class,
                 "partner", IDENTIFIER, String.class,
-                "obs_value", MEASURE, Integer.class,
+                "obs_value", MEASURE, Long.class,
                 "obs_status", ATTRIBUTE, String.class
         );
 
@@ -51,19 +51,19 @@ public class CrossJoinOperationTest {
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "CA"),
-                        structure1.wrap("obs_value", "20"),
+                        structure1.wrap("obs_value", 20L),
                         structure1.wrap("obs_status", "E")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "LEFT"),
-                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_value", 2L),
                         structure1.wrap("obs_status", "P")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "NONELEFT"),
-                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_value", 2L),
                         structure1.wrap("obs_status", "P")
                 )
         ));
@@ -74,19 +74,19 @@ public class CrossJoinOperationTest {
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "CA"),
-                        structure1.wrap("obs_value", "20"),
+                        structure1.wrap("obs_value", 20L),
                         structure1.wrap("obs_status", "E")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "RIGHT"),
-                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_value", 2L),
                         structure1.wrap("obs_status", "P")
                 ), tuple(
                         structure1.wrap("time", Year.of(2010)),
                         structure1.wrap("ref_area", "EU25"),
                         structure1.wrap("partner", "NONERIGHT"),
-                        structure1.wrap("obs_value", "2"),
+                        structure1.wrap("obs_value", 2L),
                         structure1.wrap("obs_status", "P")
                 )
         ));

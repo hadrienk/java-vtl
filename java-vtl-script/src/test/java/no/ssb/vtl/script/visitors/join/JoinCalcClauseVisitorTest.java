@@ -35,7 +35,7 @@ public class JoinCalcClauseVisitorTest {
 
         Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
-        assertThat(result.apply(null).get()).isEqualTo(1 + 2 + 3 + 4 + 5 - 6 - 7 - 8 - 9);
+        assertThat(result.apply(null).get()).isEqualTo((1L + 2L + 3L + 4L + 5L - 6L - 7L - 8L - 9L));
 
     }
 
@@ -51,7 +51,7 @@ public class JoinCalcClauseVisitorTest {
 
         Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
-        assertThat(result.apply(null).get()).isEqualTo(1 + 2 + (3 + 4 + 5 - 6 - 7) - 8 - 9);
+        assertThat(result.apply(null).get()).isEqualTo(1L + 2L + (3L + 4L + 5L - 6L - 7L) - 8L - 9L);
 
     }
 
@@ -68,7 +68,7 @@ public class JoinCalcClauseVisitorTest {
         Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
         //noinspection PointlessArithmeticExpression
-        assertThat(result.apply(null).get()).isEqualTo(1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9);
+        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * 3L * 4L * 5L / 6L / 7L / 8L / 9L);
 
     }
 
@@ -81,17 +81,17 @@ public class JoinCalcClauseVisitorTest {
         parser.setErrorHandler(new BailErrorStrategy());
 
         DataStructure ds = DataStructure.of((o, aClass) -> o,
-                "a", Component.Role.MEASURE, Integer.class,
-                "b", Component.Role.MEASURE, Integer.class,
-                "c", Component.Role.MEASURE, Integer.class,
-                "d", Component.Role.MEASURE, Integer.class
+                "a", Component.Role.MEASURE, Long.class,
+                "b", Component.Role.MEASURE, Long.class,
+                "c", Component.Role.MEASURE, Long.class,
+                "d", Component.Role.MEASURE, Long.class
         );
 
         Map<String, Object> variables = Maps.newHashMap();
-        variables.put("a", 20);
-        variables.put("b", 15);
-        variables.put("c", 10);
-        variables.put("d", 5);
+        variables.put("a", 20L);
+        variables.put("b", 15L);
+        variables.put("c", 10L);
+        variables.put("d", 5L);
 
         DataPoint dataPoint = ds.wrap(variables);
 
@@ -103,7 +103,7 @@ public class JoinCalcClauseVisitorTest {
         Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
         // TODO: Set variables.
-        assertThat(result.apply(dataPoint).get()).isEqualTo(1 * 2 + 20 * (15 - 10) / 5 - 10);
+        assertThat(result.apply(dataPoint).get()).isEqualTo(1L * 2L + 20L * (15L - 10L) / 5L - 10L);
 
     }
 
@@ -121,7 +121,7 @@ public class JoinCalcClauseVisitorTest {
 
         Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
 
-        assertThat(result.apply(null).get()).isEqualTo(1 * 2 * (3 * 4 * 5 / 6 / 7) / 8 / 9);
+        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * (3L * 4L * 5L / 6L / 7L) / 8L / 9L);
 
     }
 
@@ -148,7 +148,7 @@ public class JoinCalcClauseVisitorTest {
                 (o, aClass) -> o,
                 "value",
                 Component.Role.MEASURE,
-                Integer.class
+                Long.class
         );
         return structure.wrap("value", value);
     }

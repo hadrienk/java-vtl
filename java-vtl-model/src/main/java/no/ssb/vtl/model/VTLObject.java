@@ -99,6 +99,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         }
         if (value instanceof Integer && other instanceof  Integer) {
             return ((Integer) value).compareTo((Integer) other);
+        } else if (value instanceof Long && other instanceof Long) {
+            return ((Long) value).compareTo((Long) other);
         } else if (value instanceof Float && other instanceof Float) {
             return ((Float) value).compareTo((Float) other);
         } else if (value instanceof Double && other instanceof Double) {
