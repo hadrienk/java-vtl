@@ -1,22 +1,30 @@
 package no.ssb.vtl.script.support;
 
+import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Spliterator;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     final private Comparator<K> comparator;
-    final private Spliterator<L> left;
-    final private Spliterator<R> right;
     final private Function<L, K> leftKey;
     final private Function<R, K> rightKey;
-    final private TriFunction<L, R, Integer, List<O>> compute;
-    private boolean hadLeft = false;
-    private boolean hadRight = false;
-    private Pair pair = null;
+    final private BiFunction<L, R, O> compute;
+
+    final private Buffer<L> lb;
+    final private Buffer<R> rb;
+
+    private final long size;
+
+    private boolean initialized = false;
 
     public JoinSpliterator(
             Comparator<K> comparator,
@@ -24,74 +32,108 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Spliterator<R> right,
             Function<L, K> leftKey,
             Function<R, K> rightKey,
-            TriFunction<L, R, Integer, List<O>> compute) {
+            BiFunction<L, R, O> compute) {
         this.comparator = comparator;
-        this.right = right;
-        this.left = left;
+        this.lb = new Buffer<>(left);
+        this.rb = new Buffer<>(right);
+        this.size = Long.max(left.estimateSize(), right.estimateSize());
         this.leftKey = leftKey;
         this.rightKey = rightKey;
         this.compute = compute;
     }
 
-    boolean advanceLeft() {
-        return left.tryAdvance(v -> pair.left = v);
-    }
-
-    boolean advanceRight() {
-        return right.tryAdvance(v -> pair.right = v);
-    }
-
     @Override
     public boolean tryAdvance(Consumer<? super O> action) {
 
-        if (pair == null) {
-            pair = new Pair();
-            hadLeft = advanceLeft();
-            hadRight = advanceRight();
+        // Needed to avoid starting the stream too early.
+        if (!initialized) {
+            lb.next();
+            rb.next();
+            initialized = true;
         }
 
-        if (!hadLeft && !hadRight)
+        // one buffer reached the end.
+        if (!(lb.hasMore() && rb.hasMore())) {
+            // empty both buffers
+            outputAll(action);
             return false;
-
-        int compare = 0;
-        if (!hadLeft && hadRight) {
-            compare = 1;
-        } else if (hadLeft && !hadRight) {
-            compare = -1;
-        } else {
-            compare = comparator.compare(
-                    leftKey.apply(pair.left), rightKey.apply(pair.right)
-            );
         }
 
-        // TODO: Might be not needed to return a list.
-        List<? extends O> apply = compute.apply(pair.left, pair.right, compare);
-        if (apply != null) {
-            for (O o : apply) {
-                action.accept(o);
-            }
-        }
+        if (lb.isEmpty() && lb.next())
+            return rb.hasMore();
 
-        if (compare == 0) {
-            hadLeft = advanceLeft();
-            hadRight = advanceRight();
+        if (rb.isEmpty() && rb.next())
+            return rb.hasMore();
+
+        // TODO: Use a consumer in the merge function?
+
+        int compare = compare(lb.current(), rb.current());
+        if (0 < compare) {
+            rb.next(); // left > right (right is behind)
         } else if (compare < 0) {
-            hadLeft = advanceLeft();
-        } else /* if (compare > 0) */ {
-            hadRight = advanceRight();
+            lb.next(); // left < right (left is behind)
+        } else {
+            outputMiss(action); // output left(s) and right(s) we missed
+            outputHit(action); // output hit(s)
         }
+
         return true;
 
     }
 
+    private void outputAll(Consumer<? super O> action) {
+        while (!lb.isEmpty() && lb.next())
+            output(lb.pop(), null, action);
+        while (!rb.isEmpty() && rb.next())
+            output(null, rb.pop(), action);
+    }
+
+    private void outputHit(Consumer<? super O> action) {
+
+        List<L> left = Lists.newArrayList(lb.pop());
+        List<R> right = Lists.newArrayList(rb.pop());
+
+        // check if the next tuples are identical
+        while (lb.next() && compare(lb.current(), right.get(0)) == 0)
+            left.add(lb.pop());
+
+        while (rb.next() && compare(left.get(0), rb.current()) == 0)
+            right.add(rb.pop());
+
+        // cartesian product
+        for (L l : left) {
+            for (R r : right) {
+                output(l, r, action);
+            }
+        }
+    }
+
+    private void outputMiss(Consumer<? super O> action) {
+        while (lb.first() != lb.current())
+            output(lb.pop(), null, action);
+        while (rb.first() != rb.current())
+            output(null, rb.pop(), action);
+    }
+
+    private int compare(L left, R right) {
+        return comparator.compare(leftKey.apply(left), rightKey.apply(right));
+    }
+
+    private void output(L left, R right, Consumer<? super O> destination) {
+        O apply = compute.apply(left, right);
+        if (apply != null)
+            destination.accept(apply);
+    }
+
     @Override
     public Spliterator<O> trySplit() {
+        // prevent split
         return null;
     }
 
     @Override
     public long estimateSize() {
-        return Long.max(left.estimateSize(), right.estimateSize());
+        return this.size;
     }
 
     @Override
@@ -99,19 +141,56 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
         return 0;
     }
 
-    @FunctionalInterface
-    public interface TriFunction<A, B, C, R> {
+    private class Buffer<T> extends ArrayList<T> {
 
-        R apply(A a, B b, C c);
+        private static final long serialVersionUID = -1744403577043659072L;
 
-        default <V> TriFunction<A, B, C, V> andThen(
-                Function<? super R, ? extends V> after) {
-            return (A a, B b, C c) -> after.apply(apply(a, b, c));
+        private final Spliterator<T> source;
+        private boolean end = false;
+        private int pos = -1;
+
+        private Buffer(Spliterator<T> source) {
+            this.source = checkNotNull(source);
         }
-    }
 
-    private class Pair {
-        L left;
-        R right;
+        public boolean hasMore() {
+            return !end;
+        }
+
+        public boolean next() {
+            if (++pos >= size()) {
+                end = !source.tryAdvance(this::add);
+                if (end)
+                    pos--;
+            }
+            return !end || !isEmpty();
+        }
+
+        public T current() {
+            if (pos < 0 || size() <= pos)
+                return null;
+            return get(pos);
+        }
+
+        public T first() {
+            if (isEmpty())
+                return null;
+            return get(0);
+        }
+
+        public T pop() {
+            if (isEmpty())
+                return null;
+            return remove(0);
+        }
+
+        @Override
+        public T remove(int index) {
+            T removed = super.remove(index);
+            if (index <= pos)
+                pos--;
+            return removed;
+        }
+
     }
 }

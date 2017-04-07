@@ -11,6 +11,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
@@ -22,10 +23,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Arrays.*;
-import static no.ssb.vtl.model.Component.Role.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
+import static java.util.Arrays.asList;
+import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -63,16 +67,21 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 Long.class, Integer::longValue
         );
 
+        DataStructure.Builder identifiers = DataStructure.builder();
+        List<Class<?>> typeList = types.keySet().asList();
+        for (int i = 0; i < identifierAmount; i++) {
+            identifiers.put("i-" + i, IDENTIFIER, randomFrom(typeList));
+        }
+
         for (int i = 0; i < datasetAmount; i++) {
             String datasetName = "ds" + i;
 
-            List<Class<?>> typeList = types.keySet().asList();
             DataStructure.Builder dataStructureBuilder = DataStructure.builder();
             dataStructureBuilder.put("rowNum", IDENTIFIER, String.class);
-            for (int j = 0; j < identifierAmount + componentAmount; j++) {
-                if (j < identifierAmount) {
-                    dataStructureBuilder.put("i-" + j, IDENTIFIER, randomFrom(typeList));
-                } else if (rarely()) {
+
+            dataStructureBuilder.putAll(identifiers.build());
+            for (int j = identifierAmount; j < identifierAmount + componentAmount; j++) {
+                if (rarely()) {
                     dataStructureBuilder.put(datasetName + "-a-" + j, ATTRIBUTE, randomFrom(typeList));
                 } else {
                     dataStructureBuilder.put(datasetName + "-m-" + j, MEASURE, randomFrom(typeList));
@@ -115,7 +124,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
 
 
         Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
@@ -205,6 +214,52 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         asList("3", "c", "id", "left 3c", "right 3c"),
                         asList("4", "d", "id", null, "right 4d")
                 );
+    }
+
+    @Test
+    public void testOuterJoin() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
+
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", IDENTIFIER, Integer.class,
+                "value", MEASURE, String.class
+        );
+
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", IDENTIFIER, Integer.class,
+                "value", MEASURE, String.class
+        );
+
+        given(ds1.getDataStructure()).willReturn(structure1);
+        given(ds2.getDataStructure()).willReturn(structure2);
+
+        given(ds1.getData()).willAnswer(o -> Stream.of(1, 1, 1, 2, 3, 5, 7, 7, 8, 8, 9, 9, 9, 10)
+                .map(id -> Lists.newArrayList(
+                        VTLNumber.of(id), VTLObject.of("ds1 " + id)
+                ))
+                .map(DataPoint::create));
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
+
+        given(ds2.getData()).willAnswer(o -> Stream.of(1, 3, 3, 3, 3, 4, 5, 6, 8, 9, 9, 9, 10)
+                .map(id -> Lists.newArrayList(
+                        VTLNumber.of(id), VTLObject.of("ds2 " + id)
+                ))
+                .map(DataPoint::create));
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
+
+        AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+
+        VTLPrintStream vtlPrintStream = new VTLPrintStream(System.out);
+        //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(ds1);
+        vtlPrintStream.println(ds2);
+        //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(result);
+
     }
 
     @Test
