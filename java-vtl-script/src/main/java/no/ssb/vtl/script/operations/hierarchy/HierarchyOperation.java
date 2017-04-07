@@ -203,13 +203,29 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return paths;
     }
 
-    private Order computeOrder() {
-        // Sort by all the identifiers we are grouping on but the hierarchy element.
-        // The hierarchy element has to be the last one.
+    private Order computePredicate() {
+
+        // Same as the groupOrder, but we exclude the hierarchy component.
+
         DataStructure structure = getDataStructure();
         Order.Builder builder = Order.create(structure);
         for (Component component : structure.values()) {
-            if (!component.equals(this.component)) {
+            if (component.isIdentifier() && !component.equals(this.component)) {
+                builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
+            }
+        }
+        return builder.build();
+    }
+
+    private Order computeOrder() {
+
+        // Sort by all the identifiers we are grouping on but the hierarchy element.
+        // The hierarchy element has to be the last one.
+
+        DataStructure structure = getDataStructure();
+        Order.Builder builder = Order.create(structure);
+        for (Component component : structure.values()) {
+            if (component.isIdentifier() && !component.equals(this.component)) {
                 builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
             }
         }
@@ -323,7 +339,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             return aggregate;
         });
     }
-
+    
     private Map<Component, HierarchyAccumulator> createAccumulatorMap() {
         DataStructure structure = getDataStructure();
         ImmutableMap.Builder<Component, HierarchyAccumulator> builder = ImmutableMap.builder();
@@ -335,16 +351,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return builder.build();
     }
 
-    private Order computePredicate() {
-        // Same as the groupOrder, but we exclude the hierarchy component.
-        Order.Builder builder = Order.create(getDataStructure());
-        for (Map.Entry<Component, Order.Direction> direction : computeOrder().entrySet()) {
-            if (!direction.getKey().equals(this.component)) {
-                builder.put(direction);
-            }
-        }
-        return builder.build();
-    }
 
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {

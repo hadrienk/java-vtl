@@ -77,6 +77,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         given(ds1.getDataStructure()).willReturn(structure1);
         given(ds2.getDataStructure()).willReturn(structure2);
 
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
         given(ds1.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure1.wrap("time", Year.of(2010)),
@@ -98,8 +99,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure1.wrap("obs_status", "P")
                 )
         ));
-        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
         given(ds2.getData()).willAnswer(o -> Stream.of(
                 tuple(
                         structure2.wrap("time", Year.of(2010)),
@@ -109,7 +110,6 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         structure2.wrap("obs_status", "P")
                 )
         ));
-        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
         AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
@@ -183,7 +183,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                             .map(rowNum ->
                                     tuple(
                                             structure.wrap("id1", Year.of(2000)),
-                                            structure.wrap("id2", "id"),
+                                            structure.wrap("id2", "id" + rowNum),
                                             structure.wrap("id3", Instant.ofEpochMilli(60 * 60 * 24 * 100)),
                                             structure.wrap("measure", (long) (j + rowNum)),
                                             structure.wrap("attribute", "attribute-" + j + "-" + rowNum)
@@ -191,9 +191,12 @@ public class InnerJoinOperationTest extends RandomizedTest {
                             )
             );
             when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
+            new VTLPrintStream(System.out).println(dataset);
         }
 
         InnerJoinOperation result = new InnerJoinOperation(datasets);
+
+        new VTLPrintStream(System.out).println(result);
 
         assertThat(result.getDataStructure())
                 .describedAs("data structure of the inner join")
@@ -231,6 +234,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 "at1", Component.Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
+
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                  (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
@@ -262,6 +267,8 @@ public class InnerJoinOperationTest extends RandomizedTest {
         );
 
         when(dsCodeList2.getDataStructure()).thenReturn(structure2);
+
+        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
         when(dsCodeList2.getData()).then(invocation -> Stream.of(
                 tuple(
                         structure2.wrap("kommune_nr", "0101"),
