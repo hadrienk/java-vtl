@@ -42,18 +42,18 @@ public class AbstractJoinOperationTest {
     @Test
     public void testSortMerge() throws Exception {
 
-        ArrayList<Integer> leftData = Lists.newArrayList(
-                1, 3, 3, 3, 3, 4, 5, 6, 8, 9, 9, 9, 10
+        ArrayList<Long> leftData = Lists.newArrayList(
+                1L, 3L, 3L, 3L, 3L, 4L, 5L, 6L, 8L, 9L, 9L, 9L, 10L
         );
 
-        ArrayList<Integer> rightData = Lists.newArrayList(
-                1, 1, 1, 2, 3, 5, 7, 7, 8, 8, 9, 9, 9, 10
+        ArrayList<Long> rightData = Lists.newArrayList(
+                1L, 1L, 1L, 2L, 3L, 5L, 7L, 7L, 8L, 8L, 9L, 9L, 9L, 10L
         );
 
         Dataset left = mock(Dataset.class);
         when(left.getDataStructure()).thenReturn(
                 DataStructure.builder()
-                        .put("id", Role.IDENTIFIER, Integer.class)
+                        .put("id", Role.IDENTIFIER, Long.class)
                         .put("m", Role.MEASURE, String.class)
                         .build()
         );
@@ -68,7 +68,7 @@ public class AbstractJoinOperationTest {
         Dataset right = mock(Dataset.class);
         when(right.getDataStructure()).thenReturn(
                 DataStructure.builder()
-                        .put("id", Role.IDENTIFIER, Integer.class)
+                        .put("id", Role.IDENTIFIER, Long.class)
                         .put("m", Role.MEASURE, String.class)
                         .build()
         );
@@ -185,19 +185,19 @@ public class AbstractJoinOperationTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure s1 = DataStructure.builder()
-                .put("id1", Role.IDENTIFIER, Integer.class)
-                .put("id2", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("id2", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds1.getDataStructure()).thenReturn(s1);
 
         Dataset ds2 = mock(Dataset.class);
         DataStructure s2 = DataStructure.builder()
-                .put("id3", Role.IDENTIFIER, Integer.class)
-                .put("id4", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id3", Role.IDENTIFIER, Long.class)
+                .put("id4", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds2.getDataStructure()).thenReturn(s2);
 
@@ -214,18 +214,18 @@ public class AbstractJoinOperationTest {
         Dataset ds1 = mock(Dataset.class);
         DataStructure s1 = DataStructure.builder()
                 .put("id1", Role.IDENTIFIER, String.class)
-                .put("id2", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id2", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds1.getDataStructure()).thenReturn(s1);
 
         Dataset ds2 = mock(Dataset.class);
         DataStructure s2 = DataStructure.builder()
-                .put("id1", Role.IDENTIFIER, Integer.class)
+                .put("id1", Role.IDENTIFIER, Long.class)
                 .put("id2", Role.IDENTIFIER, String.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds2.getDataStructure()).thenReturn(s2);
 
@@ -240,9 +240,9 @@ public class AbstractJoinOperationTest {
         Dataset ds1 = mock(Dataset.class);
         DataStructure s1 = DataStructure.builder()
                 .put("id1", Role.IDENTIFIER, String.class)
-                .put("id2", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id2", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds1.getDataStructure()).thenReturn(s1);
 
@@ -250,8 +250,8 @@ public class AbstractJoinOperationTest {
         DataStructure s2 = DataStructure.builder()
                 .put("id1", Role.IDENTIFIER, String.class)
                 .put("id2", Role.IDENTIFIER, String.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds2.getDataStructure()).thenReturn(s2);
 
@@ -274,30 +274,30 @@ public class AbstractJoinOperationTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure s1 = DataStructure.builder()
-                .put("id1", Role.IDENTIFIER, Integer.class)
-                .put("id2", Role.IDENTIFIER, Integer.class)
-                .put("id4", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("id2", Role.IDENTIFIER, Long.class)
+                .put("id4", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds1.getDataStructure()).thenReturn(s1);
 
         Dataset ds2 = mock(Dataset.class);
         DataStructure s2 = DataStructure.builder()
-                .put("id1", Role.IDENTIFIER, Integer.class)
-                .put("id3", Role.IDENTIFIER, Integer.class)
-                .put("id4", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("id3", Role.IDENTIFIER, Long.class)
+                .put("id4", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds2.getDataStructure()).thenReturn(s2);
 
         Dataset ds3 = mock(Dataset.class);
         DataStructure s3 = DataStructure.builder()
-                .put("id1", Role.IDENTIFIER, Integer.class)
-                .put("id4", Role.IDENTIFIER, Integer.class)
-                .put("me1", Role.MEASURE, Integer.class)
-                .put("at1", Role.ATTRIBUTE, Integer.class)
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("id4", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
                 .build();
         when(ds3.getDataStructure()).thenReturn(s3);
 
@@ -337,7 +337,7 @@ public class AbstractJoinOperationTest {
         Dataset ds2 = mock(Dataset.class);
 
         DataStructure structure = DataStructure.builder()
-                .put("m", Role.IDENTIFIER, Integer.class)
+                .put("m", Role.IDENTIFIER, Long.class)
                 .build();
 
         when(ds1.getDataStructure()).thenReturn(structure);
@@ -370,7 +370,7 @@ public class AbstractJoinOperationTest {
         Dataset ds1 = mock(Dataset.class);
 
         DataStructure ds1Struct = DataStructure.builder()
-                .put("m", Role.IDENTIFIER, Integer.class)
+                .put("m", Role.IDENTIFIER, Long.class)
                 .build();
 
         given(ds1.getDataStructure()).willReturn(ds1Struct);
