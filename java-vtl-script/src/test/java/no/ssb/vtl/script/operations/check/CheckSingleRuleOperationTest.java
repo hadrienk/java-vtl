@@ -321,7 +321,7 @@ public class CheckSingleRuleOperationTest {
                 .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
                 .componentsToReturn(CheckSingleRuleOperation.ComponentsToReturn.CONDITION)
                 .errorCode("error001")
-                .errorLevel(10)
+                .errorLevel(10L)
                 .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).containsExactly(
@@ -347,7 +347,7 @@ public class CheckSingleRuleOperationTest {
         assertThat(map.get(dStructure.get("code")).get()).isEqualTo("0101");
         assertThat(map.get(dStructure.get(CONDITION_LABEL)).get()).isEqualTo(true);
         assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo("error001");
-        assertThat(map.get(dStructure.get(ERROR_LEVEL_LABEL)).get()).isEqualTo(10);
+        assertThat(map.get(dStructure.get(ERROR_LEVEL_LABEL)).get()).isEqualTo(10L);
 
     }
 

@@ -50,15 +50,15 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
     @Override
     public VTLExpression visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
         VTLParser.ConstantContext constantValue = ctx.constant();
-        if (constantValue.DOUBLE_CONSTANT() != null){
-            Double aDouble = Double.valueOf(constantValue.DOUBLE_CONSTANT().getText());
+        if (constantValue.FLOAT_CONSTANT() != null){
+            Double aDouble = Double.valueOf(constantValue.FLOAT_CONSTANT().getText());
             return new VTLExpression.Builder(Double.class, dataPoint -> VTLObject.of(aDouble))
                     .description(aDouble + "d").build();
         }
         if (constantValue.INTEGER_CONSTANT() != null) {
-            Integer integer = Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
-            return new VTLExpression.Builder(Integer.class, dataPoint -> VTLObject.of(integer))
-                    .description(integer.toString()).build();
+            Long aLong = Long.valueOf(constantValue.INTEGER_CONSTANT().getText());
+            return new VTLExpression.Builder(Long.class, dataPoint -> VTLObject.of(aLong))
+                    .description(aLong.toString()).build();
         }
         throw new RuntimeException(
                 format("unsupported constant type %s", constantValue)

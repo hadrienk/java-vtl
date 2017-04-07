@@ -29,7 +29,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
 
         String errorCode = getErrorCode(checkParamContext);
-        Integer errorLevel = getErrorLevel(checkParamContext);
+        Long errorLevel = getErrorLevel(checkParamContext);
 
         return new CheckSingleRuleOperation.Builder(dataset)
                 .rowsToReturn(rowsToReturn)
@@ -50,9 +50,9 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
     }
 
 
-    private Integer getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
+    private Long getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorLevel() != null) {
-            return Integer.valueOf(checkParamContext.errorLevel().getText());
+            return Long.valueOf(checkParamContext.errorLevel().getText());
         }
         return null;
     }

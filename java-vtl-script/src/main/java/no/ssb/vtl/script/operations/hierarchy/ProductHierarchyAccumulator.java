@@ -18,9 +18,9 @@ public class ProductHierarchyAccumulator implements HierarchyAccumulator {
     public BiFunction<? super VTLObject, ? super VTLObject, ? extends VTLObject> accumulator(Composition sign) {
         switch (sign) {
             case UNION:
-                return (left, right) -> VTLObject.of((Integer) left.get() * (Integer) right.get());
+                return (left, right) -> VTLObject.of((Long) left.get() * (Long) right.get());
             case COMPLEMENT:
-                return (left, right) -> VTLObject.of((Integer) left.get() * -1 * (Integer) right.get());
+                return (left, right) -> VTLObject.of((Long) left.get() * -1 * (Long) right.get());
             default:
                 throw new IllegalArgumentException(String.format("unknown sign %s", sign));
         }

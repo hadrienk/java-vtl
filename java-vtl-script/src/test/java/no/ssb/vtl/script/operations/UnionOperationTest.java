@@ -29,7 +29,7 @@ public class UnionOperationTest {
         dataStructure = DataStructure.of(mapper::convertValue,
                 "TIME", Role.IDENTIFIER, String.class,
                 "GEO", Role.IDENTIFIER, String.class,
-                "POP", Role.MEASURE, Integer.class
+                "POP", Role.MEASURE, Long.class
         );
     }
     
@@ -67,7 +67,7 @@ public class UnionOperationTest {
             DataStructure wrongStructure = DataStructure.of(mapper::convertValue,
                     "TIME2", Role.IDENTIFIER, String.class,
                     "GEO2", Role.IDENTIFIER, String.class,
-                    "POP2", Role.MEASURE, Integer.class
+                    "POP2", Role.MEASURE, Long.class
             );
 
             Dataset wrongDataset = mock(Dataset.class);
@@ -100,27 +100,27 @@ public class UnionOperationTest {
                 dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
-                        dataStructure.wrap("POP", 5)
+                        dataStructure.wrap("POP", 5L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("POP", 2)
+                        dataStructure.wrap("POP", 2L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
-                        dataStructure.wrap("POP", 3)
+                        dataStructure.wrap("POP", 3L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
-                        dataStructure.wrap("POP", 7)
+                        dataStructure.wrap("POP", 7L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Finland"),
-                        dataStructure.wrap("POP", 9)
+                        dataStructure.wrap("POP", 9L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Switzerland"),
-                        dataStructure.wrap("POP", 12)
+                        dataStructure.wrap("POP", 12L)
                 )
         ));
 
@@ -128,15 +128,15 @@ public class UnionOperationTest {
                 dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Netherlands"),
-                        dataStructure.wrap("POP", 23)
+                        dataStructure.wrap("POP", 23L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Spain"),
-                        dataStructure.wrap("POP", 5)
+                        dataStructure.wrap("POP", 5L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Iceland"),
-                        dataStructure.wrap("POP", 1)
+                        dataStructure.wrap("POP", 1L)
                 )
         ));
     
@@ -151,39 +151,39 @@ public class UnionOperationTest {
                         dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Belgium"),
-                                dataStructure.wrap("POP", 5)
+                                dataStructure.wrap("POP", 5L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Greece"),
-                                dataStructure.wrap("POP", 2)
+                                dataStructure.wrap("POP", 2L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "France"),
-                                dataStructure.wrap("POP", 3)
+                                dataStructure.wrap("POP", 3L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Malta"),
-                                dataStructure.wrap("POP", 7)
+                                dataStructure.wrap("POP", 7L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Finland"),
-                                dataStructure.wrap("POP", 9)
+                                dataStructure.wrap("POP", 9L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Switzerland"),
-                                dataStructure.wrap("POP", 12)
+                                dataStructure.wrap("POP", 12L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Netherlands"),
-                                dataStructure.wrap("POP", 23)
+                                dataStructure.wrap("POP", 23L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Spain"),
-                                dataStructure.wrap("POP", 5)
+                                dataStructure.wrap("POP", 5L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Iceland"),
-                                dataStructure.wrap("POP", 1)
+                                dataStructure.wrap("POP", 1L)
                         )
                 );
     }
@@ -202,27 +202,27 @@ public class UnionOperationTest {
                 dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
-                        dataStructure.wrap("POP", 1)
+                        dataStructure.wrap("POP", 1L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("POP", 2)
+                        dataStructure.wrap("POP", 2L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
-                        dataStructure.wrap("POP", 3)
+                        dataStructure.wrap("POP", 3L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
-                        dataStructure.wrap("POP", 4)
+                        dataStructure.wrap("POP", 4L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Finland"),
-                        dataStructure.wrap("POP", 5)
+                        dataStructure.wrap("POP", 5L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Switzerland"),
-                        dataStructure.wrap("POP", 6)
+                        dataStructure.wrap("POP", 6L)
                 )
         ));
 
@@ -230,27 +230,27 @@ public class UnionOperationTest {
                 dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Belgium"),
-                        dataStructure.wrap("POP", 10)
+                        dataStructure.wrap("POP", 10L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("POP", 20)
+                        dataStructure.wrap("POP", 20L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "France"),
-                        dataStructure.wrap("POP", 30)
+                        dataStructure.wrap("POP", 30L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Malta"),
-                        dataStructure.wrap("POP", 40)
+                        dataStructure.wrap("POP", 40L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Finland"),
-                        dataStructure.wrap("POP", 50)
+                        dataStructure.wrap("POP", 50L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2011"),
                         dataStructure.wrap("GEO", "Switzerland"),
-                        dataStructure.wrap("POP", 60)
+                        dataStructure.wrap("POP", 60L)
                 )
         ));
     
@@ -265,52 +265,52 @@ public class UnionOperationTest {
                         dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Belgium"),
-                                dataStructure.wrap("POP", 1)
+                                dataStructure.wrap("POP", 1L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Greece"),
-                                dataStructure.wrap("POP", 2)
+                                dataStructure.wrap("POP", 2L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "France"),
-                                dataStructure.wrap("POP", 3)
+                                dataStructure.wrap("POP", 3L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Malta"),
-                                dataStructure.wrap("POP", 4)
+                                dataStructure.wrap("POP", 4L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Finland"),
-                                dataStructure.wrap("POP", 5)
+                                dataStructure.wrap("POP", 5L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2012"),
                                 dataStructure.wrap("GEO", "Switzerland"),
-                                dataStructure.wrap("POP", 6)
+                                dataStructure.wrap("POP", 6L)
                         ),
                         dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Belgium"),
-                                dataStructure.wrap("POP", 10)
+                                dataStructure.wrap("POP", 10L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Greece"),
-                                dataStructure.wrap("POP", 20)
+                                dataStructure.wrap("POP", 20L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "France"),
-                                dataStructure.wrap("POP", 30)
+                                dataStructure.wrap("POP", 30L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Malta"),
-                                dataStructure.wrap("POP", 40)
+                                dataStructure.wrap("POP", 40L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Finland"),
-                                dataStructure.wrap("POP", 50)
+                                dataStructure.wrap("POP", 50L)
                         ), dataPoint(
                                 dataStructure.wrap("TIME", "2011"),
                                 dataStructure.wrap("GEO", "Switzerland"),
-                                dataStructure.wrap("POP", 60)
+                                dataStructure.wrap("POP", 60L)
                         )
                 );
 
@@ -327,15 +327,15 @@ public class UnionOperationTest {
                 dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("POP", 2)
+                        dataStructure.wrap("POP", 2L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
-                        dataStructure.wrap("POP", 3)
+                        dataStructure.wrap("POP", 3L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
-                        dataStructure.wrap("POP", 4)
+                        dataStructure.wrap("POP", 4L)
                 )
         ));
 
@@ -343,19 +343,19 @@ public class UnionOperationTest {
                 dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Belgium"),
-                        dataStructure.wrap("POP", 1)
+                        dataStructure.wrap("POP", 1L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Greece"),
-                        dataStructure.wrap("POP", 2)
+                        dataStructure.wrap("POP", 2L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "France"),
-                        dataStructure.wrap("POP", 3)
+                        dataStructure.wrap("POP", 3L)
                 ), dataPoint(
                         dataStructure.wrap("TIME", "2012"),
                         dataStructure.wrap("GEO", "Malta"),
-                        dataStructure.wrap("POP", 4)
+                        dataStructure.wrap("POP", 4L)
                 )
         ));
     

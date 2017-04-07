@@ -93,7 +93,7 @@ class StaticDataset implements Dataset {
     private final DataStructure structure = DataStructure.builder()
             .put("id", Role.IDENTIFIER, String.class)
             .put("period", Role.IDENTIFIER, Instant.class)
-            .put("measure", Role.MEASURE, Integer.class)
+            .put("measure", Role.MEASURE, Long.class)
             .put("attribute", Role.ATTRIBUTE, String.class)
             .build();
 
@@ -106,7 +106,7 @@ class StaticDataset implements Dataset {
         for (int i = 0; i < 100; i++) {
             row.put("id", "id #" + i);
             row.put("period", period);
-            row.put("measure", i);
+            row.put("measure", Long.valueOf(i));
             row.put("attribute", "attribute #" + i);
             data.add(row);
         }

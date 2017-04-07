@@ -40,7 +40,7 @@ public class SumOperationTest {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             Throwable expectedThrowable = null;
 
@@ -48,7 +48,7 @@ public class SumOperationTest {
             when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "ID1DIFFERENTNAME", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             expectedThrowable = null;
             try {
@@ -77,7 +77,7 @@ public class SumOperationTest {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             expectedThrowable = null;
             try {
@@ -123,7 +123,7 @@ public class SumOperationTest {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             Throwable expectedThrowable = null;
 
@@ -131,7 +131,7 @@ public class SumOperationTest {
             when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1NOTSAMEMEASURE", Role.MEASURE, Integer.class
+                    "ME1NOTSAMEMEASURE", Role.MEASURE, Long.class
             ));
             expectedThrowable = null;
             try {
@@ -178,14 +178,14 @@ public class SumOperationTest {
             when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "TIME", Role.IDENTIFIER, String.class,
                     "GEO", Role.IDENTIFIER, String.class,
-                    "POPULATION", Role.MEASURE, Integer.class
+                    "POPULATION", Role.MEASURE, Long.class
             ));
 
             when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
                     "TIME", Role.IDENTIFIER, String.class,
                     "GEO", Role.IDENTIFIER, String.class,
                     "AGE", Role.IDENTIFIER, String.class,
-                    "POPULATION", Role.MEASURE, Integer.class
+                    "POPULATION", Role.MEASURE, Long.class
             ));
 
             DataStructure ld = left.getDataStructure();
@@ -193,16 +193,16 @@ public class SumOperationTest {
                     Stream.of(
                             tuple(ld.wrap("TIME", "2013"),
                                     ld.wrap("GEO", "Belgium"),
-                                    ld.wrap("POPULATION", 5)),
+                                    ld.wrap("POPULATION", 5L)),
                             tuple(ld.wrap("TIME", "2013"),
                                     ld.wrap("GEO", "Denmark"),
-                                    ld.wrap("POPULATION", 2)),
+                                    ld.wrap("POPULATION", 2L)),
                             tuple(ld.wrap("TIME", "2013"),
                                     ld.wrap("GEO", "France"),
-                                    ld.wrap("POPULATION", 3)),
+                                    ld.wrap("POPULATION", 3L)),
                             tuple(ld.wrap("TIME", "2013"),
                                     ld.wrap("GEO", "Spain"),
-                                    ld.wrap("POPULATION", 4))
+                                    ld.wrap("POPULATION", 4L))
                     )
             );
 
@@ -212,11 +212,11 @@ public class SumOperationTest {
                             tuple(rd.wrap("TIME", "2013"),
                                     rd.wrap("GEO", "Belgium"),
                                     rd.wrap("AGE", "Total"),
-                                    rd.wrap("POPULATION", 10)),
+                                    rd.wrap("POPULATION", 10L)),
                             tuple(rd.wrap("TIME", "2013"),
                                     rd.wrap("GEO", "Greece"),
                                     rd.wrap("AGE", "Total"),
-                                    rd.wrap("POPULATION", 11)),
+                                    rd.wrap("POPULATION", 11L)),
                             tuple(rd.wrap("TIME", "2013"),
                                     rd.wrap("GEO", "Belgium"),
                                     rd.wrap("AGE", "Y15-24"),
@@ -224,11 +224,11 @@ public class SumOperationTest {
                             tuple(rd.wrap("TIME", "2013"),
                                     rd.wrap("GEO", "Greece"),
                                     rd.wrap("AGE", "Y15-24"),
-                                    rd.wrap("POPULATION", 2)),
+                                    rd.wrap("POPULATION", 2L)),
                             tuple(rd.wrap("TIME", "2013"),
                                     rd.wrap("GEO", "Spain"),
                                     rd.wrap("AGE", "Y15-24"),
-                                    rd.wrap("POPULATION", 6))
+                                    rd.wrap("POPULATION", 6L))
                     )
             );
 
@@ -258,7 +258,7 @@ public class SumOperationTest {
                             tuple(sumDs.wrap("TIME", "2013"),
                                     sumDs.wrap("GEO", "Belgium"),
                                     sumDs.wrap("AGE", "Total"),
-                                    sumDs.wrap("POPULATION", 15)),
+                                    sumDs.wrap("POPULATION", 15L)),
                             tuple(sumDs.wrap("TIME", "2013"),
                                     sumDs.wrap("GEO", "Belgium"),
                                     sumDs.wrap("AGE", "Y15-24"),
@@ -266,7 +266,7 @@ public class SumOperationTest {
                             tuple(sumDs.wrap("TIME", "2013"),
                                     sumDs.wrap("GEO", "Spain"),
                                     sumDs.wrap("AGE", "Y15-24"),
-                                    sumDs.wrap("POPULATION", 10))
+                                    sumDs.wrap("POPULATION", 10L))
                     );
 
         } finally {
@@ -373,7 +373,7 @@ public class SumOperationTest {
                     "TIME", Role.IDENTIFIER, String.class,
                     "REF_AREA", Role.IDENTIFIER, String.class,
                     "PARTNER", Role.IDENTIFIER, String.class,
-                    "OBS_VALUE", Role.MEASURE, Integer.class,
+                    "OBS_VALUE", Role.MEASURE, Long.class,
                     "OBS_STATUS", Role.ATTRIBUTE, String.class
             );
 
@@ -387,17 +387,17 @@ public class SumOperationTest {
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "EU25"),
                                     ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 20),
+                                    ld.wrap("OBS_VALUE", 20L),
                                     ld.wrap("OBS_STATUS", "D")),
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "BG"),
                                     ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 2),
+                                    ld.wrap("OBS_VALUE", 2L),
                                     ld.wrap("OBS_STATUS", "D")),
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "RO"),
                                     ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 2),
+                                    ld.wrap("OBS_VALUE", 2L),
                                     ld.wrap("OBS_STATUS", "D"))
                     )
             );
@@ -407,7 +407,7 @@ public class SumOperationTest {
                             tuple(ld.wrap("TIME", "2010"),
                                     ld.wrap("REF_AREA", "EU25"),
                                     ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 10),
+                                    ld.wrap("OBS_VALUE", 10L),
                                     ld.wrap("OBS_STATUS", "D")),
                             tuple(ld.wrap("TIME", "2010"))
                     )
@@ -439,7 +439,7 @@ public class SumOperationTest {
                             tuple(sumDs.wrap("TIME", "2010"),
                                     sumDs.wrap("REF_AREA", "EU25"),
                                     sumDs.wrap("PARTNER", "CA"),
-                                    sumDs.wrap("OBS_VALUE", 30))
+                                    sumDs.wrap("OBS_VALUE", 30L))
                     );
 
         } finally {

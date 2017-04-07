@@ -59,12 +59,10 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Map<String, DataStructure> dataStructures = Maps.newLinkedHashMap();
 
         // Creates random values.
-        ImmutableMap<Class<?>, Function<Integer, Object>> types = ImmutableMap.of(
+        ImmutableMap<Class<?>, Function<Long, Object>> types = ImmutableMap.of(
                 String.class, rowId -> randomAsciiOfLengthBetween(5, 10) + "-" + rowId,
-                Integer.class, integer -> integer,
-                Float.class, Integer::floatValue,
-                Double.class, Integer::doubleValue,
-                Long.class, Integer::longValue
+                Double.class, Long::doubleValue,
+                Long.class, Long::longValue
         );
 
         DataStructure.Builder identifiers = DataStructure.builder();
@@ -97,7 +95,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                     if (component.getName().equals("rowNum")) {
                         value = datasetName + "-row-" + j;
                     } else {
-                        value = types.get(component.getType()).apply(j);
+                        value = types.get(component.getType()).apply(Long.valueOf(j));
                     }
                     points.add(currentStructure.wrap(component.getName(), value));
                 }

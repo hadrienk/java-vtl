@@ -104,10 +104,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         if (value instanceof Comparable && other.getClass() == value.getClass()) {
             return ((Comparable) value).compareTo(other);
         }
-        if (value instanceof Integer && other instanceof  Integer) {
-            return ((Integer) value).compareTo((Integer) other);
-        } else if (value instanceof Float && other instanceof Float) {
-            return ((Float) value).compareTo((Float) other);
+        if (value instanceof Long && other instanceof Long) {
+            return ((Long) value).compareTo((Long) other);
         } else if (value instanceof Double && other instanceof Double) {
             return ((Double) value).compareTo((Double) other);
         } else if (value instanceof Boolean && other instanceof Boolean) {
@@ -121,7 +119,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         }
         throw new IllegalArgumentException(
                 String.format("Cannot compare %s of type %s with %s of type %s",
-                        value, value==null?"<null>":value.getClass(), other, other==null?"<null>":other.getClass()));
+                        value, value==null? "<null>" : value.getClass(), other, other==null ? "<null>": other.getClass()));
     }
     
     @Override
