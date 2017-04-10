@@ -26,7 +26,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     private final RowsToReturn rowsToReturn;
     private final ComponentsToReturn componentsToReturn;
     private final String errorCode;
-    private final Integer errorLevel;
+    private final Long errorLevel;
     private final Set<Component> conditions = Sets.newHashSet();
 
     private CheckSingleRuleOperation(Builder builder) {
@@ -55,19 +55,20 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> getData() {
         Dataset childDataset = getChild();
-        DataStructure structure = getDataStructure();
+        DataStructure newStructure = getDataStructure();
         DataStructure previousStructure = childDataset.getDataStructure();
-        Component conditionComponent = getConditionComponent(structure);
+        Component conditionComponent = getConditionComponent(newStructure);
 
         return childDataset.getData().map(dataPoint -> {
 
-            DataPoint resultDataPoint = structure.wrap();
+            DataPoint resultDataPoint = newStructure.wrap();
             Map<Component, VTLObject> originalMap = previousStructure.asMap(dataPoint);
-            Map<Component, VTLObject> resultMap = structure.asMap(resultDataPoint);
+            Map<Component, VTLObject> resultMap = newStructure.asMap(resultDataPoint);
 
             for (Component component : resultMap.keySet()) {
-                if (originalMap.containsKey(component))
+                if (originalMap.containsKey(component)) {
                     resultMap.put(component, originalMap.get(component));
+                }
             }
 
             // Optimized and.
@@ -88,16 +89,16 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
             //... then filter rows
             if (rowsToReturn != RowsToReturn.ALL) {
-                if (rowsToReturn == RowsToReturn.VALID && !combinedCondition)
+                if (rowsToReturn == RowsToReturn.VALID && !combinedCondition) {
                     return null;
-                if (rowsToReturn == RowsToReturn.NOT_VALID && combinedCondition)
+                }
+                if (rowsToReturn == RowsToReturn.NOT_VALID && combinedCondition) {
                     return null;
+                }
             }
 
-            if (combinedCondition) {
-                resultMap.computeIfPresent(getErrorCodeComponent(), (k, v) -> VTLObject.of(errorCode));
-                resultMap.computeIfPresent(getErrorLevelComponent(), (k, v) -> VTLObject.of(errorLevel));
-            }
+            resultMap.computeIfPresent(getErrorCodeComponent(), (k, v) -> VTLObject.of(errorCode));
+            resultMap.computeIfPresent(getErrorLevelComponent(), (k, v) -> VTLObject.of(errorLevel));
 
             Boolean finalPrevious = combinedCondition;
             resultMap.computeIfPresent(conditionComponent, (k, v) -> VTLObject.of(finalPrevious));
@@ -166,7 +167,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         builder.put(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE, String.class);
 
         if (errorLevel != null) {
-            builder.put(ERROR_LEVEL_LABEL, Component.Role.ATTRIBUTE, Integer.class);
+            builder.put(ERROR_LEVEL_LABEL, Component.Role.ATTRIBUTE, Long.class);
         }
 
         return builder.build();
@@ -190,7 +191,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
         private RowsToReturn rowsToReturn = RowsToReturn.NOT_VALID;
         private ComponentsToReturn componentsToReturn = ComponentsToReturn.MEASURES;
         private String errorCode;
-        private Integer errorLevel;
+        private Long errorLevel;
 
         public Builder(Dataset dataset) {
             this.dataset = dataset;
@@ -211,7 +212,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
             return this;
         }
 
-        public Builder errorLevel(Integer errorLevel) {
+        public Builder errorLevel(Long errorLevel) {
             this.errorLevel = errorLevel;
             return this;
         }

@@ -67,7 +67,7 @@ public class VTLPrintStream extends PrintStream {
         );
         structure.addRow(ds.values().stream()
                 .map(Component::hashCode)
-                .map(i -> Integer.toString(i))
+                .map(i -> Long.toString(i))
                 .collect(Collectors.toList())
         );
         structure.showTable(this);

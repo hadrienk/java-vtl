@@ -41,6 +41,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final ClauseVisitor clausesVisitor;
     private final RelationalVisitor relationalVisitor;
     private final CheckVisitor checkVisitor;
+    private final HierarchyVisitor hierarchyVisitor;
     private final AggregationVisitor aggregationVisitor;
     
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
@@ -50,6 +51,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         relationalVisitor = new RelationalVisitor(this, context);
         ReferenceVisitor referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
         checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
+        hierarchyVisitor = new HierarchyVisitor(referenceVisitor);
         aggregationVisitor = new AggregationVisitor(referenceVisitor);
     }
 
@@ -96,6 +98,11 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     @Override
     public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
         return checkVisitor.visit(ctx.checkFunction());
+    }
+
+    @Override
+    public Dataset visitWithHierarchy(VTLParser.WithHierarchyContext ctx) {
+        return hierarchyVisitor.visit(ctx.hierarchyExpression());
     }
     
     /**

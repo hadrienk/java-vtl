@@ -3,9 +3,10 @@ package no.ssb.vtl.script.visitors.join;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,11 +14,13 @@ import org.junit.Test;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class JoinFilterClauseVisitorTest {
     
@@ -34,18 +37,19 @@ public class JoinFilterClauseVisitorTest {
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Integer.class
+                "m1", Component.Role.MEASURE, Long.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
-    
+
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 structure1.wrap(ImmutableMap.of(
                         "id1", "1",
-                        "m1", 10
+                        "m1", 10L
                 )),
                 structure1.wrap(ImmutableMap.of(
                         "id1", "2",
-                        "m1", 100
+                        "m1", 100L
                 ))
         ));
         
@@ -54,23 +58,24 @@ public class JoinFilterClauseVisitorTest {
         DataStructure structure2 = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Integer.class,
-                "m2", Component.Role.MEASURE, Integer.class,
+                "m1", Component.Role.MEASURE, Long.class,
+                "m2", Component.Role.MEASURE, Long.class,
                 "a1", Component.Role.ATTRIBUTE, String.class
         );
         when(ds2.getDataStructure()).thenReturn(structure2);
-    
+
+        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds2.getData()).then(invocation -> Stream.of(
                 structure2.wrap(ImmutableMap.of(
                         "id1", "1",
-                        "m1", 10,
-                        "m2", 10,
+                        "m1", 10L,
+                        "m2", 10L,
                         "a1", "test"
                 )),
                 structure2.wrap(ImmutableMap.of(
                         "id1", "2",
-                        "m1", 100,
-                        "m2", 10,
+                        "m1", 100L,
+                        "m2", 10L,
                         "a1", "2"
                 ))
         ));
@@ -96,7 +101,7 @@ public class JoinFilterClauseVisitorTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 10
+                        "1", 10L
                 );
     }
     
@@ -121,7 +126,7 @@ public class JoinFilterClauseVisitorTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "2", 100, 10, "2"
+                        "2", 100L, 10L, "2"
                 );
         
     }

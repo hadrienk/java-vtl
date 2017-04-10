@@ -314,8 +314,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new {@link DataPoint} for the given names and values.
      * <p>
-     * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
-     * a {@link DataPoint}.
+     * The ordering of VTLObjects is determined by the order of components in {@link #delegate}
      *
      * @param map a map of name and values
      * @return the corresponding tuple (row)
@@ -323,8 +322,9 @@ public class DataStructure extends ForwardingMap<String, Component> {
     public DataPoint wrap(Map<String, Object> map) {
 
         List<VTLObject> components = Lists.newArrayList();
-        for (Map.Entry<String, Object> entry : map.entrySet())
-            components.add(wrap(entry.getKey(), entry.getValue()));
+
+        for (String key : delegate.keySet())
+            components.add(VTLObject.of(map.get(key)));
 
         return DataPoint.create(components);
 
@@ -333,11 +333,11 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new {@link DataPoint} for the given names and values.
      * <p>
-     * This method uses the {@link #wrap(String, Object)} method to convert each value and returns
+     * This method uses the {@link #asMap(DataPoint)} method to convert each value and returns
      * a {@link DataPoint}.
      *
      * @param map a map of name and values
-     * @return the corresponding tuple (row)
+     * @return the corresponding DataPoint (row)
      */
     public DataPoint fromStringMap(Map<String, Object> map) {
         DataPoint dataPoint = DataPoint.create(map.size());

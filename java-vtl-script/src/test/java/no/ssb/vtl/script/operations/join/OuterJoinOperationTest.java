@@ -11,6 +11,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
@@ -22,10 +23,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Arrays.*;
-import static no.ssb.vtl.model.Component.Role.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
+import static java.util.Arrays.asList;
+import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -55,24 +59,27 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Map<String, DataStructure> dataStructures = Maps.newLinkedHashMap();
 
         // Creates random values.
-        ImmutableMap<Class<?>, Function<Integer, Object>> types = ImmutableMap.of(
+        ImmutableMap<Class<?>, Function<Long, Object>> types = ImmutableMap.of(
                 String.class, rowId -> randomAsciiOfLengthBetween(5, 10) + "-" + rowId,
-                Integer.class, integer -> integer,
-                Float.class, Integer::floatValue,
-                Double.class, Integer::doubleValue,
-                Long.class, Integer::longValue
+                Double.class, Long::doubleValue,
+                Long.class, Long::longValue
         );
+
+        DataStructure.Builder identifiers = DataStructure.builder();
+        List<Class<?>> typeList = types.keySet().asList();
+        for (int i = 0; i < identifierAmount; i++) {
+            identifiers.put("i-" + i, IDENTIFIER, randomFrom(typeList));
+        }
 
         for (int i = 0; i < datasetAmount; i++) {
             String datasetName = "ds" + i;
 
-            List<Class<?>> typeList = types.keySet().asList();
             DataStructure.Builder dataStructureBuilder = DataStructure.builder();
             dataStructureBuilder.put("rowNum", IDENTIFIER, String.class);
-            for (int j = 0; j < identifierAmount + componentAmount; j++) {
-                if (j < identifierAmount) {
-                    dataStructureBuilder.put("i-" + j, IDENTIFIER, randomFrom(typeList));
-                } else if (rarely()) {
+
+            dataStructureBuilder.putAll(identifiers.build());
+            for (int j = identifierAmount; j < identifierAmount + componentAmount; j++) {
+                if (rarely()) {
                     dataStructureBuilder.put(datasetName + "-a-" + j, ATTRIBUTE, randomFrom(typeList));
                 } else {
                     dataStructureBuilder.put(datasetName + "-m-" + j, MEASURE, randomFrom(typeList));
@@ -88,7 +95,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                     if (component.getName().equals("rowNum")) {
                         value = datasetName + "-row-" + j;
                     } else {
-                        value = types.get(component.getType()).apply(j);
+                        value = types.get(component.getType()).apply(Long.valueOf(j));
                     }
                     points.add(currentStructure.wrap(component.getName(), value));
                 }
@@ -115,7 +122,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
 
 
         Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
@@ -208,6 +215,52 @@ public class OuterJoinOperationTest extends RandomizedTest {
     }
 
     @Test
+    public void testOuterJoin() throws Exception {
+
+        Dataset ds1 = mock(Dataset.class, "ds1");
+        Dataset ds2 = mock(Dataset.class, "ds2");
+
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", IDENTIFIER, Integer.class,
+                "value", MEASURE, String.class
+        );
+
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", IDENTIFIER, Integer.class,
+                "value", MEASURE, String.class
+        );
+
+        given(ds1.getDataStructure()).willReturn(structure1);
+        given(ds2.getDataStructure()).willReturn(structure2);
+
+        given(ds1.getData()).willAnswer(o -> Stream.of(1, 1, 1, 2, 3, 5, 7, 7, 8, 8, 9, 9, 9, 10)
+                .map(id -> Lists.newArrayList(
+                        VTLNumber.of(id), VTLObject.of("ds1 " + id)
+                ))
+                .map(DataPoint::create));
+        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
+
+        given(ds2.getData()).willAnswer(o -> Stream.of(1, 3, 3, 3, 3, 4, 5, 6, 8, 9, 9, 9, 10)
+                .map(id -> Lists.newArrayList(
+                        VTLNumber.of(id), VTLObject.of("ds2 " + id)
+                ))
+                .map(DataPoint::create));
+        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
+
+        AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+
+        VTLPrintStream vtlPrintStream = new VTLPrintStream(System.out);
+        //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(ds1);
+        vtlPrintStream.println(ds2);
+        //vtlPrintStream.println(result.getDataStructure());
+        vtlPrintStream.println(result);
+
+    }
+
+    @Test
     public void testOuterJoinWithUnequalIds() throws Exception {
 
 
@@ -249,6 +302,10 @@ public class OuterJoinOperationTest extends RandomizedTest {
                         structure2.wrap("id1", "2"),
                         structure2.wrap("value", "right 2"),
                         structure2.wrap("id2", "b")
+//FIXME                ), tuple(
+//FIXME                  structure2.wrap("id1", "2"),
+//FIXME                  structure2.wrap("value", "right 2e"),
+//FIXME                  structure2.wrap("id2", "e")
                 ), tuple(
                         structure2.wrap("id1", "3"),
                         structure2.wrap("value", "right 3"),
@@ -285,6 +342,7 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 .containsExactly(
                         asList("1", "left 1", null, null),
                         asList("2", "left 2", "right 2", "b"),
+//FIXME                 asList("2", "left 2", "right 2e", "e"),
                         asList("3", "left 3", "right 3", "c"),
                         asList("4", null, "right 4", "d")
                 );

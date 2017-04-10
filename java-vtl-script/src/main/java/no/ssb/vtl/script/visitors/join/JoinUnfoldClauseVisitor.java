@@ -8,6 +8,7 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.UnfoldOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
+import no.ssb.vtl.script.visitors.VisitorUtil;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Set;
@@ -31,8 +32,7 @@ public class JoinUnfoldClauseVisitor extends VTLDatasetExpressionVisitor<UnfoldO
 
         Set<String> elements = Sets.newLinkedHashSet();
         for (TerminalNode element : ctx.STRING_CONSTANT()) {
-            String constant = element.getText();
-            elements.add(constant.substring(1, constant.length() - 1));
+            elements.add(VisitorUtil.stripQuotes(element));
         }
         return new UnfoldOperation(dataset, dimension, measure, elements);
     }

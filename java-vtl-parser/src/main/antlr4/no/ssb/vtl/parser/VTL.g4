@@ -29,11 +29,17 @@ block : '{' assignment+ '}' ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
+           | hierarchyExpression                                    #withHierarchy
            | relationalExpression                                   #withRelational
            | function                                               #withFunction
            | exprAtom                                               #withAtom
            ;
 
+hierarchyExpression :
+    HIERARCHY_FUNC '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' HIERARCHY_FLAGS )? ')' ;
+hierarchyReference : datasetRef ;
+HIERARCHY_FUNC : 'hierarchy' ;
+HIERARCHY_FLAGS : 'sum' | 'prod';
 function : getFunction               #withGet
          | putFunction               #withPut
          | checkFunction             #withCheck
@@ -60,7 +66,7 @@ exprAtom : variableRef;
 
 checkFunction : 'check' '(' checkParam ')';
 
-checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
+checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;

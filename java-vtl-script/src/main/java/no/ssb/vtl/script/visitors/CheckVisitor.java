@@ -4,6 +4,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.check.CheckSingleRuleOperation;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
 
         String errorCode = getErrorCode(checkParamContext);
-        Integer errorLevel = getErrorLevel(checkParamContext);
+        Long errorLevel = getErrorLevel(checkParamContext);
 
         return new CheckSingleRuleOperation.Builder(dataset)
                 .rowsToReturn(rowsToReturn)
@@ -49,16 +50,16 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
     }
 
 
-    private Integer getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
+    private Long getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorLevel() != null) {
-            return Integer.valueOf(checkParamContext.errorLevel().getText());
+            return Long.valueOf(checkParamContext.errorLevel().getText());
         }
         return null;
     }
 
     private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
         if (checkParamContext.errorCode() != null) {
-            return checkParamContext.errorCode().getText();
+            return VisitorUtil.stripQuotes(checkParamContext.errorCode().STRING_CONSTANT());
         }
         return null;
     }

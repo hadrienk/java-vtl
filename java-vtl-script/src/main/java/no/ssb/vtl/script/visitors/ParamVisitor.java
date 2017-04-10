@@ -22,9 +22,9 @@ public class ParamVisitor extends VTLBaseVisitor<Object> {
         if (ctx.BOOLEAN_CONSTANT() != null) {
             return Boolean.valueOf(constant);
         } else if (ctx.FLOAT_CONSTANT() != null) {
-            return Float.valueOf(constant);
+            return Double.valueOf(constant);
         } else if (ctx.INTEGER_CONSTANT() != null) {
-            return Integer.valueOf(constant);
+            return Long.valueOf(constant);
         } else if (ctx.NULL_CONSTANT() != null) {
             return null;
         } else { //String

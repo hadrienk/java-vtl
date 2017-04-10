@@ -7,13 +7,11 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression;
 
-import java.lang.String;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
-import static java.lang.String.format;
 
 public class CalcOperation extends AbstractUnaryDatasetOperation {
     
@@ -65,7 +63,6 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     public Stream<DataPoint> getData() {
         return getChild().getData().map(dataPoint -> {
             dataPoint.add(getDataStructure().wrap(variableName, componentExpression.apply(dataPoint)));
-            System.out.println(format("Adding value for %s to datapoint %s", variableName, dataPoint));
             return dataPoint;
         });
     }
