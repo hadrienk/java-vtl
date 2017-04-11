@@ -3,9 +3,12 @@ package no.ssb.vtl.connectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.connectors.testutil.ConstantClockSource;
+import no.ssb.vtl.connectors.util.TimeUtil;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.InputStreamResource;
@@ -32,8 +35,13 @@ public class SsbKlassApiConnectorTest {
         SsbKlassApiConnector ssbConnector = new SsbKlassApiConnector(this.mapper, SsbKlassApiConnector.PeriodType.YEAR);
         this.connector = ssbConnector;
         mockServer = MockRestServiceServer.createServer(ssbConnector.getRestTemplate());
+        TimeUtil.setClockSource(new ConstantClockSource(Instant.parse("2017-01-01T12:00:00.00Z")));
     }
 
+    @After
+    public void teardown() {
+        TimeUtil.revertClockSource();
+    }
 
     @Test
     public void testCanHandle() throws Exception {

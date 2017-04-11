@@ -17,6 +17,7 @@ import com.google.common.collect.Maps;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.connector.ConnectorException;
 import no.ssb.vtl.connector.NotFoundException;
+import no.ssb.vtl.connectors.util.TimeUtil;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -270,7 +271,9 @@ public class SsbKlassApiConnector implements Connector {
         List<String> periods = new ArrayList<>();
 
         ZonedDateTime current = validFrom;
-        ZonedDateTime nextYear = ZonedDateTime.now().plusYears(1).with(DECEMBER).with(lastDayOfMonth()).withHour(23);
+        ZonedDateTime nextYear =
+                ZonedDateTime.ofInstant(TimeUtil.now(), ZoneId.of(KLASS_TIME_ZONE))
+                        .plusYears(1).with(DECEMBER).with(lastDayOfMonth()).withHour(23);
         while (current.isBefore(validTo) && current.isBefore(nextYear)) {
             periods.add(String.valueOf(current.getYear()));
             current = current.plusYears(1);
