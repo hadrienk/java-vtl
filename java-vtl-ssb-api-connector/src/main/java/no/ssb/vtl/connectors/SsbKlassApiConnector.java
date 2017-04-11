@@ -31,21 +31,23 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriTemplate;
 
 import java.io.IOException;
-import java.lang.String;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
-import static java.lang.String.format;
+import static java.lang.String.*;
+import static java.time.Month.*;
+import static java.time.temporal.TemporalAdjusters.*;
 import static java.util.Arrays.*;
 
 
@@ -59,8 +61,8 @@ public class SsbKlassApiConnector implements Connector {
             "/classifications/{classificationId}/codes?from={codesFrom}"
             //for example "/classifications/{classificationId}/codes?from={codesFrom}&to={codesTo}"
     };
-    private static final String KLASS_DATE_PATTERN = "yyyy-MM-dd";
     private static final String FIELD_CODE = "code";
+    private static final String FIELD_PERIOD = "period";
     private static final String FIELD_VALID_FROM = "validFrom";
     private static final String FIELD_VALID_TO = "validTo";
     private static final String FIELD_NAME = "name";
@@ -68,18 +70,19 @@ public class SsbKlassApiConnector implements Connector {
     private static final DataStructure DATA_STRUCTURE =
             DataStructure.builder()
                     .put(FIELD_CODE, Component.Role.IDENTIFIER, String.class)
-                    .put(FIELD_VALID_FROM, Component.Role.IDENTIFIER, Instant.class)
+                    .put(FIELD_PERIOD, Component.Role.IDENTIFIER, String.class)
                     //Note: validTo can contain nulls and VTL specification states that ICs cannot contain null values (VTL 1.1, user manual, line 2283).
                     //Nevertheless we set validTo to be an Identifier as we're not sure at this point what implications we
                     //could come upon.
-                    .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
+//                    .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
                     .put(FIELD_NAME, Component.Role.MEASURE, String.class)
                     .build();
 
     //Instead of using null when validTo not specified
-    private static final Instant MAX_DATE = Instant.parse("9999-12-31T23:59:59.999Z");
     private static final String KLASS_TIME_ZONE = "Europe/Oslo";
+    private static final ZonedDateTime MAX_DATE = ZonedDateTime.ofInstant(Instant.parse("9999-12-31T00:00:00.000Z"), ZoneId.of(KLASS_TIME_ZONE));
 
+    private final PeriodType periodType;
     private final List<UriTemplate> dataTemplates;
     private final ObjectMapper mapper;
     private final RestTemplate restTemplate;
@@ -93,7 +96,8 @@ public class SsbKlassApiConnector implements Connector {
 
      */
 
-    public SsbKlassApiConnector(ObjectMapper mapper) {
+    public SsbKlassApiConnector(ObjectMapper mapper, PeriodType periodType) {
+        this.periodType = periodType;
 
         this.dataTemplates = Lists.newArrayList();
         for (String path : DATA_PATHS) {
@@ -157,7 +161,8 @@ public class SsbKlassApiConnector implements Connector {
                 throw new NotFoundException(format("empty dataset returned for the identifier %s", url));
             }
 
-            List<Map<String, Object>> datasets = exchange.getBody().getCodes();
+            List<Map<String, Object>> rows = exchange.getBody().getCodes();
+            List<Map<String, Object>> rowsExpanded = expand(rows);
 
             return new Dataset() {
 
@@ -169,10 +174,7 @@ public class SsbKlassApiConnector implements Connector {
                 @Override
                 public Stream<DataPoint> getData() {
                     DataStructure dataStructure = getDataStructure();
-                    Set<String> codeFields = dataStructure.keySet();
-                    return datasets.stream()
-                            .map(d -> Maps.filterKeys(d, codeFields::contains))
-                            .map(d -> convertType(d))
+                    return rowsExpanded.stream()
                             .map(dataStructure::fromStringMap);
                 }
 
@@ -195,13 +197,44 @@ public class SsbKlassApiConnector implements Connector {
         }
     }
 
-    private Map<String, Object> convertType(Map<String, Object> d) {
-        Map<String, Object> copy = Maps.newLinkedHashMap(d);
-        Map<String, Class<?>> types = DATA_STRUCTURE.getTypes();
+    private List<Map<String, Object>> expand(List<Map<String, Object>> rows) {
+        ArrayList<Map<String, Object>> expanded = new ArrayList<>();
+        Map<String, Object> columnToValueExpanded;
+        ZonedDateTime validFrom;
+        ZonedDateTime validTo;
 
-        d.forEach((k, v) -> copy.put(k, mapper.convertValue(v, types.get(k))));
+        for (Map columnToValue : rows) {
+            validFrom = (ZonedDateTime) columnToValue.get(FIELD_VALID_FROM);
+            validTo = (ZonedDateTime) columnToValue.get(FIELD_VALID_TO);
+            for (String periode : getPeriods(validFrom, validTo)) {
+                columnToValueExpanded = new HashMap<>();
+                columnToValueExpanded.put(FIELD_CODE, columnToValue.get(FIELD_CODE));
+                columnToValueExpanded.put(FIELD_PERIOD, periode);
+                columnToValueExpanded.put(FIELD_NAME, columnToValue.get(FIELD_NAME));
+                expanded.add(columnToValueExpanded);
+            }
+        }
 
-        return copy;
+        return expanded;
+    }
+
+    private List<String> getPeriods(ZonedDateTime validFrom, ZonedDateTime validTo) {
+        if (periodType != PeriodType.YEAR) {
+            throw new UnsupportedOperationException("Period type: " + periodType + " not supported");
+        }
+
+        List<String> periods = new ArrayList<>();
+
+        ZonedDateTime current = validFrom;
+        ZonedDateTime nextYear = ZonedDateTime.now().plusYears(1).with(DECEMBER).with(lastDayOfMonth()).withHour(23);
+        while (current.isBefore(validTo) && current.isBefore(nextYear)) {
+            if (current.getMonth() == JANUARY) {
+                periods.add(String.valueOf(current.getYear()));
+            }
+            current = current.plusYears(1);
+        }
+
+        return periods;
     }
 
     public Dataset putDataset(String identifier, Dataset dataset) throws ConnectorException {
@@ -212,7 +245,7 @@ public class SsbKlassApiConnector implements Connector {
         @JsonProperty
         private List<Map<String, Object>> codes;
 
-        public DatasetWrapper() {
+        DatasetWrapper() {
         }
 
         public List<Map<String, Object>> getCodes() {
@@ -226,11 +259,11 @@ public class SsbKlassApiConnector implements Connector {
 
     private static class KlassDeserializer extends StdDeserializer<Map<String, Object>> {
 
-        public KlassDeserializer() {
+        KlassDeserializer() {
             this(null);
         }
 
-        public KlassDeserializer(Class<?> vc) {
+        KlassDeserializer(Class<?> vc) {
             super(vc);
         }
 
@@ -243,11 +276,10 @@ public class SsbKlassApiConnector implements Connector {
                 switch (jp.getCurrentName()) {
                     case FIELD_VALID_FROM:
                     case FIELD_VALID_TO:
-                        Instant value = null;
+                        ZonedDateTime value = null;
                         LocalDate localDate = jp.readValueAs(LocalDate.class);
                         if (localDate != null) {
-                            value = localDate.atStartOfDay(TimeZone.getTimeZone(ZoneId.of(KLASS_TIME_ZONE)).toZoneId())
-                                    .toInstant();
+                            value = localDate.atStartOfDay(TimeZone.getTimeZone(ZoneId.of(KLASS_TIME_ZONE)).toZoneId());
                         } else {
                             value = MAX_DATE;
                         }
@@ -261,5 +293,9 @@ public class SsbKlassApiConnector implements Connector {
             }
             return entry;
         }
+    }
+
+    public enum PeriodType {
+        YEAR
     }
 }
