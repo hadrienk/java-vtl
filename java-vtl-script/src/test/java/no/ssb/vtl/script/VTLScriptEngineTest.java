@@ -680,7 +680,7 @@ public class VTLScriptEngineTest {
         DataStructure ds = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Number.class
+                "m1", Role.MEASURE, Long.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
 
@@ -697,9 +697,9 @@ public class VTLScriptEngineTest {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
                 (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, Integer.class,
+                "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "m2", Role.MEASURE, Double.class,
                 "at1", Role.ATTRIBUTE, String.class
         );
@@ -708,29 +708,29 @@ public class VTLScriptEngineTest {
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
-                        "id1", 1,
+                        "id1", 1L,
                         "id2", "one",
-                        "m1", 101,
+                        "m1", 101L,
                         "m2", 1.1,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
-                        "id1", 1,
+                        "id1", 1L,
                         "id2", "two",
-                        "m1", 102,
+                        "m1", 102L,
                         "m2", 1.1,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
-                        "id1", 2,
+                        "id1", 2L,
                         "id2", "one",
-                        "m1", 201,
+                        "m1", 201L,
                         "m2", 1.1,
                         "at1", "attr2"
                 ), ImmutableMap.of(
-                        "id1", 2,
+                        "id1", 2L,
                         "id2", "two",
-                        "m1", 202,
+                        "m1", 202L,
                         "m2", 1.1,
                         "at1", "attr2"
                 )
@@ -748,15 +748,15 @@ public class VTLScriptEngineTest {
         );
     
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
-                entry("id1", Integer.class),
-                entry("m1", Integer.class)
+                entry("id1", Long.class),
+                entry("m1", Long.class)
         );
     
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        1, 101 + 102,
-                        2, 201 + 202
+                        1L, 101L + 102L,
+                        2L, 201L + 202L
                 );
     }
     
@@ -765,9 +765,9 @@ public class VTLScriptEngineTest {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
                 (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, Integer.class,
+                "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Integer.class,
+                "m1", Role.MEASURE, Long.class,
                 "at1", Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure);
@@ -775,26 +775,26 @@ public class VTLScriptEngineTest {
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
-                        "id1", 1,
+                        "id1", 1L,
                         "id2", "one",
-                        "m1", 101,
+                        "m1", 101L,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
-                        "id1", 1,
+                        "id1", 1L,
                         "id2", "two",
-                        "m1", 102,
+                        "m1", 102L,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
-                        "id1", 2,
+                        "id1", 2L,
                         "id2", "one",
-                        "m1", 201,
+                        "m1", 201L,
                         "at1", "attr2"
                 ), ImmutableMap.of(
-                        "id1", 2,
+                        "id1", 2L,
                         "id2", "two",
-                        "m1", 202,
+                        "m1", 202L,
                         "at1", "attr2"
                 )
         ).map(structure::wrap));
@@ -811,15 +811,15 @@ public class VTLScriptEngineTest {
         );
         
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
-                entry("id1", Integer.class),
-                entry("m1", Integer.class)
+                entry("id1", Long.class),
+                entry("m1", Long.class)
         );
         
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        1, 101 + 102,
-                        2, 201 + 202
+                        1L, 101L + 102L,
+                        2L, 201L + 202L
                 );
     }
     
