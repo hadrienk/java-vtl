@@ -178,13 +178,13 @@ public class VTLScriptEngineTest {
         assertThat(ds3.getDataStructure())
                 .describedAs("data structure of d3")
                 .containsOnlyKeys(
-                "renamedId1",
-                "id2",
-                "m2",
-                "m1",
-                "ident",
-                "boolTest"
-        );
+                        "renamedId1",
+                        "id2",
+                        "m2",
+                        "m1",
+                        "ident",
+                        "boolTest"
+                );
 
         assertThat(ds3.getData())
                 .flatExtracting(input -> input)
@@ -392,35 +392,82 @@ public class VTLScriptEngineTest {
                 (o, aClass) -> o,
                 "code", Role.IDENTIFIER, String.class,
                 "name", Role.MEASURE, String.class,
-                "validFrom", Role.IDENTIFIER, Instant.class,
-                "validTo", Role.IDENTIFIER, Instant.class
+                "period", Role.IDENTIFIER, String.class
         );
         when(dsCodeList2.getDataStructure()).thenReturn(structure2);
 
-        Instant year2013Utc = Instant.parse("2012-12-31T23:00:00.000Z");
-        Instant year2015Utc = Instant.parse("2014-12-31T23:00:00.000Z");
-        Instant year9999 = Instant.parse("9999-12-31T23:59:59.999Z");
-
         when(dsCodeList2.getData()).then(invocation -> Stream.of(
-                tuple(
-                        structure2.wrap("code", "0101"),
-                        structure2.wrap("name", "Halden"),
-                        structure2.wrap("validFrom", year2013Utc),
-                        structure2.wrap("validTo", year9999)
+                (Map) ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden 2010-2013",
+                        "period", "2010"
                 ),
-                tuple(
-                        structure2.wrap("code", "0111"),
-                        structure2.wrap("name", "Hvaler"),
-                        structure2.wrap("validFrom", year2015Utc),
-                        structure2.wrap("validTo", year9999)
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden 2010-2013",
+                        "period", "2011"
                 ),
-                tuple(
-                        structure2.wrap("code", "1001"),
-                        structure2.wrap("name", "Kristiansand"),
-                        structure2.wrap("validFrom", year2013Utc),
-                        structure2.wrap("validTo", year2015Utc)
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden 2010-2013",
+                        "period", "2012"
+                ),
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden",
+                        "period", "2013"
+                ),
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden",
+                        "period", "2014"
+                ),
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden",
+                        "period", "2015"
+                ),
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden",
+                        "period", "2016"
+                ),
+                ImmutableMap.of(
+                        "code", "0101",
+                        "name", "Halden",
+                        "period", "2017"
+                ),
+                ImmutableMap.of(
+                        "code", "0111",
+                        "name", "Hvaler",
+                        "period", "2015"
+                ),
+                ImmutableMap.of(
+                        "code", "0111",
+                        "name", "Hvaler",
+                        "period", "2016"
+                ),
+                ImmutableMap.of(
+                        "code", "0111",
+                        "name", "Hvaler",
+                        "period", "2017"
+                ),
+                ImmutableMap.of(
+                        "code", "1001",
+                        "name", "Kristiansand",
+                        "period", "2013"
+                ),
+                ImmutableMap.of(
+                        "code", "1001",
+                        "name", "Kristiansand",
+                        "period", "2014"
+                ),
+                ImmutableMap.of(
+                        "code", "1001",
+                        "name", "Kristiansand",
+                        "period", "2015"
                 )
-        ));
+        ).map(structure2::wrap));
         when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
         bindings.put("ds1", ds1);
@@ -428,16 +475,13 @@ public class VTLScriptEngineTest {
 
         VTLPrintStream out = new VTLPrintStream(System.out);
         engine.eval("" +
-                        "ds2r := ds2[rename code as kommune_nr]" +
-                        "dsBoolean := [outer ds1, ds2r]{" +
-                        "   filter periode is not null," +
-                        "   temp := date_from_string(periode, \"YYYY\")," + //TODO rewrite when we have functions
-                        "   CONDITION := validFrom <= temp" +
-                        "      and temp < validTo," +
-                        "   drop temp" +
-                        "}"+
-                        "ds3invalid := check(dsBoolean, not_valid, measures, errorcode(\"TEST_ERROR_CODE\"))" +
-                        "ds3valid   := check(dsBoolean, valid, measures)"
+                "ds2r := ds2[rename code as kommune_nr, period as periode]" +
+                "dsBoolean := [outer ds1, ds2r]{" +
+                "   CONDITION := name is not null," +
+                "   kommune_nr_RESULTAT := CONDITION" +
+                "}"+
+                "ds3invalid := check(dsBoolean, not_valid, measures, errorcode(\"TEST_ERROR_CODE\"))" +
+                "ds3valid   := check(dsBoolean, valid, measures)"
         );
 
         out.println(bindings.get("dsBoolean"));
@@ -454,9 +498,8 @@ public class VTLScriptEngineTest {
                 entry("ds1_m1", Component.Role.MEASURE),
                 entry("ds1_at1", Component.Role.ATTRIBUTE),
                 entry("ds2r_name", Component.Role.MEASURE),
-                entry("validFrom", Component.Role.IDENTIFIER),
-                entry("validTo", Component.Role.IDENTIFIER),
-                entry("errorcode", Component.Role.ATTRIBUTE)
+                entry("errorcode", Component.Role.ATTRIBUTE),
+                entry("kommune_nr_RESULTAT", Component.Role.MEASURE)
         );
 
         assertThat(ds3valid.getDataStructure().getRoles()).contains(
@@ -465,9 +508,8 @@ public class VTLScriptEngineTest {
                 entry("ds1_m1", Component.Role.MEASURE),
                 entry("ds1_at1", Component.Role.ATTRIBUTE),
                 entry("ds2r_name", Component.Role.MEASURE),
-                entry("validFrom", Component.Role.IDENTIFIER),
-                entry("validTo", Component.Role.IDENTIFIER),
-                entry("errorcode", Component.Role.ATTRIBUTE)
+                entry("errorcode", Component.Role.ATTRIBUTE),
+                entry("kommune_nr_RESULTAT", Component.Role.MEASURE)
         );
 
         // Should only contain the "non valid" rows.
@@ -481,38 +523,27 @@ public class VTLScriptEngineTest {
         assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
         assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(101L);
         assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr2");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isEqualTo("Hvaler");
-        assertThat(map.get(ds3InvalidDataStruct.get("validFrom")).get()).isEqualTo(year2015Utc);
-        assertThat(map.get(ds3InvalidDataStruct.get("validTo")).get()).isEqualTo(year9999);
+        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isNull();
         assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
 
         map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(1));
         assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
         assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
         assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(102L);
         assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr3");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isEqualTo(null);
-        assertThat(map.get(ds3InvalidDataStruct.get("validFrom")).get()).isEqualTo(null);
-        assertThat(map.get(ds3InvalidDataStruct.get("validTo")).get()).isEqualTo(null);
+        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isNull();
         assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
 
 
         // Should only contain the "valid" rows.
-        DataStructure ds3ValidDataStruct = ds3valid.getDataStructure();
         List<DataPoint> ds3ValidDataPoints = ds3valid.getData().collect(Collectors.toList());
 
-        assertThat(ds3ValidDataPoints).hasSize(1);
-
-        map = ds3ValidDataStruct.asMap(ds3ValidDataPoints.get(0));
-        assertThat(map.get(ds3ValidDataStruct.get("kommune_nr")).get()).isEqualTo("0101");
-        assertThat(map.get(ds3ValidDataStruct.get("periode")).get()).isEqualTo("2015");
-        assertThat(map.get(ds3ValidDataStruct.get("ds1_m1")).get()).isEqualTo(100L);
-        assertThat(map.get(ds3ValidDataStruct.get("ds1_at1")).get()).isEqualTo("attr1");
-        assertThat(map.get(ds3ValidDataStruct.get("ds2r_name")).get()).isEqualTo("Halden");
-        assertThat(map.get(ds3ValidDataStruct.get("validFrom")).get()).isEqualTo(year2013Utc);
-        assertThat(map.get(ds3ValidDataStruct.get("validTo")).get()).isEqualTo(year9999);
-        assertThat(map.get(ds3ValidDataStruct.get("errorcode")).get()).isEqualTo(null);
-
+        //TODO only the following row is really valid but this is not something we need for now
+        //| kommune_nr | periode | m1  | at1   | name   | CONDITION | kommune_nr_RESULTAT |
+        //| 0101       | 2015    | 100 | attr1 | Halden | true      | true                |
+        assertThat(ds3ValidDataPoints).hasSize(14);
     }
 
     @Test
