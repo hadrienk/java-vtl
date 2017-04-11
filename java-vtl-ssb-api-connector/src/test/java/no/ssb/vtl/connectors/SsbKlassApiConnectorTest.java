@@ -89,8 +89,8 @@ public class SsbKlassApiConnectorTest {
                         "0104", "2017", "Moss ny",
                         "0104", "2018", "Moss ny",
                         "0105", "2013", "Sarpsborg",
-                        "0105", "2014", "Sarpsborg",
-                        "0105", "2015", "Sarpsborg ny", //valid from 2014-06-01, but the first year is 2015
+                        "0105", "2014", "Sarpsborg ny", //valid from 2014-06-01, but year 2014 gets the newest name
+                        "0105", "2015", "Sarpsborg ny",
                         "0105", "2016", "Sarpsborg ny",
                         "0105", "2017", "Sarpsborg ny",
                         "0105", "2018", "Sarpsborg ny" //TODO simulate time

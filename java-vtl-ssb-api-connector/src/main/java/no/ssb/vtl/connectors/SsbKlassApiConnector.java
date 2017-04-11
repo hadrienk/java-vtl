@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.connector.Connector;
@@ -37,11 +38,18 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -71,15 +79,11 @@ public class SsbKlassApiConnector implements Connector {
             DataStructure.builder()
                     .put(FIELD_CODE, Component.Role.IDENTIFIER, String.class)
                     .put(FIELD_PERIOD, Component.Role.IDENTIFIER, String.class)
-                    //Note: validTo can contain nulls and VTL specification states that ICs cannot contain null values (VTL 1.1, user manual, line 2283).
-                    //Nevertheless we set validTo to be an Identifier as we're not sure at this point what implications we
-                    //could come upon.
-//                    .put(FIELD_VALID_TO, Component.Role.IDENTIFIER, Instant.class)
                     .put(FIELD_NAME, Component.Role.MEASURE, String.class)
                     .build();
 
-    //Instead of using null when validTo not specified
     private static final String KLASS_TIME_ZONE = "Europe/Oslo";
+    //Instead of using null when validTo not specified
     private static final ZonedDateTime MAX_DATE = ZonedDateTime.ofInstant(Instant.parse("9999-12-31T00:00:00.000Z"), ZoneId.of(KLASS_TIME_ZONE));
 
     private final PeriodType periodType;
@@ -200,22 +204,62 @@ public class SsbKlassApiConnector implements Connector {
     private List<Map<String, Object>> expand(List<Map<String, Object>> rows) {
         ArrayList<Map<String, Object>> expanded = new ArrayList<>();
         Map<String, Object> columnToValueExpanded;
-        ZonedDateTime validFrom;
-        ZonedDateTime validTo;
 
-        for (Map columnToValue : rows) {
-            validFrom = (ZonedDateTime) columnToValue.get(FIELD_VALID_FROM);
-            validTo = (ZonedDateTime) columnToValue.get(FIELD_VALID_TO);
-            for (String periode : getPeriods(validFrom, validTo)) {
-                columnToValueExpanded = new HashMap<>();
-                columnToValueExpanded.put(FIELD_CODE, columnToValue.get(FIELD_CODE));
-                columnToValueExpanded.put(FIELD_PERIOD, periode);
-                columnToValueExpanded.put(FIELD_NAME, columnToValue.get(FIELD_NAME));
-                expanded.add(columnToValueExpanded);
+        List<String> distinctCodes = rows.stream()
+                .map(row -> (String)row.get(FIELD_CODE))
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> codeRows;
+        for (String code : distinctCodes) {
+            codeRows = getRowsForCode(rows, code);
+
+            //reverse ordered by validFrom
+            SortedMap<ZonedDateTime, Map<String, List<String>>> periodToNameToPeriod = new TreeMap<>(Comparator.reverseOrder());
+            initializeSortedMap(codeRows, periodToNameToPeriod);
+
+            Set<String> seenPeriods = new HashSet<>();
+            List<Map<String, Object>> tempExpanded;
+            tempExpanded = new ArrayList<>();
+            for (Map<String, List<String>> nameToPeriod : periodToNameToPeriod.values()) {
+                for (Map.Entry<String, List<String>> e : nameToPeriod.entrySet()) {
+                    //reverse so that newest are checked first and we get newest name for a code
+                    //that was changed during a year
+                    Collections.reverse(e.getValue());
+                    for (String period : e.getValue()) {
+                        if (!seenPeriods.contains(period)) {
+                            columnToValueExpanded = new HashMap<>();
+                            columnToValueExpanded.put(FIELD_CODE, code);
+                            columnToValueExpanded.put(FIELD_PERIOD, period);
+                            columnToValueExpanded.put(FIELD_NAME, e.getKey());
+                            tempExpanded.add(columnToValueExpanded);
+                            seenPeriods.add(period);
+                        }
+                    }
+                }
             }
+            Collections.reverse(tempExpanded);
+            expanded.addAll(tempExpanded);
         }
 
         return expanded;
+    }
+
+    private void initializeSortedMap(List<Map<String, Object>> codeRows, SortedMap<ZonedDateTime, Map<String, List<String>>> periodToNameToPeriod) {
+        codeRows.forEach(codeRow ->
+                periodToNameToPeriod.put(
+                        (ZonedDateTime) codeRow.get(FIELD_VALID_FROM),
+                        ImmutableMap.of(
+                                (String) codeRow.get(FIELD_NAME),
+                                getPeriods(
+                                        (ZonedDateTime) codeRow.get(FIELD_VALID_FROM),
+                                        (ZonedDateTime) codeRow.get(FIELD_VALID_TO))
+                        )
+                ));
+    }
+
+    private List<Map<String, Object>> getRowsForCode(List<Map<String, Object>> rows, String code) {
+        return rows.stream().filter(row -> row.get(FIELD_CODE).equals(code)).collect(Collectors.toList());
     }
 
     private List<String> getPeriods(ZonedDateTime validFrom, ZonedDateTime validTo) {
@@ -228,9 +272,7 @@ public class SsbKlassApiConnector implements Connector {
         ZonedDateTime current = validFrom;
         ZonedDateTime nextYear = ZonedDateTime.now().plusYears(1).with(DECEMBER).with(lastDayOfMonth()).withHour(23);
         while (current.isBefore(validTo) && current.isBefore(nextYear)) {
-            if (current.getMonth() == JANUARY) {
-                periods.add(String.valueOf(current.getYear()));
-            }
+            periods.add(String.valueOf(current.getYear()));
             current = current.plusYears(1);
         }
 
