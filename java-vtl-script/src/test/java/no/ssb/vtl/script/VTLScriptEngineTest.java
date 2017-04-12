@@ -357,11 +357,13 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         Dataset dsCodeList2 = mock(Dataset.class);
+        Dataset dsCodeList3 = mock(Dataset.class);
 
         DataStructure structure1 = DataStructure.of(
                 (o, aClass) -> o,
                 "kommune_nr", Role.IDENTIFIER, String.class,
                 "periode", Role.IDENTIFIER, String.class,
+                "kostragruppe", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
                 "at1", Role.ATTRIBUTE, String.class
         );
@@ -370,18 +372,28 @@ public class VTLScriptEngineTest {
                 (Map) ImmutableMap.of(
                         "kommune_nr", "0101",
                         "periode", "2015",
+                        "kostragruppe", "EKG14",
                         "m1", 100L,
                         "at1", "attr1"
                 ),
                 ImmutableMap.of(
+                        "kommune_nr", "0101",
+                        "periode", "2015",
+                        "kostragruppe", "EKG15",
+                        "m1", 110L,
+                        "at1", "attr4"
+                ),
+                ImmutableMap.of(
                         "kommune_nr", "0111",
                         "periode", "2014",
+                        "kostragruppe", "EKG14",
                         "m1", 101L,
                         "at1", "attr2"
                 ),
                 ImmutableMap.of(
                         "kommune_nr", "9000",
                         "periode", "2014",
+                        "kostragruppe", "EKG14",
                         "m1", 102L,
                         "at1", "attr3"
                 )
@@ -470,80 +482,172 @@ public class VTLScriptEngineTest {
         ).map(structure2::wrap));
         when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
+        DataStructure structure3 = DataStructure.of(
+                (o, aClass) -> o,
+                "code", Role.IDENTIFIER, String.class,
+                "name", Role.MEASURE, String.class,
+                "period", Role.IDENTIFIER, String.class
+        );
+        when(dsCodeList3.getDataStructure()).thenReturn(structure3);
+
+        when(dsCodeList3.getData()).then(invocation -> Stream.of(
+                (Map) ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2010"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2011"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2012"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2013"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2014"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2015"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2016"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG14",
+                        "name", "Bergen, Trondheim og Stavanger",
+                        "period", "2017"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG15",
+                        "name", "Oslo kommune",
+                        "period", "2016"
+                ),
+                ImmutableMap.of(
+                        "code", "EKG15",
+                        "name", "Oslo kommune",
+                        "period", "2017"
+                )
+        ).map(structure2::wrap));
+        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
+
         bindings.put("ds1", ds1);
         bindings.put("ds2", dsCodeList2);
+        bindings.put("ds3", dsCodeList3);
 
         VTLPrintStream out = new VTLPrintStream(System.out);
         engine.eval("" +
                 "ds2r := ds2[rename code as kommune_nr, period as periode]" +
-                "dsBoolean := [outer ds1, ds2r]{" +
-                "   CONDITION := name is not null," +
-                "   kommune_nr_RESULTAT := CONDITION" +
+                "dsBoolean0 := [outer ds1, ds2r]{" +
+                "   ds2_CONDITION := name is not null," +
+                "   rename name to ds2_name," +
+                "   kommune_nr_RESULTAT := ds2_CONDITION" +
                 "}"+
-                "ds3invalid := check(dsBoolean, not_valid, measures, errorcode(\"TEST_ERROR_CODE\"))" +
-                "ds3valid   := check(dsBoolean, valid, measures)"
+                "ds3r := ds3[rename code as kostragruppe, period as periode]" +
+                "dsBoolean1 := [outer ds1, ds3r]{" +
+                "   ds3_CONDITION := name is not null," +
+                "   rename name to ds3_name," +
+                "   kostragruppe_RESULTAT := ds3_CONDITION" +
+                "}"+
+                "dsBoolean3 := [dsBoolean0, dsBoolean1]{" +
+                "   filter true" +
+                "}" +
+                "ds4invalid := check(dsBoolean3, not_valid, measures, errorcode(\"TEST_ERROR_CODE\"))" +
+                "ds4valid   := check(dsBoolean3, valid, measures)"
         );
 
-        out.println(bindings.get("dsBoolean"));
+//        out.println(bindings.get("dsBoolean0"));
+//        out.println(bindings.get("dsBoolean1"));
+//        out.println(bindings.get("dsBoolean3"));
+        out.println(bindings.get("ds4invalid"));
 
-        assertThat(bindings).containsKey("ds3invalid");
-        assertThat(bindings).containsKey("ds3valid");
+        assertThat(bindings).containsKey("ds4invalid");
+        assertThat(bindings).containsKey("ds4valid");
 
-        Dataset ds3invalid = (Dataset) bindings.get("ds3invalid");
-        Dataset ds3valid = (Dataset) bindings.get("ds3valid");
+        Dataset ds3invalid = (Dataset) bindings.get("ds4invalid");
+        Dataset ds3valid = (Dataset) bindings.get("ds4valid");
 
+        //not checking for other measures and attributes since they are
+        //not necessary for validation
         assertThat(ds3invalid.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("periode", Component.Role.IDENTIFIER),
-                entry("ds1_m1", Component.Role.MEASURE),
-                entry("ds1_at1", Component.Role.ATTRIBUTE),
-                entry("ds2r_name", Component.Role.MEASURE),
+                entry("kostragruppe", Component.Role.IDENTIFIER),
                 entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("kommune_nr_RESULTAT", Component.Role.MEASURE)
+                entry("dsBoolean0_kommune_nr_RESULTAT", Component.Role.MEASURE),
+                entry("dsBoolean1_kostragruppe_RESULTAT", Component.Role.MEASURE)
         );
 
         assertThat(ds3valid.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("periode", Component.Role.IDENTIFIER),
-                entry("ds1_m1", Component.Role.MEASURE),
-                entry("ds1_at1", Component.Role.ATTRIBUTE),
-                entry("ds2r_name", Component.Role.MEASURE),
+                entry("kostragruppe", Component.Role.IDENTIFIER),
                 entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("kommune_nr_RESULTAT", Component.Role.MEASURE)
+                entry("dsBoolean0_kommune_nr_RESULTAT", Component.Role.MEASURE),
+                entry("dsBoolean1_kostragruppe_RESULTAT", Component.Role.MEASURE)
         );
 
         // Should only contain the "non valid" rows.
         DataStructure ds3InvalidDataStruct = ds3invalid.getDataStructure();
         List<DataPoint> ds3InvalidDataPoints = ds3invalid.getData().collect(Collectors.toList());
 
-        assertThat(ds3InvalidDataPoints).hasSize(2);
+        assertThat(ds3InvalidDataPoints).hasSize(3);
 
-        Map<Component, VTLObject> map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(0));
-        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0111");
-        assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(101L);
-        assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr2");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isNull();
-        assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
+        //using for loop as data points come in random order
+        Map<Component, VTLObject> map;
+        for (DataPoint dp : ds3InvalidDataPoints) {
+            map = ds3InvalidDataStruct.asMap(dp);
 
-        map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(1));
-        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
-        assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(102L);
-        assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr3");
-        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isNull();
-        assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
-
+            if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("0101")) {
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0101");
+                assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2015");
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG15");
+                assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(false);
+            } else if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("9000")) {
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
+                assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
+                assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+            } else if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("0111")) {
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0111");
+                assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
+                assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+            }
+        }
 
         // Should only contain the "valid" rows.
+        DataStructure ds3ValidDataStruct = ds3valid.getDataStructure();
         List<DataPoint> ds3ValidDataPoints = ds3valid.getData().collect(Collectors.toList());
 
-        //TODO only the following row is really valid but this is not something we need for now
-        //| kommune_nr | periode | m1  | at1   | name   | CONDITION | kommune_nr_RESULTAT |
-        //| 0101       | 2015    | 100 | attr1 | Halden | true      | true                |
-        assertThat(ds3ValidDataPoints).hasSize(14);
+        assertThat(ds3ValidDataPoints).hasSize(1);
+
+        map = ds3ValidDataStruct.asMap(ds3ValidDataPoints.get(0));
+        assertThat(map.get(ds3ValidDataStruct.get("kommune_nr")).get()).isEqualTo("0101");
+        assertThat(map.get(ds3ValidDataStruct.get("periode")).get()).isEqualTo("2015");
+        assertThat(map.get(ds3ValidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
+        assertThat(map.get(ds3ValidDataStruct.get("errorcode")).get()).isNull();
+        assertThat(map.get(ds3ValidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(true);
+        assertThat(map.get(ds3ValidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
     }
 
     @Test
