@@ -40,7 +40,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         AbstractJoinOperation joinOperation = joinDefVisitor.visit(ctx.joinDefinition());
         joinScope = joinOperation.getJoinScope();
 
-        workingDataset = joinOperation.workDataset();
+        workingDataset = joinOperation;
         referenceVisitor = new ReferenceVisitor(joinScope);
 
         Dataset finalDataset = visit(ctx.joinBody());

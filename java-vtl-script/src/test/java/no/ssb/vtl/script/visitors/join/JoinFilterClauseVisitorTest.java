@@ -3,9 +3,10 @@ package no.ssb.vtl.script.visitors.join;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,11 +14,13 @@ import org.junit.Test;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class JoinFilterClauseVisitorTest {
     
@@ -37,7 +40,8 @@ public class JoinFilterClauseVisitorTest {
                 "m1", Component.Role.MEASURE, Integer.class
         );
         when(ds1.getDataStructure()).thenReturn(structure1);
-    
+
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 structure1.wrap(ImmutableMap.of(
                         "id1", "1",
@@ -59,7 +63,8 @@ public class JoinFilterClauseVisitorTest {
                 "a1", Component.Role.ATTRIBUTE, String.class
         );
         when(ds2.getDataStructure()).thenReturn(structure2);
-    
+
+        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds2.getData()).then(invocation -> Stream.of(
                 structure2.wrap(ImmutableMap.of(
                         "id1", "1",
