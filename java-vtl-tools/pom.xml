@@ -25,6 +25,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>no.ssb.common.data</groupId>
             <artifactId>data-vtl-connector</artifactId>
             <version>0.3-DEV-SNAPSHOT</version>
@@ -107,7 +112,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>1.4.3.RELEASE</version>
+                <version>1.5.2.RELEASE</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>

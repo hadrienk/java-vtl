@@ -1,23 +1,30 @@
 package no.ssb.vtl.tools.webconsole;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import org.antlr.v4.runtime.*;
+import no.ssb.vtl.tools.webconsole.entity.SyntaxError;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.BufferedTokenStream;
+import org.antlr.v4.runtime.DiagnosticErrorListener;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.tool.GrammarParserInterpreter;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.List;
 
 /**
- * Created by hadrien on 08/12/2016.
+ * A validator service that returns syntax errors for expressions.
  */
 @RequestMapping(
         produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
@@ -27,13 +34,21 @@ import java.util.List;
 public class ValidatorController {
 
 
+    /**
+     * Validate a VTL Expression
+     *
+     * @param expression
+     * @return a list of Error if any
+     * @throws IOException
+     */
     @RequestMapping(
             path = "/validate",
             method = RequestMethod.POST
     )
-    public List<Error> validate(Reader script) throws IOException {
+    @Cacheable(cacheNames="expressions", key="@hasher.apply(#expression)")
+    public List<SyntaxError> validate(@RequestBody String expression) throws IOException {
 
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(script));
+        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
         VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
 
         lexer.removeErrorListeners();
@@ -50,61 +65,19 @@ public class ValidatorController {
 
         parser.start();
 
-
-        return errorListener.getErrors();
+        return errorListener.getSyntaxErrors();
 
     }
 
-    public static class Error {
-
-        private final Integer startLine;
-        private final Integer stopLine;
-        private final Integer startColumn;
-        private final Integer stopColumn;
-        private final String message;
-        private final RecognitionException exception;
-
-        public Error(Integer startLine, Integer stopLine, Integer startColumn, Integer stopColumn, String message, RecognitionException exception) {
-            this.startLine = startLine;
-            this.stopLine = stopLine;
-            this.startColumn = startColumn;
-            this.stopColumn = stopColumn;
-            this.message = message;
-            this.exception = exception;
-        }
-
-        public Integer getStartLine() {
-            return startLine;
-        }
-
-        public Integer getStopLine() {
-            return stopLine;
-        }
-
-        public Integer getStartColumn() {
-            return startColumn;
-        }
-
-        public Integer getStopColumn() {
-            return stopColumn;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        @JsonIgnore
-        public RecognitionException getException() {
-            return exception;
-        }
-    }
-
+    /**
+     * An {@link org.antlr.v4.runtime.ANTLRErrorListener} implementation that collects errors and create {@link SyntaxError}
+     */
     public static class ErrorListener extends BaseErrorListener {
 
-        private List<Error> errors = Lists.newArrayList();
+        private List<SyntaxError> syntaxErrors = Lists.newArrayList();
 
-        public List<Error> getErrors() {
-            return errors;
+        public List<SyntaxError> getSyntaxErrors() {
+            return syntaxErrors;
         }
 
         @Override
@@ -119,7 +92,7 @@ public class ValidatorController {
                     stopColumn = startColumn + (stop - start) + 1;
                 }
             }
-            errors.add(new Error(startLine, stopLine, startColumn, stopColumn, msg, e));
+            syntaxErrors.add(new SyntaxError(startLine, stopLine, startColumn, stopColumn, msg, e));
         }
     }
 }
