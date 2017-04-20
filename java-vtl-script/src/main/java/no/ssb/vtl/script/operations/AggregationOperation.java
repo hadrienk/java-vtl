@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -11,6 +12,7 @@ import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,31 +48,37 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        Order order = Order.create(getDataStructure()).build();
-        return StreamUtils.aggregate(getChild().getData(order).orElse(getChild().getData().sorted(order)), (
-                dataPoint, dataPoint2) -> {
-            Map<Component, VTLObject> map1 = getDataStructure().asMap(dataPoint);
-            Map<Component, VTLObject> map2 = getDataStructure().asMap(dataPoint2);
-            return map1.get(groupBy.get(0)).compareTo(map2.get(groupBy.get(0))) == 0;
-        })
-                .map(dataPoints -> {
-                    DataPoint result = getDataStructure().wrap();
-                    Map<Component, VTLObject> resultAsMap = getDataStructure().asMap(result);
-
-                    List<VTLNumber> aggregationValues = new ArrayList<>();
-                    for (DataPoint dataPoint : dataPoints) {
-                        Map<Component, VTLObject> objectMap = getChild().getDataStructure().asMap(dataPoint);
-                        for (Map.Entry<Component, VTLObject> entry : objectMap.entrySet()) {
-                            if (entry.getKey().equals(aggregationComponent)) {
-                                aggregationValues.add(VTLNumber.of((Number) entry.getValue().get()));
-                            } else if (groupBy.contains(entry.getKey())) {
-                                resultAsMap.put(entry.getKey(), entry.getValue());
-                            }
-                        }
-                    }
-                    resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
-                    return result;
+        Order.Builder builder = Order.create(getDataStructure());
+        groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
+        Order order = builder.build();
+        
+        Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(
+                getChild().getData(order).orElse(getChild().getData().sorted(order)), (dataPoint, dataPoint2) -> {
+                    Map<Component, VTLObject> map1 = getDataStructure().asMap(dataPoint);
+                    Map<Component, VTLObject> map2 = getDataStructure().asMap(dataPoint2);
+                    return groupBy.stream()
+                            .allMatch(component -> map1.get(component).compareTo(map2.get(component)) == 0);
                 });
+    
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {
+            Map<Component, VTLObject> resultAsMap = Maps.newHashMap();
+            List<VTLNumber> aggregationValues = new ArrayList<>();
+            dataPoints.stream()
+                    .map(dataPoint ->  getChild().getDataStructure().asMap(dataPoint).entrySet())
+                    .flatMap(Collection::stream)
+                    .forEach(entry -> {
+                        if (entry.getKey().equals(aggregationComponent)) {
+                            aggregationValues.add(VTLNumber.of((Number) entry.getValue().get()));
+                        } else if (groupBy.contains(entry.getKey())) {
+                            resultAsMap.put(entry.getKey(), entry.getValue());
+                        }
+                    });
+            resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
+            return getDataStructure().fromMap(resultAsMap);
+        });
+        
+        return aggregatedDataPoints;
     }
 
     /**

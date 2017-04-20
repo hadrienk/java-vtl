@@ -32,13 +32,14 @@ public class AggregationVisitorTest {
                 "m1", Component.Role.MEASURE, Long.class);
         datasetSingleMeasure = new TestableDataset(
                 Arrays.asList(dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2010", "geo", "NO", "m1", 20L)),
-                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2010", "geo", "SE", "m1", 40L)),
-                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60L)),
-                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2011", "geo", "NO", "m1", 11L)),
                         dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2011", "geo", "SE", "m1", 31L)),
-                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51L)),
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 41L)),
                         dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "NO", "m1", 72L)),
-                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 82L)),
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2010", "geo", "SE", "m1", 40L)),
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2011", "geo", "NO", "m1", 11L)),
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 41L)),
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60L)),
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51L)),
                         dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92L))), dataStructureSingleMeasure);
     
     
@@ -126,6 +127,39 @@ public class AggregationVisitorTest {
         
     }
     
+    
+    @Test
+    public void testSumGroupedByMultipleIdentifiers() throws Exception {
+        DataStructure dataStructure = datasetSingleMeasure.dataStructure;
+        List<Component> components = Lists.newArrayList(dataStructure.get("time"), dataStructure.get("geo"));
+        System.out.println("Group By " + components);
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetSingleMeasure,components);
+        sumOperation.getData().forEach(System.out::println);
+    
+        DataStructure resultingDataStructure = sumOperation.getDataStructure();
+    
+        assertThat(resultingDataStructure.getRoles()).contains(
+                entry("time", Component.Role.IDENTIFIER),
+                entry("m1", Component.Role.MEASURE)
+        );
+    
+        assertThat(resultingDataStructure.getTypes()).contains(
+                entry("time", String.class),
+                entry("m1", Long.class)
+        );
+    
+        assertThat(sumOperation.getData()).contains(
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "NO", "m1", 20L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "SE", "m1", 40L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "NO", "m1", 11L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "SE", "m1", 31L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "NO", "m1", 72L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 82L)),
+                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92L))
+        );
+    }
     
     private final class TestableDataset implements Dataset {
         
