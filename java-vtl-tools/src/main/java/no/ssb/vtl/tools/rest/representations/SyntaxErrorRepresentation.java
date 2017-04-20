@@ -1,31 +1,34 @@
-package no.ssb.vtl.tools.webconsole.entity;
+package no.ssb.vtl.tools.rest.representations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import no.ssb.vtl.tools.rest.controllers.ValidatorController;
 import org.antlr.v4.runtime.RecognitionException;
-
-import java.io.Reader;
 
 /**
  * Json representation of syntax errors.
  *
- * @see no.ssb.vtl.tools.webconsole.ValidatorController#validate(Reader)
+ * @see ValidatorController
  */
-public class SyntaxError {
+public class SyntaxErrorRepresentation {
 
     private final Integer startLine;
     private final Integer stopLine;
     private final Integer startColumn;
     private final Integer stopColumn;
     private final String message;
-    private final RecognitionException exception;
+    private final ThrowableRepresentation exception;
 
-    public SyntaxError(Integer startLine, Integer stopLine, Integer startColumn, Integer stopColumn, String message, RecognitionException exception) {
+    public SyntaxErrorRepresentation(Integer startLine, Integer stopLine, Integer startColumn, Integer stopColumn, String message, RecognitionException exception) {
         this.startLine = startLine;
         this.stopLine = stopLine;
         this.startColumn = startColumn;
         this.stopColumn = stopColumn;
         this.message = message;
-        this.exception = exception;
+
+        ThrowableRepresentation throwableRepresentation = null;
+        if (exception != null)
+            throwableRepresentation = new ThrowableRepresentation(exception);
+        this.exception = throwableRepresentation;
     }
 
     public Integer getStartLine() {
@@ -49,7 +52,7 @@ public class SyntaxError {
     }
 
     @JsonIgnore
-    public RecognitionException getException() {
+    public ThrowableRepresentation getException() {
         return exception;
     }
 }

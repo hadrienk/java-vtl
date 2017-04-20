@@ -134,7 +134,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>no.ssb.vtl.tools.webconsole.Application</mainClass>
+                    <mainClass>no.ssb.vtl.tools.rest.Application</mainClass>
                     <addResources>true</addResources>
                 </configuration>
             </plugin>

@@ -1,4 +1,4 @@
-package no.ssb.vtl.tools.webconsole;
+package no.ssb.vtl.tools.rest;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;

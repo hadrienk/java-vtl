@@ -1,4 +1,4 @@
-package no.ssb.vtl.tools.webconsole;
+package no.ssb.vtl.tools.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
@@ -17,10 +17,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.web.context.WebApplicationContext;
 
 import javax.script.Bindings;
 import java.util.List;
 import java.util.function.Function;
+
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 /**
  * Spring application
@@ -37,6 +40,19 @@ public class Application {
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
         return Lists.newArrayList(
+
+                new RestDataConnector("http://localhost:7080", mapper),
+                new RestDataConnector("http://al-kostra-app-utv:7080", mapper),
+                new RestDataConnector("http://al-kostra-app-test:7080", mapper),
+                new RestDataConnector("http://al-kostra-app-utv.ssb.no:7080", mapper),
+                new RestDataConnector("http://al-kostra-app-test.ssb.no:7080", mapper),
+
+                new RestDataConnector("http://localhost:7090", mapper),
+                new RestDataConnector("http://al-kostra-app-utv:7090", mapper),
+                new RestDataConnector("http://al-kostra-app-test:7090", mapper),
+                new RestDataConnector("http://al-kostra-app-utv.ssb.no:7090", mapper),
+                new RestDataConnector("http://al-kostra-app-test.ssb.no:7090", mapper),
+
                 new SsbKlassApiConnector(mapper),
                 new SsbApiConnector(mapper)
         );
@@ -48,7 +64,7 @@ public class Application {
     }
 
     @Bean(name = "vtlBindings")
-    @Scope(value = "session", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(value = WebApplicationContext.SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public Bindings getBindings(VTLScriptEngine vtlEngine) {
         return vtlEngine.createBindings();
     }
@@ -56,7 +72,7 @@ public class Application {
     /* used to create keys for */
     @Bean(name = "hasher")
     public Function<String, HashCode> getHashFunction() {
-        return expression -> Hashing.murmur3_32().hashString(expression, Charsets.UTF_8);
+        return expression -> Hashing.murmur3_32().hashString(firstNonNull(expression, ""), Charsets.UTF_8);
     }
 
 }

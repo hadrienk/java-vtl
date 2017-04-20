@@ -1,9 +1,10 @@
-package no.ssb.vtl.tools.webconsole;
+package no.ssb.vtl.tools.rest.controllers;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.tools.webconsole.entity.SyntaxError;
+import no.ssb.vtl.tools.rest.representations.SyntaxErrorRepresentation;
+import no.ssb.vtl.tools.rest.representations.ThrowableRepresentation;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -15,12 +16,15 @@ import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.tool.GrammarParserInterpreter;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,20 +37,30 @@ import java.util.List;
 @RestController
 public class ValidatorController {
 
+    @ExceptionHandler
+    @ResponseStatus()
+    public Object handleError(Throwable t) {
+        return new ThrowableRepresentation(t);
+    }
 
     /**
      * Validate a VTL Expression
-     *
-     * @param expression
-     * @return a list of Error if any
-     * @throws IOException
      */
     @RequestMapping(
             path = "/validate",
-            method = RequestMethod.POST
+            method = RequestMethod.POST,
+            consumes = {
+                    MediaType.ALL_VALUE,
+                    MediaType.TEXT_PLAIN_VALUE
+            }
     )
-    @Cacheable(cacheNames="expressions", key="@hasher.apply(#expression)")
-    public List<SyntaxError> validate(@RequestBody String expression) throws IOException {
+    @Cacheable(cacheNames = "expressions", key = "@hasher.apply(#expression)")
+    public List<SyntaxErrorRepresentation> validate(
+            @RequestBody(required = false) String expression
+    ) throws IOException {
+
+        if (expression == null)
+            return Collections.emptyList();
 
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
         VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
@@ -70,13 +84,14 @@ public class ValidatorController {
     }
 
     /**
-     * An {@link org.antlr.v4.runtime.ANTLRErrorListener} implementation that collects errors and create {@link SyntaxError}
+     * An {@link org.antlr.v4.runtime.ANTLRErrorListener} implementation that collects
+     * errors and create {@link SyntaxErrorRepresentation}
      */
     public static class ErrorListener extends BaseErrorListener {
 
-        private List<SyntaxError> syntaxErrors = Lists.newArrayList();
+        private List<SyntaxErrorRepresentation> syntaxErrors = Lists.newArrayList();
 
-        public List<SyntaxError> getSyntaxErrors() {
+        public List<SyntaxErrorRepresentation> getSyntaxErrors() {
             return syntaxErrors;
         }
 
@@ -92,7 +107,7 @@ public class ValidatorController {
                     stopColumn = startColumn + (stop - start) + 1;
                 }
             }
-            syntaxErrors.add(new SyntaxError(startLine, stopLine, startColumn, stopColumn, msg, e));
+            syntaxErrors.add(new SyntaxErrorRepresentation(startLine, stopLine, startColumn, stopColumn, msg, e));
         }
     }
 }
