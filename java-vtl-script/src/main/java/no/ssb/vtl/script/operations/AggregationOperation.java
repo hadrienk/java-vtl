@@ -1,7 +1,6 @@
 package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
-import com.google.common.collect.Maps;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -11,12 +10,11 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -48,7 +46,10 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        Order.Builder builder = Order.create(getDataStructure());
+        DataStructure childStructure = getChild().getDataStructure();
+        DataStructure structure = getDataStructure();
+    
+        Order.Builder builder = Order.create(structure);
         groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
         Order order = builder.build();
     
@@ -58,20 +59,16 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     
         @SuppressWarnings("UnnecessaryLocalVariable")
         Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {
-            Map<Component, VTLObject> resultAsMap = Maps.newHashMap();
-            List<VTLNumber> aggregationValues = new ArrayList<>();
-            dataPoints.stream()
-                    .map(dataPoint ->  getChild().getDataStructure().asMap(dataPoint).entrySet())
-                    .flatMap(Collection::stream)
-                    .forEach(entry -> {
-                        if (entry.getKey().equals(aggregationComponent)) {
-                            aggregationValues.add(VTLNumber.of((Number) entry.getValue().get()));
-                        } else if (groupBy.contains(entry.getKey())) {
-                            resultAsMap.put(entry.getKey(), entry.getValue());
-                        }
-                    });
+            DataPoint firstDataPointOfGroup = DataPoint.create(dataPoints.get(0));
+            Map<Component, VTLObject> resultAsMap = childStructure.asMap(firstDataPointOfGroup);
+        
+            List<VTLNumber> aggregationValues = dataPoints.stream()
+                    .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
+                    .map(vtlObject -> VTLNumber.of((Number) vtlObject.get()))
+                    .collect(Collectors.toList());
+        
             resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
-            return getDataStructure().fromMap(resultAsMap);
+            return structure.fromMap(resultAsMap);
         });
         
         return aggregatedDataPoints;
