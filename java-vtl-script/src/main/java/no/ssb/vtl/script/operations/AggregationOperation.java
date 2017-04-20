@@ -51,14 +51,10 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         Order.Builder builder = Order.create(getDataStructure());
         groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
         Order order = builder.build();
-        
-        Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(
-                getChild().getData(order).orElse(getChild().getData().sorted(order)), (dataPoint, dataPoint2) -> {
-                    Map<Component, VTLObject> map1 = getDataStructure().asMap(dataPoint);
-                    Map<Component, VTLObject> map2 = getDataStructure().asMap(dataPoint2);
-                    return groupBy.stream()
-                            .allMatch(component -> map1.get(component).compareTo(map2.get(component)) == 0);
-                });
+    
+        Stream<DataPoint> data = getChild().getData(order).orElse(getChild().getData().sorted(order));
+        Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(data,
+                (dataPoint1, dataPoint2) -> order.compare(dataPoint1, dataPoint2) == 0);
     
         @SuppressWarnings("UnnecessaryLocalVariable")
         Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {
