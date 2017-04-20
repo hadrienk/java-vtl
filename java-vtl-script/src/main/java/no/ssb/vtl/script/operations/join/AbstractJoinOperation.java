@@ -19,15 +19,16 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.base.Objects;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -38,168 +39,301 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.RandomAccess;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.Order.Direction.ASC;
 
 /**
  * Abstract join operation.
+ * <p>
+ * Contains the base logic for inner join and outer join operations.
  */
 public abstract class AbstractJoinOperation extends AbstractDatasetOperation implements WorkingDataset {
 
-    // The datasets the join operates on.
-    private final Bindings joinScope;
+    private static final String ERROR_EMPTY_DATASET_LIST = "join operation impossible on empty dataset list";
+    private static final String ERROR_INCOMPATIBLE_TYPES = "incompatible identifier types: %s";
+    private static final String ERROR_NO_COMMON_IDENTIFIERS = "could not find common identifiers in the datasets %s";
+
+    private final Table<Component, Dataset, Component> componentMapping;
     private final ImmutableMap<String, Dataset> datasets;
-    private final ImmutableSet<Component> identifiers;
+    private final ImmutableSet<Component> commonIdentifiers;
+
+    private final Bindings joinScope;
+
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
-        super(Lists.newArrayList(namedDatasets.values()));
+        super(Lists.newArrayList(checkNotNull(namedDatasets).values()));
+
+        checkArgument(
+                !namedDatasets.isEmpty(),
+                ERROR_EMPTY_DATASET_LIST
+        );
         this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
 
         checkNotNull(identifiers);
-        checkArgument(
-                !namedDatasets.isEmpty(),
-                "join operation impossible on empty dataset list"
-        );
 
         this.joinScope = new JoinScopeBindings(this.datasets);
 
-        this.identifiers = createIdentifierSet(identifiers);
+        this.componentMapping = createComponentMapping(this.datasets.values());
 
-    }
+        Map<Component, Map<Dataset, Component>> idMap = this.componentMapping.rowMap().entrySet().stream()
+                .filter(e -> e.getKey().isIdentifier())
+                .filter(e -> e.getValue().size() == datasets.size())
+                // identifiers can be from any dataset
+                .filter(e -> identifiers.isEmpty() || !Collections.disjoint(e.getValue().values(), identifiers))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    private ImmutableSet<Component> createIdentifierSet(Set<Component> identifiers) {
-        ImmutableMultimap<String, Component> superSet = createCommonIdentifiers();
+        // No common identifier
+        checkArgument(!idMap.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
 
-        HashSet<Component> keySet = Sets.newHashSet(superSet.values());
+        this.commonIdentifiers = ImmutableSet.copyOf(idMap.keySet());
 
-        // Checks that the datasets have at least one common identifier.
-        checkArgument(
-                !keySet.isEmpty(),
-                "could not find common identifiers in the datasets %s",
-                superSet.keySet()
-        );
+        // Type mismatch check
+        List<String> typeMismatches = Lists.newArrayList();
+        for (Map.Entry<Component, Map<Dataset, Component>> entry : idMap.entrySet()) {
+            Component identifier = entry.getKey();
 
-        // Use all common identifiers if identifiers is  empty
-        ImmutableSet<Component> result;
-        if (!identifiers.isEmpty()) {
-            result = ImmutableSet.copyOf(
-                    Sets.intersection(
-                            identifiers,
-                            keySet
-                    )
-            );
-            checkArgument(!result.isEmpty(), "cannot use %s as key",
-                    Sets.difference(identifiers, Sets.newHashSet(keySet)));
-        } else {
-            result = ImmutableSet.copyOf(keySet);
+            Multimap<Class<?>, Dataset> typeMap = ArrayListMultimap.create();
+            entry.getValue().entrySet().forEach(datasetComponent -> {
+                typeMap.put(
+                        datasetComponent.getValue().getType(),
+                        datasetComponent.getKey()
+                );
+            });
+            if (typeMap.keySet().size() != 1)
+                typeMismatches.add(String.format("%s -> (%s)", identifier, typeMap));
         }
-        return result;
+        checkArgument(
+                typeMismatches.isEmpty(),
+                ERROR_INCOMPATIBLE_TYPES,
+                String.join(", ", typeMismatches)
+        );
     }
 
-    protected abstract JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
-            final DataStructure leftStructure, final DataStructure rightStructure
-    );
-
-    protected ImmutableSet<Component> getIdentifiers() {
-        return this.identifiers;
-    }
 
     /**
-     * Compute a multimap with components eligible as keys.
+     * Create a table that maps the components of the resulting dataset to the component of the underlying
+     * datasets.
+     * <p>
+     * <pre>
+     * +------+-----------------+
+     * |  re  |     Dataset     |
+     * |  su  +-----+-----+-----+
+     * |  lt  | ds1 | dsN | ... |
+     * +------+-----+-----+-----+
+     * | ref  | ref | ref |     |
+     * +------+-----+-----+     +
+     * | ref  | ref | ref |     |
+     * +------+-----+-----+     +
+     * | ...  |                 |
+     * +------+-----+-----+-----+
+     * </pre>
+     *
+     * @param datasets the datasets
+     * @return the component table
      */
-    private ImmutableMultimap<String, Component> createCommonIdentifiers() {
+    @VisibleForTesting
+    static Table<Component, Dataset, Component> createComponentMapping(Iterable<Dataset> datasets) {
 
-        Multimap<SuperSetWrapper, Component> superSet = LinkedListMultimap.create();
-        for (Dataset dataset : datasets.values()) {
-            for (Map.Entry<String, Component> componentEntry : dataset.getDataStructure().entrySet()) {
-                Component component = componentEntry.getValue();
-                if (component.isIdentifier()) {
-                    String name = componentEntry.getKey();
-                    Class<?> type = component.getType();
-                    superSet.put(
-                            new SuperSetWrapper(type, name),
-                            component
-                    );
-                }
+        Map<String, Component> seen = Maps.newHashMap();
+
+        ImmutableTable.Builder<Component, Dataset, Component> table;
+        table = ImmutableTable.builder();
+
+        for (Dataset dataset : datasets) {
+            DataStructure structure = dataset.getDataStructure();
+            for (Map.Entry<String, Component> entry : structure.entrySet()) {
+                Component component;
+
+                if (entry.getValue().isIdentifier())
+                    component = seen.computeIfAbsent(entry.getKey(), s -> entry.getValue());
+                else
+                    component = entry.getValue();
+
+                table.put(component, dataset, entry.getValue());
             }
         }
 
-        ImmutableMultimap.Builder<String, Component> builder = ImmutableMultimap.builder();
-        for (Map.Entry<SuperSetWrapper, Collection<Component>> entry : superSet.asMap().entrySet()) {
-            if (entry.getValue().size() >= datasets.size()) {
-                builder.putAll(
-                        entry.getKey().name,
-                        entry.getValue()
-                );
-            }
-        }
-        return builder.build();
+        return table.build();
     }
 
-    private Stream<DataPoint> getSorted(Dataset dataset, DataStructure structure) {
-        // Need to be sorted by common ids.
-        Order.Builder builder = Order.create(structure);
-        for (String id : createCommonIdentifiers().keySet()) {
-            builder.put(id, Order.Direction.ASC);
+    protected abstract BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
+            Dataset leftDataset, Dataset rightDataset
+    );
+
+    /**
+     * Ensure sorted.
+     */
+    private Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
+        // Adjust the order to the structure.
+
+        Order.Builder adjustedOrder = Order.create(dataset.getDataStructure());
+        Table<Component, Dataset, Component> mapping = getComponentMapping();
+
+        for (Map.Entry<Component, Order.Direction> orderEntry : order.entrySet()) {
+            Map<Dataset, Component> rowMapping = mapping.row(orderEntry.getKey());
+            if (!rowMapping.containsKey(dataset))
+                continue;
+
+            Component component = rowMapping.get(dataset);
+            if (component.isIdentifier()) {
+                Order.Direction direction = orderEntry.getValue();
+                adjustedOrder.put(component, direction);
+            }
         }
-        return dataset.getData(builder.build()).orElse(dataset.getData().sorted(builder.build()));
+        //Order.Builder minimalOrder = Order.createCopyOf(order);
+        return dataset.getData(adjustedOrder.build()).orElse(dataset.getData().sorted(adjustedOrder.build()));
+    }
+
+    private Comparator<Map<Component, VTLObject>> createKeyComparator(
+            Dataset leftDataset, Dataset rightDataset,
+            Order order
+    ) {
+
+        // Only check the values of the common identifiers.
+
+        HashSet<Component> commonComponents = Sets.newHashSet(getCommonIdentifiers());
+        final Map<Component, Order.Direction> commonOrder = Maps.filterKeys(order, commonComponents::contains);
+        final Table<Component, Dataset, Component> componentMap = getComponentMapping();
+        return (left, right) -> {
+            int result;
+            for (Map.Entry<Component, Order.Direction> entry : commonOrder.entrySet()) {
+                Component component = entry.getKey();
+                Order.Direction direction = entry.getValue();
+
+                Map<Dataset, Component> map = componentMap.row(component);
+                Component leftComponent = map.get(leftDataset);
+                Component rightComponent = map.get(rightDataset);
+
+                VTLObject leftValue = left.get(leftComponent);
+                VTLObject rightValue = right.get(rightComponent);
+
+                result = Order.NULLS_FIRST.compare(leftValue, rightValue);
+
+                if (result != 0)
+                    return direction == ASC ? result : -1 * result;
+
+            }
+            return 0;
+        };
+    }
+
+    @Override
+    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Filtering filtering, Set<String> components) {
+
+        // Optimization.
+        if (datasets.size() == 1) {
+            Dataset dataset = datasets.values().iterator().next();
+            return Optional.of(sortIfNeeded(dataset, requestedOrder));
+        }
+
+        // Check if requested order is compatible.
+        Optional<Order> order = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
+        if (!order.isPresent())
+            return Optional.empty();
+
+        // TODO: Filtering
+
+        // TODO: Components
+
+        Iterator<Dataset> iterator = datasets.values().iterator();
+
+        Dataset left = iterator.next();
+        Dataset right = left;
+
+        // Create the resulting data points.
+        final DataStructure joinStructure = getDataStructure();
+        final DataStructure structure = left.getDataStructure();
+
+        Stream<DataPoint> result = sortIfNeeded(left, requestedOrder)
+                .map(dataPoint -> joinStructure.fromMap(
+                        structure.asMap(dataPoint)
+                ));
+
+        while (iterator.hasNext()) {
+            left = right;
+            right = iterator.next();
+            result = StreamSupport.stream(
+                    new JoinSpliterator<>(
+                            createKeyComparator(left, right, requestedOrder),
+                            result.spliterator(),
+                            sortIfNeeded(right, requestedOrder).spliterator(),
+                            left.getDataStructure()::asMap,
+                            right.getDataStructure()::asMap,
+                            getMerger(left, right)
+                    ), false
+            );
+        }
+        return Optional.of(result);
+    }
+
+    private ImmutableSet<Component> getCommonIdentifiers() {
+        return this.commonIdentifiers;
     }
 
     @Override
     public Stream<DataPoint> getData() {
-        // Optimization.
-        if (datasets.size() == 1) {
-            return datasets.values().iterator().next().getData();
-        }
-
-        Iterator<Dataset> iterator = datasets.values().iterator();
-
-        Dataset dataset = iterator.next();
-
-        // Create the resulting data points.
-        final DataStructure joinStructure = getDataStructure();
-        final DataStructure structure = dataset.getDataStructure();
-        Stream<JoinDataPoint> result = getSorted(dataset, structure)
-                .map(dataPoint -> {
-                    return joinStructure.fromMap(
-                            structure.asMap(dataPoint)
-                    );
-                }).map(JoinDataPoint::new);
-
-        while (iterator.hasNext()) {
-            dataset = iterator.next();
-            result = StreamSupport.stream(
-                    new JoinSpliterator<>(
-                            getKeyComparator(),
-                            result.spliterator(),
-                            getSorted(dataset, dataset.getDataStructure()).map(JoinDataPoint::new).spliterator(),
-                            getKeyExtractor(joinStructure),
-                            getKeyExtractor(dataset.getDataStructure()),
-                            getMerger(joinStructure, dataset.getDataStructure())
-                    ), false
-            );
-        }
-        return result.map(tuple -> tuple);
+        Order order = createDefaultOrder(getDataStructure(), getCommonIdentifiers());
+        return getData(order, null, null)
+                .orElseThrow(() -> new RuntimeException("could not sort data"));
     }
 
-    private Function<JoinDataPoint, List<VTLObject>> getKeyExtractor(final DataStructure structure) {
-        // Filter by common ids.
-        final Set<Component> components = Sets.intersection(
-                getIdentifiers(),
-                Sets.newHashSet(structure.values())
+    @VisibleForTesting
+    Order createDefaultOrder(DataStructure structure, Set<Component> firstComponent) {
+        LinkedHashSet<Component> components = Sets.newLinkedHashSet(
+                structure.values()
         );
-        return dataPoint -> Lists.newArrayList(Maps.filterKeys(structure.asMap(dataPoint), components::contains).values());
+        components.removeAll(firstComponent);
+
+        Order.Builder order = Order.create(structure);
+        for (Component component : firstComponent) {
+            order.put(component, ASC);
+        }
+        for (Component component : components) {
+            order.put(component, ASC);
+        }
+        return order.build();
+    }
+
+    /**
+     * Try to create an order that is compatible with the join using the requested order
+     * <p>
+     * Join operations need the common identifiers to be first.
+     *
+     * @param structure
+     * @param firstComponents
+     * @param requestedOrder  the requested order
+     */
+    @VisibleForTesting
+    Optional<Order> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Order requestedOrder) {
+
+        Set<Component> identifiers = Sets.newHashSet(firstComponents);
+
+        Order.Builder compatibleOrder = Order.create(structure);
+        for (Map.Entry<Component, Order.Direction> order : requestedOrder.entrySet()) {
+            Component key = order.getKey();
+            Order.Direction direction = order.getValue();
+
+            if (!identifiers.isEmpty() && !identifiers.remove(key))
+                return Optional.empty();
+
+            compatibleOrder.put(key, direction);
+        }
+        return Optional.of(compatibleOrder.build());
     }
 
     @Override
@@ -230,59 +364,8 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return joinScope;
     }
 
-    @Deprecated
-    public abstract WorkingDataset workDataset();
-
-    protected Comparator<List<VTLObject>> getKeyComparator() {
-        return (l, r) -> {
-            checkArgument(l.size() == r.size());
-            for (int i = 0; i < l.size(); i++) {
-                int res = l.get(i).compareTo(r.get(i));
-                if (res != 0)
-                    return res;
-            }
-            return 0;
-        };
-    }
-
-    /**
-     * Wrapper that helps with superset calculation.
-     */
-    private final static class SuperSetWrapper {
-
-        private final Class<?> clazz;
-        private final String name;
-
-        private SuperSetWrapper(Class<?> clazz, String name) {
-            this.clazz = clazz;
-            this.name = name;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            SuperSetWrapper that = (SuperSetWrapper) o;
-            return Objects.equal(clazz, that.clazz) &&
-                    Objects.equal(name, that.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(clazz, name);
-        }
-    }
-
-    /**
-     * Holds the "working dataset" dataPoint.
-     */
-    static final class JoinDataPoint extends DataPoint implements RandomAccess {
-
-        public JoinDataPoint(List<VTLObject> ids) {
-            super(ids);
-        }
-
-
+    public Table<Component, Dataset, Component> getComponentMapping() {
+        return componentMapping;
     }
 
 }

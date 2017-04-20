@@ -29,6 +29,7 @@ block : '{' statement+ '}' ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
+           | hierarchyExpression                                    #withHierarchy
            | relationalExpression                                   #withRelational
            | getExpression                                          #withGet
            | putExpression                                          #withPut
@@ -36,6 +37,11 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | checkExpression                                        #withCheck
            ;
 
+hierarchyExpression :
+    HIERARCHY_FUNC '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' HIERARCHY_FLAGS )? ')' ;
+hierarchyReference : datasetRef ;
+HIERARCHY_FUNC : 'hierarchy' ;
+HIERARCHY_FLAGS : 'sum' | 'prod';
 
 getExpression : 'get' '(' datasetId ')';
 putExpression : 'put(todo)';
@@ -47,7 +53,7 @@ exprAtom : variableRef;
 
 checkExpression : 'check' '(' checkParam ')';
 
-checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? ( 'errorcode' '(' errorCode ')' )? ( 'errorlevel' '=' '(' errorLevel ')' )?;
+checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
@@ -61,7 +67,7 @@ variableRef : identifier;
 
 identifier : IDENTIFIER ;
 
-constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
+constant : INTEGER_CONSTANT | DOUBLE_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
 
 clauseExpression      : '[' clause ']' ;
@@ -210,8 +216,8 @@ INTEGER_CONSTANT  : DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
 STRING_CONSTANT   :'"' (~'"')* '"';
 
-FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
-                  | (DIGIT)+ FLOATEXP
+DOUBLE_CONSTANT    : (DIGIT)+ '.' (DIGIT)* DOUBLEEXP?
+                  | (DIGIT)+ DOUBLEEXP
                   ;
 
 NULL_CONSTANT     : 'null';
@@ -227,7 +233,7 @@ PLUS : '+';
 MINUS : '-';
 
 fragment DIGIT    : '0'..'9' ;
-fragment FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
+fragment DOUBLEEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
 fragment LETTER   : 'A'..'Z' | 'a'..'z';
 
 WS : [ \n\r\t\u000C] -> skip ;

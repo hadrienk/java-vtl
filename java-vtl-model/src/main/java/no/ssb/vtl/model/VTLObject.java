@@ -94,6 +94,13 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
         } else {
             other = o;
         }
+
+        if (value == null) {
+            return (other == null) ? 0 : -1;
+        } else if (other == null) {
+            return 1;
+        }
+
         if (value instanceof Comparable && other.getClass() == value.getClass()) {
             return ((Comparable) value).compareTo(other);
         }
@@ -119,13 +126,13 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
     
     @Override
     public int hashCode() {
-        return Objects.hash(componentReference, get());
+        return Objects.hash(get());
     }
     
     @Override
     public boolean equals(Object o) { //TODO
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof VTLObject)) return false;
         VTLObject<?> value = (VTLObject<?>) o;
         return Objects.equals(get(), value.get());
     }

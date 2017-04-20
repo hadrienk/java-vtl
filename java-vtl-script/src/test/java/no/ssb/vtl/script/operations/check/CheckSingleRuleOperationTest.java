@@ -9,9 +9,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
@@ -113,7 +113,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(checkOperation.getDataStructure().getRoles()).containsExactly(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
-                //entry(CONDITION_LABEL, Component.Role.MEASURE),
                 entry("measure", Component.Role.MEASURE),
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)
         );
@@ -123,10 +122,17 @@ public class CheckSingleRuleOperationTest {
 
         List<DataPoint> collect = stream.collect(toList());
 
-        assertThat(collect).flatExtracting(input -> input).extracting(VTLObject::get)
-                .containsExactly(
-                        "9990", null, "measure 9990", null
-                );
+        assertThat(collect).hasSize(1);
+
+        DataStructure dStructure = checkOperation.getDataStructure();
+
+        //row 1
+        Map<Component, VTLObject> map = dStructure.asMap(collect.get(0));
+        assertThat(map.get(dStructure.get("kommune_nr")).get()).isEqualTo("9990");
+        assertThat(map.get(dStructure.get("code")).get()).isEqualTo(null);
+        assertThat(map.get(dStructure.get("measure")).get()).isEqualTo("measure 9990");
+        assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo(null);
+
     }
 
     @Test
@@ -171,7 +177,7 @@ public class CheckSingleRuleOperationTest {
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
                 entry("measure", Component.Role.MEASURE),
-                entry("errorcode", Component.Role.ATTRIBUTE)
+                entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)
         );
 
         Stream<DataPoint> stream = checkOperation.getData();
@@ -179,11 +185,23 @@ public class CheckSingleRuleOperationTest {
 
         List<DataPoint> collect = stream.collect(toList());
 
-        assertThat(collect).flatExtracting(input -> input).extracting(VTLObject::get)
-                .containsExactly(
-                        "0101", "0101", "measure 0101", null,
-                        "0104", "0104", "measure 0104", null
-                );
+        assertThat(collect).hasSize(2);
+
+        DataStructure dStructure = checkOperation.getDataStructure();
+
+        //row 1
+        Map<Component, VTLObject> map = dStructure.asMap(collect.get(0));
+        assertThat(map.get(dStructure.get("kommune_nr")).get()).isEqualTo("0101");
+        assertThat(map.get(dStructure.get("code")).get()).isEqualTo("0101");
+        assertThat(map.get(dStructure.get("measure")).get()).isEqualTo("measure 0101");
+        assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo(null);
+
+        //row 2
+        map = dStructure.asMap(collect.get(1));
+        assertThat(map.get(dStructure.get("kommune_nr")).get()).isEqualTo("0104");
+        assertThat(map.get(dStructure.get("code")).get()).isEqualTo("0104");
+        assertThat(map.get(dStructure.get("measure")).get()).isEqualTo("measure 0104");
+        assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo(null);
     }
 
     @Test
@@ -232,8 +250,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
-                //entry("CONDITION_CONDITION", Component.Role.MEASURE),
-                //entry("booleanMeasure_CONDITION", Component.Role.MEASURE),
                 entry(CONDITION_LABEL, Component.Role.MEASURE),   //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)  //new component
         );
@@ -243,18 +259,24 @@ public class CheckSingleRuleOperationTest {
 
         List<DataPoint> collect = stream.collect(toList());
 
-        assertThat(collect).flatExtracting(input -> input).extracting(VTLObject::get)
-                .containsExactly(
-                        "9990", null, false, null,
-                        "0104", null, false, null
-                );
+        assertThat(collect).hasSize(2);
 
-//        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("9990", "0104");
-//        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsNull();
-//        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(VTLObject::get).containsExactlyInAnyOrder(true, false);
-//        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(VTLObject::get).containsOnly(false);
-//        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(false);
-//        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsNull();
+        DataStructure dStructure = checkOperation.getDataStructure();
+
+        //row 1
+        Map<Component, VTLObject> map = dStructure.asMap(collect.get(0));
+        assertThat(map.get(dStructure.get("kommune_nr")).get()).isEqualTo("9990");
+        assertThat(map.get(dStructure.get("code")).get()).isEqualTo(null);
+        assertThat(map.get(dStructure.get(CONDITION_LABEL)).get()).isEqualTo(false);
+        assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo(null);
+
+        //row 2
+        map = dStructure.asMap(collect.get(1));
+        assertThat(map.get(dStructure.get("kommune_nr")).get()).isEqualTo("0104");
+        assertThat(map.get(dStructure.get("code")).get()).isEqualTo(null);
+        assertThat(map.get(dStructure.get(CONDITION_LABEL)).get()).isEqualTo(false);
+        assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo(null);
+
     }
 
     @Test
@@ -305,11 +327,9 @@ public class CheckSingleRuleOperationTest {
         assertThat(checkOperation.getDataStructure().getRoles()).containsExactly(
                 entry("kommune_nr", Component.Role.IDENTIFIER),
                 entry("code", Component.Role.IDENTIFIER),
-                //entry("CONDITION_CONDITION", Component.Role.MEASURE),
-                //entry("booleanMeasure_CONDITION", Component.Role.MEASURE),
-                entry("condition", Component.Role.MEASURE),   //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
-                entry("errorcode", Component.Role.ATTRIBUTE), //new component
-                entry("errorlevel", Component.Role.ATTRIBUTE) //new component
+                entry(CONDITION_LABEL, Component.Role.MEASURE),    //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
+                entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE), //new component
+                entry(ERROR_LEVEL_LABEL, Component.Role.ATTRIBUTE) //new component
         );
 
         Stream<DataPoint> stream = checkOperation.getData();
@@ -317,35 +337,18 @@ public class CheckSingleRuleOperationTest {
 
         List<DataPoint> collect = stream.collect(toList());
 
-        assertThat(collect).flatExtracting(input -> input).extracting(VTLObject::get)
-                .containsExactly(
-                        "0101", "0101", true, "error001", 10
-                );
+        assertThat(collect).hasSize(1);
 
-//        assertThat(getDataPointsWithComponentName(collect, "kommune_nr")).extracting(VTLObject::get).containsOnlyOnce("0101");
-//        assertThat(getDataPointsWithComponentName(collect, "code")).extracting(VTLObject::get).containsOnlyOnce("0101");
-//        assertThat(getDataPointsWithComponentName(collect, "CONDITION_CONDITION")).extracting(VTLObject::get).containsOnly(true);
-//        assertThat(getDataPointsWithComponentName(collect, "booleanMeasure_CONDITION")).extracting(VTLObject::get).containsOnly(true);
-//        assertThat(getDataPointsWithComponentName(collect, "CONDITION")).extracting(VTLObject::get).containsOnly(true);
-//        assertThat(getDataPointsWithComponentName(collect, "errorlevel")).extracting(VTLObject::get).containsOnlyOnce(10);
-//        assertThat(getDataPointsWithComponentName(collect, "errorcode")).extracting(VTLObject::get).containsOnlyOnce("error001");
-    }
+        DataStructure dStructure = checkOperation.getDataStructure();
 
-    private ArrayList<VTLObject> getDataPointsWithComponentName(List<DataPoint> dataPoint, String componentName) {
-        ArrayList<VTLObject> dpsFound = new ArrayList<>();
+        //row 1
+        Map<Component, VTLObject> map = dStructure.asMap(collect.get(0));
+        assertThat(map.get(dStructure.get("kommune_nr")).get()).isEqualTo("0101");
+        assertThat(map.get(dStructure.get("code")).get()).isEqualTo("0101");
+        assertThat(map.get(dStructure.get(CONDITION_LABEL)).get()).isEqualTo(true);
+        assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo("error001");
+        assertThat(map.get(dStructure.get(ERROR_LEVEL_LABEL)).get()).isEqualTo(10);
 
-        for (DataPoint dataPoints : dataPoint) {
-            List<VTLObject> dpListOfOne = dataPoints.stream()
-                    .filter(dp -> dp.getComponent().getName().equals(componentName))
-                    .collect(toList());
-            if (dpListOfOne.size() == 1) {
-                dpsFound.add(dpListOfOne.get(0));
-            } else {
-                throw new IllegalArgumentException("Should have found 1 VTLObject object, but found: " + Arrays.toString(dpListOfOne.toArray()));
-            }
-        }
-
-        return dpsFound;
     }
 
     private DataPoint tuple(VTLObject... components) {

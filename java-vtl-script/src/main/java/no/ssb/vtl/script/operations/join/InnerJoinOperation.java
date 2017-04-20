@@ -19,17 +19,18 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.script.support.JoinSpliterator;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Represent an inner join on datasets.
@@ -45,27 +46,35 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public WorkingDataset workDataset() {
-        // TODO: Remove
-        return this;
-    }
-
-    @Override
-    protected JoinSpliterator.TriFunction<JoinDataPoint, JoinDataPoint, Integer, List<JoinDataPoint>> getMerger(
-            final DataStructure leftStructure, final DataStructure rightStructure
+    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
+            final Dataset leftDataset, final Dataset rightDataset
     ) {
-        final Set<Component> identifiers = getIdentifiers();
-        return (left, right, compare) -> {
-            if (compare != 0)
+
+        final DataStructure rightStructure = rightDataset.getDataStructure();
+        final DataStructure structure = getDataStructure();
+
+        // Create final collection to improve performances.
+        final Table<Component, Dataset, Component> componentMap = getComponentMapping();
+
+        return (left, right) -> {
+
+            if (left == null || right == null)
                 return null;
 
-            Map<Component, VTLObject> leftMap = leftStructure.asMap(left);
-            for (Map.Entry<Component, VTLObject> entry : rightStructure.asMap(right).entrySet()) {
-                if (!identifiers.contains(entry.getKey())) {
-                    leftMap.put(entry.getKey(), entry.getValue());
-                }
+            /*
+             * Put the measures and attributes of the right data point
+             * in the left data point.
+             */
+
+            Map<Component, VTLObject> leftMap = structure.asMap(left);
+            Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
+            for (Map.Entry<Component, Component> mapping : componentMap.column(rightDataset).entrySet()) {
+                Component from = mapping.getKey();
+                Component to = mapping.getValue();
+                leftMap.put(to, rightMap.get(from));
             }
-            return Collections.singletonList(left);
+
+            return left;
         };
     }
 

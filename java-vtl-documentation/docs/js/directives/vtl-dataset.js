@@ -44,7 +44,7 @@ define(['angular'], function (angular) {
                 if (cells.length < 1)
                     throw new Error("invalid header format");
 
-                var columnRegex = /([^,\[]+)\[(I|M|A),(String|Number)]?/;
+                var columnRegex = /([^,\[]+)\[(I|M|A),(String|Integer|Double|Long|Float)]?/;
                 for (var len = cells.length, i = 0; i < len; ++i) {
                     cell = columnRegex.exec(cells[i].trim());
                     if (cell.length != 4)
@@ -70,13 +70,20 @@ define(['angular'], function (angular) {
 
                 for (var len = lines.length, i = 0; i < len; ++i) {
                     cells = lines[i].trim().split(',');
+                    for (var cellIndex = 0; cellIndex < cells.length; ++cellIndex) {
+                        cells[cellIndex] = cells[cellIndex].trim()
+                        if (cells[cellIndex] === "null") {
+                            cells[cellIndex] = null;
+                        }
+                    }
                     if (cells.length != dataset.structure.length)
                         throw new Error("row size inconsistent with header");
-
-                    // TODO: Convert?
+                    for (var cellLen = cells.length, j = 0; j < cellLen; ++j) {
+                        if (dataset.structure[j].type !== "java.lang.String") {
+                            cells[j] = parseFloat(cells[j]);
+                        }
+                    }
                     dataset.data.push(cells);
-                    //for (var len = dataset.structure.length, j = 0; j<len; ++i) {
-                    //}
                 }
 
                 return dataset;

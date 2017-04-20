@@ -37,19 +37,23 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.*;
-import static no.ssb.vtl.test.ComponentConditions.*;
-import static org.assertj.core.api.Assertions.*;
+import static no.ssb.vtl.model.Component.Role;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VTLScriptEngineTest {
 
@@ -182,22 +186,6 @@ public class VTLScriptEngineTest {
                 "boolTest"
         );
 
-        assertThat(ds3.getDataStructure().values())
-                .haveAtLeastOne(componentWith("renamedId1", Role.IDENTIFIER))
-                .haveAtLeastOne(componentWith("id2", Role.IDENTIFIER))
-                .haveAtLeastOne(componentWith("m2", Role.MEASURE))
-                .haveAtLeastOne(componentWith("m1", Role.MEASURE))
-                .haveAtLeastOne(componentWith("ident", Role.MEASURE))
-                .haveAtLeastOne(componentWith("boolTest", Role.MEASURE));
-
-
-        assertThat(ds3.getData())
-                .flatExtracting(input -> input)
-                .extracting((vtlObject) -> vtlObject.getComponent().getName())
-                .containsExactly(
-                        "renamedId1", "id2", "m1", "m2", "ident", "boolTest"
-                );
-
         assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
@@ -280,6 +268,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
                         "id1", "1",
@@ -447,7 +436,7 @@ public class VTLScriptEngineTest {
                         "      and temp < validTo," +
                         "   drop temp" +
                         "}"+
-                        "ds3invalid := check(dsBoolean, not_valid, measures)" +
+                        "ds3invalid := check(dsBoolean, not_valid, measures, errorcode(\"TEST_ERROR_CODE\"))" +
                         "ds3valid   := check(dsBoolean, valid, measures)"
         );
 
@@ -482,19 +471,47 @@ public class VTLScriptEngineTest {
         );
 
         // Should only contain the "non valid" rows.
-        assertThat(ds3invalid.getData()).flatExtracting(input -> input)
-                .extracting(VTLObject::get)
-                .containsExactly(
-                        "0111", "2014", 101, "attr2", "Hvaler", year2015Utc, year9999, null,
-                        "9000", "2014", 102, "attr3", null, null, null, null
-                );
+        DataStructure ds3InvalidDataStruct = ds3invalid.getDataStructure();
+        List<DataPoint> ds3InvalidDataPoints = ds3invalid.getData().collect(Collectors.toList());
+
+        assertThat(ds3InvalidDataPoints).hasSize(2);
+
+        Map<Component, VTLObject> map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(0));
+        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0111");
+        assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
+        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(101);
+        assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr2");
+        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isEqualTo("Hvaler");
+        assertThat(map.get(ds3InvalidDataStruct.get("validFrom")).get()).isEqualTo(year2015Utc);
+        assertThat(map.get(ds3InvalidDataStruct.get("validTo")).get()).isEqualTo(year9999);
+        assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+
+        map = ds3InvalidDataStruct.asMap(ds3InvalidDataPoints.get(1));
+        assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
+        assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
+        assertThat(map.get(ds3InvalidDataStruct.get("ds1_m1")).get()).isEqualTo(102);
+        assertThat(map.get(ds3InvalidDataStruct.get("ds1_at1")).get()).isEqualTo("attr3");
+        assertThat(map.get(ds3InvalidDataStruct.get("ds2r_name")).get()).isEqualTo(null);
+        assertThat(map.get(ds3InvalidDataStruct.get("validFrom")).get()).isEqualTo(null);
+        assertThat(map.get(ds3InvalidDataStruct.get("validTo")).get()).isEqualTo(null);
+        assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
+
 
         // Should only contain the "valid" rows.
-        assertThat(ds3valid.getData()).flatExtracting(input -> input)
-                .extracting(VTLObject::get)
-                .containsExactly(
-                        "0101", "2015", 100, "attr1", "Halden", year2013Utc, year9999, null
-                );
+        DataStructure ds3ValidDataStruct = ds3valid.getDataStructure();
+        List<DataPoint> ds3ValidDataPoints = ds3valid.getData().collect(Collectors.toList());
+
+        assertThat(ds3ValidDataPoints).hasSize(1);
+
+        map = ds3ValidDataStruct.asMap(ds3ValidDataPoints.get(0));
+        assertThat(map.get(ds3ValidDataStruct.get("kommune_nr")).get()).isEqualTo("0101");
+        assertThat(map.get(ds3ValidDataStruct.get("periode")).get()).isEqualTo("2015");
+        assertThat(map.get(ds3ValidDataStruct.get("ds1_m1")).get()).isEqualTo(100);
+        assertThat(map.get(ds3ValidDataStruct.get("ds1_at1")).get()).isEqualTo("attr1");
+        assertThat(map.get(ds3ValidDataStruct.get("ds2r_name")).get()).isEqualTo("Halden");
+        assertThat(map.get(ds3ValidDataStruct.get("validFrom")).get()).isEqualTo(year2013Utc);
+        assertThat(map.get(ds3ValidDataStruct.get("validTo")).get()).isEqualTo(year9999);
+        assertThat(map.get(ds3ValidDataStruct.get("errorcode")).get()).isEqualTo(null);
 
     }
 
@@ -509,6 +526,7 @@ public class VTLScriptEngineTest {
                 "m2", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 tuple(
                         ds.wrap("id1", "1"),
@@ -594,6 +612,7 @@ public class VTLScriptEngineTest {
                 "m1", Role.MEASURE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 tuple(
                         ds.wrap("id1", "1"),
@@ -629,7 +648,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", Instant.parse("2016-12-31T23:00:00Z"),
+                        "1", ZonedDateTime.of(2017,1,1,0,0,0,0, ZoneId.systemDefault()).toInstant(),
                         "2", null
                 );
 

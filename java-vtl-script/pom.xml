@@ -61,6 +61,13 @@
             <artifactId>randomizedtesting-runner</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.brotli</groupId>
+            <artifactId>dec</artifactId>
+            <version>0.1.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

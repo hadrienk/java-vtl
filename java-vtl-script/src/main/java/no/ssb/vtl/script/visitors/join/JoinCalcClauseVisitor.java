@@ -50,10 +50,10 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
     @Override
     public VTLExpression visitJoinCalcAtom(VTLParser.JoinCalcAtomContext ctx) {
         VTLParser.ConstantContext constantValue = ctx.constant();
-        if (constantValue.FLOAT_CONSTANT() != null){
-            Float aFloat = Float.valueOf(constantValue.FLOAT_CONSTANT().getText());
-            return new VTLExpression.Builder(Float.class, dataPoint -> VTLObject.of(aFloat))
-                    .description(aFloat+"f").build();
+        if (constantValue.DOUBLE_CONSTANT() != null){
+            Double aDouble = Double.valueOf(constantValue.DOUBLE_CONSTANT().getText());
+            return new VTLExpression.Builder(Double.class, dataPoint -> VTLObject.of(aDouble))
+                    .description(aDouble + "d").build();
         }
         if (constantValue.INTEGER_CONSTANT() != null) {
             Integer integer = Integer.valueOf(constantValue.INTEGER_CONSTANT().getText());
