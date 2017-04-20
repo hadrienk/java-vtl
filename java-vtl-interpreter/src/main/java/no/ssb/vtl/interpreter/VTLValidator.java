@@ -44,7 +44,7 @@ public class VTLValidator {
         parser.reset();
         //parser.addErrorListener(reporter);
 
-        parser.statement();
+        parser.assignment();
 
         if (syntaxErrors.isEmpty())
             return true;

@@ -18,23 +18,21 @@
  * #L%
  */
 grammar VTL;
-start : statement+ EOF;
+start : assignment+ EOF;
 
 /* Assignment */
-statement : identifier ASSIGNMENT datasetExpression
-          | identifier ASSIGNMENT block
-          ;
+assignment : identifier ASSIGNMENT datasetExpression
+           | identifier ASSIGNMENT block
+           ;
 
-block : '{' statement+ '}' ;
+block : '{' assignment+ '}' ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | hierarchyExpression                                    #withHierarchy
            | relationalExpression                                   #withRelational
-           | getExpression                                          #withGet
-           | putExpression                                          #withPut
+           | function                                               #withFunction
            | exprAtom                                               #withAtom
-           | checkExpression                                        #withCheck
            ;
 
 hierarchyExpression :
@@ -42,16 +40,31 @@ hierarchyExpression :
 hierarchyReference : datasetRef ;
 HIERARCHY_FUNC : 'hierarchy' ;
 HIERARCHY_FLAGS : 'sum' | 'prod';
+function : getFunction               #withGet
+         | putFunction               #withPut
+         | checkFunction             #withCheck
+         | aggregationFunction       #withAggregation
+         ;
 
-getExpression : 'get' '(' datasetId ')';
-putExpression : 'put(todo)';
+getFunction : 'get' '(' datasetId ')';
+putFunction : 'put(todo)';
+
+aggregationFunction
+       : 'sum' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateSum
+       | 'avg' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateAvg
+       ;
+
+aggregationParms: aggregationClause=(GROUP_BY|ALONG) componentRef (',' componentRef)*;
+
+ALONG : 'along' ;
+GROUP_BY : 'group by' ;
 
 datasetId : STRING_CONSTANT ;
 
 /* Atom */
 exprAtom : variableRef;
 
-checkExpression : 'check' '(' checkParam ')';
+checkFunction : 'check' '(' checkParam ')';
 
 checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
 

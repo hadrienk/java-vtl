@@ -42,6 +42,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     private final RelationalVisitor relationalVisitor;
     private final CheckVisitor checkVisitor;
     private final HierarchyVisitor hierarchyVisitor;
+    private final AggregationVisitor aggregationVisitor;
     
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this.context = checkNotNull(context, "the context was null");
@@ -51,15 +52,16 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
         ReferenceVisitor referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
         checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
         hierarchyVisitor = new HierarchyVisitor(referenceVisitor);
+        aggregationVisitor = new AggregationVisitor(referenceVisitor);
     }
 
     @Override
     protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
         return nextResult != null ? nextResult : aggregate;
     }
-
+    
     @Override
-    public Dataset visitStatement(VTLParser.StatementContext ctx) {
+    public Dataset visitAssignment(VTLParser.AssignmentContext ctx) {
         String name = ctx.identifier().getText();
         Dataset dataset = visit(ctx.datasetExpression());
         context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
@@ -77,12 +79,12 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitGetExpression(VTLParser.GetExpressionContext ctx) {
+    public Dataset visitGetFunction(VTLParser.GetFunctionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitPutExpression(VTLParser.PutExpressionContext ctx) {
+    public Dataset visitPutFunction(VTLParser.PutFunctionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
@@ -95,11 +97,23 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
-        return checkVisitor.visit(ctx.checkExpression());
+        return checkVisitor.visit(ctx.checkFunction());
     }
 
     @Override
     public Dataset visitWithHierarchy(VTLParser.WithHierarchyContext ctx) {
         return hierarchyVisitor.visit(ctx.hierarchyExpression());
+    }
+    
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <p>The default implementation returns the result of calling
+     * {@link #visitChildren} on {@code ctx}.</p>
+     * @param ctx
+     */
+    @Override
+    public Dataset visitWithAggregation(VTLParser.WithAggregationContext ctx) {
+        return aggregationVisitor.visit(ctx.aggregationFunction());
     }
 }
