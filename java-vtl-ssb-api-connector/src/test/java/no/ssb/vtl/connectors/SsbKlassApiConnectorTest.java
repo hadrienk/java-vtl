@@ -101,7 +101,7 @@ public class SsbKlassApiConnectorTest {
                         "0105", "2015", "Sarpsborg ny",
                         "0105", "2016", "Sarpsborg ny",
                         "0105", "2017", "Sarpsborg ny",
-                        "0105", "2018", "Sarpsborg ny" //TODO simulate time
+                        "0105", "2018", "Sarpsborg ny"
                 );
 
     }
