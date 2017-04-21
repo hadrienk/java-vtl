@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -74,37 +73,24 @@ import static com.google.common.base.Preconditions.*;
  */
 public interface Dataset {
 
-    /**
-     * Deprecated, we are moving toward a Map view of the tuples.
-     */
-    @Deprecated
-    static Comparator<DataPoint> comparatorFor(Component.Role... roles) {
+    static Comparator<DataPoint> comparatorFor(DataStructure dataStructure, Component.Role... roles) {
         ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
-        return new Comparator<DataPoint>() {
-            @Override
-            public int compare(DataPoint li, DataPoint ri) {
-                Comparator comparator = Comparator.naturalOrder();
+        return (li, ri) -> {
+            Comparator comparator = Comparator.naturalOrder();
 
-                Map<String, Object> lm = li.stream().filter(dataPoint -> roleSet.contains(dataPoint.getComponent().getRole()))
-                        .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
-                                VTLObject::get
-                        ));
+            Map<Component, VTLObject> leftMap = dataStructure.asMap(li);
+            Map<Component, VTLObject> rightMap = dataStructure.asMap(ri);
 
-                Map<String, Object> rm = ri.stream().filter(dataPoint -> roleSet.contains(dataPoint.getComponent().getRole()))
-                        .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
-                                VTLObject::get
-                        ));
-
-                checkArgument(lm.keySet().equals(rm.keySet()));
-                int i = 0;
-                for (String key : lm.keySet()) {
-                    i = comparator.compare(lm.get(key), rm.get(key));
-                    if (i != 0)
-                        return i;
+            checkArgument(leftMap.keySet().equals(rightMap.keySet()));
+            int i = 0;
+            for (Component key : leftMap.keySet()) {
+                if (roleSet.contains(key.getRole())) {
+                    i = comparator.compare(leftMap.get(key).get(), rightMap.get(key).get());
+                    if (i != 0) return i;
                 }
-                return i;
-
             }
+            return i;
+
         };
     }
 
