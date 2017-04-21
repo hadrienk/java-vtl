@@ -35,11 +35,9 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | exprAtom                                               #withAtom
            ;
 
-hierarchyExpression :
-    HIERARCHY_FUNC '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' HIERARCHY_FLAGS )? ')' ;
+hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
 hierarchyReference : datasetRef ;
-HIERARCHY_FUNC : 'hierarchy' ;
-HIERARCHY_FLAGS : 'sum' | 'prod';
+
 function : getFunction               #withGet
          | putFunction               #withPut
          | checkFunction             #withCheck
