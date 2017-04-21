@@ -30,7 +30,7 @@ public class Application {
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
         return Lists.newArrayList(
-                new SsbKlassApiConnector(mapper),
+                new SsbKlassApiConnector(mapper, SsbKlassApiConnector.PeriodType.YEAR),
                 new SsbApiConnector(mapper)
         );
     }

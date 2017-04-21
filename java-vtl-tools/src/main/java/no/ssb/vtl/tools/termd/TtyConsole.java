@@ -92,7 +92,7 @@ public class TtyConsole implements Consumer<TtyConnection> {
         // engine = checkNotNull(manager.getEngineByName("VTLJava"));
 
         engine = new VTLScriptEngine(
-                new SsbKlassApiConnector(new ObjectMapper()),
+                new SsbKlassApiConnector(new ObjectMapper(), SsbKlassApiConnector.PeriodType.YEAR),
                 new SsbApiConnector(new ObjectMapper()));
 
         read(ttyConnection, readline);
