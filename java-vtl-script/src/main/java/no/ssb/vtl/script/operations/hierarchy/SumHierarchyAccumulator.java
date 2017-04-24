@@ -17,6 +17,7 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
     private static Map<Class<?>, Object> TYPEMAP = ImmutableMap.<Class<?>, Object>builder()
             .put(Long.class, 0L)
             .put(Double.class, 0D)
+            .put(Number.class, 0D)
             .build();
 
     private final Number identity;

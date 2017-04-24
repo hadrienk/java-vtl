@@ -248,6 +248,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         // TODO: Save the graph in the correct order.
         final LinkedList<VTLObject> sorted = sortTopologically(this.graph);
 
+        final Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
+
         // Get the data sorted.
         Stream<DataPoint> sortedData = getChild().getData(groupOrder)
                 .orElse(getChild().getData().sorted(groupOrder));
@@ -309,7 +311,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             // Optimization.
             if (dataPoints.size() > 1) {
 
-                Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
+
 
                 // Won't fail since we check size.
                 aggregate = DataPoint.create(dataPoints.get(0));
