@@ -1,4 +1,4 @@
-package no.ssb.vtl.tools.webconsole;
+package no.ssb.vtl.tools.rest;
 
 import io.termd.core.http.HttpTtyConnection;
 import io.termd.core.tty.TtyConnection;
