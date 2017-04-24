@@ -28,7 +28,10 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
-
+	
+	<!-- 
+		uncomment for ssb connector
+		TODO(hk): Include data connector in VTL project?
         <dependency>
             <groupId>no.ssb.common.data</groupId>
             <artifactId>data-vtl-connector</artifactId>
@@ -48,6 +51,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+	-->
 
         <dependency>
             <groupId>org.antlr</groupId>
