@@ -3,9 +3,12 @@ package no.ssb.vtl.connectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.connectors.testutil.ConstantClockSource;
+import no.ssb.vtl.connectors.util.TimeUtil;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.InputStreamResource;
@@ -29,11 +32,16 @@ public class SsbKlassApiConnectorTest {
     @Before
     public void setUp() throws Exception {
         this.mapper = new ObjectMapper();
-        SsbKlassApiConnector ssbConnector = new SsbKlassApiConnector(this.mapper);
+        SsbKlassApiConnector ssbConnector = new SsbKlassApiConnector(this.mapper, SsbKlassApiConnector.PeriodType.YEAR);
         this.connector = ssbConnector;
         mockServer = MockRestServiceServer.createServer(ssbConnector.getRestTemplate());
+        TimeUtil.setClockSource(new ConstantClockSource(Instant.parse("2017-01-01T12:00:00.00Z")));
     }
 
+    @After
+    public void teardown() {
+        TimeUtil.revertClockSource();
+    }
 
     @Test
     public void testCanHandle() throws Exception {
@@ -62,15 +70,13 @@ public class SsbKlassApiConnectorTest {
 
         assertThat(dataset.getDataStructure().getRoles()).containsExactly(
                 entry("code", Component.Role.IDENTIFIER),
-                entry("validFrom", Component.Role.IDENTIFIER),
-                entry("validTo", Component.Role.IDENTIFIER),
+                entry("period", Component.Role.IDENTIFIER),
                 entry("name", Component.Role.MEASURE)
         );
 
         assertThat(dataset.getDataStructure().getTypes()).containsExactly(
                 entry("code", String.class),
-                entry("validFrom", Instant.class),
-                entry("validTo", Instant.class),
+                entry("period", String.class),
                 entry("name", String.class)
         );
 
@@ -78,8 +84,24 @@ public class SsbKlassApiConnectorTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsSequence(
-                        "0101", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z"), "Halden",
-                        "0104", Instant.parse("2012-12-31T23:00:00Z"), Instant.parse("9999-12-31T23:59:59.999Z"), "Moss"
+                        "0101", "2013", "Halden",
+                        "0101", "2014", "Halden",
+                        "0101", "2015", "Halden",
+                        "0101", "2016", "Halden",
+                        "0101", "2017", "Halden",
+                        "0101", "2018", "Halden",
+                        "0104", "2013", "Moss",
+                        "0104", "2014", "Moss ny",
+                        "0104", "2015", "Moss ny",
+                        "0104", "2016", "Moss ny",
+                        "0104", "2017", "Moss ny",
+                        "0104", "2018", "Moss ny",
+                        "0105", "2013", "Sarpsborg",
+                        "0105", "2014", "Sarpsborg ny", //valid from 2014-06-01, but year 2014 gets the newest name
+                        "0105", "2015", "Sarpsborg ny",
+                        "0105", "2016", "Sarpsborg ny",
+                        "0105", "2017", "Sarpsborg ny",
+                        "0105", "2018", "Sarpsborg ny"
                 );
 
     }
