@@ -53,28 +53,7 @@ final class JoinScopeBindings implements Bindings {
             DataStructure finalStructure = DataStructure.copyOf(
                     newStructure
             ).build();
-            cleanedDatasets.put(datasetEntry.getKey(), new Dataset() {
-                @Override
-                public Stream<DataPoint> getData() {
-                    throw new UnsupportedOperationException("TODO");
-                }
-
-                @Override
-                public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                    return Optional.empty();
-                }
-
-                @Override
-                public Optional<Long> getSize() {
-                    return Optional.empty();
-                }
-
-                @Override
-                public DataStructure getDataStructure() {
-                    return finalStructure;
-                }
-
-            });
+            cleanedDatasets.put(datasetEntry.getKey(), createEmptyDataset(finalStructure));
         }
 
         this.scope.putAll(cleanedDatasets);
@@ -84,6 +63,31 @@ final class JoinScopeBindings implements Bindings {
                 this.scope.putIfAbsent(componentEntry.getKey(), componentEntry.getValue());
             }
         }
+    }
+
+    private Dataset createEmptyDataset(final DataStructure structure) {
+        return new Dataset() {
+            @Override
+            public Stream<DataPoint> getData() {
+                return Stream.empty();
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return Optional.of(0L);
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return structure;
+            }
+
+        };
     }
 
     @Override

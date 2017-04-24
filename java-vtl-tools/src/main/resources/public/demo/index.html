@@ -128,7 +128,7 @@
                     </blockquote>
                 </div>
 
-                <p>datasets in context: {{ datasets | json}}</p>
+                <p>datasets in context: {{ variables | json}}</p>
 
                 <p class="lead">
                 <form>
@@ -143,13 +143,13 @@
             <div class="inner cover row">
                 <div class="col-md-12 dataset">
                     <!-- display the dataset. -->
-                    <div class="table-responsive" ng-repeat="name in datasets">
+                    <div class="table-responsive" ng-repeat="name in variables">
                         <table ng-if="!datasets[name].error" class="table-responsive table-bordered table-condensed">
                             <caption>{{ name }}, <a ng-click="remove(name)">delete</a></caption>
                             <thead>
                             <tr>
                                 <th ng-class="variable.role | lowercase"
-                                    ng-repeat="variable in datasets[name].datasets | toArray | orderBy: [roleOrder, 'name']">
+                                    ng-repeat="variable in datasets[name].variables | toArray | orderBy: [roleOrder, 'name']">
                                     {{ variable.name }}
                                 </th>
                             </tr>
@@ -158,20 +158,20 @@
                             <tbody>
 
                             <tr ng-if="!datasets[name].data">
-                                <td colspan="{{ (datasets[name].datasets | toArray).length }}">
+                                <td colspan="{{ (datasets[name].variables | toArray).length }}">
                                     <a ng-click="fetchData(name)">load data for {{ name }}</a>
                                 </td>
                             </tr>
 
                             <tr ng-if="datasets[name].data" ng-repeat="row in datasets[name].data | limitTo: options.limitTuple">
-                                <td ng-repeat="variable in datasets[name].datasets | toArray | orderBy: [roleOrder, 'name']">
+                                <td ng-repeat="variable in datasets[name].variables | toArray | orderBy: [roleOrder, 'name']">
                                     {{ row[variable.name] }}
                                 </td>
                             </tr>
 
                             <tr>
                                 <td ng-if="datasets[name].data.length >= limitTuple"
-                                    colspan="{{ (datasets[name].datasets | toArray).length }}">
+                                    colspan="{{ (datasets[name].variables | toArray).length }}">
                                     and {{ datasets[name].data.length - options.limitTuple }} more.
                                     and {{ datasets[name].data.length - options.limitTuple }} more.
                                 </td>

@@ -16,6 +16,10 @@ public abstract class VTLNumber extends VTLObject<Number> {
         
     }
     
+    public VTLNumber add(VTLNumber addend) {
+        return add(addend.get());
+    }
+    
     public VTLNumber add(Number addend) {
         Number augend = get();
         if (augend instanceof Double || addend instanceof Double) {
@@ -28,6 +32,10 @@ public abstract class VTLNumber extends VTLObject<Number> {
                 format("unsupported number types %s, %s", augend.getClass(), addend.getClass())
         );
         
+    }
+    
+    public VTLNumber subtract(VTLNumber subtrahend) {
+        return subtract(subtrahend.get());
     }
     
     public VTLNumber subtract(Number subtrahend) {
@@ -44,6 +52,10 @@ public abstract class VTLNumber extends VTLObject<Number> {
         
     }
     
+    public VTLNumber multiply(VTLNumber multiplicand) {
+        return multiply(multiplicand.get());
+    }
+    
     public VTLNumber multiply(Number multiplicand) {
         Number multiplier = get();
         if (multiplier instanceof Double || multiplicand instanceof Double) {
@@ -52,6 +64,10 @@ public abstract class VTLNumber extends VTLObject<Number> {
             return VTLNumber.of(multiplier.longValue() * multiplicand.longValue());
         }
         throw new RuntimeException(format("unsupported number types %s, %s", multiplier.getClass(), multiplicand.getClass()));
+    }
+    
+    public VTLNumber divide(VTLNumber divisor) {
+        return divide(divisor.get());
     }
     
     public VTLNumber divide(Number divisor) {

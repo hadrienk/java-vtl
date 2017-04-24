@@ -9,9 +9,6 @@ import java.util.LinkedList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Created by hadrien on 18/10/2016.
- */
 public class StartVisitor extends VTLBaseVisitor<LinkedList<Dataset>> {
 
     private final AssignmentVisitor assignmentVisitor;
@@ -27,8 +24,8 @@ public class StartVisitor extends VTLBaseVisitor<LinkedList<Dataset>> {
 
     @Override
     public LinkedList<Dataset> visitStart(VTLParser.StartContext ctx) {
-        for (VTLParser.StatementContext statement : ctx.statement()) {
-            Dataset assigned = assignmentVisitor.visit(statement);
+        for (VTLParser.AssignmentContext assignment : ctx.assignment()) {
+            Dataset assigned = assignmentVisitor.visit(assignment);
             defaultResult().add(assigned);
         }
         return defaultResult();

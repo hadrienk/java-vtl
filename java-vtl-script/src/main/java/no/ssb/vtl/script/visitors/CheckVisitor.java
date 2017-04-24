@@ -19,9 +19,9 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         this.relationalVisitor = relationalVisitor;
         this.referenceVisitor = referenceVisitor;
     }
-
+    
     @Override
-    public Dataset visitCheckExpression(VTLParser.CheckExpressionContext ctx) {
+    public Dataset visitCheckFunction(VTLParser.CheckFunctionContext ctx) {
         VTLParser.CheckParamContext checkParamContext = ctx.checkParam();
         Dataset dataset = visit(checkParamContext.datasetExpression());
 
