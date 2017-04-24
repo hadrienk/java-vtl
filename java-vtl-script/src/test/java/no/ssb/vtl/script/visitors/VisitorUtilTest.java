@@ -30,6 +30,9 @@ public class VisitorUtilTest {
 
         token.setText("\"'test'\"");
         assertThat(VisitorUtil.stripQuotes(terminalNode)).isEqualTo("'test'");
+    
+        token.setText("\"a\"\"b"); //escaped quote
+        assertThat(VisitorUtil.stripQuotes(terminalNode)).isEqualTo("a\"b");
     }
 
 }

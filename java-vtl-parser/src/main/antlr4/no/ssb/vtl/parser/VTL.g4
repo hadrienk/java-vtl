@@ -225,7 +225,8 @@ CROSS : 'cross' ;
 
 INTEGER_CONSTANT  : DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
-STRING_CONSTANT   :'"' (~'"')* '"';
+STRING_CONSTANT   :'"' (ESCAPED_QUOTE|~'"')* '"';
+fragment ESCAPED_QUOTE : '""';
 
 FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
                   | (DIGIT)+ FLOATEXP
