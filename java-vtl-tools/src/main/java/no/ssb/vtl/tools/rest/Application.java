@@ -52,7 +52,7 @@ public class Application {
 //                new RestDataConnector("http://al-kostra-app-utv.ssb.no:7090", mapper),
 //                new RestDataConnector("http://al-kostra-app-test.ssb.no:7090", mapper),
 
-                new SsbKlassApiConnector(mapper),
+                new SsbKlassApiConnector(mapper, SsbKlassApiConnector.PeriodType.YEAR),
                 new SsbApiConnector(mapper)
         );
     }
