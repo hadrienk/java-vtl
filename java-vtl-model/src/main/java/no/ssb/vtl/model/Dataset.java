@@ -21,18 +21,12 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.stream.Stream;
-
-import static com.google.common.base.Preconditions.*;
 
 /**
  * A dataset represents a list of observations.
@@ -72,28 +66,7 @@ import static com.google.common.base.Preconditions.*;
  * join or union.
  */
 public interface Dataset {
-
-    static Comparator<DataPoint> comparatorFor(DataStructure dataStructure, Component.Role... roles) {
-        ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
-        return (li, ri) -> {
-            Comparator comparator = Comparator.naturalOrder();
-
-            Map<Component, VTLObject> leftMap = dataStructure.asMap(li);
-            Map<Component, VTLObject> rightMap = dataStructure.asMap(ri);
-
-            checkArgument(leftMap.keySet().equals(rightMap.keySet()));
-            int i = 0;
-            for (Component key : leftMap.keySet()) {
-                if (roleSet.contains(key.getRole())) {
-                    i = comparator.compare(leftMap.get(key).get(), rightMap.get(key).get());
-                    if (i != 0) return i;
-                }
-            }
-            return i;
-
-        };
-    }
-
+    
     /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>

@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.operations;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.AbstractDatasetOperation;
@@ -7,14 +8,17 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -94,7 +98,10 @@ public class UnionOperation extends AbstractDatasetOperation {
         }
 
         // TODO: Attribute propagation.
-        Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(getDataStructure(), Component.Role.IDENTIFIER, Component.Role.MEASURE));
+        Order order = Order.create(getDataStructure())
+                .putAll(rolesInOrder(getDataStructure(), Order.Direction.DESC, Component.Role.IDENTIFIER, Component.Role.MEASURE))
+                .build();
+        Set<DataPoint> bucket = Sets.newTreeSet(order);
         Set<DataPoint> seen = Collections.synchronizedSet(bucket);
         return getChildren().stream().flatMap(Dataset::getData)
                 .peek((o) -> {
@@ -103,6 +110,13 @@ public class UnionOperation extends AbstractDatasetOperation {
                     }
                 })
                 .peek(bucket::add);
+    }
+    
+    private Map<Component, Order.Direction> rolesInOrder(DataStructure dataStructure, Order.Direction desc, Component.Role... roles) {
+        ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
+        return dataStructure.values().stream()
+                .filter(component -> roleSet.contains(component.getRole()))
+                .collect(Collectors.toMap(o -> o, o -> desc));
     }
     
     @Override
