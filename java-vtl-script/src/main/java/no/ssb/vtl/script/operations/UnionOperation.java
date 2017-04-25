@@ -1,5 +1,6 @@
 package no.ssb.vtl.script.operations;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.AbstractDatasetOperation;
@@ -7,14 +8,17 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
@@ -24,61 +28,52 @@ import static java.util.Arrays.*;
  * Union operator
  */
 public class UnionOperation extends AbstractDatasetOperation {
-
-    private Set<Map.Entry<String, Class<? extends Component>>> requiredRoles;
-
+    
     public UnionOperation(Dataset... dataset) {
         this(asList(dataset));
     }
 
     public UnionOperation(List<Dataset> datasets) {
         super(datasets);
+        Iterator<Dataset> iterator = datasets.iterator();
+        DataStructure firstDataStructure = iterator.next().getDataStructure();
+        while (iterator.hasNext())
+            checkDataStructures(firstDataStructure, iterator.next().getDataStructure());
     }
     
     @Override
     protected DataStructure computeDataStructure() {
-        Iterator<Dataset> iterator = this.getChildren().iterator();
-        DataStructure dataStructure = iterator.next().getDataStructure();
-        while (iterator.hasNext())
-            checkDataStructures(iterator.next(), dataStructure);
-        return dataStructure;
+        return getChildren().get(0).getDataStructure();
     }
     
-    private void checkDataStructures(Dataset dataset, DataStructure dataStructure) {
+    private void checkDataStructures(DataStructure baseDataStructure, DataStructure nextDataStructure) {
         // Identifiers and attribute should be equals in name, role and type.
-        Set<String> requiredNames = nonAttributeNames(dataStructure);
-        Set<String> providedNames = nonAttributeNames(dataset.getDataStructure());
+        Set<String> requiredNames = nonAttributeNames(baseDataStructure);
+        Set<String> providedNames = nonAttributeNames(nextDataStructure);
 
         checkArgument(
                 requiredNames.equals(providedNames),
-                "dataset %s was incompatible with the required data structure, missing: %s, unexpected %s",
-                dataset,
+                "dataset was incompatible with the required data structure, missing: %s, unexpected %s",
                 Sets.difference(requiredNames, providedNames),
                 Sets.difference(providedNames, requiredNames)
         );
 
-        Map<String, Component.Role> requiredRoles;
-        requiredRoles = Maps.filterKeys(getDataStructure().getRoles(), requiredNames::contains);
-        Map<String, Component.Role> providedRoles;
-        providedRoles = Maps.filterKeys(dataset.getDataStructure().getRoles(), requiredNames::contains);
-
+        Map<String, Component.Role> requiredRoles = Maps.filterKeys(baseDataStructure.getRoles(), requiredNames::contains);
+        Map<String, Component.Role> providedRoles = Maps.filterKeys(nextDataStructure.getRoles(), requiredNames::contains);
+    
         checkArgument(
-                requiredNames.equals(providedNames),
-                "dataset %s was incompatible with the required data structure, missing: %s, unexpected %s",
-                dataset,
+                requiredRoles.equals(providedRoles),
+                "dataset was incompatible with the required data structure, missing: %s, unexpected %s",
                 Sets.difference(requiredRoles.entrySet(), providedRoles.entrySet()),
                 Sets.difference(providedRoles.entrySet(), requiredRoles.entrySet())
         );
 
-        Map<String, Class<?>> requiredTypes;
-        requiredTypes = Maps.filterKeys(getDataStructure().getTypes(), requiredNames::contains);
-        Map<String, Class<?>> providedTypes;
-        providedTypes = Maps.filterKeys(dataset.getDataStructure().getTypes(), requiredNames::contains);
-
+        Map<String, Class<?>> requiredTypes = Maps.filterKeys(baseDataStructure.getTypes(), requiredNames::contains);
+        Map<String, Class<?>> providedTypes = Maps.filterKeys(nextDataStructure.getTypes(), requiredNames::contains);
+    
         checkArgument(
-                requiredNames.equals(providedNames),
-                "dataset %s was incompatible with the required data structure, missing: %s, unexpected %s",
-                dataset,
+                requiredTypes.equals(providedTypes),
+                "dataset was incompatible with the required data structure, missing: %s, unexpected %s",
                 Sets.difference(requiredTypes.entrySet(), providedTypes.entrySet()),
                 Sets.difference(providedTypes.entrySet(), requiredTypes.entrySet())
         );
@@ -103,7 +98,10 @@ public class UnionOperation extends AbstractDatasetOperation {
         }
 
         // TODO: Attribute propagation.
-        Set<DataPoint> bucket = Sets.newTreeSet(Dataset.comparatorFor(Component.Role.IDENTIFIER, Component.Role.MEASURE));
+        Order order = Order.create(getDataStructure())
+                .putAll(rolesInOrder(getDataStructure(), Order.Direction.DESC, Component.Role.IDENTIFIER, Component.Role.MEASURE))
+                .build();
+        Set<DataPoint> bucket = Sets.newTreeSet(order);
         Set<DataPoint> seen = Collections.synchronizedSet(bucket);
         return getChildren().stream().flatMap(Dataset::getData)
                 .peek((o) -> {
@@ -112,6 +110,13 @@ public class UnionOperation extends AbstractDatasetOperation {
                     }
                 })
                 .peek(bucket::add);
+    }
+    
+    private Map<Component, Order.Direction> rolesInOrder(DataStructure dataStructure, Order.Direction desc, Component.Role... roles) {
+        ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
+        return dataStructure.values().stream()
+                .filter(component -> roleSet.contains(component.getRole()))
+                .collect(Collectors.toMap(o -> o, o -> desc));
     }
     
     @Override
