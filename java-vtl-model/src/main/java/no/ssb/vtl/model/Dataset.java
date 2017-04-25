@@ -21,19 +21,12 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.google.common.base.Preconditions.*;
 
 /**
  * A dataset represents a list of observations.
@@ -73,41 +66,7 @@ import static com.google.common.base.Preconditions.*;
  * join or union.
  */
 public interface Dataset {
-
-    /**
-     * Deprecated, we are moving toward a Map view of the tuples.
-     */
-    @Deprecated
-    static Comparator<DataPoint> comparatorFor(Component.Role... roles) {
-        ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
-        return new Comparator<DataPoint>() {
-            @Override
-            public int compare(DataPoint li, DataPoint ri) {
-                Comparator comparator = Comparator.naturalOrder();
-
-                Map<String, Object> lm = li.stream().filter(dataPoint -> roleSet.contains(dataPoint.getComponent().getRole()))
-                        .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
-                                VTLObject::get
-                        ));
-
-                Map<String, Object> rm = ri.stream().filter(dataPoint -> roleSet.contains(dataPoint.getComponent().getRole()))
-                        .collect(Collectors.toMap((vtlObject) -> vtlObject.getComponent().getName(),
-                                VTLObject::get
-                        ));
-
-                checkArgument(lm.keySet().equals(rm.keySet()));
-                int i = 0;
-                for (String key : lm.keySet()) {
-                    i = comparator.compare(lm.get(key), rm.get(key));
-                    if (i != 0)
-                        return i;
-                }
-                return i;
-
-            }
-        };
-    }
-
+    
     /**
      * Creates a new independent, immutable stream of DataPoints.
      * <p>
