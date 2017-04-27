@@ -6,6 +6,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AggregationOperation;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
@@ -161,6 +163,53 @@ public class AggregationVisitorTest {
         );
     }
     
+    
+    @Test
+    public void testSumAlongMultipleIdentifiers() throws Exception {
+        DataStructure dataStructure = DataStructure.builder()
+                .put("eieform", Component.Role.IDENTIFIER, String.class)
+                .put("enhet", Component.Role.IDENTIFIER, String.class)
+                .put("feltnavn", Component.Role.IDENTIFIER, String.class)
+                .put("funksjon", Component.Role.IDENTIFIER, String.class)
+                .put("periode", Component.Role.IDENTIFIER, String.class)
+                .put("region", Component.Role.IDENTIFIER, String.class)
+                .put("regnskapsomfang", Component.Role.IDENTIFIER, String.class)
+                .put("areal", Component.Role.MEASURE, Long.class)
+                .build();
+        TestableDataset datasetToBeSummed = new TestableDataset(
+                Arrays.asList(
+                        dataPoint("EIER","981548183", "F130KFEIER", "130", "2015", "0104", "SBDR", 8418L),
+                        dataPoint("EIER","988935816", "F130KFEIER", "130", "2015", "0105", "SBDR", 0L),
+                        dataPoint("EIER","979952171", "F130KFEIER", "130", "2015", "0106", "SBDR", 1092L),
+                        dataPoint("EIER","986386947", "F130KFEIER", "130", "2015", "0226", "SBDR", 5367L),
+                        dataPoint("EIER","994860216", "F130KFEIER", "130", "2015", "0233", "SBDR", 4370L),
+                        dataPoint("EIER","997756215", "F130KFEIER", "130", "2015", "0236", "SBDR", 318L),
+                        dataPoint("EIER","984070659", "F130KFEIER", "130", "2015", "0301", "SBDR", 610L),
+                        dataPoint("EIER","985987246", "F130KFEIER", "130", "2015", "0301", "SBDR", 3888L),
+                        dataPoint("EIER","987592567", "F130KFEIER", "130", "2015", "0301", "SBDR", 24L),
+                        dataPoint("EIER","983529968", "F130KFEIER", "130", "2015", "0417", "SBDR", 0L)), dataStructure);
+    
+    
+        
+    
+        List<Component> alongComponents = Lists.newArrayList(dataStructure.get("enhet"), dataStructure.get("region"));
+        List<Component> groupBy = dataStructure.values()
+                .stream()
+                .filter(Component::isIdentifier)
+                .filter(component -> !alongComponents.contains(component))
+                .collect(Collectors.toList());
+        System.out.println(groupBy);
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetToBeSummed,groupBy);
+        
+        assertThat(sumOperation.getData()).containsOnly(dataPoint("EIER", "F130KFEIER", "130", "2015", "SBDR", 8418L+1092L+5367L+4370L+318L+610L+3888L+24L));
+        
+    }
+    
+    private DataPoint dataPoint(Object... objects) {
+        List<VTLObject> vtlObjects = Stream.of(objects).map(VTLObject::of).collect(Collectors.toList());
+        return DataPoint.create(vtlObjects);
+    }
+ 
     private final class TestableDataset implements Dataset {
         
         private final List<DataPoint> data;

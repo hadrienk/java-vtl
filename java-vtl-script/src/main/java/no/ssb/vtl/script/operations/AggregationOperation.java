@@ -49,7 +49,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         DataStructure childStructure = getChild().getDataStructure();
         DataStructure structure = getDataStructure();
     
-        Order.Builder builder = Order.create(structure);
+        Order.Builder builder = Order.create(childStructure);
         groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
         Order order = builder.build();
     
