@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,10 +26,11 @@ public class AggregationVisitorTest {
     private AggregationVisitor visitor = new AggregationVisitor(null);
     private TestableDataset datasetSingleMeasure;
     private TestableDataset datasetMultiMeasure;
+    private DataStructure dataStructureSingleMeasure;
     
     @Before
     public void setUp() throws Exception {
-        DataStructure dataStructureSingleMeasure = DataStructure.of((o, aClass) -> o,
+        dataStructureSingleMeasure = DataStructure.of((o, aClass) -> o,
                 "time", Component.Role.IDENTIFIER, String.class,
                 "geo", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class);
@@ -42,7 +44,8 @@ public class AggregationVisitorTest {
                         dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 41L)),
                         dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60L)),
                         dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51L)),
-                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92L))), dataStructureSingleMeasure);
+                        dataStructureSingleMeasure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92L))),
+                dataStructureSingleMeasure);
     
     
         DataStructure dataStructureMultiMeasure = DataStructure.of((o, aClass) -> o,
@@ -203,6 +206,26 @@ public class AggregationVisitorTest {
         
         assertThat(sumOperation.getData()).containsOnly(dataPoint("EIER", "F130KFEIER", "130", "2015", "SBDR", 8418L+1092L+5367L+4370L+318L+610L+3888L+24L));
         
+    }
+    
+    @Test
+    public void testSumWithNullValues() throws Exception {
+        TestableDataset dataset = new TestableDataset(
+                Arrays.asList(dataPoint("2010", "NO",20L),
+                        dataPoint("2011", "SE", 31L),
+                        dataPoint("2012", "SE", null),
+                        dataPoint("2012", "NO", null),
+                        dataPoint("2010", "SE", 40L),
+                        dataPoint("2011", "NO", 11L),
+                        dataPoint("2012", "SE", 41L),
+                        dataPoint("2010", "DK", null),
+                        dataPoint("2011", "DK", 51L),
+                        dataPoint("2012", "DK", 92L)), dataStructureSingleMeasure);
+    
+        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+                Collections.singletonList(dataStructureSingleMeasure.get("time")));
+        assertThat(sumOperation.getData()).contains(dataPoint("2012", 41L + 92L));
+    
     }
     
     private DataPoint dataPoint(Object... objects) {
