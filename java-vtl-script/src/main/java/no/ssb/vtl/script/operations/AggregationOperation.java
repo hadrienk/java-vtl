@@ -80,7 +80,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
      */
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        return null;
+        return Optional.empty();
     }
 
     /**
@@ -89,6 +89,6 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
      */
     @Override
     public Optional<Long> getSize() {
-        return null;
+        return Optional.empty();
     }
 }
