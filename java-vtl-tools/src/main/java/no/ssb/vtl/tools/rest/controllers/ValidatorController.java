@@ -12,7 +12,6 @@ import org.antlr.v4.runtime.DiagnosticErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.tool.GrammarParserInterpreter;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
@@ -74,8 +73,9 @@ public class ValidatorController {
         lexer.addErrorListener(errorListener);
         parser.addErrorListener(new DiagnosticErrorListener());
         parser.addErrorListener(errorListener);
-
-        parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
+    
+        //Should not be reported as an error. The expression works TODO: A warning might be more appropriate
+//        parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
 
         parser.start();
 
