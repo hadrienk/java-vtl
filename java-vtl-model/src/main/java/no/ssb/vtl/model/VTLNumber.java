@@ -6,7 +6,6 @@ public abstract class VTLNumber extends VTLObject<Number> {
     
     
     public static VTLNumber of(Number number) {
-        
         return new VTLNumber() {
             @Override
             public Number get() {

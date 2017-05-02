@@ -64,6 +64,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         
             List<VTLNumber> aggregationValues = dataPoints.stream()
                     .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
+                    .filter(vtlObject -> !VTLObject.NULL.equals(vtlObject))
                     .map(vtlObject -> VTLNumber.of((Number) vtlObject.get()))
                     .collect(Collectors.toList());
         
@@ -79,7 +80,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
      */
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        return null;
+        return Optional.empty();
     }
 
     /**
@@ -88,6 +89,6 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
      */
     @Override
     public Optional<Long> getSize() {
-        return null;
+        return Optional.empty();
     }
 }

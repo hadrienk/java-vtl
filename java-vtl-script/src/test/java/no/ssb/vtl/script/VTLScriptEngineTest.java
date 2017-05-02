@@ -868,6 +868,12 @@ public class VTLScriptEngineTest {
                         "m1", 202L,
                         "m2", 1.1,
                         "at1", "attr2"
+                ), ImmutableMap.of(
+                        "id1", 2L,
+                        "id2", "two-null",
+                        "m1", VTLObject.NULL,
+                        "m2", VTLObject.NULL,
+                        "at1", "attr2"
                 )
         ).map(structure::wrap));
     
@@ -930,6 +936,12 @@ public class VTLScriptEngineTest {
                         "id1", 2L,
                         "id2", "two",
                         "m1", 202L,
+                        "at1", "attr2"
+                ),
+                ImmutableMap.of(
+                        "id1", 2L,
+                        "id2", "two-null",
+                        "m1", VTLObject.NULL,
                         "at1", "attr2"
                 )
         ).map(structure::wrap));
