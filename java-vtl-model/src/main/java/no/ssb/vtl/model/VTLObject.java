@@ -40,7 +40,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
      *
      * Subclasses' method should be used as "delegate":
      * <code><pre>
-     * public static VTLObject of(Boolean b) {
+     * public static VTLBoolean of(Boolean b) {
      *     return VTLBoolean.of(b)
      * }
      * </pre></code>
