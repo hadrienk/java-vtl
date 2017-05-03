@@ -1,11 +1,9 @@
 package no.ssb.vtl.model;
 
-import java.time.Instant;
-import java.time.Year;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Root of the VTL data type hierarchy.
@@ -132,25 +130,18 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
             return 1;
         }
 
-        if (value instanceof Comparable && other.getClass() == value.getClass()) {
+        // TODO: Should we allow this?
+        // Compare numbers
+        //if (Number.class.isAssignableFrom(other.getClass()) && Number.class.isAssignableFrom(value.getClass()))
+        //    return Double.compare(((Number) value).doubleValue(), ((Number) other).doubleValue());
+
+        // Compare comparable.
+        if (other.getClass() == value.getClass() && value instanceof Comparable)
             return ((Comparable) value).compareTo(other);
-        }
-        if (value instanceof Long && other instanceof Long) {
-            return ((Long) value).compareTo((Long) other);
-        } else if (value instanceof Double && other instanceof Double) {
-            return ((Double) value).compareTo((Double) other);
-        } else if (value instanceof Boolean && other instanceof Boolean) {
-            return ((Boolean) value).compareTo((Boolean) other);
-        } else if (value instanceof String && other instanceof String) {
-            return ((String) value).compareTo((String) other);
-        } else if (value instanceof Instant && other instanceof Instant) {
-            return ((Instant) value).compareTo((Instant) other);
-        } else if (value instanceof Year && other instanceof Year) {
-            return ((Year) value).compareTo((Year) other);
-        }
+
         throw new IllegalArgumentException(
                 String.format("Cannot compare %s of type %s with %s of type %s",
-                        value, value==null? "<null>" : value.getClass(), other, other==null ? "<null>": other.getClass()));
+                        value, value.getClass(), other, other.getClass()));
     }
     
     @Override
