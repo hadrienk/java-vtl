@@ -257,6 +257,43 @@ public class VTLScriptEngineTest {
     }
 
     @Test
+    public void testBoolean() throws Exception {
+        List<List<VTLObject>> data = Lists.newArrayList();
+        data.add(
+                Lists.newArrayList(VTLObject.of("1"), VTLObject.of(1L), VTLObject.of(2D))
+        );
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure ds = DataStructure.of(
+                (o, aClass) -> o,
+                "id", Role.IDENTIFIER, String.class,
+                "integerMeasure", Role.MEASURE, Long.class,
+                "float", Role.MEASURE, Long.class
+        );
+        when(ds1.getDataStructure()).thenReturn(ds);
+        when(ds1.getData()).then(invocation -> data.stream().map(DataPoint::create));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+
+        // TODO: Add test that check that we can compare float and integer in VTL.
+
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := [ds1] {" +
+                "  lessThan := ds1.integerMeasure < 2," +
+                "  lessOrEqual := ds1.integerMeasure <= 2," +
+                "  moreThan := ds1.integerMeasure > 2," +
+                "  moreOrEqual := ds1.integerMeasure >= 2," +
+                "  equal := ds1.integerMeasure = 2" +
+                "}"
+        );
+
+        DataPoint point = ((Dataset) bindings.get("ds2")).getData().findFirst().get();
+        assertThat(point)
+                .extracting(VTLObject::get)
+                .containsExactly("1", 1L, 2D, true, true, false, false, false);
+
+    }
+
+    @Test
     public void testJoinUnfold() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
