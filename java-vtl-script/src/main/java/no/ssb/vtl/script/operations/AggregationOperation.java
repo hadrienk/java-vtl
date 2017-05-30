@@ -17,18 +17,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-
 public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
     private final List<Component> groupBy;
-    private final Component aggregationComponent;
+    private final List<Component> aggregationComponents;
     private final Function<List<VTLNumber>, VTLNumber> aggregationFunction;
 
-    public AggregationOperation(Dataset child, List<Component> groupBy, Component aggregationComponent, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
+    public AggregationOperation(Dataset child, List<Component> groupBy, List<Component> aggregationComponents, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
         super(child);
         this.groupBy = groupBy;
-        this.aggregationComponent = checkNotNull(aggregationComponent);
+        this.aggregationComponents = aggregationComponents;
         this.aggregationFunction = aggregationFunction;
         
     }
@@ -37,7 +35,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     protected DataStructure computeDataStructure() {
         DataStructure.Builder newDataStructure = DataStructure.builder();
         for (Map.Entry<String, Component> entry : getChild().getDataStructure().entrySet()) {
-            if (groupBy.contains(entry.getValue()) || aggregationComponent.equals(entry.getValue())) {
+            if (groupBy.contains(entry.getValue()) || aggregationComponents.contains(entry.getValue())) {
                 newDataStructure.put(entry);
             }
         }
@@ -61,14 +59,17 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {
             DataPoint firstDataPointOfGroup = DataPoint.create(dataPoints.get(0));
             Map<Component, VTLObject> resultAsMap = childStructure.asMap(firstDataPointOfGroup);
-        
-            List<VTLNumber> aggregationValues = dataPoints.stream()
-                    .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
-                    .filter(vtlObject -> !VTLObject.NULL.equals(vtlObject))
-                    .map(vtlObject -> VTLNumber.of((Number) vtlObject.get()))
-                    .collect(Collectors.toList());
-        
-            resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
+    
+            for (Component aggregationComponent : aggregationComponents) {
+    
+                List<VTLNumber> aggregationValues = dataPoints.stream()
+                        .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
+                        .filter(vtlObject -> !VTLObject.NULL.equals(vtlObject))
+                        .map(vtlObject -> VTLNumber.of((Number) vtlObject.get()))
+                        .collect(Collectors.toList());
+    
+                resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
+            }
             return structure.fromMap(resultAsMap);
         });
         
