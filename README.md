@@ -140,7 +140,7 @@ This is an overview of the implementation progress.
 
 Group|Operators|Progress|Comment
 ---|---|---|---
-General purpose|round parenthesis|![todo][todo]
+General purpose|round parenthesis|![done][done]
 General purpose|:= (assignment)|![done][done]
 General purpose|membership|![done][done]
 General purpose|get|![usable](http://progressed.io/bar/20)|The keep, filter and aggregate are not yet reflected in the connector interface.
