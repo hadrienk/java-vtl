@@ -24,8 +24,6 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
         
         /*
             TODO: Handle explicit and implicit component computation.
-            Need to parse the role
-            If implicit, error if already defined.
          */
         variableName = removeQuoteIfNeeded(identifier);
 //        return new Dataset() {
@@ -42,12 +40,32 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     
     @Override
     protected DataStructure computeDataStructure() {
+
+        Boolean implicit = true;
+        Component.Role defaultRole = Component.Role.MEASURE;
+
+        DataStructure.Builder builder = DataStructure.builder();
+        DataStructure dataStructure = getChild().getDataStructure();
+        for (Map.Entry<String, Component> entry : dataStructure.entrySet()) {
+            if (dataStructure.containsKey(variableName))
+                continue;
+            builder.put(entry.getKey(), entry.getValue());
+        }
+
         Component.Role role = Component.Role.MEASURE;
-        Class<?> type = componentExpression.getType(); //Number.class; //TODO
-    
-        DataStructure.Builder structureCopy = DataStructure.copyOf(getChild().getDataStructure());
-        structureCopy.put(variableName, role, type);
-        return structureCopy.build();
+        Class<?> type = componentExpression.getType();
+
+        // TODO: Support implicit
+        if (dataStructure.containsKey(variableName) && implicit)
+            role = dataStructure.get(variableName).getRole();
+
+        // TODO: Support role change
+        if (false)
+            role = Component.Role.MEASURE;
+
+        builder.put(variableName, role, type);
+
+        return builder.build();
     }
     
     private static String removeQuoteIfNeeded(String key) {
