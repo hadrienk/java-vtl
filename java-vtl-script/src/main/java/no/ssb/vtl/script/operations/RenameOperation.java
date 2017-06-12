@@ -21,20 +21,19 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLObject;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Rename operation.
@@ -43,7 +42,6 @@ import static com.google.common.base.Preconditions.*;
  */
 public class RenameOperation extends AbstractUnaryDatasetOperation {
 
-    private final Map<Component, Component> mapping = Maps.newHashMap();
     private final Map<Component, String> newNames;
     private final Map<Component, Component.Role> newRoles;
 
@@ -57,41 +55,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         this.newRoles = newRoles;
     }
 
-    /**
-     * Compute a Map<String, String>
-     */
-    private static ImmutableMap<String, String> computeNames(Map<Component, String> newNames) {
-        checkNotNull(newNames);
-        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-        for (Map.Entry<Component, String> entry : newNames.entrySet()) {
-            builder.put(entry.getKey().getName(), entry.getValue());
-        }
-        return builder.build();
-    }
-
-    /**
-     * Compute a Map<String, Role>
-     */
-    private static ImmutableMap<String, Component.Role> computeRoles(Map<Component, Component.Role> newRoles) {
-        checkNotNull(newRoles);
-        ImmutableMap.Builder<String, Component.Role> builder = ImmutableMap.builder();
-        for (Map.Entry<Component, Component.Role> entry : newRoles.entrySet()) {
-            builder.put(entry.getKey().getName(), entry.getValue());
-        }
-        return builder.build();
-    }
-
-    /**
-     * Compute the role from the components.
-     */
-    private ImmutableMap<String, Component.Role> computeSameRole(Map<Component, String> newNames) {
-        checkNotNull(newNames);
-        ImmutableMap.Builder<String, Component.Role> builder = ImmutableMap.builder();
-        for (Map.Entry<Component, String> entry : newNames.entrySet()) {
-            builder.put(entry.getValue(), entry.getKey().getRole());
-        }
-        return builder.build();
-    }
 
     @Override
     protected DataStructure computeDataStructure() {
@@ -100,7 +63,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         for (Map.Entry<String, Component> componentEntry : getChild().getDataStructure().entrySet()) {
             Component component = componentEntry.getValue();
             if (newNames.containsKey(component)) {
-                String oldName = component.getName();
                 String newName = newNames.get(component);
                 map.put(component, newName);
                 newDataStructure.put(
@@ -112,15 +74,8 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
                 newDataStructure.put(componentEntry);
             }
         }
-        DataStructure builtDataStructure = newDataStructure.build();
 
-        // This is twisted, but there is no way to get the
-        // component before the builder is built.
-        for (Map.Entry<Component, String> entry : map.entrySet()) {
-            mapping.put(entry.getKey(), builtDataStructure.get(entry.getValue()));
-        }
-
-        return builtDataStructure;
+        return newDataStructure.build();
     }
 
     @Override
@@ -134,15 +89,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        return getChild().getData().map(dataPoint -> {
-            LinkedList<Component> list = Lists.newLinkedList(getDataStructure().values());
-            Map<VTLObject, Component> componentMap = getDataStructure().asInverseMap(dataPoint);
-            dataPoint.replaceAll(vtlObject -> {
-                Component component = componentMap.get(vtlObject);
-                return  VTLObject.of(component, vtlObject.get());
-            });
-            return dataPoint;
-        });
+        return getChild().getData();
     }
 
     @Override
@@ -153,6 +100,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Optional<Long> getSize() {
-        return null;
+        return getChild().getSize();
     }
 }

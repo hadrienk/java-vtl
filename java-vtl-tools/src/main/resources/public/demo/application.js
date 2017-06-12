@@ -68,6 +68,22 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
             }
         };
 
+        function normalizeStructure(structure) {
+            const normalized = [];
+            for (let name in structure) {
+
+                if (!structure.hasOwnProperty(name))
+                    continue;
+
+                normalized.push({
+                    name: name,
+                    type: structure[name].type,
+                    role: structure[name].role
+                })
+            }
+            return normalized;
+        }
+
         $scope.execute = function () {
             // Simple GET request example:
             $http({
@@ -90,7 +106,10 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
                     }
                     var promise = $http.get("/dataset/" + dataset + "/structure");
                     promises[dataset] = promise.then(function (response) {
-                        return {variables: response.data.dataStructure};
+                        const structure = normalizeStructure(response.data.dataStructure);
+                        return {
+                            variables: structure
+                        };
                     },function (response) {
                         return { error: response.data};
                     });

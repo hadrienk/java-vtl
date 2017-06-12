@@ -43,8 +43,9 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     private static final String FROM_COLUMN_NAME = "from";
     private static final String TO_COLUMN_NAME = "to";
     private static final String SIGN_COLUMN_NAME = "sign";
-    private static final String COLUMN_NOT_FOUND = "could not find the column %s";
-    private static final String UNKNOWN_SIGN_VALUE = "unknown sign component %s";
+
+    private static final String COLUMN_NOT_FOUND = "could not find the column [%s]";
+    private static final String UNKNOWN_SIGN_VALUE = "unknown sign component [%s]";
     private static final String CIRCULAR_DEPENDENCY = "the edge %s -(%s)-> %s introduced a loop (%s)";
     private static final Map<String, Composition> COMPOSITION_MAP = ImmutableMap.of(
             "", Composition.UNION,
@@ -65,26 +66,34 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         this.component = checkNotNull(group, "component cannot be null");
 
         checkArgument(
-                group.isIdentifier(),
-                "%s was not an identifier",
-                group
-        );
-
-        checkArgument(
                 dataset.getDataStructure().containsValue(group),
                 "%s was not part of %s",
                 group, dataset
         );
 
-        for (Component component : dataset.getDataStructure().values()) {
-            if (component.isMeasure()) {
-                checkArgument(
-                        Number.class.isAssignableFrom(component.getType()),
-                        "all measure components must be numeric (%s was not)",
-                        component
-                );
-            }
+        checkArgument(
+                group.isIdentifier(),
+                "%s (%s)  was not an identifier",
+                dataset.getDataStructure().getName(group),
+                group
+        );
+
+        List<Map.Entry<String, Component>> wrongComponents = Lists.newArrayList();
+        for (Map.Entry<String,Component> entry : dataset.getDataStructure().entrySet()) {
+            Component component = entry.getValue();
+            if (!component.isMeasure())
+                continue;
+
+            if (!Number.class.isAssignableFrom(component.getType()))
+                wrongComponents.add(entry);
         }
+        checkArgument(
+                wrongComponents.isEmpty(),
+                "all measure components must be numeric (%s %s wrong)",
+                wrongComponents,
+                wrongComponents.size() > 1 ? "were" : "is"
+        );
+
 
         // TODO: Hierarchy should be typed.
         checkNotNull(hierarchy);

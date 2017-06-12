@@ -31,11 +31,11 @@ public class VTLPrintStream extends PrintStream {
 
         AsciiTable4j table = new AsciiTable4j();
         table.addRow(
-                dataset.getDataStructure().values().stream()
+                dataset.getDataStructure().entrySet().stream()
                         .map(c ->
                                 String.format("%s (%d)",
-                                        c.getName(),
-                                        c.hashCode()
+                                        c.getKey(),
+                                        c.getValue().hashCode()
                                 )
                         )
                         .collect(Collectors.toList())
@@ -57,9 +57,6 @@ public class VTLPrintStream extends PrintStream {
         AsciiTable4j structure = new AsciiTable4j();
         structure.addRow(ds.keySet());
         structure.addRow(ds.values().stream()
-                .map(Component::getName).collect(Collectors.toList())
-        );
-        structure.addRow(ds.values().stream()
                 .map(Component::getRole).map(Enum::toString).collect(Collectors.toList())
         );
         structure.addRow(ds.values().stream()
@@ -67,7 +64,7 @@ public class VTLPrintStream extends PrintStream {
         );
         structure.addRow(ds.values().stream()
                 .map(Component::hashCode)
-                .map(i -> Long.toString(i))
+                .map(Long::toString)
                 .collect(Collectors.toList())
         );
         structure.showTable(this);

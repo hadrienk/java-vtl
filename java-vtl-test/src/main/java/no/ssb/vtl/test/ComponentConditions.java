@@ -37,33 +37,15 @@ public class ComponentConditions {
     }
 
     public static Condition<Component> identifierWith(String name) {
-        return componentWith(name, Role.IDENTIFIER);
+        return componentWith(Role.IDENTIFIER);
     }
 
-    public static Condition<Component> identifierWith(String name, Class<?> type) {
-        return componentWith(name, Role.IDENTIFIER, type);
-    }
-
-    public static Condition<Component> measureWith(String name) {
-        return componentWith(name, Role.MEASURE);
-    }
-
-    public static Condition<Component> measureWith(String name, Class<?> type) {
-        return componentWith(name, Role.MEASURE, type);
+    public static Condition<Component> identifierWith(Class<?> type) {
+        return componentWith(Role.IDENTIFIER, type);
     }
 
     public static Condition<Component> attributeWith(String name) {
-        return componentWith(name, Role.ATTRIBUTE);
-    }
-
-    public static Condition<Component> attributeWith(String name, Class<?> type) {
-        return componentWith(name, Role.ATTRIBUTE, type);
-    }
-
-    public static Condition<Component> componentWith(String name) {
-        return new Condition<>(
-                c -> c.getName().equals(name),
-                "component with name: [%s]", name);
+        return componentWith(Role.ATTRIBUTE);
     }
 
     public static Condition<Component> componentWith(Role role) {
@@ -78,17 +60,8 @@ public class ComponentConditions {
                 "component with type: [%s]", type);
     }
 
-    public static Condition<Component> componentWith(String name, Role role) {
-        return componentWith(
-                componentWith(name),
-                componentWith(role),
-                null
-        );
-    }
-
-    public static Condition<Component> componentWith(String name, Role role, Class<?> type) {
-        return componentWith(
-                componentWith(name),
+    public static Condition<Component> componentWith(Role role, Class<?> type) {
+        return allOf(
                 componentWith(role),
                 componentWith(type)
         );

@@ -31,13 +31,11 @@ public class Component {
 
     private final Class<?> type;
     private final Role role;
-    private final String name;
 
     // Use data structure static methods to create component.
-    Component(Class<?> type, Role role, String name) {
+    Component(Class<?> type, Role role) {
         this.type = checkNotNull(type);
         this.role = checkNotNull(role);
-        this.name = checkNotNull(name);
     }
 
     public Class<?> getType() {
@@ -46,10 +44,6 @@ public class Component {
 
     public Role getRole() {
         return role;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public boolean isIdentifier() {
@@ -67,26 +61,20 @@ public class Component {
     @Override
     public boolean equals(Object o) {
         return this == o;
-//        if (this == o) return true;
-//        if (o == null || getClass() != o.getClass()) return false;
-//        Component component = (Component) o;
-//        return Objects.equals(getType(), component.getType()) &&
-//                //Objects.equals(getName(), component.getName()) &&
-//                getRole() == component.getRole();
     }
 
 
     @Override
     public int hashCode() {
         return System.identityHashCode(this);
-        ///return Objects.hash(getType(), getName(), getRole());
     }
 
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(name.concat("@").concat(String.valueOf(hashCode())))
-                .addValue(type)
+        String name = getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
+        return MoreObjects.toStringHelper(name)
+                .addValue(type.getSimpleName())
                 .addValue(role)
                 .toString();
     }

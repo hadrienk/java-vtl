@@ -394,7 +394,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         }
 
         public Builder put(String key, Component.Role role, Class<?> type) {
-            return put(key, new Component(type, role, key));
+            return put(key, new Component(type, role));
         }
 
         /**

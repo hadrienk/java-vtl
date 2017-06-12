@@ -33,12 +33,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static java.lang.String.*;
-
-import java.lang.String;
+import static java.lang.String.format;
 
 /**
  * A termd interpreter.
@@ -177,13 +176,13 @@ public class TtyConsole implements Consumer<TtyConnection> {
 
         // Header
         List<String> columns = Lists.newArrayList();
-        for (Component component : dataStructure.values()) {
+        for (Map.Entry<String, Component> component : dataStructure.entrySet()) {
             columns.add(
                     format(
                             "%s[%s,%s]",
-                            component.getName(),
-                            component.getType().getSimpleName(),
-                            component.getType().getSimpleName()
+                            component.getKey(),
+                            component.getValue().getType().getSimpleName(),
+                            component.getValue().getType().getSimpleName()
                     )
             );
         }
@@ -214,7 +213,7 @@ public class TtyConsole implements Consumer<TtyConnection> {
                 b = offendingToken.getStopIndex() + 1;
             }
             // TODO: Highlight errors.
-            String errorString = String.format("\033[31msyntax error:(%d,%d-%s) %s.\033[39;49m\n", 1, a, b, syntaxError.getMessage());
+            String errorString = format("\033[31msyntax error:(%d,%d-%s) %s.\033[39;49m\n", 1, a, b, syntaxError.getMessage());
             connection.write(errorString);
         }
     }

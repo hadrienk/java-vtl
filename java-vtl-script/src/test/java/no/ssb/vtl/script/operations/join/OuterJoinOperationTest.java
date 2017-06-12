@@ -92,12 +92,12 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 List<VTLObject> points = Lists.newArrayList();
                 for (Component component : currentStructure.values()) {
                     Object value;
-                    if (component.getName().equals("rowNum")) {
+                    if (component.equals(currentStructure.get("rowNum"))) {
                         value = datasetName + "-row-" + j;
                     } else {
                         value = types.get(component.getType()).apply(Long.valueOf(j));
                     }
-                    points.add(currentStructure.wrap(component.getName(), value));
+                    points.add(VTLObject.of(value));
                 }
                 currentData.add(tuple(points));
             }

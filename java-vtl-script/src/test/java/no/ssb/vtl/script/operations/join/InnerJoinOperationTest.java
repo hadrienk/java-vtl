@@ -14,7 +14,6 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
-import org.assertj.core.api.Condition;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -25,14 +24,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
+import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,16 +41,6 @@ import static org.mockito.Mockito.when;
 public class InnerJoinOperationTest extends RandomizedTest {
 
     private ObjectMapper mapper = new ObjectMapper();
-
-    private static Condition<VTLObject> dataPointWith(String name, Object value) {
-        return new Condition<VTLObject>(new Predicate<VTLObject>() {
-            @Override
-            public boolean test(VTLObject value) {
-                return name.equals(value.getComponent().getName()) &&
-                        value.equals(value.get());
-            }
-        }, "data point with name %s and value %s", name, value);
-    }
 
     @Test
     public void testDefaultJoin() throws Exception {
