@@ -3,6 +3,7 @@ package no.ssb.vtl.script.support;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Spliterator;
@@ -158,11 +159,8 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
         }
 
         public boolean next() {
-            if (++pos >= size()) {
+            if (!end)
                 end = !source.tryAdvance(this::add);
-                if (end)
-                    pos--;
-            }
             return !end || !isEmpty();
         }
 
@@ -192,5 +190,34 @@ public class JoinSpliterator<L, R, K, O> implements Spliterator<O> {
             return removed;
         }
 
+        @Override
+        public boolean add(T t) {
+            pos++;
+            return super.add(t);
+        }
+
+        @Override
+        public boolean addAll(int index, Collection<? extends T> c) {
+            pos = pos + c.size();
+            return super.addAll(index, c);
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            pos = pos + c.size();
+            return super.addAll(c);
+        }
+
+        @Override
+        public void add(int index, T element) {
+            pos++;
+            super.add(index, element);
+        }
+
+        @Override
+        public void clear() {
+            pos = -1;
+            super.clear();
+        }
     }
 }

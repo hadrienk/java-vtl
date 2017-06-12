@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -210,6 +211,14 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         final Map<Component, Order.Direction> commonOrder = Maps.filterKeys(order, commonComponents::contains);
         final Table<Component, Dataset, Component> componentMap = getComponentMapping();
         return (left, right) -> {
+
+            if (left == null)
+                return -1;
+            if (right == null)
+                return 1;
+            if (left == right)
+                return 0;
+
             int result;
             for (Map.Entry<Component, Order.Direction> entry : commonOrder.entrySet()) {
                 Component component = entry.getKey();
@@ -273,14 +282,19 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                             createKeyComparator(right, requestedOrder),
                             result.spliterator(),
                             sortIfNeeded(right, requestedOrder).spliterator(),
-                            joinStructure::asMap,
-                            right.getDataStructure()::asMap,
+                            createKeyExtractor(joinStructure),
+                            createKeyExtractor(right.getDataStructure()),
                             getMerger(left, right)
                     ), false
             );
         }
         return Optional.of(result);
     }
+
+    private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
+        return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
+    }
+
 
     private ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
