@@ -8,6 +8,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AggregationOperation;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -246,6 +247,23 @@ public class AggregationVisitorTest {
                 Collections.singletonList(dataStructureSingleMeasure.get("time")));
         assertThat(sumOperation.getData()).contains(dataPoint("2012", 41L + 92L));
     
+    }
+    
+    @Test(expected = ParseCancellationException.class)
+    public void testAggregationWithoutNumber() throws Exception {
+        DataStructure dataStructure = DataStructure.builder()
+                .put("id1", Component.Role.IDENTIFIER, String.class)
+                .put("m1", Component.Role.MEASURE, String.class)
+                .build();
+        TestableDataset dataset = new TestableDataset(
+                Arrays.asList(
+                        dataPoint("1", "notANumeric"),
+                        dataPoint("2", "shouldFail"))
+                , dataStructure);
+        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+                Collections.singletonList(dataStructureSingleMeasure.get("time")));
+        sumOperation.getDataStructure();
+        fail("Expected an exception but none was thrown");
     }
     
     private DataPoint dataPoint(Object... objects) {

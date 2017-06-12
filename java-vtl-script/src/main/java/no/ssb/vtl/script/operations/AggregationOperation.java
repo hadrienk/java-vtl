@@ -9,6 +9,8 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.error.TypeException;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
 import java.util.Map;
@@ -35,8 +37,15 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     protected DataStructure computeDataStructure() {
         DataStructure.Builder newDataStructure = DataStructure.builder();
         for (Map.Entry<String, Component> entry : getChild().getDataStructure().entrySet()) {
-            if (groupBy.contains(entry.getValue()) || aggregationComponents.contains(entry.getValue())) {
+            if (groupBy.contains(entry.getValue())) {
                 newDataStructure.put(entry);
+            } else if (aggregationComponents.contains(entry.getValue())) {
+                if (Number.class.isAssignableFrom(entry.getValue().getType())) {
+                    newDataStructure.put(entry);
+                } else {
+                    throw new ParseCancellationException(
+                            new TypeException(String.format("Cannot aggregate component %s of type %s. It must be numeric", entry.getKey(), entry.getValue().getType()), "VTL-02xx"));
+                }
             }
         }
         return newDataStructure.build();
