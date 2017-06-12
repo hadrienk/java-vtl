@@ -200,7 +200,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     private Comparator<Map<Component, VTLObject>> createKeyComparator(
-            Dataset leftDataset, Dataset rightDataset,
+            Dataset rightDataset,
             Order order
     ) {
 
@@ -216,7 +216,8 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 Order.Direction direction = entry.getValue();
 
                 Map<Dataset, Component> map = componentMap.row(component);
-                Component leftComponent = map.get(leftDataset);
+
+                Component leftComponent = component; // kept for clarity
                 Component rightComponent = map.get(rightDataset);
 
                 VTLObject leftValue = left.get(leftComponent);
@@ -269,10 +270,10 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             right = iterator.next();
             result = StreamSupport.stream(
                     new JoinSpliterator<>(
-                            createKeyComparator(left, right, requestedOrder),
+                            createKeyComparator(right, requestedOrder),
                             result.spliterator(),
                             sortIfNeeded(right, requestedOrder).spliterator(),
-                            left.getDataStructure()::asMap,
+                            joinStructure::asMap,
                             right.getDataStructure()::asMap,
                             getMerger(left, right)
                     ), false
