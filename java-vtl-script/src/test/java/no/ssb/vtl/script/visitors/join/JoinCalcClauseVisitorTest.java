@@ -25,60 +25,33 @@ public class JoinCalcClauseVisitorTest {
 
     @Test
     public void testNumericalLiteralsSum() throws Exception {
-
         String test = "1 + 2 + 3 + 4 + 5 - 6 - 7 - 8 - 9";
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
-
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
-
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
 
         assertThat(result.apply(null).get()).isEqualTo((1L + 2L + 3L + 4L + 5L - 6L - 7L - 8L - 9L));
-
     }
 
     @Test
     public void testNumericalLiteralsSumWithParenthesis() throws Exception {
-
         String test = "1 + 2 + ( 3 + 4 + 5 - 6 - 7 ) - 8 - 9";
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
-
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
-
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
 
         assertThat(result.apply(null).get()).isEqualTo(1L + 2L + (3L + 4L + 5L - 6L - 7L) - 8L - 9L);
-
     }
 
     @Test
     public void testNumericalLiteralsProduct() throws Exception {
-
         String test = "1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9";
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
-
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
-
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
 
         //noinspection PointlessArithmeticExpression
         assertThat(result.apply(null).get()).isEqualTo(1L * 2L * 3L * 4L * 5L / 6L / 7L / 8L / 9L);
-
     }
-
+    
     @Test
     public void testNumericalVariableReference() {
         String test = "1 * 2 + a * (b - c) / d - 10";
-
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
+        VTLParser parser = createParser(test);
 
         DataStructure ds = DataStructure.of((o, aClass) -> o,
                 "a", Component.Role.MEASURE, Long.class,
@@ -106,32 +79,20 @@ public class JoinCalcClauseVisitorTest {
         assertThat(result.apply(dataPoint).get()).isEqualTo(1L * 2L + 20L * (15L - 10L) / 5L - 10L);
 
     }
-
+    
     @Test
     public void testNumericalLiteralsProductWithParenthesis() throws Exception {
-
         String test = "1 * 2 * ( 3 * 4 * 5 / 6 / 7 ) / 8 / 9";
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
-
-        // Setup fake map.
-
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
-
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
 
         assertThat(result.apply(null).get()).isEqualTo(1L * 2L * (3L * 4L * 5L / 6L / 7L) / 8L / 9L);
-
     }
-
+    
     @Test
     public void testNumericalReferenceNotFound() throws Exception {
-
         String test = "notFoundVariable + 1";
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
-        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
+        VTLParser parser = createParser(test);
+        
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(Collections.emptyMap()), null);
 
         assertThatThrownBy(() -> {
@@ -140,16 +101,19 @@ public class JoinCalcClauseVisitorTest {
             result.apply(DataPoint.create(Collections.emptyList()));
         }).hasMessageContaining("variable")
                 .hasMessageContaining("notFoundVariable");
-
     }
-
-    private VTLObject createNumericalDataPoint(Long value) {
-        DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
-                "value",
-                Component.Role.MEASURE,
-                Long.class
-        );
-        return structure.wrap("value", value);
+    
+    private VTLParser createParser(String test) {
+        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
+        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser;
+    }
+    
+    private Function<DataPoint, VTLObject> getSimpleCalcResult(String expression) {
+        VTLParser parser = createParser(expression);
+        
+        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
+        return visitor.visit(parser.joinCalcExpression());
     }
 }
