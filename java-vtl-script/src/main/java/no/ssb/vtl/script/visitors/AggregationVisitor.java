@@ -1,7 +1,6 @@
 package no.ssb.vtl.script.visitors;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.MoreCollectors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -11,6 +10,7 @@ import no.ssb.vtl.script.operations.AggregationOperation;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,7 +32,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
         } else if (ctx.componentRef() != null) {
             dataset = (Dataset) referenceVisitor.visit(ctx.componentRef().datasetRef());
             Component aggregationComponent = getComponentFromDataset(dataset, ctx.componentRef().variableRef());
-            return getSumOperation(dataset, getGroupByComponents(ctx, dataset), aggregationComponent);
+            return getSumOperation(dataset, getGroupByComponents(ctx, dataset), Collections.singletonList(aggregationComponent));
         } throw new ParseCancellationException("Required parameters not found");
     }
     
@@ -63,15 +63,15 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
 
     @VisibleForTesting
     AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy) {
-        Component component = dataset.getDataStructure().values().stream()
+        List<Component> component = dataset.getDataStructure().values().stream()
                 .filter(Component::isMeasure)
-                .collect(MoreCollectors.onlyElement());
+                .collect(Collectors.toList());
         return getSumOperation(dataset, groupBy, component);
     }
 
     @VisibleForTesting
-    AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, Component aggregationComponent) {
-        return new AggregationOperation(dataset, groupBy, aggregationComponent,
+    AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, List<Component> aggregationComponents) {
+        return new AggregationOperation(dataset, groupBy, aggregationComponents,
                 vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).get());
     }
     

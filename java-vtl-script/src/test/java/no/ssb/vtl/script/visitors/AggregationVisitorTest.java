@@ -8,6 +8,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AggregationOperation;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -75,32 +76,52 @@ public class AggregationVisitorTest {
         AggregationOperation sumOperation = visitor.getSumOperation(datasetSingleMeasure,components);
         sumOperation.getData().forEach(System.out::println);
     
-        DataStructure resultingDataStructure = sumOperation.getDataStructure();
+        DataStructure dataStructure = sumOperation.getDataStructure();
     
-        assertThat(resultingDataStructure.getRoles()).contains(
+        assertThat(dataStructure.getRoles()).contains(
                 entry("time", Component.Role.IDENTIFIER),
                 entry("m1", Component.Role.MEASURE)
         );
     
-        assertThat(resultingDataStructure.getTypes()).contains(
+        assertThat(dataStructure.getTypes()).contains(
                 entry("time", String.class),
                 entry("m1", Long.class)
         );
-        
+    
+    
         assertThat(sumOperation.getData()).contains(
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "m1", 20L+40L+60L)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "m1", 11L+31L+51L)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "m1", 72L+82L+92L))
+                dataStructure.wrap(ImmutableMap.of("time", "2010", "m1", 20L+40L+60L)),
+                dataStructure.wrap(ImmutableMap.of("time", "2011", "m1", 11L+31L+51L)),
+                dataStructure.wrap(ImmutableMap.of("time", "2012", "m1", 72L+82L+92L))
         );
     
     }
     
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testSumMultiMeasureDataSetFail() throws Exception {
-        List<Component> components = Lists.newArrayList(datasetMultiMeasure.getDataStructure().getOrDefault("time", null));
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,components);
-        fail("Expected an IllegalArgumentException when attempting to create a sum operation on a data set with more than one measure component");
+    @Test
+    public void testSumMultiMeasureDataSetAll() throws Exception {
+        List<Component> groupBy = Lists.newArrayList(datasetMultiMeasure.getDataStructure().getOrDefault("time", null));
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy);
+    
+        DataStructure dataStructure = sumOperation.getDataStructure();
+        
+        assertThat(dataStructure.getRoles()).contains(
+                entry("time", Component.Role.IDENTIFIER),
+                entry("m1", Component.Role.MEASURE),
+                entry("m2", Component.Role.MEASURE)
+        );
+    
+        assertThat(dataStructure.getTypes()).contains(
+                entry("time", String.class),
+                entry("m1", Long.class),
+                entry("m2", Long.class)
+        );
+    
+        assertThat(sumOperation.getData()).contains(
+                dataStructure.wrap(ImmutableMap.of("time", "2010", "m1", 20L+40L+60L, "m2", 2L+4L+6L )),
+                dataStructure.wrap(ImmutableMap.of("time", "2011", "m1", 11L+31L+51L, "m2", 1L+3L+5L)),
+                dataStructure.wrap(ImmutableMap.of("time", "2012", "m1", 72L+82L+92L, "m2", 7L+8L+9L))
+        );
     }
     
     @Test
@@ -110,7 +131,7 @@ public class AggregationVisitorTest {
         Component m1 = dataStructure.getOrDefault("m1", null);
         List<Component> groupBy = Lists.newArrayList(dataStructure.getOrDefault("time", null));
         
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy, m1);
+        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy, Collections.singletonList(m1));
         
         DataStructure resultingDataStructure = sumOperation.getDataStructure();
         
@@ -226,6 +247,23 @@ public class AggregationVisitorTest {
                 Collections.singletonList(dataStructureSingleMeasure.get("time")));
         assertThat(sumOperation.getData()).contains(dataPoint("2012", 41L + 92L));
     
+    }
+    
+    @Test(expected = ParseCancellationException.class)
+    public void testAggregationWithoutNumber() throws Exception {
+        DataStructure dataStructure = DataStructure.builder()
+                .put("id1", Component.Role.IDENTIFIER, String.class)
+                .put("m1", Component.Role.MEASURE, String.class)
+                .build();
+        TestableDataset dataset = new TestableDataset(
+                Arrays.asList(
+                        dataPoint("1", "notANumeric"),
+                        dataPoint("2", "shouldFail"))
+                , dataStructure);
+        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+                Collections.singletonList(dataStructureSingleMeasure.get("time")));
+        sumOperation.getDataStructure();
+        fail("Expected an exception but none was thrown");
     }
     
     private DataPoint dataPoint(Object... objects) {

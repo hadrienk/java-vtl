@@ -47,13 +47,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+import static no.ssb.vtl.model.Component.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class VTLScriptEngineTest {
 
@@ -1004,6 +1002,82 @@ public class VTLScriptEngineTest {
                 .containsExactly(
                         1L, 101L + 102L,
                         2L, 201L + 202L
+                );
+    }
+    
+    @Test
+    public void testAggregationMultiple() throws Exception {
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure structure = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, Long.class,
+                "id2", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Long.class,
+                "m2", Role.MEASURE, Double.class,
+                "at1", Role.ATTRIBUTE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(structure);
+        
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+        when(ds1.getData()).then(invocation -> Stream.of(
+                (Map) ImmutableMap.of(
+                        "id1", 1L,
+                        "id2", "one",
+                        "m1", 101L,
+                        "m2", 1.1d,
+                        "at1", "attr1"
+                ),
+                ImmutableMap.of(
+                        "id1", 1L,
+                        "id2", "two",
+                        "m1", 102L,
+                        "m2", 1.2d,
+                        "at1", "attr2"
+                ),
+                ImmutableMap.of(
+                        "id1", 2L,
+                        "id2", "one",
+                        "m1", 201L,
+                        "m2", 2.1d,
+                        "at1", "attr2"
+                ), ImmutableMap.of(
+                        "id1", 2L,
+                        "id2", "two",
+                        "m1", 202L,
+                        "m2", 2.2d,
+                        "at1", "attr2"
+                ), ImmutableMap.of(
+                        "id1", 2L,
+                        "id2", "two-null",
+                        "m1", VTLObject.NULL,
+                        "m2", VTLObject.NULL,
+                        "at1", "attr2"
+                )
+        ).map(structure::wrap));
+        
+        bindings.put("ds1", ds1);
+        engine.eval("ds2 := sum(ds1) group by id1");
+        
+        assertThat(bindings).containsKey("ds2");
+        Dataset ds2 = (Dataset) bindings.get("ds2");
+        
+        assertThat(ds2.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("m1", Role.MEASURE),
+                entry("m2", Role.MEASURE)
+        );
+        
+        assertThat(ds2.getDataStructure().getTypes()).containsOnly(
+                entry("id1", Long.class),
+                entry("m1", Long.class),
+                entry("m2", Double.class)
+        );
+        
+        assertThat(ds2.getData()).flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        1L, 203L, 1.1d + 1.2d,
+                        2L, 403L, 2.1d + 2.2d
                 );
     }
     
