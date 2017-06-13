@@ -223,13 +223,13 @@ OUTER : 'outer' ;
 CROSS : 'cross' ;
 
 
-INTEGER_CONSTANT  : DIGIT+;
+INTEGER_CONSTANT  : (PLUS|MINUS)?DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
 STRING_CONSTANT   :'"' (ESCAPED_QUOTE|~'"')* '"';
 fragment ESCAPED_QUOTE : '""';
 
-FLOAT_CONSTANT    : (DIGIT)+ '.' (DIGIT)* FLOATEXP?
-                  | (DIGIT)+ FLOATEXP
+FLOAT_CONSTANT    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
+                  | (PLUS|MINUS)?(DIGIT)+ FLOATEXP
                   ;
 
 NULL_CONSTANT     : 'null';

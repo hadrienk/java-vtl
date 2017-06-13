@@ -103,6 +103,22 @@ public class JoinCalcClauseVisitorTest {
                 .hasMessageContaining("notFoundVariable");
     }
     
+    @Test
+    public void testSignedIntegerConstant() throws Exception {
+        String expression = "10 * -1";
+        Function<DataPoint, VTLObject> result = getSimpleCalcResult(expression);
+        
+        assertThat(result.apply(null).get()).isEqualTo(-10L);
+    }
+    
+    @Test
+    public void testSignedFloatConstant() throws Exception {
+        String expression = "10 * -1.5";
+        Function<DataPoint, VTLObject> result = getSimpleCalcResult(expression);
+        
+        assertThat(result.apply(null).get()).isEqualTo(-15d);
+    }
+    
     private VTLParser createParser(String test) {
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
