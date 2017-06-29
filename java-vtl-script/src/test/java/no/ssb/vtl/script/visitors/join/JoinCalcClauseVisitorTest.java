@@ -5,7 +5,6 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.VTLExpression;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
@@ -16,7 +15,6 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -33,8 +31,9 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
-
+        VTLExpression result = visitor.visit(parser.joinCalcExpression());
+    
+        assertThat(result.getType()).isEqualTo(Long.class);
         assertThat(result.apply(null).get()).isEqualTo((1L + 2L + 3L + 4L + 5L - 6L - 7L - 8L - 9L));
 
     }
@@ -49,8 +48,9 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
-
+        VTLExpression result = visitor.visit(parser.joinCalcExpression());
+    
+        assertThat(result.getType()).isEqualTo(Long.class);
         assertThat(result.apply(null).get()).isEqualTo(1L + 2L + (3L + 4L + 5L - 6L - 7L) - 8L - 9L);
 
     }
@@ -65,10 +65,11 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+        VTLExpression result = visitor.visit(parser.joinCalcExpression());
 
+        assertThat(result.getType()).isEqualTo(Double.class);
         //noinspection PointlessArithmeticExpression
-        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * 3L * 4L * 5L / 6L / 7L / 8L / 9L);
+        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * 3L * 4L * 5L / 6d / 7d / 8d / 9d);
 
     }
 
@@ -100,10 +101,11 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope), ds);
 
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
-
+        VTLExpression result = visitor.visit(parser.joinCalcExpression());
+    
+        assertThat(result.getType()).isEqualTo(Double.class);
         // TODO: Set variables.
-        assertThat(result.apply(dataPoint).get()).isEqualTo(1L * 2L + 20L * (15L - 10L) / 5L - 10L);
+        assertThat(result.apply(dataPoint).get()).isEqualTo(1L * 2L + 20L * (15L - 10L) / 5d - 10L);
 
     }
 
@@ -119,9 +121,10 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
 
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
-
-        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * (3L * 4L * 5L / 6L / 7L) / 8L / 9L);
+        VTLExpression result = visitor.visit(parser.joinCalcExpression());
+        
+        assertThat(result.getType()).isEqualTo(Double.class);
+        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * (3L * 4L * 5L / 6d / 7d) / 8d / 9d);
 
     }
 
@@ -141,15 +144,5 @@ public class JoinCalcClauseVisitorTest {
         }).hasMessageContaining("variable")
                 .hasMessageContaining("notFoundVariable");
 
-    }
-
-    private VTLObject createNumericalDataPoint(Long value) {
-        DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
-                "value",
-                Component.Role.MEASURE,
-                Long.class
-        );
-        return structure.wrap("value", value);
     }
 }
