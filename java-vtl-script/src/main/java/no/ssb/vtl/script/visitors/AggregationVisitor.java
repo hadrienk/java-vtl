@@ -72,7 +72,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     @VisibleForTesting
     AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, List<Component> aggregationComponents) {
         return new AggregationOperation(dataset, groupBy, aggregationComponents,
-                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).get());
+                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLNumber.of(null)));
     }
     
 }

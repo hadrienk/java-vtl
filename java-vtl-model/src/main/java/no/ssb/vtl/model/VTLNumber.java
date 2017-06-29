@@ -71,11 +71,6 @@ public abstract class VTLNumber extends VTLObject<Number> {
     
     public VTLNumber divide(Number divisor) {
         Number dividend = get();
-        if (dividend instanceof Double || divisor instanceof Double) {
-            return VTLNumber.of(dividend.doubleValue() / divisor.doubleValue());
-        } else if (dividend instanceof Long || divisor instanceof Long) {
-            return VTLNumber.of(dividend.longValue() / divisor.longValue());
-        }
-        throw new RuntimeException(format("unsupported number types %s, %s", dividend.getClass(), divisor.getClass()));
+        return VTLNumber.of(dividend.doubleValue() / divisor.doubleValue());
     }
 }

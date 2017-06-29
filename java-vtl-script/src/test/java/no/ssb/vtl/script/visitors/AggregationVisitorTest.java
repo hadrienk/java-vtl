@@ -266,6 +266,27 @@ public class AggregationVisitorTest {
         fail("Expected an exception but none was thrown");
     }
     
+    
+    @Test
+    public void testSumWithEmptyAggregationGroup() throws Exception {
+        TestableDataset dataset = new TestableDataset( //dataset with several null values. In fact ALL 2010 values are null
+                Arrays.asList(dataPoint("2010", "NO",null),
+                        dataPoint("2011", "SE", 31L),
+                        dataPoint("2012", "SE", null),
+                        dataPoint("2012", "NO", null),
+                        dataPoint("2010", "SE", null),
+                        dataPoint("2011", "NO", 11L),
+                        dataPoint("2012", "SE", 41L),
+                        dataPoint("2010", "DK", null),
+                        dataPoint("2011", "DK", 51L),
+                        dataPoint("2012", "DK", 92L)), dataStructureSingleMeasure);
+    
+        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+                Collections.singletonList(dataStructureSingleMeasure.get("time")));
+        assertThat(sumOperation.getData()).contains(dataPoint("2012", 41L + 92L));
+        assertThat(sumOperation.getData()).contains(dataPoint("2010", null));
+    }
+    
     private DataPoint dataPoint(Object... objects) {
         List<VTLObject> vtlObjects = Stream.of(objects).map(VTLObject::of).collect(Collectors.toList());
         return DataPoint.create(vtlObjects);

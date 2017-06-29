@@ -18,7 +18,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("PointlessArithmeticExpression")
 public class JoinCalcClauseVisitorTest {
@@ -26,28 +27,31 @@ public class JoinCalcClauseVisitorTest {
     @Test
     public void testNumericalLiteralsSum() throws Exception {
         String test = "1 + 2 + 3 + 4 + 5 - 6 - 7 - 8 - 9";
-        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
+        VTLExpression result = getSimpleCalcResult(test);
 
+        assertThat(result.getType()).isEqualTo(Long.class);
         assertThat(result.apply(null).get()).isEqualTo((1L + 2L + 3L + 4L + 5L - 6L - 7L - 8L - 9L));
     }
 
     @Test
     public void testNumericalLiteralsSumWithParenthesis() throws Exception {
         String test = "1 + 2 + ( 3 + 4 + 5 - 6 - 7 ) - 8 - 9";
-        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
+        VTLExpression result = getSimpleCalcResult(test);
 
+        assertThat(result.getType()).isEqualTo(Long.class);
         assertThat(result.apply(null).get()).isEqualTo(1L + 2L + (3L + 4L + 5L - 6L - 7L) - 8L - 9L);
     }
 
     @Test
     public void testNumericalLiteralsProduct() throws Exception {
         String test = "1 * 2 * 3 * 4 * 5 / 6 / 7 / 8 / 9";
-        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
+        VTLExpression result = getSimpleCalcResult(test);
 
+        assertThat(result.getType()).isEqualTo(Double.class);
         //noinspection PointlessArithmeticExpression
-        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * 3L * 4L * 5L / 6L / 7L / 8L / 9L);
+        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * 3L * 4L * 5L / 6d / 7d / 8d / 9d);
     }
-    
+
     @Test
     public void testNumericalVariableReference() {
         String test = "1 * 2 + a * (b - c) / d - 10";
@@ -73,26 +77,29 @@ public class JoinCalcClauseVisitorTest {
 
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(scope), ds);
 
-        Function<DataPoint, VTLObject> result = visitor.visit(parser.joinCalcExpression());
+        VTLExpression result = visitor.visit(parser.joinCalcExpression());
 
+        assertThat(result.getType()).isEqualTo(Double.class);
         // TODO: Set variables.
-        assertThat(result.apply(dataPoint).get()).isEqualTo(1L * 2L + 20L * (15L - 10L) / 5L - 10L);
+        assertThat(result.apply(dataPoint).get()).isEqualTo(1L * 2L + 20L * (15L - 10L) / 5d - 10L);
 
     }
-    
+
     @Test
     public void testNumericalLiteralsProductWithParenthesis() throws Exception {
         String test = "1 * 2 * ( 3 * 4 * 5 / 6 / 7 ) / 8 / 9";
-        Function<DataPoint, VTLObject> result = getSimpleCalcResult(test);
+        VTLExpression result = getSimpleCalcResult(test);
 
-        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * (3L * 4L * 5L / 6L / 7L) / 8L / 9L);
+        assertThat(result.getType()).isEqualTo(Double.class);
+        assertThat(result.apply(null).get()).isEqualTo(1L * 2L * (3L * 4L * 5L / 6d / 7d) / 8d / 9d);
+
     }
-    
+
     @Test
     public void testNumericalReferenceNotFound() throws Exception {
         String test = "notFoundVariable + 1";
         VTLParser parser = createParser(test);
-        
+
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(new ReferenceVisitor(Collections.emptyMap()), null);
 
         assertThatThrownBy(() -> {
@@ -102,34 +109,35 @@ public class JoinCalcClauseVisitorTest {
         }).hasMessageContaining("variable")
                 .hasMessageContaining("notFoundVariable");
     }
-    
+
     @Test
     public void testSignedIntegerConstant() throws Exception {
         String expression = "10 * -1";
         Function<DataPoint, VTLObject> result = getSimpleCalcResult(expression);
-        
+
         assertThat(result.apply(null).get()).isEqualTo(-10L);
     }
-    
+
     @Test
     public void testSignedFloatConstant() throws Exception {
         String expression = "10 * -1.5";
         Function<DataPoint, VTLObject> result = getSimpleCalcResult(expression);
-        
+
         assertThat(result.apply(null).get()).isEqualTo(-15d);
     }
-    
+
     private VTLParser createParser(String test) {
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(test));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
         return parser;
     }
-    
-    private Function<DataPoint, VTLObject> getSimpleCalcResult(String expression) {
+
+    private VTLExpression getSimpleCalcResult(String expression) {
         VTLParser parser = createParser(expression);
-        
+
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor();
         return visitor.visit(parser.joinCalcExpression());
+
     }
 }
