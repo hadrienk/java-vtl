@@ -198,9 +198,9 @@ public class VTLScriptEngineTest {
         DataStructure ds = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Number.class,
-                "m2", Role.MEASURE, Number.class,
-                "m3", Role.MEASURE, Number.class
+                "m1", Role.MEASURE, Long.class,
+                "m2", Role.MEASURE, Long.class,
+                "m3", Role.MEASURE, Long.class
         );
         when(ds1.getDataStructure()).thenReturn(ds);
         when(ds1.getData()).then(invocation -> Stream.of(

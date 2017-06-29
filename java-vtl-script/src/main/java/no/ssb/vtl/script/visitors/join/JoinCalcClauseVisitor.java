@@ -10,9 +10,10 @@ import no.ssb.vtl.model.VTLPredicate;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
 import no.ssb.vtl.script.visitors.ConditionalExpressionVisitor;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import no.ssb.vtl.script.visitors.DateFunctionVisitor;
+import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import no.ssb.vtl.script.visitors.VTLScalarExpressionVisitor;
+import org.antlr.v4.runtime.Token;
 
 import java.util.Map;
 import java.util.Optional;
@@ -79,7 +80,7 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return new VTLExpression.Builder(Number.class, dataPoint -> {
+        return new VTLExpression.Builder(getResultingType(leftResult, rightResult, ctx.sign), dataPoint -> {
 
             Number leftNumber = (Number) leftResult.apply(dataPoint).get();
             Number rightNumber = (Number) rightResult.apply(dataPoint).get();
@@ -100,7 +101,6 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
         }).description(format("%s %s %s", leftResult, ctx.sign.getText(), rightResult)).build();
     }
 
-
     @Override
     public VTLExpression visitJoinCalcProduct(VTLParser.JoinCalcProductContext ctx) {
         VTLExpression leftResult = visit(ctx.leftOperand);
@@ -110,7 +110,7 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
         //checkArgument(Number.class.isAssignableFrom(leftResult.getType()));
         //checkArgument(Number.class.isAssignableFrom(rightResult.getType()));
 
-        return new VTLExpression.Builder(Number.class, dataPoint -> {
+        return new VTLExpression.Builder(getResultingType(leftResult, rightResult, ctx.sign), dataPoint -> {
             Number leftNumber = (Number) leftResult.apply(dataPoint).get();
             Number rightNumber = (Number) rightResult.apply(dataPoint).get();
 
@@ -149,6 +149,16 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
         DateFunctionVisitor dateFunctionVisitor = new DateFunctionVisitor(
                 referenceVisitor, dataStructure);
         return dateFunctionVisitor.visit(ctx.dateFunction());
+    }
+    
+    private Class getResultingType(VTLExpression leftResult, VTLExpression rightResult, Token sign) {
+        if (sign.getText().equals("/")) {
+            return Double.class;
+        } else if (leftResult.getType().equals(Double.class) || rightResult.getType().equals(Double.class)) {
+            return Double.class;
+        } else {
+            return Long.class;
+        }
     }
 
 }
