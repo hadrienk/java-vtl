@@ -7,7 +7,7 @@
     <groupId>no.ssb.vtl</groupId>
     <artifactId>java-vtl-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 
     <name>Java VTL Maven Parent</name>
 
@@ -18,14 +18,12 @@
 
     <distributionManagement>
         <repository>
-            <id>releases</id>
-            <name>SSB Nexus Releases</name>
-            <url>http://kodehus.ssb.no/content/repositories/releases/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <name>SSB Snapshot Repository</name>
-            <url>http://kodehus.ssb.no/content/repositories/snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
