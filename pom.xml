@@ -9,12 +9,54 @@
     <packaging>pom</packaging>
     <version>0.1.0</version>
 
-    <name>Java VTL Maven Parent</name>
+    <modules>
+        <module>java-vtl-model</module>
+        <module>java-vtl-parser</module>
+        <module>java-vtl-script</module>
+        <module>java-vtl-interpreter</module>
+        <module>java-vtl-connector</module>
+        <module>java-vtl-ssb-api-connector</module>
+        <module>java-vtl-test</module>
+        <module>java-vtl-tools</module>
+    </modules>
+
+    <name>Java VTL</name>
+
+    <description>Open Source Java implementation of the Validation Transformation Language.</description>
+    <url>https://github.com/statisticsnorway/java-vtl-connectors</url>
+
+    <inceptionYear>2016</inceptionYear>
+    <organization>
+        <name>Statistics Norway and contributors</name>
+    </organization>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <oss.skipsign>true</oss.skipsign>
         <java.version>1.8</java.version>
     </properties>
+
+    <developers>
+        <developer>
+            <name>Hadrien Kohl</name>
+            <email>hadrien.kohl@gmail.com</email>
+        </developer>
+        <developer>
+            <name>Eivind Høiseth-Gilje</name>
+            <email>egi@capraconsulting.no</email>
+        </developer>
+        <developer>
+            <name>Pawel Buczek</name>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <distributionManagement>
         <repository>
@@ -27,23 +69,13 @@
         </snapshotRepository>
     </distributionManagement>
 
-    <modules>
-        <module>java-vtl-model</module>
-        <module>java-vtl-parser</module>
-        <module>java-vtl-script</module>
-        <module>java-vtl-interpreter</module>
-        <module>java-vtl-connector</module>
-        <module>java-vtl-ssb-api-connector</module>
-        <module>java-vtl-test</module>
-        <module>java-vtl-tools</module>
-    </modules>
 
-    <developers>
-        <developer>
-            <name>Hadrien Kohl</name>
-            <email>hadrien.kohl@gmail.com</email>
-        </developer>
-    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:statisticsnorway/java-vtl-connectors</connection>
+        <developerConnection>scm:git:git@github.com:statisticsnorway/java-vtl-connectors</developerConnection>
+        <url>https://github.com/statisticsnorway/java-vtl-connectors</url>
+    </scm>
+
 
     <profiles>
         <profile>
@@ -111,15 +143,6 @@
         <url>https://github.com/statisticsnorway/java-vtl/</url>
     </issueManagement>
 
-    <inceptionYear>2016</inceptionYear>
-    <licenses>
-        <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-            <comments>A business-friendly OSS license</comments>
-        </license>
-    </licenses>
     <ciManagement>
         <system>Travis CI</system>
         <url>https://travis-ci.org/hadrienk/java-vtl</url>
@@ -128,6 +151,110 @@
     <build>
 
         <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.13</version>
+                <configuration>
+                    <licenseName>apache_v2</licenseName>
+                    <failOnMissingHeader>true</failOnMissingHeader>
+                    <processStartTag>========================LICENSE_START=================================
+                    </processStartTag>
+                    <processEndTag>=========================LICENSE_END==================================
+                    </processEndTag>
+                    <excludes>
+                        <exclude>**/*.json</exclude>
+                        <exclude>java-vtl-tools/src/main/resources/public/js/*</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>first</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check-file-header</goal>
+                            <!-- <goal>update-file-header</goal> -->
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+
+                <configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.0</version>
+
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${oss.skipsign}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
 
         <pluginManagement>
