@@ -5,13 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>kohl.hadrien</groupId>
+        <groupId>no.ssb.vtl</groupId>
         <artifactId>java-vtl-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
     </parent>
 
     <artifactId>java-vtl-model</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
     <dependencies>
         <!-- A small collection of Stream utilities for Java 8 -->
@@ -19,12 +18,6 @@
             <groupId>com.codepoetics</groupId>
             <artifactId>protonpack</artifactId>
             <version>1.9</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.codepoetics</groupId>
-            <artifactId>protonpack</artifactId>
-            <version>1.10</version>
         </dependency>
 
     </dependencies>

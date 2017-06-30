@@ -5,24 +5,44 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>kohl.hadrien</groupId>
+        <groupId>no.ssb.vtl</groupId>
         <artifactId>java-vtl-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
     </parent>
 
-    <groupId>kohl.hadrien</groupId>
     <artifactId>java-vtl-parser</artifactId>
-    <version>1.0-SNAPSHOT</version>
+
+    <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-test</artifactId>
+        </dependency>
+
+    </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
                 <executions>
                     <execution>
                         <configuration>
+                            <listener>false</listener>
                             <visitor>true</visitor>
                         </configuration>
                         <id>antlr</id>
@@ -37,6 +57,9 @@
         <!-- Needed so that the mvn test goal finds the ANTLR g4 files. -->
         <resources>
             <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
                 <directory>src/main/antlr4</directory>
                 <includes>
                     <include>**/*.g4</include>
@@ -44,31 +67,5 @@
             </resource>
         </resources>
     </build>
-
-
-    <dependencies>
-
-        <dependency><!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>4.5.3</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.antlr/antlr-runtime -->
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr-runtime</artifactId>
-            <version>3.5.2</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4</artifactId>
-            <version>4.5.3</version>
-            <scope>test</scope>
-        </dependency>
-
-    </dependencies>
 
 </project>
