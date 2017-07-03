@@ -13,8 +13,6 @@
         <module>java-vtl-model</module>
         <module>java-vtl-parser</module>
         <module>java-vtl-script</module>
-        <module>java-vtl-interpreter</module>
-        <module>java-vtl-ssb-api-connector</module>
         <module>java-vtl-test</module>
         <module>java-vtl-tools</module>
     </modules>

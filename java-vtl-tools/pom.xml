@@ -20,8 +20,9 @@
         </dependency>
 
         <dependency>
-            <groupId>no.ssb.vtl</groupId>
-            <artifactId>java-vtl-ssb-api-connector</artifactId>
+            <groupId>no.ssb.vtl.connectors</groupId>
+            <artifactId>java-vtl-connectors-ssb</artifactId>
+            <version>0.1.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
