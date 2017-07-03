@@ -24,11 +24,6 @@
             <artifactId>java-vtl-parser</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>no.ssb.vtl.connectors</groupId>
-            <artifactId>java-vtl-connectors-api</artifactId>
-        </dependency>
-
         <!-- Needed to mock converters -->
         <!-- TODO: Someone check that? -->
         <dependency>

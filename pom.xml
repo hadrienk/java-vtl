@@ -20,7 +20,7 @@
     <name>Java VTL</name>
 
     <description>Open Source Java implementation of the Validation Transformation Language.</description>
-    <url>https://github.com/statisticsnorway/java-vtl-connectors</url>
+    <url>https://github.com/statisticsnorway/java-vtl</url>
 
     <inceptionYear>2016</inceptionYear>
     <organization>
@@ -68,9 +68,9 @@
 
 
     <scm>
-        <connection>scm:git:git@github.com:statisticsnorway/java-vtl-connectors</connection>
-        <developerConnection>scm:git:git@github.com:statisticsnorway/java-vtl-connectors</developerConnection>
-        <url>https://github.com/statisticsnorway/java-vtl-connectors</url>
+        <connection>scm:git:git@github.com:statisticsnorway/java-vtl</connection>
+        <developerConnection>scm:git:git@github.com:statisticsnorway/java-vtl</developerConnection>
+        <url>https://github.com/statisticsnorway/java-vtl</url>
     </scm>
 
 
@@ -381,12 +381,6 @@
                 <groupId>no.ssb.vtl</groupId>
                 <artifactId>java-vtl-script</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>no.ssb.vtl.connectors</groupId>
-                <artifactId>java-vtl-connectors-api</artifactId>
-                <version>0.1.1-SNAPSHOT</version>
             </dependency>
 
             <dependency>

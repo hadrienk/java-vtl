@@ -19,40 +19,26 @@
             <artifactId>java-vtl-script</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>no.ssb.vtl.connectors</groupId>
-            <artifactId>java-vtl-connectors-ssb</artifactId>
-            <version>0.1.1-SNAPSHOT</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>no.ssb.vtl.connectors</groupId>-->
+            <!--<artifactId>ssb-connector</artifactId>-->
+            <!--<version>LATEST</version>-->
+            <!--<scope>runtime</scope>-->
+            <!--<optional>true</optional>-->
+        <!--</dependency>-->
+
+        <!--<dependency>-->
+            <!--<groupId>no.ssb.vtl.connectors</groupId>-->
+            <!--<artifactId>spring-connector</artifactId>-->
+            <!--<version>LATEST</version>-->
+            <!--<scope>runtime</scope>-->
+            <!--<optional>true</optional>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
-	
-	<!-- 
-		uncomment for ssb connector
-		TODO(hk): Include data connector in VTL project?
-        <dependency>
-            <groupId>no.ssb.common.data</groupId>
-            <artifactId>data-vtl-connector</artifactId>
-            <version>0.3-DEV-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.security</groupId>
-                    <artifactId>spring-security-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.security.oauth</groupId>
-                    <artifactId>spring-security-oauth2</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.security</groupId>
-                    <artifactId>spring-security-jwt</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-	-->
 
         <dependency>
             <groupId>org.antlr</groupId>
