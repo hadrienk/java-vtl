@@ -109,14 +109,23 @@ public class TtyConsole implements Consumer<TtyConnection> {
         // ScriptEngineManager manager = new ScriptEngineManager();
         // engine = checkNotNull(manager.getEngineByName("VTLJava"));
 
-        ttyConnection.write("Loading connectors.\n");
+        ttyConnection.write("Loading connectors: ");
         ServiceLoader<Connector> loader = ServiceLoader.load(Connector.class);
 
         List<Connector> connectors = Lists.newArrayList();
-        for (Connector connector : loader) {
-            ttyConnection.write(format("loaded %s", connector));
-            connectors.add(connector);
+
+        if (!loader.iterator().hasNext()) {
+            ttyConnection.write(" no connector found.\n");
+        } else {
+            for (Connector connector : loader) {
+                connectors.add(connector);
+            }
+            String loaded = connectors.stream().map(Object::toString)
+                    .collect(Collectors.joining(", ", "", ".\n"));
+
+            ttyConnection.write(loaded);
         }
+
         engine = new VTLScriptEngine(connectors.toArray(new Connector[]{}));
 
         read(ttyConnection, readline);

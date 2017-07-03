@@ -55,7 +55,6 @@ public class Application {
 
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
-
         List<Connector> connectors = Lists.newArrayList();
         ServiceLoader<Connector> loader = ServiceLoader.load(Connector.class);
         for (Connector connector : loader) {
