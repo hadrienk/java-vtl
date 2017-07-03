@@ -41,8 +41,8 @@ package no.ssb.vtl.script.visitors;
  */
 
 import com.google.common.base.Throwables;
-import no.ssb.vtl.connector.Connector;
-import no.ssb.vtl.connector.ConnectorException;
+import no.ssb.vtl.connectors.Connector;
+import no.ssb.vtl.connectors.ConnectorException;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;

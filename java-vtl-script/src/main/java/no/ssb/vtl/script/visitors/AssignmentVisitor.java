@@ -40,7 +40,7 @@ package no.ssb.vtl.script.visitors;
  * #L%
  */
 
-import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;

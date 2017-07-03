@@ -21,7 +21,7 @@ package no.ssb.vtl.script.visitors.join;
  */
 
 import com.google.common.collect.ImmutableMap;
-import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;

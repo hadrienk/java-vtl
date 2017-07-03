@@ -25,7 +25,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
-import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import no.ssb.vtl.connectors.SsbKlassApiConnector;
 import no.ssb.vtl.script.VTLScriptEngine;
