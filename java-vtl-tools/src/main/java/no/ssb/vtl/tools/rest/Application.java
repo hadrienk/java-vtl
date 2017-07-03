@@ -35,7 +35,6 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.script.Bindings;
@@ -48,7 +47,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
  * Spring application
  */
 @SpringBootApplication
-@WebAppConfiguration
 @EnableCaching
 public class Application {
 

@@ -112,7 +112,8 @@ public class TtyConsole implements Consumer<TtyConnection> {
 
         engine = new VTLScriptEngine(
                 new SsbKlassApiConnector(new ObjectMapper(), SsbKlassApiConnector.PeriodType.YEAR),
-                new SsbApiConnector(new ObjectMapper()));
+                new SsbApiConnector(new ObjectMapper())
+        );
 
         read(ttyConnection, readline);
     }
