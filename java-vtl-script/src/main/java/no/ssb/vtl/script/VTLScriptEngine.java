@@ -42,17 +42,28 @@ package no.ssb.vtl.script;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.SyntaxException;
 import no.ssb.vtl.script.error.WrappedException;
 import no.ssb.vtl.script.visitors.AssignmentVisitor;
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import javax.script.*;
+import javax.script.AbstractScriptEngine;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -63,8 +74,8 @@ import java.util.TimeZone;
  */
 public class VTLScriptEngine extends AbstractScriptEngine {
 
-    private TimeZone timeZone = TimeZone.getDefault();
     private final ImmutableList<Connector> connectors;
+    private TimeZone timeZone = TimeZone.getDefault();
 
     /**
      * Create a new engine instance.
@@ -100,7 +111,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
 
     /**
      * Sets a different global timezone.
-     *
+     * <p>
      * The engine will use a different global time zone in situations no implicit time
      * zone is defined in date conversion operations. For example:
      * <pre>
@@ -111,11 +122,13 @@ public class VTLScriptEngine extends AbstractScriptEngine {
      *     vtlEngine.eval("date := date_from_string(\"2000\", \"YYYY\")");
      *
      * </pre>
+     *
      * @param tz the time zone
      */
     public void setTimeZone(TimeZone tz) {
         timeZone = tz;
     }
+
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException {
         return eval(new StringReader(script), context);
@@ -151,14 +164,14 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                     if (e instanceof WrappedException) {
                         wrappedException = (WrappedException) e;
                     } else {
-                         wrappedException = new WrappedException(
-                                 msg,
-                                 recognizer,
-                                 e != null ? e.getInputStream() : null,
-                                 e != null ? (ParserRuleContext) e.getCtx() : null,
-                                 new SyntaxException(
-                                         msg, null, line, column, "VTL-0199"
-                                 )
+                        wrappedException = new WrappedException(
+                                msg,
+                                recognizer,
+                                e != null ? e.getInputStream() : null,
+                                e != null ? (ParserRuleContext) e.getCtx() : null,
+                                new SyntaxException(
+                                        msg, null, line, column, "VTL-0199"
+                                )
                         );
                     }
                     wrappedException.setLine(line);

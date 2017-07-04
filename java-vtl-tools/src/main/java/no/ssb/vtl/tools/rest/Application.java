@@ -25,10 +25,13 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
+import no.ssb.common.data.connector.RestDataConnector;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
@@ -45,7 +48,12 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 /**
  * Spring application
  */
-@SpringBootApplication
+@SpringBootApplication(
+        exclude = {
+                SecurityAutoConfiguration.class,
+                ManagementWebSecurityAutoConfiguration.class
+        }
+)
 @EnableCaching
 public class Application {
 
