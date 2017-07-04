@@ -323,12 +323,6 @@
             <artifactId>guava</artifactId>
         </dependency>
 
-        <!-- Collectors for Guava collection types -->
-        <dependency>
-            <groupId>me.yanaga</groupId>
-            <artifactId>guava-stream</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
