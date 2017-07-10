@@ -25,7 +25,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
-import no.ssb.common.data.connector.RestDataConnector;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.boot.SpringApplication;
