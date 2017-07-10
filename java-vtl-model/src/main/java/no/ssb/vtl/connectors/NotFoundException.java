@@ -1,4 +1,4 @@
-package no.ssb.vtl.connector;
+package no.ssb.vtl.connectors;
 
 /*-
  * ========================LICENSE_START=================================

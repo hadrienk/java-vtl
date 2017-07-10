@@ -20,7 +20,7 @@ package no.ssb.vtl.script.visitors.join;
  * =========================LICENSE_END==================================
  */
 
-import me.yanaga.guava.stream.MoreCollectors;
+import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
@@ -51,7 +51,7 @@ public class JoinFoldClauseVisitor extends VTLDatasetExpressionVisitor<FoldOpera
         Set<Component> elements = ctx.componentRef().stream()
                 .map(referenceVisitor::visitComponentRef)
                 .map(o -> (Component) o)
-                .collect(MoreCollectors.toImmutableSet());
+                .collect(ImmutableSet.toImmutableSet());
 
         return new FoldOperation(dataset, dimension, measure, elements);
     }

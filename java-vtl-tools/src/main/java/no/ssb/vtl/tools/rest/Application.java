@@ -25,21 +25,21 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
-import no.ssb.vtl.connector.Connector;
-import no.ssb.vtl.connectors.SsbApiConnector;
-import no.ssb.vtl.connectors.SsbKlassApiConnector;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.script.Bindings;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -47,8 +47,12 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 /**
  * Spring application
  */
-@SpringBootApplication
-@WebAppConfiguration
+@SpringBootApplication(
+        exclude = {
+                SecurityAutoConfiguration.class,
+                ManagementWebSecurityAutoConfiguration.class
+        }
+)
 @EnableCaching
 public class Application {
 
@@ -58,23 +62,12 @@ public class Application {
 
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
-        return Lists.newArrayList(
-
-//                new RestDataConnector("http://localhost:7080", mapper),
-//                new RestDataConnector("http://al-kostra-app-utv:7080", mapper),
-//                new RestDataConnector("http://al-kostra-app-test:7080", mapper),
-//                new RestDataConnector("http://al-kostra-app-utv.ssb.no:7080", mapper),
-//                new RestDataConnector("http://al-kostra-app-test.ssb.no:7080", mapper),
-//
-//                new RestDataConnector("http://localhost:7090", mapper),
-//                new RestDataConnector("http://al-kostra-app-utv:7090", mapper),
-//                new RestDataConnector("http://al-kostra-app-test:7090", mapper),
-//                new RestDataConnector("http://al-kostra-app-utv.ssb.no:7090", mapper),
-//                new RestDataConnector("http://al-kostra-app-test.ssb.no:7090", mapper),
-
-                new SsbKlassApiConnector(mapper, SsbKlassApiConnector.PeriodType.YEAR),
-                new SsbApiConnector(mapper)
-        );
+        List<Connector> connectors = Lists.newArrayList();
+        ServiceLoader<Connector> loader = ServiceLoader.load(Connector.class);
+        for (Connector connector : loader) {
+            connectors.add(connector);
+        }
+        return connectors;
     }
 
     @Bean

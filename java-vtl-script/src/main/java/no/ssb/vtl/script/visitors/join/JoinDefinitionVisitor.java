@@ -22,7 +22,6 @@ package no.ssb.vtl.script.visitors.join;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import me.yanaga.guava.stream.MoreCollectors;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
@@ -61,7 +60,7 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
 
     private ImmutableMap<String, Dataset> extractDatasets(List<VTLParser.DatasetRefContext> ctx) {
         return ctx.stream()
-                    .collect(MoreCollectors.toImmutableMap(
+                    .collect(ImmutableMap.toImmutableMap(
                             // TODO: Need to support alias here. The spec forgot it.
                             datasetRefContext -> datasetRefContext.variableRef().identifier().getText(),
                             datasetRefContext -> (Dataset) referenceVisitor.visit(datasetRefContext)
@@ -71,7 +70,7 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
     private ImmutableSet<Component> extractIdentifierComponents(List<VTLParser.ComponentRefContext> ctx) {
         return ctx.stream()
                     .map(componentRefContext -> (Component) referenceVisitor.visit(componentRefContext))
-                    .collect(MoreCollectors.toImmutableSet());
+                    .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override

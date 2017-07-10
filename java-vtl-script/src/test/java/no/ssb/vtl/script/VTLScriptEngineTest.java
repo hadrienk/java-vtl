@@ -42,7 +42,7 @@ package no.ssb.vtl.script;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import no.ssb.vtl.connector.Connector;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;

@@ -20,15 +20,13 @@ package no.ssb.vtl.tools.termd;
  * =========================LICENSE_END==================================
  */
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.termd.core.readline.Function;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
-import no.ssb.vtl.connectors.SsbApiConnector;
-import no.ssb.vtl.connectors.SsbKlassApiConnector;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -54,6 +52,7 @@ import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -110,9 +109,24 @@ public class TtyConsole implements Consumer<TtyConnection> {
         // ScriptEngineManager manager = new ScriptEngineManager();
         // engine = checkNotNull(manager.getEngineByName("VTLJava"));
 
-        engine = new VTLScriptEngine(
-                new SsbKlassApiConnector(new ObjectMapper(), SsbKlassApiConnector.PeriodType.YEAR),
-                new SsbApiConnector(new ObjectMapper()));
+        ttyConnection.write("Loading connectors: ");
+        ServiceLoader<Connector> loader = ServiceLoader.load(Connector.class);
+
+        List<Connector> connectors = Lists.newArrayList();
+
+        if (!loader.iterator().hasNext()) {
+            ttyConnection.write(" no connector found.\n");
+        } else {
+            for (Connector connector : loader) {
+                connectors.add(connector);
+            }
+            String loaded = connectors.stream().map(Object::toString)
+                    .collect(Collectors.joining(", ", "", ".\n"));
+
+            ttyConnection.write(loaded);
+        }
+
+        engine = new VTLScriptEngine(connectors.toArray(new Connector[]{}));
 
         read(ttyConnection, readline);
     }

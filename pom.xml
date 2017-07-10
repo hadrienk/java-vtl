@@ -7,15 +7,12 @@
     <groupId>no.ssb.vtl</groupId>
     <artifactId>java-vtl-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.0</version>
+    <version>0.1.2</version>
 
     <modules>
         <module>java-vtl-model</module>
         <module>java-vtl-parser</module>
         <module>java-vtl-script</module>
-        <module>java-vtl-interpreter</module>
-        <module>java-vtl-connector</module>
-        <module>java-vtl-ssb-api-connector</module>
         <module>java-vtl-test</module>
         <module>java-vtl-tools</module>
     </modules>
@@ -23,7 +20,7 @@
     <name>Java VTL</name>
 
     <description>Open Source Java implementation of the Validation Transformation Language.</description>
-    <url>https://github.com/statisticsnorway/java-vtl-connectors</url>
+    <url>https://github.com/statisticsnorway/java-vtl</url>
 
     <inceptionYear>2016</inceptionYear>
     <organization>
@@ -71,9 +68,9 @@
 
 
     <scm>
-        <connection>scm:git:git@github.com:statisticsnorway/java-vtl-connectors</connection>
-        <developerConnection>scm:git:git@github.com:statisticsnorway/java-vtl-connectors</developerConnection>
-        <url>https://github.com/statisticsnorway/java-vtl-connectors</url>
+        <connection>scm:git:git@github.com:statisticsnorway/java-vtl</connection>
+        <developerConnection>scm:git:git@github.com:statisticsnorway/java-vtl</developerConnection>
+        <url>https://github.com/statisticsnorway/java-vtl</url>
     </scm>
 
 
@@ -326,12 +323,6 @@
             <artifactId>guava</artifactId>
         </dependency>
 
-        <!-- Collectors for Guava collection types -->
-        <dependency>
-            <groupId>me.yanaga</groupId>
-            <artifactId>guava-stream</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -354,6 +345,12 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>hamcrest-core</artifactId>
+                    <groupId>org.hamcrest</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -370,12 +367,6 @@
             <!-- Depend on ourselves -->
             <dependency>
                 <groupId>no.ssb.vtl</groupId>
-                <artifactId>java-vtl-connector</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>no.ssb.vtl</groupId>
                 <artifactId>java-vtl-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -389,18 +380,6 @@
             <dependency>
                 <groupId>no.ssb.vtl</groupId>
                 <artifactId>java-vtl-script</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>no.ssb.vtl</groupId>
-                <artifactId>java-vtl-ssb-api-connector</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>no.ssb.vtl</groupId>
-                <artifactId>websocket</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
