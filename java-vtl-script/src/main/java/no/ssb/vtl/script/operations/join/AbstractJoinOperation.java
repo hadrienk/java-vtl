@@ -56,9 +56,11 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.support.Closer;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
 import javax.script.Bindings;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -289,10 +291,15 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         final DataStructure joinStructure = getDataStructure();
         final DataStructure structure = left.getDataStructure();
 
-        Stream<DataPoint> result = sortIfNeeded(left, requestedOrder)
-                .map(dataPoint -> joinStructure.fromMap(
-                        structure.asMap(dataPoint)
-                ));
+        // Close all children
+        Closer closer = Closer.create();
+
+        Stream<DataPoint> result = closer.register(
+                sortIfNeeded(left, requestedOrder)
+                        .map(dataPoint -> joinStructure.fromMap(
+                                structure.asMap(dataPoint)
+                        ))
+        );
 
         while (iterator.hasNext()) {
             left = right;
@@ -301,14 +308,22 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                     new JoinSpliterator<>(
                             createKeyComparator(right, requestedOrder),
                             result.spliterator(),
-                            sortIfNeeded(right, requestedOrder).spliterator(),
+                            closer.register(
+                                    sortIfNeeded(right, requestedOrder)
+                            ).spliterator(),
                             createKeyExtractor(joinStructure),
                             createKeyExtractor(right.getDataStructure()),
                             getMerger(left, right)
                     ), false
             );
         }
-        return Optional.of(result);
+        return Optional.of(result.onClose(() -> {
+            try {
+                closer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }));
     }
 
     private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {

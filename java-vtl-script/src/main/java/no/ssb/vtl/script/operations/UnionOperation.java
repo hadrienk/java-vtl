@@ -41,8 +41,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-import static java.util.Arrays.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Arrays.asList;
 
 /**
  * Union operator
@@ -100,7 +100,7 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     }
 
-    private Set<String> nonAttributeNames(DataStructure dataStructure) {
+    private Set<String> nonAttributeNames(DataStructure dataStructure   ) {
         return Maps.filterValues(dataStructure.getRoles(), role -> role != Component.Role.ATTRIBUTE).keySet();
     }
             
