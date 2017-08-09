@@ -96,7 +96,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=identifier ( 'role' ROLE )? ;
+renameParam : from=componentRef 'as' to=identifier ( ROLE role=( IDENTIFIER | MEASURE | ATTRIBUTE ) )? ;
 
 filter      : 'filter' booleanExpression ;
 
@@ -107,10 +107,6 @@ calc        : 'calc' ;
 attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
-
-//varID       : 'varId';
-
-//WS          : [ \t\n\t] -> skip ;
 
 booleanExpression                                                                                       //Evaluation order of the operators
     : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
@@ -158,7 +154,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : IMPLICIT? ROLE? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
+joinClause : implicit=IMPLICIT? role=( IDENTIFIER | MEASURE | ATTRIBUTE)? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -217,6 +213,7 @@ INNER : 'inner' ;
 OUTER : 'outer' ;
 CROSS : 'cross' ;
 
+ROLE : 'role' ;
 
 INTEGER_CONSTANT  : (PLUS|MINUS)?DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
@@ -229,9 +226,8 @@ FLOAT_CONSTANT    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
 
 NULL_CONSTANT     : 'null';
 
-ROLE : ( IDENTIFIER | MEASURE | ATTRIBUTE ) ;
-
 IMPLICIT : 'implicit' ;
+
 IDENTIFIER : 'identifier' | 'IDENTIFIER' ;
 MEASURE : 'measure' | 'MEASURE' ;
 ATTRIBUTE : 'attribute' | 'ATTRIBUTE'  ;

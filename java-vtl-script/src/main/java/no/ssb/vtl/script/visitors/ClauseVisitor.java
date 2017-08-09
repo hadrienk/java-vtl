@@ -46,12 +46,10 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
+import org.antlr.v4.runtime.Token;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
-
-import static java.util.Optional.ofNullable;
 
 /**
  * A visitor that handles the clauses.
@@ -84,21 +82,21 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
                 String to = parameter.to.getText();
                 names.put(from, to);
 
-                Optional<String> role = ofNullable(parameter.role()).map(VTLParser.RoleContext::getText);
-                if (role.isPresent()) {
+                Token role = parameter.role;
+                if (role != null) {
                     Component.Role roleEnum;
-                    switch (role.get()) {
-                        case "IDENTIFIER":
+                    switch (role.getType()) {
+                        case VTLParser.IDENTIFIER:
                             roleEnum = Component.Role.IDENTIFIER;
                             break;
-                        case "MEASURE":
+                        case VTLParser.MEASURE:
                             roleEnum = Component.Role.MEASURE;
                             break;
-                        case "ATTRIBUTE":
+                        case VTLParser.ATTRIBUTE:
                             roleEnum = Component.Role.ATTRIBUTE;
                             break;
                         default:
-                            throw new RuntimeException("unknown component type " + role.get());
+                            throw new RuntimeException("unknown component type " + role.getText());
                     }
                     roles.put(from, roleEnum);
                 }
