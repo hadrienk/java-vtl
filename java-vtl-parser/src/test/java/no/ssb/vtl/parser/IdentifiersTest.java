@@ -27,6 +27,21 @@ import org.junit.Test;
  */
 public class IdentifiersTest extends GrammarTest {
 
+    @Test
+    public void testIdentifierWithRole() throws Exception {
+        parse("identifier 'identifier' := null", "joinClause");
+        parse("measure 'identifier' := null", "joinClause");
+        parse("attribute 'identifier' := null", "joinClause");
+    }
+
+    @Test
+    public void testIdentifierImplicit() throws Exception {
+        parse("implicit 'identifier' := null", "joinClause");
+        parse("implicit identifier 'identifier' := null", "joinClause");
+        parse("implicit measure 'identifier' := null", "joinClause");
+        parse("implicit attribute 'identifier' := null", "joinClause");
+    }
+
     @Test(expected = Exception.class)
     public void testIdentifierWithLineBreaks() throws Exception {
         parse("'ident\nifier'", "identifier");
@@ -37,9 +52,14 @@ public class IdentifiersTest extends GrammarTest {
         parse("'ident''ifier'", "identifier");
     }
 
+    @Test(expected = Exception.class)
+    public void testIdentifierReserved() throws Exception {
+        parse("identifier", "identifier");
+    }
+
     @Test
     public void testIdentifier() throws Exception {
-        parse("identifier", "identifier");
+        parse("identifierId", "identifier");
     }
 
     @Test(expected = Exception.class)
