@@ -162,7 +162,7 @@
                     </processEndTag>
                     <excludes>
                         <exclude>**/*.json</exclude>
-                        <exclude>java-vtl-tools/src/main/resources/public/js/*</exclude>
+                        <exclude>**/resources/public/**/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
