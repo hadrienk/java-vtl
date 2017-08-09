@@ -96,7 +96,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=identifier ( ROLE role=( IDENTIFIER | MEASURE | ATTRIBUTE ) )? ;
+renameParam : from=componentRef 'as' to=identifier ( ROLE role=componentRole )? ;
 
 filter      : 'filter' booleanExpression ;
 
@@ -154,7 +154,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : implicit=IMPLICIT? role=( IDENTIFIER | MEASURE | ATTRIBUTE)? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
+joinClause : implicit=IMPLICIT? role=componentRole? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -208,6 +208,8 @@ joinRenameParameter  : from=componentRef 'to' to=identifier ;
 
 // Filter clause
 joinFilterExpression : 'filter' booleanExpression ;
+
+componentRole : role=(IDENTIFIER | MEASURE | ATTRIBUTE);
 
 INNER : 'inner' ;
 OUTER : 'outer' ;

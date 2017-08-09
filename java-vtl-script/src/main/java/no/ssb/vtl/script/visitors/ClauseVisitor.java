@@ -46,7 +46,6 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
-import org.antlr.v4.runtime.Token;
 
 import java.util.List;
 import java.util.function.Function;
@@ -77,28 +76,17 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
             ImmutableMap.Builder<Component, String> names = ImmutableMap.builder();
             ImmutableMap.Builder<Component, Component.Role> roles = ImmutableMap.builder();
 
+            // TODO: Maybe use a singleton?
+            ComponentRoleVisitor roleVisitor = new ComponentRoleVisitor();
+
             for (VTLParser.RenameParamContext parameter : parameters) {
                 Component from = (Component) visitor.visit(parameter.from);
                 String to = parameter.to.getText();
                 names.put(from, to);
 
-                Token role = parameter.role;
-                if (role != null) {
-                    Component.Role roleEnum;
-                    switch (role.getType()) {
-                        case VTLParser.IDENTIFIER:
-                            roleEnum = Component.Role.IDENTIFIER;
-                            break;
-                        case VTLParser.MEASURE:
-                            roleEnum = Component.Role.MEASURE;
-                            break;
-                        case VTLParser.ATTRIBUTE:
-                            roleEnum = Component.Role.ATTRIBUTE;
-                            break;
-                        default:
-                            throw new RuntimeException("unknown component type " + role.getText());
-                    }
-                    roles.put(from, roleEnum);
+                if (parameter.role != null) {
+                    Component.Role role = roleVisitor.visit(parameter.role);
+                    roles.put(from, role);
                 }
             }
 

@@ -31,57 +31,58 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * TODO: Rename to reflect scalar assignment
+ */
 public class CalcOperation extends AbstractUnaryDatasetOperation {
     
     private VTLExpression componentExpression;
     private final String variableName;
+    private final Component.Role role;
+    private final Boolean implicit;
     
-    public CalcOperation(Dataset dataset, VTLExpression componentExpression, String identifier) {
-        super(checkNotNull(dataset, "the dataset was null"));
-        this.componentExpression = checkNotNull(componentExpression, "the function was null");
-        
-        /*
-            TODO: Handle explicit and implicit component computation.
-         */
-        variableName = removeQuoteIfNeeded(identifier);
-//        return new Dataset() {
-//
-//
-//
-//            @Override
-//            public String toString() {
-//                MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper("Calc");
-//                return helper.omitNullValues().toString();
-//            }
-//        };
+    public CalcOperation(Dataset dataset, VTLExpression componentExpression, String identifier, Component.Role role, Boolean implicit) {
+        super(checkNotNull(dataset));
+        this.componentExpression = checkNotNull(componentExpression);
+        this.role = checkNotNull(role);
+        this.implicit = checkNotNull(implicit);
+        // TODO: move to visitor and reuse Pawel's helper.
+        this.variableName = removeQuoteIfNeeded(identifier);
     }
     
     @Override
     protected DataStructure computeDataStructure() {
 
-        Boolean implicit = true;
-        Component.Role defaultRole = Component.Role.MEASURE;
-
         DataStructure.Builder builder = DataStructure.builder();
         DataStructure dataStructure = getChild().getDataStructure();
         for (Map.Entry<String, Component> entry : dataStructure.entrySet()) {
-            if (dataStructure.containsKey(variableName))
+            if (entry.getKey().equals(variableName))
                 continue;
             builder.put(entry.getKey(), entry.getValue());
         }
 
-        Component.Role role = Component.Role.MEASURE;
         Class<?> type = componentExpression.getType();
 
-        // TODO: Support implicit
-        if (dataStructure.containsKey(variableName) && implicit)
-            role = dataStructure.get(variableName).getRole();
+        if (dataStructure.containsKey(variableName)) {
+            Component existingComponent = dataStructure.get(variableName);
 
-        // TODO: Support role change
-        if (false)
-            role = Component.Role.MEASURE;
+            // Overriding identifier is not permitted.
+            checkArgument(existingComponent.getRole() != Component.Role.IDENTIFIER,
+                    "an identifier %s already exists in %s", variableName, getChild()
+            );
+
+            // Implicit fails if a component with the same name but a different role
+            // already exists.
+            if (implicit) {
+                checkArgument(role.equals(existingComponent.getRole()),
+                        "the role of the component %s must be %s",
+                        variableName, existingComponent.getRole()
+                );
+            }
+        }
 
         builder.put(variableName, role, type);
 

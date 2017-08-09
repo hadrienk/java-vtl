@@ -26,11 +26,12 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.CalcOperation;
-import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
+import no.ssb.vtl.script.visitors.ComponentRoleVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import javax.script.Bindings;
@@ -42,7 +43,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.MoreObjects.*;
+import static com.google.common.base.MoreObjects.firstNonNull;
+import static java.util.Optional.ofNullable;
 
 public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
@@ -50,6 +52,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     private ReferenceVisitor referenceVisitor;
     private Dataset workingDataset;
     private Bindings joinScope;
+    private static final ComponentRoleVisitor ROLE_VISITOR = new ComponentRoleVisitor();
 
     public JoinExpressionVisitor(ScriptContext context) {
         joinDefVisitor = new JoinDefinitionVisitor(context);
@@ -101,7 +104,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         // Compute the new scope.
         Dataset currentDataset = firstNonNull(nextResult, aggregate);
         
-        Set<String> previous = Optional.ofNullable(aggregate)
+        Set<String> previous = ofNullable(aggregate)
                 .map(Dataset::getDataStructure)
                 .map(ForwardingMap::keySet)
                 .orElse(Collections.emptySet());
@@ -122,9 +125,24 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
+
+        // Create the expression.
         JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
         VTLExpression componentExpression = visitor.visit(ctx);
-        return new CalcOperation(workingDataset, componentExpression, ctx.identifier().getText());
+
+        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(ctx.role));
+        Boolean implicit = ctx.implicit != null;
+
+        // Calculate name
+        String componentName = ctx.identifier().getText();
+
+        return new CalcOperation(
+                workingDataset,
+                componentExpression,
+                componentName,
+                componentRole.orElse(Component.Role.MEASURE),
+                implicit
+        );
     }
 
     @Override
