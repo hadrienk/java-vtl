@@ -26,6 +26,10 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import no.ssb.vtl.connectors.Connector;
+import no.ssb.vtl.connectors.spring.RestTemplateConnector;
+import no.ssb.vtl.connectors.spring.converters.DataHttpConverter;
+import no.ssb.vtl.connectors.spring.converters.DataStructureHttpConverter;
+import no.ssb.vtl.connectors.spring.converters.DatasetHttpMessageConverter;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration;
@@ -35,11 +39,16 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.script.Bindings;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -67,7 +76,45 @@ public class Application {
         for (Connector connector : loader) {
             connectors.add(connector);
         }
+
+        connectors.add(getKompisConnector(mapper));
         return connectors;
+    }
+
+    Connector getKompisConnector(ObjectMapper mapper) {
+
+        SimpleClientHttpRequestFactory schrf = new SimpleClientHttpRequestFactory();
+        schrf.setBufferRequestBody(false);
+        schrf.setTaskExecutor(new SimpleAsyncTaskExecutor());
+
+        schrf.setConnectTimeout(200);
+        schrf.setReadTimeout(1000);
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        RestTemplate template = new RestTemplate(schrf);
+
+//        template.getInterceptors().add(
+//                new AuthorizationTokenInterceptor()
+//        );
+
+        //ObjectMapper mapper = new ObjectMapper();
+        // mapper.registerModule(new JavaTimeModule());
+        template.getMessageConverters().add(
+                0, new DataHttpConverter(mapper)
+        );
+        template.getMessageConverters().add(
+                0, new DataStructureHttpConverter(mapper)
+        );
+        template.getMessageConverters().add(
+                0, new DatasetHttpMessageConverter(mapper)
+        );
+
+        RestTemplateConnector restTemplateConnector = new RestTemplateConnector(
+                template,
+                executorService
+        );
+        return restTemplateConnector;
     }
 
     @Bean
