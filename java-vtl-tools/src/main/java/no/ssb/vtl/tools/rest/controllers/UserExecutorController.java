@@ -116,7 +116,7 @@ public class UserExecutorController {
         DataStructure structure = dataset.getDataStructure();
         return () -> {
             return dataset.getData().map(dataPoints -> {
-                Map<String, Object> map = Maps.newHashMap();
+                Map<String, Object> map = Maps.newLinkedHashMap();
                 for (Map.Entry<Component, VTLObject> entry : structure.asMap(dataPoints).entrySet()) {
                     map.put(structure.getName(entry.getKey()), entry.getValue().get());
                 }

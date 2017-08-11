@@ -30,6 +30,8 @@ import no.ssb.vtl.connectors.spring.RestTemplateConnector;
 import no.ssb.vtl.connectors.spring.converters.DataHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DataStructureHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DatasetHttpMessageConverter;
+import no.ssb.vtl.connectors.utils.RegexConnector;
+import no.ssb.vtl.connectors.utils.TimeoutConnector;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration;
@@ -49,7 +51,9 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
@@ -78,7 +82,16 @@ public class Application {
         }
 
         connectors.add(getKompisConnector(mapper));
-        return connectors;
+
+        return Lists.transform(connectors, c -> {
+            // TODO: Remove when old API is deprecated.
+            Connector hackConnector = RegexConnector.create(c,
+                    Pattern.compile("(?<host>(?:http|https)://.*?)/api/data/(?<id>.*)/latest"),
+                    "${host}/api/v3/data/${id}"
+            );
+
+            return TimeoutConnector.create(hackConnector, 10, TimeUnit.SECONDS);
+        });
     }
 
     Connector getKompisConnector(ObjectMapper mapper) {

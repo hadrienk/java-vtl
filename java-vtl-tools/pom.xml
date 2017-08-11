@@ -32,6 +32,12 @@
         </dependency>
 
         <dependency>
+            <groupId>no.ssb.vtl.connectors</groupId>
+            <artifactId>utils</artifactId>
+            <version>0.1.5-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
