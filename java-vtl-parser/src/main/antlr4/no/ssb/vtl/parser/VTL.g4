@@ -76,7 +76,7 @@ datasetRef: variableRef ;
 componentRef : ( datasetRef '.')? variableRef ;
 variableRef : identifier;
 
-identifier : IDENTIFIER ;
+identifier : VARIABLE_ID ;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
@@ -96,9 +96,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=identifier ( 'role' role )? ;
-
-role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
+renameParam : from=componentRef 'as' to=identifier ( ROLE role=componentRole )? ;
 
 filter      : 'filter' booleanExpression ;
 
@@ -109,10 +107,6 @@ calc        : 'calc' ;
 attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
-
-//varID       : 'varId';
-
-//WS          : [ \t\n\t] -> skip ;
 
 booleanExpression                                                                                       //Evaluation order of the operators
     : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
@@ -160,8 +154,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 
 joinBody : joinClause (',' joinClause)* ;
 
-// TODO: Implement role and implicit
-joinClause : role? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
+joinClause : implicit=IMPLICIT? role=componentRole? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -216,12 +209,13 @@ joinRenameParameter  : from=componentRef 'to' to=identifier ;
 // Filter clause
 joinFilterExpression : 'filter' booleanExpression ;
 
-//role : ( 'IDENTIFIER' | 'MEASURE' | 'ATTRIBUTE' ) ;
+componentRole : role=(IDENTIFIER | MEASURE | ATTRIBUTE);
 
 INNER : 'inner' ;
 OUTER : 'outer' ;
 CROSS : 'cross' ;
 
+ROLE : 'role' ;
 
 INTEGER_CONSTANT  : (PLUS|MINUS)?DIGIT+;
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
@@ -234,7 +228,14 @@ FLOAT_CONSTANT    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
 
 NULL_CONSTANT     : 'null';
 
-IDENTIFIER : REG_IDENTIFIER | ESCAPED_IDENTIFIER ;
+IMPLICIT : 'implicit' ;
+
+IDENTIFIER : 'identifier' | 'IDENTIFIER' ;
+MEASURE : 'measure' | 'MEASURE' ;
+ATTRIBUTE : 'attribute' | 'ATTRIBUTE'  ;
+
+VARIABLE_ID : REG_IDENTIFIER | ESCAPED_IDENTIFIER ;
+
 //regular identifiers start with a (lowercase or uppercase) English alphabet letter, followed by zero or more letters, decimal digits, or underscores
 REG_IDENTIFIER: LETTER(LETTER|'_'|DIGIT)* ; //TODO: Case insensitive??
 //VTL 1.1 allows us to escape the limitations imposed on regular identifiers by enclosing them in single quotes (apostrophes).
