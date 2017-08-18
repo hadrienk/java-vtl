@@ -42,7 +42,7 @@
                 <executions>
                     <execution>
                         <configuration>
-                            <listener>false</listener>
+                            <listener>true</listener>
                             <visitor>true</visitor>
                         </configuration>
                         <id>antlr</id>

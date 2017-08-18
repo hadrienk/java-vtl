@@ -15,6 +15,7 @@
         <module>java-vtl-script</module>
         <module>java-vtl-test</module>
         <module>java-vtl-tools</module>
+        <module>java-vtl-dependency-parser</module>
     </modules>
 
     <name>Java VTL</name>
