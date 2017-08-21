@@ -25,7 +25,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -39,13 +38,13 @@ public class DependencyParserTest {
     @Test
     public void parse() throws Exception {
         String vtlExpression = "r := [t1, t2]{ var := t1.var1 / t2.var2, otherVar := t1.var3 * 1000}";
-        Map<String, Set<ComponentRef>> dependencies = parser.parse(vtlExpression);
+        Map<String, Assignment> dependencies = parser.parse(vtlExpression);
     
         System.out.println(dependencies);
-        softly.assertThat(dependencies.get("var"))
+        softly.assertThat(dependencies.get("var").getComponentRefs())
                 .extracting("datasetId", "variableId")
                 .containsExactlyInAnyOrder(tuple("t1", "var1"), tuple("t2", "var2"));
-        softly.assertThat(dependencies.get("otherVar"))
+        softly.assertThat(dependencies.get("otherVar").getComponentRefs())
                 .extracting("datasetId", "variableId")
                 .containsExactlyInAnyOrder(tuple("t1", "var3"));
     

@@ -31,7 +31,7 @@ import java.util.Set;
 
 public class AssignmentListener extends VTLBaseListener {
     
-    private Map<String, Set<ComponentRef>> variableDependency;
+    private Map<String, Assignment> variableDependency;
     
     private Set<ComponentRef> componentRefs = new HashSet<>();
     
@@ -42,7 +42,10 @@ public class AssignmentListener extends VTLBaseListener {
     @Override
     public void exitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
         String identifier = ctx.identifier().getText();
-        variableDependency.put(identifier, ImmutableSet.copyOf(componentRefs));
+        String expression = ctx.getText();
+        Assignment assignment =
+                new Assignment(identifier, expression,ImmutableSet.copyOf(componentRefs));
+        variableDependency.put(identifier, assignment);
         componentRefs.clear();
     }
     
@@ -54,7 +57,7 @@ public class AssignmentListener extends VTLBaseListener {
         componentRefs.add(new ComponentRef(datasetRef, variableRef));
     }
     
-    public Map<String, Set<ComponentRef>> getVariableDependency() {
+    public Map<String, Assignment> getVariableDependency() {
         return variableDependency;
     }
     

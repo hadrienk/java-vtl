@@ -20,26 +20,40 @@ package no.ssb.vtl.dependencies;
  * =========================LICENSE_END==================================
  */
 
-public class ComponentRef {
-    
-    private final String datasetId;
-    private final String variableId;
+import com.google.common.base.MoreObjects;
 
-    public ComponentRef(String datasetId, String variableId) {
-        this.datasetId = datasetId;
-        this.variableId = variableId;
+import java.util.Set;
+
+public class Assignment {
+    
+    private final String identifier;
+    private final String expression;
+    private final Set<ComponentRef> componentRefs;
+    
+    public Assignment(String identifier, String expression, Set<ComponentRef> componentRefs) {
+        this.identifier = identifier;
+        this.expression = expression;
+        this.componentRefs = componentRefs;
     }
     
-    public String getDatasetId() {
-        return datasetId;
+    public String getIdentifier() {
+        return identifier;
     }
     
-    public String getVariableId() {
-        return variableId;
+    public String getExpression() {
+        return expression;
+    }
+    
+    public Set<ComponentRef> getComponentRefs() {
+        return componentRefs;
     }
     
     @Override
     public String toString() {
-        return String.format("%s.%s", datasetId, variableId);
+        return MoreObjects.toStringHelper(this)
+                .add("identifier", identifier)
+                .add("expression", expression)
+                .add("componentRefs", componentRefs)
+                .toString();
     }
 }

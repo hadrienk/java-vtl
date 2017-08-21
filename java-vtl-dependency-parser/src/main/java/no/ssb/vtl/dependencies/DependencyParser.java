@@ -30,11 +30,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 public class DependencyParser {
     
-    public Map<String, Set<ComponentRef>> parse(String vtlExpression) {
+    public Map<String, Assignment> parse(String vtlExpression) {
         try {
             VTLLexer lexer = new VTLLexer(new ANTLRInputStream(new StringReader(vtlExpression)));
             VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
