@@ -15,6 +15,7 @@
         <module>java-vtl-script</module>
         <module>java-vtl-test</module>
         <module>java-vtl-tools</module>
+        <module>java-vtl-dependency-parser</module>
     </modules>
 
     <name>Java VTL</name>
@@ -427,13 +428,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>com.carrotsearch.randomizedtesting</groupId>
-                <artifactId>randomizedtesting-runner</artifactId>
-                <version>2.5.0</version>
                 <scope>test</scope>
             </dependency>
 
