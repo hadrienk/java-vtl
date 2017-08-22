@@ -121,7 +121,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // No common identifier
-        checkArgument(!idMap.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
+        checkArgument(namedDatasets.size() == 1 || !idMap.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
 
         this.commonIdentifiers = ImmutableSet.copyOf(idMap.keySet());
 
