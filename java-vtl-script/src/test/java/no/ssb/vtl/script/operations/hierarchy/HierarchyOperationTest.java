@@ -483,9 +483,10 @@ public class HierarchyOperationTest extends RandomizedTest {
         }
         System.out.println("Graphs.hasCycle(): " + hasCyclePathWatch.elapsed(TimeUnit.NANOSECONDS) / loops);
 
-        assertThat(hasCyclePathWatch.elapsed(TimeUnit.NANOSECONDS) / loops)
-                .describedAs("time per guava Graph.hasCycle() call")
-                .isGreaterThan(findPathWatch.elapsed(TimeUnit.NANOSECONDS) / loops);
+//        Hadrien: disabled because it is not predictable.
+//        assertThat(hasCyclePathWatch.elapsed(TimeUnit.NANOSECONDS) / loops)
+//                .describedAs("time per guava Graph.hasCycle() call")
+//                .isGreaterThan(findPathWatch.elapsed(TimeUnit.NANOSECONDS) / loops);
 
     }
 
