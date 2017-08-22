@@ -41,8 +41,8 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -86,8 +86,8 @@ public class Application {
         return Lists.transform(connectors, c -> {
             // TODO: Remove when old API is deprecated.
             Connector hackConnector = RegexConnector.create(c,
-                    Pattern.compile("(?<host>(?:http|https)://.*?)/api/data/(?<id>.*)/latest"),
-                    "${host}/api/v3/data/${id}"
+                    Pattern.compile("(?<host>(?:http|https)://.*?)/api/data/(?<id>.*)/latest(?<param>[?|#].*)"),
+                    "${host}/api/v3/data/${id}${param}"
             );
 
             return TimeoutConnector.create(hackConnector, 10, TimeUnit.SECONDS);
@@ -98,12 +98,13 @@ public class Application {
 
         SimpleClientHttpRequestFactory schrf = new SimpleClientHttpRequestFactory();
         schrf.setBufferRequestBody(false);
-        schrf.setTaskExecutor(new SimpleAsyncTaskExecutor());
+
+        schrf.setTaskExecutor(new ConcurrentTaskExecutor());
 
         schrf.setConnectTimeout(200);
         schrf.setReadTimeout(1000);
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newCachedThreadPool();
 
         RestTemplate template = new RestTemplate(schrf);
 
