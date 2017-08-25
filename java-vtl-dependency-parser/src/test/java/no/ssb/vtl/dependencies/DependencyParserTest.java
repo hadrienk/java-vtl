@@ -36,7 +36,7 @@ public class DependencyParserTest {
     public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
     
     @Test
-    public void parse() throws Exception {
+    public void joinCalc() throws Exception {
         String vtlExpression = "r := [t1, t2]{ var := t1.var1 / t2.var2, otherVar := t1.var3 * 1000}";
         Map<String, Assignment> dependencies = parser.parse(vtlExpression);
     
@@ -47,6 +47,44 @@ public class DependencyParserTest {
         softly.assertThat(dependencies.get("otherVar").getComponentRefs())
                 .extracting("datasetId", "variableId")
                 .containsExactlyInAnyOrder(tuple("t1", "var3"));
-    
     }
+    
+    @Test
+    public void joinRename() throws Exception {
+        String vtlExpression = "r := [t1, t2]{ rename t1.var1 to var }";
+        Map<String, Assignment> dependencies = parser.parse(vtlExpression);
+        
+        System.out.println(dependencies);
+        softly.assertThat(dependencies.get("var").getComponentRefs())
+                .extracting("datasetId", "variableId")
+                .containsExactlyInAnyOrder(tuple("t1", "var1"));
+    }
+    
+    @Test
+    public void joinUnfold() throws Exception {
+        String vtlExpression = "r := [t1, t2]{ unfold t1.id1, t1.m1 to \"val1\", \"val2\" }";
+        Map<String, Assignment> dependencies = parser.parse(vtlExpression);
+        
+        System.out.println(dependencies);
+        softly.assertThat(dependencies.get("\"val1\"").getComponentRefs())
+                .extracting("datasetId", "variableId").as("dependencies of val1")
+                .containsExactlyInAnyOrder(tuple("t1", "m1"));
+    
+        softly.assertThat(dependencies.get("\"val2\"").getComponentRefs())
+                .extracting("datasetId", "variableId").as("dependencies of val2")
+                .containsExactlyInAnyOrder(tuple("t1", "m1"));
+    }
+    
+    @Test
+    public void joinFold() throws Exception {
+        String vtlExpression = "r := [t1, t2]{ fold t1.val1, t1.val2 to id1, m1 }";
+        Map<String, Assignment> dependencies = parser.parse(vtlExpression);
+        
+        System.out.println(dependencies);
+        softly.assertThat(dependencies.get("m1").getComponentRefs())
+                .extracting("datasetId", "variableId").as("dependencies of m1")
+                .containsExactlyInAnyOrder(tuple("t1", "val1"), tuple("t1", "val2"));
+        
+    }
+    
 }

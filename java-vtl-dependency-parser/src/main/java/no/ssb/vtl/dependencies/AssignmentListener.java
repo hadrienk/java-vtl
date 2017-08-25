@@ -23,6 +23,7 @@ package no.ssb.vtl.dependencies;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.parser.VTLBaseListener;
 import no.ssb.vtl.parser.VTLParser;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,22 +40,66 @@ public class AssignmentListener extends VTLBaseListener {
         variableDependency = new HashMap<>();
     }
     
-    @Override
-    public void exitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        String identifier = ctx.identifier().getText();
-        String expression = ctx.getText();
+    
+    
+    private void createAssignment(String identifier, String expression, Set<ComponentRef> componentRefs) {
         Assignment assignment =
-                new Assignment(identifier, expression,ImmutableSet.copyOf(componentRefs));
+                new Assignment(identifier, expression, componentRefs);
         variableDependency.put(identifier, assignment);
+    }
+    
+    @Override
+    public void enterJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
         componentRefs.clear();
     }
     
     @Override
-    public void exitComponentRef(VTLParser.ComponentRefContext ctx) {
+    public void exitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
+        String identifier = ctx.identifier().getText();
+        String expression = ctx.getText();
+        createAssignment(identifier, expression, ImmutableSet.copyOf(componentRefs));
+    }
     
+    @Override
+    public void exitJoinRenameExpression(VTLParser.JoinRenameExpressionContext ctx) {
+        for (VTLParser.JoinRenameParameterContext renameParameterContext : ctx.joinRenameParameter()) {
+            String identifier = renameParameterContext.to.getText();
+            String expression = ctx.getText();
+            createAssignment(identifier, expression, ImmutableSet.of(createComponentRef(renameParameterContext.from)));
+        }
+    }
+    
+    @Override
+    public void exitJoinUnfoldExpression(VTLParser.JoinUnfoldExpressionContext ctx) {
+        for (TerminalNode element : ctx.STRING_CONSTANT()) {
+            String identifier = element.getText();
+            String expression = ctx.getText();
+            createAssignment(identifier, expression, ImmutableSet.of(createComponentRef(ctx.measure)));
+        }
+    }
+    
+    @Override
+    public void enterJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
+        componentRefs.clear();
+    }
+    
+    @Override
+    public void exitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
+        String identifier = ctx.measure.getText();
+        String expression = ctx.getText();
+        createAssignment(identifier, expression, ImmutableSet.copyOf(componentRefs));
+    }
+    
+    @Override
+    public void exitComponentRef(VTLParser.ComponentRefContext ctx) {
+        ComponentRef componentRef = createComponentRef(ctx);
+        componentRefs.add(componentRef);
+    }
+    
+    private ComponentRef createComponentRef(VTLParser.ComponentRefContext ctx) {
         String datasetRef = ctx.datasetRef().getText();
         String variableRef = ctx.variableRef().getText();
-        componentRefs.add(new ComponentRef(datasetRef, variableRef));
+        return new ComponentRef(datasetRef, variableRef);
     }
     
     public Map<String, Assignment> getVariableDependency() {
