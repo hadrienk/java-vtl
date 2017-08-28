@@ -218,8 +218,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 adjustedOrder.put(component, direction);
             }
         }
-        //Order.Builder minimalOrder = Order.createCopyOf(order);
-        return dataset.getData(adjustedOrder.build()).orElse(dataset.getData().sorted(adjustedOrder.build()));
+        return dataset.getData(adjustedOrder.build()).orElseGet(() -> dataset.getData().sorted(adjustedOrder.build()));
     }
 
     private Comparator<Map<Component, VTLObject>> createKeyComparator(

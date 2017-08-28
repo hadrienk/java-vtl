@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -55,9 +54,70 @@ import static org.assertj.guava.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
+
+    @Test
+    public void testGetDataOnlyOnce() {
+
+        // Makes sure getData is not called when sorting is available.
+
+        ArrayList<Long> leftData = Lists.newArrayList(
+                1L, 3L, 3L, 3L, 3L, 4L, 5L, 6L, 8L, 9L, 9L, 9L, 10L
+        );
+
+        ArrayList<Long> rightData = Lists.newArrayList(
+                1L, 1L, 1L, 2L, 3L, 5L, 7L, 7L, 8L, 8L, 9L, 9L, 9L, 10L
+        );
+
+        Dataset left = mock(Dataset.class);
+        when(left.getDataStructure()).thenReturn(
+                DataStructure.builder()
+                        .put("id", Role.IDENTIFIER, Long.class)
+                        .put("m", Role.MEASURE, String.class)
+                        .build()
+        );
+        when(left.getData()).then(o -> {
+            return Streams.mapWithIndex(leftData.stream(), (id, index) -> {
+                return Lists.newArrayList(VTLObject.of(id), VTLObject.of("left " + (index + 1)));
+            }).map(DataPoint::create);
+        });
+        when(left.getData(any(Order.class))).then(invocation -> {
+            Order order = invocation.getArgumentAt(0, Order.class);
+            Stream<DataPoint> sortedStream = Streams.mapWithIndex(leftData.stream(), (id, index) -> Lists.newArrayList(VTLObject.of(id), VTLObject.of("left " + (index + 1)))).map(DataPoint::create).sorted(order);
+            return Optional.of(sortedStream);
+        });
+
+        Dataset right = mock(Dataset.class);
+        when(right.getDataStructure()).thenReturn(
+                DataStructure.builder()
+                        .put("id", Role.IDENTIFIER, Long.class)
+                        .put("m", Role.MEASURE, String.class)
+                        .build()
+        );
+        when(right.getData()).then(o -> {
+            return Streams.mapWithIndex(rightData.stream(), (id, index) -> {
+                return Lists.newArrayList(VTLObject.of(id), VTLObject.of("right " + (index + 1)));
+            }).map(DataPoint::create);
+        });
+        when(right.getData(any(Order.class))).then(invocation -> {
+            Order order = invocation.getArgumentAt(0, Order.class);
+            Stream<DataPoint> sortedStream = Streams.mapWithIndex(leftData.stream(), (id, index) -> Lists.newArrayList(VTLObject.of(id), VTLObject.of("left " + (index + 1)))).map(DataPoint::create).sorted(order);
+            return Optional.of(sortedStream);
+        });
+
+        TestAbstractJoinOperation result = new TestAbstractJoinOperation(ImmutableMap.of("left", left, "right", right));
+
+        result.getData().forEach(dp -> {
+        });
+
+        verify(left, never()).getData();
+        verify(right, never()).getData();
+
+    }
 
     @Test
     public void testSortMerge() throws Exception {
