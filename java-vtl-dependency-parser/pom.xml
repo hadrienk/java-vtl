@@ -15,11 +15,6 @@
       <groupId>no.ssb.vtl</groupId>
       <artifactId>java-vtl-parser</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.vaadin.external.gwt</groupId>
-      <artifactId>gwt-dev</artifactId>
-      <version>2.7.0.vaadin4</version>
-    </dependency>
   </dependencies>
 
 
