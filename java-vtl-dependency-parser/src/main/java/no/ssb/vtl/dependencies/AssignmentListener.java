@@ -21,20 +21,24 @@ package no.ssb.vtl.dependencies;
  */
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.parser.VTLBaseListener;
 import no.ssb.vtl.parser.VTLParser;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class AssignmentListener extends VTLBaseListener {
     
     private Map<String, Assignment> variableDependency;
     
     private Set<ComponentRef> componentRefs = new HashSet<>();
+    private Set<String> joinDatasets = new HashSet<>();
     
     public AssignmentListener() {
         variableDependency = new HashMap<>();
@@ -46,6 +50,13 @@ public class AssignmentListener extends VTLBaseListener {
         Assignment assignment =
                 new Assignment(identifier, expression, componentRefs);
         variableDependency.put(identifier, assignment);
+    }
+    
+    @Override
+    public void exitJoinDefinition(VTLParser.JoinDefinitionContext ctx) {
+        joinDatasets = ctx.datasetRef().stream()
+                .map(RuleContext::getText)
+                .collect(Collectors.toSet());
     }
     
     @Override
@@ -65,7 +76,7 @@ public class AssignmentListener extends VTLBaseListener {
         for (VTLParser.JoinRenameParameterContext renameParameterContext : ctx.joinRenameParameter()) {
             String identifier = renameParameterContext.to.getText();
             String expression = ctx.getText();
-            createAssignment(identifier, expression, ImmutableSet.of(createComponentRef(renameParameterContext.from)));
+            createAssignment(identifier, expression, createComponentRefs(renameParameterContext.from));
         }
     }
     
@@ -74,7 +85,7 @@ public class AssignmentListener extends VTLBaseListener {
         for (TerminalNode element : ctx.STRING_CONSTANT()) {
             String identifier = element.getText();
             String expression = ctx.getText();
-            createAssignment(identifier, expression, ImmutableSet.of(createComponentRef(ctx.measure)));
+            createAssignment(identifier, expression, createComponentRefs(ctx.measure));
         }
     }
     
@@ -92,14 +103,22 @@ public class AssignmentListener extends VTLBaseListener {
     
     @Override
     public void exitComponentRef(VTLParser.ComponentRefContext ctx) {
-        ComponentRef componentRef = createComponentRef(ctx);
-        componentRefs.add(componentRef);
+        Set<ComponentRef> componentRef = createComponentRefs(ctx);
+        componentRefs.addAll(componentRef);
     }
     
-    private ComponentRef createComponentRef(VTLParser.ComponentRefContext ctx) {
-        String datasetRef = ctx.datasetRef().getText();
+    private Set<ComponentRef> createComponentRefs(VTLParser.ComponentRefContext ctx) {
         String variableRef = ctx.variableRef().getText();
-        return new ComponentRef(datasetRef, variableRef);
+        if (ctx.datasetRef() != null) {
+            String datasetRef = ctx.datasetRef().getText();
+            return Sets.newHashSet(new ComponentRef(datasetRef, variableRef));
+        } else if (variableDependency.containsKey(variableRef)) {
+            return variableDependency.get(variableRef).getComponentRefs();
+        } else {
+            return joinDatasets.stream()
+                    .map(datasetRef -> new ComponentRef(datasetRef, variableRef))
+                    .collect(Collectors.toSet());
+        }
     }
     
     public Map<String, Assignment> getVariableDependency() {

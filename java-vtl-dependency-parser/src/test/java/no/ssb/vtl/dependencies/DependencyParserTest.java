@@ -87,4 +87,28 @@ public class DependencyParserTest {
         
     }
     
+    @Test
+    public void joinOperation() throws Exception {
+        String vtlExpression = "r := [t1, t2]{ rename t1.m1 to m1, var := m1 + m2 }";
+        Map<String, Assignment> dependencies = parser.parse(vtlExpression);
+        
+        System.out.println(dependencies);
+    
+        softly.assertThat(dependencies.get("m1").getComponentRefs())
+                .extracting("datasetId", "variableId").as("dependencies of m1")
+                .containsExactlyInAnyOrder( tuple("t1", "m1"));
+    
+        softly.assertThat(dependencies.get("var").getComponentRefs())
+                .extracting("datasetId", "variableId").as("dependencies of var")
+                .containsExactlyInAnyOrder(
+                        tuple("t1", "m1"),
+                        tuple("t1", "m2"), tuple("t2", "m2"));
+    
+        //Without running the expression with an actual dataset we have no way of knowing if m2 is from t1 or t2,
+        // but if the join expression is valid it cannot exists in both.
+        // Therefor we return both options and let further evaluation determine which reference actually exists
+        //TODO: (Common) components that are not referenced in joinBody but are still a part the resulting dataset
+        
+    }
+    
 }
