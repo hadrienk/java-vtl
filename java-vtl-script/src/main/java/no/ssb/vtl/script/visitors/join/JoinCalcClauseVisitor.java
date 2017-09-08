@@ -81,6 +81,9 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
             return new VTLExpression.Builder(Long.class, dataPoint -> VTLObject.of(aLong))
                     .description(aLong.toString()).build();
         }
+        if (constantValue.STRING_CONSTANT() != null) {
+            return new VTLExpression.Builder(String.class, dataPoint -> VTLObject.of(constantValue.getText())).build();
+        }
         throw new RuntimeException(
                 format("unsupported constant type %s", constantValue)
         );

@@ -91,6 +91,25 @@ public class VTLScriptEngineTest {
     }
 
     @Test
+    public void test22() throws Exception {
+
+        DataStructure structure = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class
+        );
+        when(dataset.getDataStructure()).thenReturn(structure);
+        when(dataset.getData()).thenReturn(Stream.of(DataPoint.create(1)));
+
+        bindings.put("t1", dataset);
+        engine.eval("/* test */\n" +
+                "resultat := [t1] {\n" +
+                "    test := \"test variable\"\n" +
+                "}");
+
+        assertThat(bindings.get("t1")).isNotNull();
+    }
+
+    @Test
     public void testGet() throws Exception {
 
         when(connector.canHandle(anyString())).thenReturn(true);
