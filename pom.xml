@@ -88,8 +88,25 @@
         <url>https://github.com/statisticsnorway/java-vtl</url>
     </scm>
 
-
     <profiles>
+
+        <profile>
+            <!-- interal distribution for ssb -->
+            <id>ssb</id>
+            <distributionManagement>
+                <repository>
+                    <id>releases</id>
+                    <name>SSB Nexus Releases</name>
+                    <url>http://kodehus.ssb.no/content/repositories/releases/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>snapshots</id>
+                    <name>SSB Snapshot Repository</name>
+                    <url>http://kodehus.ssb.no/content/repositories/snapshots/</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+
         <profile>
             <id>travis</id>
             <activation>
