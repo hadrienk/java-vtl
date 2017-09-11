@@ -7,7 +7,7 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-
+java-vtl-documentation/site
 **/.DS_Store
 **/*.iml
 **/.idea
