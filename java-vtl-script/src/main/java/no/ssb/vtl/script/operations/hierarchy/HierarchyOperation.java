@@ -123,6 +123,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     }
 
     public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component component) {
+        // TODO: Should NOT happen in the constructor.
         this(dataset, convertToHierarchy(hierarchy), component);
     }
 
@@ -281,7 +282,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
         // Get the data sorted.
         Stream<DataPoint> sortedData = getChild().getData(groupOrder)
-                .orElse(getChild().getData().sorted(groupOrder));
+                .orElseGet(() -> getChild().getData().sorted(groupOrder));
 
         Stream<ComposedDataPoint> streamToAggregate = StreamUtils.aggregate(
                 sortedData,
