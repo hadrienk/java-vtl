@@ -150,22 +150,24 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 .build();
 
         // Add all the points.
-        for (DataPoint point : (Iterable<? extends DataPoint>) hierarchy.getData()::iterator) {
+        try (Stream<DataPoint> stream = hierarchy.getData()) {
+            for (DataPoint point : (Iterable<? extends DataPoint>) stream::iterator) {
 
-            Map<Component, VTLObject> asMap = structure.asMap(point);
+                Map<Component, VTLObject> asMap = structure.asMap(point);
 
-            VTLObject from = asMap.get(fromComponent);
-            VTLObject to = asMap.get(toComponent);
-            VTLObject sign = asMap.get(signComponent);
+                VTLObject from = asMap.get(fromComponent);
+                VTLObject to = asMap.get(toComponent);
+                VTLObject sign = asMap.get(signComponent);
 
-            Composition composition = checkNotNull(COMPOSITION_MAP.get(sign.get()), UNKNOWN_SIGN_VALUE, sign);
+                Composition composition = checkNotNull(COMPOSITION_MAP.get(sign.get()), UNKNOWN_SIGN_VALUE, sign);
 
-            List<List<VTLObject>> paths = findPaths(graph, to, from);
-            checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
+                List<List<VTLObject>> paths = findPaths(graph, to, from);
+                checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
 
-            graph.putEdgeValue(from, to, composition);
+                graph.putEdgeValue(from, to, composition);
+            }
+            return graph;
         }
-        return graph;
     }
 
     @VisibleForTesting
