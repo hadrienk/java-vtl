@@ -91,22 +91,51 @@ public class VTLScriptEngineTest {
     }
 
     @Test
-    public void test22() throws Exception {
+    public void testCalcAtoms() throws Exception {
 
         DataStructure structure = DataStructure.of(
                 (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class
         );
         when(dataset.getDataStructure()).thenReturn(structure);
-        when(dataset.getData()).thenReturn(Stream.of(DataPoint.create(1)));
+        when(dataset.getData()).then(invocation -> Stream.of(
+                structure.wrap(ImmutableMap.of(
+                        "id1", "1"
+                ))
+        ));
+        when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
 
         bindings.put("t1", dataset);
         engine.eval("/* test */\n" +
                 "resultat := [t1] {\n" +
-                "    test := \"test variable\"\n" +
+                "    testFloat := 1.0," +
+                "    testInteger := 1," +
+                "    testString := \"test string\",\n" +
+                "    testString2 := \"test \"\"escaped\"\" string\",\n" +
+                "    testBoolean := true" +
                 "}");
-
-        assertThat(bindings.get("t1")).isNotNull();
+    
+        assertThat(bindings).containsKey("resultat");
+        assertThat(bindings.get("resultat")).isInstanceOf(Dataset.class);
+    
+        Dataset resultat = (Dataset) bindings.get("resultat");
+        assertThat(resultat.getDataStructure())
+                .describedAs("data structure of resultat")
+                .containsOnlyKeys(
+                        "id1",
+                        "testFloat",
+                        "testInteger",
+                        "testString",
+                        "testString2",
+                        "testBoolean"
+                );
+    
+        assertThat(resultat.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", 1.0d, 1L, "test string", "test \"escaped\" string", true
+                );
     }
 
     @Test
