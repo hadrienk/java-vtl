@@ -82,7 +82,8 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     
         Stream<DataPoint> data = getChild().getData(order).orElseGet(() -> getChild().getData().sorted(order));
         Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(data,
-                (dataPoint1, dataPoint2) -> order.compare(dataPoint1, dataPoint2) == 0);
+                (dataPoint1, dataPoint2) -> order.compare(dataPoint1, dataPoint2) == 0)
+                .onClose(data::close);
     
         @SuppressWarnings("UnnecessaryLocalVariable")
         Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {

@@ -287,7 +287,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         Stream<ComposedDataPoint> streamToAggregate = StreamUtils.aggregate(
                 sortedData,
                 (prev, current) -> groupPredicate.compare(prev, current) == 0
-        ).map(dataPoints -> {
+        ).onClose(sortedData::close).map(dataPoints -> {
 
             // Organize the data points in "buckets" for each component. Here we add "sign" information
             // to the data points so that we can use it later when we aggregate.
@@ -335,7 +335,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return StreamUtils.aggregate(
                 streamToAggregate,
                 (dataPoint, dataPoint2) -> groupOrder.compare(dataPoint, dataPoint2) == 0
-        ).map(dataPoints -> {
+        ).onClose(streamToAggregate::close).map(dataPoints -> {
 
             DataPoint aggregate;
             // Optimization.
