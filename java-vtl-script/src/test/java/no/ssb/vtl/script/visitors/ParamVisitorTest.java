@@ -65,4 +65,44 @@ public class ParamVisitorTest {
         assertThat(param instanceof Double);
         assertThat(param).isEqualTo(1.234e2);
     }
+    
+    @Test
+    public void visitLongConstant() throws Exception {
+        VTLParser parser = parse("1");
+    
+        Object param = visitor.visit(parser.constant());
+    
+        assertThat(param instanceof Long);
+        assertThat(param).isEqualTo(1L);
+    }
+    
+    @Test
+    public void visitBooleanConstant() throws Exception {
+        VTLParser parser = parse("false");
+        
+        Object param = visitor.visit(parser.constant());
+        
+        assertThat(param instanceof Boolean);
+        assertThat(param).isEqualTo(false);
+    }
+    
+    @Test
+    public void visitStringConstant() throws Exception {
+        VTLParser parser = parse("\"string\"");
+        
+        Object param = visitor.visit(parser.constant());
+        
+        assertThat(param instanceof String);
+        assertThat(param).isEqualTo("string");
+    }
+    
+    @Test
+    public void visitEscapedStringConstant() throws Exception {
+        VTLParser parser = parse("\"an \"\"Escaped\"\" string\""); //That is the VTL expression: an ""escaped"" string
+        
+        Object param = visitor.visit(parser.constant());
+        
+        assertThat(param instanceof String);
+        assertThat(param).isEqualTo("an \"Escaped\" string"); //Resulting in the string: an "escaped" string
+    }
 }
