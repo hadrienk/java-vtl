@@ -23,6 +23,8 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
+import static java.lang.String.*;
+
 public class ParamVisitor extends VTLBaseVisitor<Object> {
     
     private final ReferenceVisitor referenceVisitor;
@@ -47,9 +49,13 @@ public class ParamVisitor extends VTLBaseVisitor<Object> {
             return Long.valueOf(constant);
         } else if (ctx.NULL_CONSTANT() != null) {
             return null;
-        } else { //String
-            return constant.replace("\"", "");
+        } else if (ctx.STRING_CONSTANT() != null) {
+            return VisitorUtil.stripQuotes(ctx.STRING_CONSTANT());
+        } else {
+            throw new RuntimeException(format("unsupported constant type %s", constant)
+            );
         }
+        //TODO: Merge this with JoinCalcClauseVisitor.visitJoinCalcAtom()
     }
     
 }
