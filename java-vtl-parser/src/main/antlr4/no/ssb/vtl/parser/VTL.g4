@@ -60,7 +60,7 @@ GROUP_BY : 'group by' ;
 datasetId : STRING_CONSTANT ;
 
 /* Atom */
-exprAtom : variableRef;
+exprAtom : datasetRef;
 
 checkFunction : 'check' '(' checkParam ')';
 

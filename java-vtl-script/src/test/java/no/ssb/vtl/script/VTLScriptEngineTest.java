@@ -1149,6 +1149,90 @@ public class VTLScriptEngineTest {
                 );
     }
     
+    @Test
+    public void testUnion() throws Exception {
+        Dataset ds1 = mock(Dataset.class);
+        Dataset ds2 = mock(Dataset.class);
+    
+        DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Long.class,
+                "m2", Role.MEASURE, Double.class,
+                "at1", Role.MEASURE, String.class
+        );
+        DataStructure structure2 = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class,
+                "m1", Role.MEASURE, Long.class,
+                "m2", Role.MEASURE, Double.class,
+                "at1", Role.MEASURE, String.class
+        );
+        when(ds1.getDataStructure()).thenReturn(structure1);
+        when(ds2.getDataStructure()).thenReturn(structure2);
+    
+        when(ds1.getData()).then(invocation -> Stream.of(
+                structure1.wrap(ImmutableMap.of(
+                        "id1", "1",
+                        "m1", 10L,
+                        "m2", 20,
+                        "at1", "attr1-1"
+                )),
+                structure1.wrap(ImmutableMap.of(
+                        "id1", "2",
+                        "m1", 100L,
+                        "m2", 200,
+                        "at1", "attr1-2"
+                ))
+        ));
+        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+    
+        when(ds2.getData()).then(invocation -> Stream.of(
+                structure2.wrap(ImmutableMap.of(
+                        "id1", "3",
+                        "m1", 30L,
+                        "m2", 40,
+                        "at1", "attr2-1"
+                )),
+                structure2.wrap(ImmutableMap.of(
+                        "id1", "4",
+                        "m1", 300L,
+                        "m2", 400,
+                        "at1", "attr2-2"
+                ))
+        ));
+        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
+    
+        bindings.put("ds1", ds1);
+        bindings.put("ds2", ds2);
+    
+        engine.eval("" +
+                "ds3 := union(ds1, ds2)");
+    
+        assertThat(bindings).containsKey("ds3");
+        assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+    
+        Dataset ds3 = (Dataset) bindings.get("ds3");
+        assertThat(ds3.getDataStructure())
+                .describedAs("data structure of d3")
+                .containsOnlyKeys(
+                        "id1",
+                        "m1",
+                        "m2",
+                        "at1"
+                );
+    
+        assertThat(ds3.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", 10L, 20, "attr1-1",
+                        "2", 100L, 200, "attr1-2",
+                        "3", 30L, 40, "attr2-1",
+                        "4", 300L, 400, "attr2-2"
+                );
+    }
+    
     private DataPoint tuple(VTLObject... components) {
         return DataPoint.create(Arrays.asList(components));
     }
