@@ -82,8 +82,8 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     
     @Override
     public Dataset visitAssignment(VTLParser.AssignmentContext ctx) {
-        String name = ctx.identifier().getText();
-        Dataset dataset = visit(ctx.datasetExpression());
+        String name = ctx.variable().getText();
+        Dataset dataset = visit(ctx.expression());
         context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
         return (Dataset) context.getAttribute(name, ScriptContext.ENGINE_SCOPE);
     }
@@ -94,7 +94,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitVariableRef(VTLParser.VariableRefContext ctx) {
+    public Dataset visitVariable(VTLParser.VariableContext ctx) {
         return (Dataset) context.getAttribute(ctx.getText());
     }
 

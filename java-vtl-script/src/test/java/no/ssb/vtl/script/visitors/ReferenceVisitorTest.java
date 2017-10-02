@@ -94,7 +94,7 @@ public class ReferenceVisitorTest {
                     .hasMessageContaining("datasetNotFound")
                     .hasMessageContaining("not found");
 
-            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("variableNotFound").variableRef()))
+            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("variableNotFound").variable()))
                     .describedAs("exception when component not found")
                     .hasMessageContaining("variable")
                     .hasMessageContaining("variableNotFound")

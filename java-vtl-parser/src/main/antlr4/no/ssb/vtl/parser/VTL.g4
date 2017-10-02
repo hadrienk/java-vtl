@@ -39,7 +39,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | hierarchyExpression                                    #withHierarchy
            | relationalExpression                                   #withRelational
            | function                                               #withFunction
-           | exprAtom                                               #withAtom
+           | variable                                               #withAtom
            ;
 
 hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
@@ -66,9 +66,6 @@ GROUP_BY : 'group by' ;
 
 datasetId : STRING_CONSTANT ;
 
-/* Atom */
-exprAtom : variableRef;
-
 checkFunction : 'check' '(' checkParam ')';
 
 checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
@@ -78,12 +75,9 @@ checkColumns : ( 'measures' | 'condition' ) ;
 errorCode : STRING_CONSTANT ;
 errorLevel : INTEGER_CONSTANT;
 
-datasetRef: variableRef ;
+datasetRef: variable ;
 
-componentRef : ( datasetRef '.')? variableRef ;
-variableRef : identifier;
-
-identifier : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
+componentRef : ( datasetRef '.')? variable ;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
@@ -103,7 +97,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=identifier ( ROLE role=componentRole )? ;
+renameParam : from=componentRef 'as' to=variable ( ROLE role=componentRole )? ;
 
 filter      : 'filter' booleanExpression ;
 
@@ -161,7 +155,7 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : implicit=IMPLICIT? role=componentRole? identifier ASSIGNMENT joinCalcExpression # joinCalcClause
+joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalcExpression # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -171,7 +165,7 @@ joinClause : implicit=IMPLICIT? role=componentRole? identifier ASSIGNMENT joinCa
            ;
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
-joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=identifier ',' measure=identifier ;
+joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=variable ',' measure=variable ;
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
 conditionalExpression
@@ -211,7 +205,7 @@ joinKeepExpression : 'keep' componentRef (',' componentRef)* ;
 
 // Rename clause
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
-joinRenameParameter  : from=componentRef 'to' to=identifier ;
+joinRenameParameter  : from=componentRef 'to' to=variable ;
 
 // Filter clause
 joinFilterExpression : 'filter' booleanExpression ;

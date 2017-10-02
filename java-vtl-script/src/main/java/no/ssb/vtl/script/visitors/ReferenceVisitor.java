@@ -84,9 +84,9 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitVariableRef(VTLParser.VariableRefContext ctx) {
+    public Object visitVariable(VTLParser.VariableContext ctx) {
         // TODO: Would be nice to handle quote removal in ANTLR
-        String key = removeQuoteIfNeeded(ctx.identifier().getText());
+        String key = removeQuoteIfNeeded(ctx.getText());
         return checkFound(ctx.getText(), stack.peek().get(key));
     }
 
@@ -105,10 +105,10 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
         if (ctx.datasetRef() != null) {
             Dataset ds = (Dataset) visit(ctx.datasetRef());
             this.stack.push(ds.getDataStructure());
-            component = checkType(ctx.getText(), visit(ctx.variableRef()), Component.class);
+            component = checkType(ctx.getText(), visit(ctx.variable()), Component.class);
             this.stack.pop();
         } else {
-            component = checkType(ctx.getText(), visit(ctx.variableRef()), Component.class);
+            component = checkType(ctx.getText(), visit(ctx.variable()), Component.class);
         }
         return component;
     }
@@ -124,7 +124,7 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
     @Override
     public Object visitDatasetRef(VTLParser.DatasetRefContext ctx) {
         // Ensure data type dataset.
-        Dataset dataset = checkType(ctx.getText(), visit(ctx.variableRef()), Dataset.class);
+        Dataset dataset = checkType(ctx.getText(), visit(ctx.variable()), Dataset.class);
         return dataset;
     }
 }

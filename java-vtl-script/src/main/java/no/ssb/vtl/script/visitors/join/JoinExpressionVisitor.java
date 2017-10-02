@@ -134,7 +134,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         Boolean implicit = ctx.implicit != null;
 
         // Calculate name
-        String componentName = ctx.identifier().getText();
+        String componentName = ctx.variable().getText();
 
         return new CalcOperation(
                 workingDataset,

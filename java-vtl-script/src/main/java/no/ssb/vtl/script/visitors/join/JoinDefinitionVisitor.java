@@ -62,7 +62,7 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
         return ctx.stream()
                     .collect(ImmutableMap.toImmutableMap(
                             // TODO: Need to support alias here. The spec forgot it.
-                            datasetRefContext -> datasetRefContext.variableRef().identifier().getText(),
+                            datasetRefContext -> datasetRefContext.variable().getText(),
                             datasetRefContext -> (Dataset) referenceVisitor.visit(datasetRefContext)
                     ));
     }
