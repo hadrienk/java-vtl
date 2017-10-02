@@ -22,18 +22,21 @@ package no.ssb.vtl.model;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class VTLBoolean extends VTLObject<Boolean> {
+public abstract class VTLString extends VTLObject<String> {
 
-    private VTLBoolean() {
+    private VTLString() {
         // private.
     }
 
-    public static VTLBoolean of(Boolean value) {
-        checkNotNull(value);
-        return new VTLBoolean() {
+    public static VTLString of(String string) {
+        checkNotNull(string);
+        return new VTLString() {
+            /**
+             * Returns the value of the data point.
+             */
             @Override
-            public Boolean get() {
-                return value;
+            public String get() {
+                return string;
             }
         };
     }

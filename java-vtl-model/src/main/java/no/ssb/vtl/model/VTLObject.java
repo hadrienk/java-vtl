@@ -28,21 +28,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Root of the VTL data type hierarchy.
  */
-public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
+public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
 
     private final Component componentReference;
-    
+
     protected VTLObject() {
         componentReference = null; //TODO: Remove any reference to component
     }
-    
+
     /**
      * @deprecated Use {@link DataStructure#wrap(String, Object)} instead
      */
     private VTLObject(Component component) {
         this.componentReference = checkNotNull(component);
     }
-    
+
     /**
      * This method is marked as deprecated (Hadrien, 02-05-2017).
      *
@@ -72,14 +72,32 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
             // TODO: Fail here, this only makes the contract of the method confusing. Will be solved with sub types.
             return (VTLObject) o;
         }
-        
+
         return new VTLObject<Object>(){
-    
+
             @Override
             public Object get() {
                 return o;
             }
         };
+    }
+
+    /**
+     * Create a new VTLString instance.
+     *
+     * @throws NullPointerException if str is null.
+     */
+    public static VTLString of(String str) {
+        return VTLString.of(str);
+    }
+
+    /**
+     * Create a new VTLBoolean instance.
+     *
+     * @throws NullPointerException if str is null.
+     */
+    public static VTLBoolean of(Boolean bool) {
+        return VTLBoolean.of(bool);
     }
 
     /**
@@ -102,13 +120,13 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
             }
         };
     }
-    
+
     public static final VTLObject NULL = new VTLObject() {
         @Override
         public Object get() {
             return null;
         }
-        
+
         @Override
         public String toString() {
             return "[NULL]";
@@ -128,7 +146,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
     public Component getComponent() {
         return componentReference;
     }
-    
+
     /**
      * Note: this class has a natural ordering that is inconsistent with equals. //TODO: Fix that
      * <br/>
@@ -163,12 +181,12 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
                 String.format("Cannot compare %s of type %s with %s of type %s",
                         value, value.getClass(), other, other.getClass()));
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(get());
     }
-    
+
     @Override
     public boolean equals(Object o) { //TODO
         if (this == o) return true;
