@@ -55,7 +55,7 @@ engine.eval("ds1 := get(\"foo\")" +
             "ds2 := get(\"bar\")" +
             "ds3 := [ds1, ds2] {" +
             "   filter ds1.id = \"string\"," +
-            "   sum := ds1.measure + ds2.measure" +
+            "   total := ds1.measure + ds2.measure" +
             "}");
 
 System.out.println(bindings.get("ds3"))
