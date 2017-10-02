@@ -18,14 +18,21 @@
  * =========================LICENSE_END==================================
  */
 grammar VTL;
-start : assignment+ EOF;
+start : statement+ EOF;
 
-/* Assignment */
-assignment : identifier ASSIGNMENT datasetExpression
-           | identifier ASSIGNMENT block
-           ;
+statement : assignment | expression ;
 
-block : '{' assignment+ '}' ;
+functionCall : REG_IDENTIFIER LPAR functionParameter RPAR
+             | REG_IDENTIFIER LPAR RPAR ;
+
+functionParameter : expression ( COMMA expression )* ;
+
+expression : variable | litteral | functionCall | datasetExpression ;
+
+variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
+litteral : constant ;
+
+assignment : variable ASSIGNMENT expression ;
 
 /* Expressions */
 datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
@@ -69,14 +76,14 @@ checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorc
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
 errorCode : STRING_CONSTANT ;
-errorLevel : INTEGER_CONSTANT ;
+errorLevel : INTEGER_CONSTANT;
 
 datasetRef: variableRef ;
 
 componentRef : ( datasetRef '.')? variableRef ;
 variableRef : identifier;
 
-identifier : VARIABLE_ID ;
+identifier : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
@@ -234,16 +241,19 @@ IDENTIFIER : 'identifier' | 'IDENTIFIER' ;
 MEASURE : 'measure' | 'MEASURE' ;
 ATTRIBUTE : 'attribute' | 'ATTRIBUTE'  ;
 
-VARIABLE_ID : REG_IDENTIFIER | ESCAPED_IDENTIFIER ;
-
 //regular identifiers start with a (lowercase or uppercase) English alphabet letter, followed by zero or more letters, decimal digits, or underscores
-REG_IDENTIFIER: LETTER(LETTER|'_'|DIGIT)* ; //TODO: Case insensitive??
+REG_IDENTIFIER : LETTER(LETTER|'_'|DIGIT)* ;
 //VTL 1.1 allows us to escape the limitations imposed on regular identifiers by enclosing them in single quotes (apostrophes).
-fragment ESCAPED_IDENTIFIER:  QUOTE (~['\r\n] | '\'\'')+ QUOTE;
+ESCAPED_IDENTIFIER:  QUOTE (~['\r\n] | '\'\'')+ QUOTE;
+
 fragment QUOTE : '\'';
 
 PLUS : '+';
 MINUS : '-';
+
+LPAR : '(' ;
+RPAR : ')' ;
+COMMA : ',' ;
 
 fragment DIGIT    : '0'..'9' ;
 fragment FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
