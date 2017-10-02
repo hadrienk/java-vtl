@@ -56,7 +56,7 @@ public class FilterOperationTest {
     @Test
     public void testPredicateReturnsNull() throws Exception {
 
-        FilterOperation resultBooleanNull = new FilterOperation(dataset, dp -> VTLBoolean.of(null));
+        FilterOperation resultBooleanNull = new FilterOperation(dataset, dp -> VTLBoolean.of((Boolean) null));
         assertThat(resultBooleanNull.getData()).isEmpty();
 
         FilterOperation resultNull = new FilterOperation(dataset, dp -> null);

@@ -41,7 +41,7 @@ public class AssignmentListener extends VTLBaseListener {
     
     @Override
     public void exitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        String identifier = ctx.identifier().getText();
+        String identifier = ctx.variable().getText();
         String expression = ctx.getText();
         Assignment assignment =
                 new Assignment(identifier, expression,ImmutableSet.copyOf(componentRefs));
@@ -53,7 +53,7 @@ public class AssignmentListener extends VTLBaseListener {
     public void exitComponentRef(VTLParser.ComponentRefContext ctx) {
     
         String datasetRef = ctx.datasetRef().getText();
-        String variableRef = ctx.variableRef().getText();
+        String variableRef = ctx.variable().getText();
         componentRefs.add(new ComponentRef(datasetRef, variableRef));
     }
     
