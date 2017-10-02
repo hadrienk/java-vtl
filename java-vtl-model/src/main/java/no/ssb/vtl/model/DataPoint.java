@@ -45,7 +45,7 @@ public class DataPoint extends ArrayList<VTLObject> {
         return new DataPoint(Collections.nCopies(initialCapacity, VTLObject.NULL));
     }
 
-    public static DataPoint create(List<VTLObject> components) {
+    public static DataPoint create(List<? extends VTLObject> components) {
         return new DataPoint(components);
     }
 
