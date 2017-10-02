@@ -309,27 +309,6 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return indexListCache.indexOf(component);
     }
 
-    /**
-     * Creates a new {@link Component} for the given column and value.
-     * <p>
-     * This method is deprecated, the VTLObject will loose its reference to Component. That was the only
-     * reason to have a wrap method.
-     *
-     * @param name  the name of the column.
-     * @param value the value of the resulting component.
-     * @return a component
-     */
-    @Deprecated
-    public VTLObject wrap(String name, Object value) {
-        checkArgument(
-                containsKey(name),
-                "could not find %s in data structure %s",
-                name, this
-        );
-
-        Component component = get(name);
-        return VTLObject.of(component, converter().apply(value, component.getType()));
-    }
 
     /**
      * Creates a new {@link DataPoint} for the given names and values.
@@ -369,12 +348,6 @@ public class DataStructure extends ForwardingMap<String, Component> {
             );
         }
         return dataPoint;
-    }
-
-    @Deprecated
-    public DataPoint wrap() {
-        return DataPoint.create(this.size());
-
     }
 
     @Override

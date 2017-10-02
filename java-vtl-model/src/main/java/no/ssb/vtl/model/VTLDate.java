@@ -27,6 +27,7 @@ import java.util.TimeZone;
 
 import static java.lang.String.*;
 
+// TODO: The spec specifies that date format should be configurable.
 public abstract class VTLDate extends VTLObject<Instant> {
 
     public static VTLDate of(String input, String dateFormat, TimeZone timeZone) {

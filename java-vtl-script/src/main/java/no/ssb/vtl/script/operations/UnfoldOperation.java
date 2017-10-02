@@ -91,7 +91,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
             return commonIdentifierOrder.compare(left, right) == 0;
         }).map(dataPoints -> {
 
-            DataPoint result = dataStructure.wrap();
+            DataPoint result = DataPoint.create(dataStructure.size());
             Map<Component, VTLObject> resultAsMap = dataStructure.asMap(result);
 
             for (DataPoint dataPoint : dataPoints) {

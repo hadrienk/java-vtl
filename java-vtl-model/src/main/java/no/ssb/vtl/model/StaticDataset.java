@@ -148,7 +148,8 @@ public class StaticDataset implements Dataset {
         }
 
         public ValueBuilder addPoints(Object... values) {
-            return addPoints(Arrays.stream(values).map(VTLObject::of).collect(Collectors.toList()));
+            List<VTLObject> converted = Arrays.stream(values).map(VTLObject::of).collect(Collectors.toList());
+            return addPoints(converted.toArray(new VTLObject[]{}));
         }
 
         public ValueBuilder addPoints(VTLObject... values) {

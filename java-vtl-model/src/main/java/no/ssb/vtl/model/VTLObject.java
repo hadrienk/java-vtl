@@ -23,25 +23,10 @@ package no.ssb.vtl.model;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Root of the VTL data type hierarchy.
  */
 public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
-
-    private final Component componentReference;
-
-    protected VTLObject() {
-        componentReference = null; //TODO: Remove any reference to component
-    }
-
-    /**
-     * @deprecated Use {@link DataStructure#wrap(String, Object)} instead
-     */
-    private VTLObject(Component component) {
-        this.componentReference = checkNotNull(component);
-    }
 
     /**
      * This method is marked as deprecated (Hadrien, 02-05-2017).
@@ -100,27 +85,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
         return VTLBoolean.of(bool);
     }
 
-    /**
-     * Do not use!
-     */
-    @Deprecated
-    public static VTLObject of(Component component, Object o) {
-        if (o == null)
-            return VTLObject.NULL;
-
-        if (o instanceof VTLObject) {
-            return (VTLObject) o;
-        }
-
-        return new VTLObject<Object>(component){
-
-            @Override
-            public Object get() {
-                return o;
-            }
-        };
-    }
-
     public static final VTLObject NULL = new VTLObject() {
         @Override
         public Object get() {
@@ -138,14 +102,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
      */
     @Override
     public abstract V get();
-
-    /**
-     * Returns the componentReference (type and role) of this data point.
-     * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
-     */
-    public Component getComponent() {
-        return componentReference;
-    }
 
     /**
      * Note: this class has a natural ordering that is inconsistent with equals. //TODO: Fix that

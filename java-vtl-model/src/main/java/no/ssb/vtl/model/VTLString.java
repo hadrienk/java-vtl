@@ -20,8 +20,6 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public abstract class VTLString extends VTLObject<String> {
 
     private VTLString() {
@@ -29,7 +27,6 @@ public abstract class VTLString extends VTLObject<String> {
     }
 
     public static VTLString of(String string) {
-        checkNotNull(string);
         return new VTLString() {
             /**
              * Returns the value of the data point.

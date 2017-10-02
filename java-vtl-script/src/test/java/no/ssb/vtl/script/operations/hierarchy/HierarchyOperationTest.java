@@ -170,7 +170,7 @@ public class HierarchyOperationTest extends RandomizedTest {
             return Streams.stream(rows).map(list -> {
 
                 checkArgument(list.size() == structure.size());
-                DataPoint dataPoint = structure.wrap();
+                DataPoint dataPoint = DataPoint.create(structure.size());
 
                 Iterator<Component> components = structure.values().iterator();
                 for (int i = 0; i < list.size(); i++) {

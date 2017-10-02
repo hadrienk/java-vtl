@@ -52,7 +52,7 @@ public class BooleanExpressionVisitorTest {
                 "at1", Component.Role.ATTRIBUTE, String.class);
         visitor = new BooleanExpressionVisitor(null, dataStructure);
         dataPointWithValues = dataStructure.wrap(ImmutableMap.of("id1", "1", "m1", 20L, "m2", 10.0, "m3", 10L, "at1", "blabla"));
-        dataPointWithNull = dataStructure.wrap();
+        dataPointWithNull = DataPoint.create(dataStructure.size());
         
         
     }

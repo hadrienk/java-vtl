@@ -20,8 +20,6 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public abstract class VTLBoolean extends VTLObject<Boolean> {
 
     private VTLBoolean() {
@@ -29,7 +27,6 @@ public abstract class VTLBoolean extends VTLObject<Boolean> {
     }
 
     public static VTLBoolean of(Boolean value) {
-        checkNotNull(value);
         return new VTLBoolean() {
             @Override
             public Boolean get() {

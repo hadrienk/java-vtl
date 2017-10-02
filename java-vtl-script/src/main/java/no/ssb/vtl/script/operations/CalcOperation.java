@@ -26,6 +26,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 
 import java.util.Map;
 import java.util.Optional;
@@ -101,7 +102,8 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> getData() {
         return getChild().getData().map(dataPoint -> {
-            dataPoint.add(getDataStructure().wrap(variableName, componentExpression.apply(dataPoint)));
+            VTLObject object = componentExpression.apply(dataPoint);
+            dataPoint.add(object);
             return dataPoint;
         });
     }
