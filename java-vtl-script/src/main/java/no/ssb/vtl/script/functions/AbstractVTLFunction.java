@@ -1,12 +1,15 @@
 package no.ssb.vtl.script.functions;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.VTLObject;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -55,12 +58,50 @@ public abstract class AbstractVTLFunction {
     }
 
     private TypeSafeArguments createTypeSafeArguments(List<VTLObject> arguments, Map<String, VTLObject> namedArguments) {
-        checkArguments(arguments, namedArguments.values());
+        checkArgumentsTypes(arguments);
+        checkNamedArgumentTypes(namedArguments);
         return null;
     }
 
-    private void checkArguments(Collection<VTLObject>... arguments) {
-        // TODO
+    private void checkNamedArgumentTypes(Map<String, VTLObject> namedArguments) {
+        // TODO: exception type.
+        checkArgument(namedArguments.size() > signature.size(),
+                "passed argument larger than definition"
+        );
+
+        Sets.SetView<String> unknown = Sets.difference(namedArguments.keySet(), signature.keySet());
+        checkArgument(unknown.isEmpty(), "unknown arguments %s", unknown);
+
+        Map<String, Argument> requiredSignature = signature.entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof OptionalArgument)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Sets.SetView<String> missing = Sets.difference(requiredSignature.keySet(), namedArguments.keySet());
+        checkArgument(missing.isEmpty(), "missing arguments %s", missing);
+
+    }
+
+    private void checkType(VTLObject value, Argument argument) {
+        // TODO: exception type.
+        checkArgument(argument.getType().isAssignableFrom(value.getClass()),
+                "invalid type %s for argument %s, expected %s",
+                value.getClass(), argument.getName(), argument.getType()
+        );
+    }
+
+    private void checkArgumentsTypes(Collection<VTLObject> arguments) {
+        // TODO: exception type.
+        checkArgument(arguments.size() <= signature.size(),
+                "passed argument larger than definition"
+        );
+
+        Iterator<VTLObject> argumentsIt = arguments.iterator();
+        Iterator<Argument> signatureIt = signature.values().iterator();
+        while (argumentsIt.hasNext() && signatureIt.hasNext()) {
+            VTLObject argument = argumentsIt.next();
+            Argument signature = signatureIt.next();
+            checkType(argument, signature);
+        }
     }
 
     abstract VTLObject safeInvoke(TypeSafeArguments arguments);
@@ -73,7 +114,6 @@ public abstract class AbstractVTLFunction {
         }
 
     }
-
 
     public static class Argument<T extends VTLObject> {
         private final String name;
@@ -103,7 +143,7 @@ public abstract class AbstractVTLFunction {
             this.defaultValue = checkNotNull(defaultValue);
         }
 
-        public T getDefaultValue() {
+        public VTLObject<T> getDefaultValue() {
             return defaultValue;
         }
     }
