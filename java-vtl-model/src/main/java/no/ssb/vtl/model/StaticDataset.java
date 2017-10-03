@@ -21,12 +21,17 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,7 +55,30 @@ public class StaticDataset implements Dataset {
 
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        return Optional.empty();
+        List<Set<Object>> seenHashes = Lists.newArrayList();
+        DataStructure structure = getDataStructure();
+
+        for (int i = 0; i < structure.size(); i++)
+            seenHashes.add(Sets.newHashSet());
+
+        getData().map(structure::asMap).forEach(map -> {
+            Iterator<VTLObject> valuesIterator = map.values().iterator();
+            Iterator<Set<Object>> hashIterator = seenHashes.iterator();
+            while (valuesIterator.hasNext() && hashIterator.hasNext()) {
+                VTLObject value = valuesIterator.next();
+                Set<Object> seen = hashIterator.next();
+                if (!seen.contains(value))
+                    seen.add(value);
+            }
+        });
+
+        LinkedHashMap<String, Integer> count = Maps.newLinkedHashMap();
+        Iterator<Set<Object>> iterator = seenHashes.iterator();
+        for (String name : structure.keySet())
+            count.put(name, iterator.next().size());
+
+        return Optional.of(count);
+
     }
 
     @Override

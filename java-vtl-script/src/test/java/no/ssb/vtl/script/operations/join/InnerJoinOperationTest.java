@@ -40,6 +40,7 @@ import java.time.Year;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -179,6 +180,29 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 .containsOnlyElementsOf(
                         data
                 );
+
+    }
+
+    @Test
+    public void testJoinWithOneDatasetForwardsDistinctCount() {
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id", IDENTIFIER, String.class)
+                .addPoints("a")
+                .addPoints("b")
+                .addPoints("c")
+                .addPoints("d")
+                .build();
+
+        Optional<Long> originalSize = ds1.getSize();
+        Optional<Map<String, Integer>> originalDistinctValues = ds1.getDistinctValuesCount();
+
+        Map<String, Dataset> map = Maps.newLinkedHashMap();
+        map.put("ds1", ds1);
+        InnerJoinOperation innerJoinOperation = new InnerJoinOperation(map);
+
+        assertThat(innerJoinOperation.getSize()).isEqualTo(originalSize);
+        assertThat(innerJoinOperation.getDistinctValuesCount()).isEqualTo(originalDistinctValues);
 
     }
 
