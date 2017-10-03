@@ -29,7 +29,7 @@ The project is divided in modules;
 - java-vtl-parent
     - java-vtl-parser, contains the lexer and parser for VTL.
     - java-vtl-model, VTL data model.
-    - java-vtl-script, JSR-223 implementation.
+    - java-vtl-script, JSR-223 (ScriptEngine) implementation.
     - java-vtl-connector, connector API.
     - java-vtl-tools, various tools.
 
