@@ -33,6 +33,7 @@ import no.ssb.vtl.script.visitors.ConditionalExpressionVisitor;
 import no.ssb.vtl.script.visitors.DateFunctionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import no.ssb.vtl.script.visitors.VTLScalarExpressionVisitor;
+import no.ssb.vtl.script.visitors.VisitorUtil;
 import org.antlr.v4.runtime.Token;
 
 import java.util.Map;
@@ -81,9 +82,22 @@ public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpress
             return new VTLExpression.Builder(Long.class, dataPoint -> VTLObject.of(aLong))
                     .description(aLong.toString()).build();
         }
+        if (constantValue.STRING_CONSTANT() != null) {
+            String aString = VisitorUtil.stripQuotes(constantValue.STRING_CONSTANT());
+            return new VTLExpression.Builder(String.class, dataPoint -> VTLObject.of(aString))
+                    .description(aString).build();
+        }
+        if (constantValue.BOOLEAN_CONSTANT() != null) {
+            Boolean aBoolean = Boolean.valueOf(constantValue.BOOLEAN_CONSTANT().getText());
+            return new VTLExpression.Builder(Boolean.class, dataPoint -> VTLObject.of(aBoolean))
+                    .description(aBoolean.toString()).build();
+        }
+        //TODO: NULL_CONSTANT ?
+       
         throw new RuntimeException(
                 format("unsupported constant type %s", constantValue)
         );
+        //TODO: Merge this with ParamVisitor.visitConstant()
     }
 
     @Override

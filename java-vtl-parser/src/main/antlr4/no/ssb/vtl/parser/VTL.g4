@@ -39,7 +39,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
            | hierarchyExpression                                    #withHierarchy
            | relationalExpression                                   #withRelational
            | function                                               #withFunction
-           | variable                                               #withAtom
+           | exprAtom                                               #withAtom
            ;
 
 hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
@@ -66,6 +66,9 @@ GROUP_BY : 'group by' ;
 
 datasetId : STRING_CONSTANT ;
 
+/* Atom */
+exprAtom : datasetRef;
+
 checkFunction : 'check' '(' checkParam ')';
 
 checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
@@ -73,7 +76,7 @@ checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorc
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
 errorCode : STRING_CONSTANT ;
-errorLevel : INTEGER_CONSTANT;
+errorLevel : INTEGER_CONSTANT ;
 
 datasetRef: variable ;
 

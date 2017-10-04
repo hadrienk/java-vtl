@@ -92,6 +92,54 @@ public class VTLScriptEngineTest {
     }
 
     @Test
+    public void testCalcAtoms() throws Exception {
+
+        DataStructure structure = DataStructure.of(
+                (o, aClass) -> o,
+                "id1", Role.IDENTIFIER, String.class
+        );
+        when(dataset.getDataStructure()).thenReturn(structure);
+        when(dataset.getData()).then(invocation -> Stream.of(
+                structure.wrap(ImmutableMap.of(
+                        "id1", "1"
+                ))
+        ));
+        when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
+
+        bindings.put("t1", dataset);
+        engine.eval("/* test */\n" +
+                "resultat := [t1] {\n" +
+                "    testFloat := 1.0," +
+                "    testInteger := 1," +
+                "    testString := \"test string\",\n" +
+                "    testString2 := \"test \"\"escaped\"\" string\",\n" +
+                "    testBoolean := true" +
+                "}");
+
+        assertThat(bindings).containsKey("resultat");
+        assertThat(bindings.get("resultat")).isInstanceOf(Dataset.class);
+
+        Dataset resultat = (Dataset) bindings.get("resultat");
+        assertThat(resultat.getDataStructure())
+                .describedAs("data structure of resultat")
+                .containsOnlyKeys(
+                        "id1",
+                        "testFloat",
+                        "testInteger",
+                        "testString",
+                        "testString2",
+                        "testBoolean"
+                );
+
+        assertThat(resultat.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", 1.0d, 1L, "test string", "test \"escaped\" string", true
+                );
+    }
+
+    @Test
     public void testGet() throws Exception {
 
         when(connector.canHandle(anyString())).thenReturn(true);
@@ -1052,6 +1100,60 @@ public class VTLScriptEngineTest {
                 .containsExactly(
                         1L, 203L, 1.1d + 1.2d,
                         2L, 403L, 2.1d + 2.2d
+                );
+    }
+    
+    @Test
+    public void testUnion() throws Exception {
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
+
+                .addPoints( "1", 10L, 20, "attr1-1")
+                .addPoints( "2", 100L, 200, "attr1-2")
+                .build();
+
+        Dataset ds2 = StaticDataset.create()
+               .addComponent("id1", Role.IDENTIFIER, String.class)
+               .addComponent("m1", Role.MEASURE, Long.class)
+               .addComponent("m2", Role.MEASURE, Double.class)
+               .addComponent("at1", Role.MEASURE, String.class)
+
+                .addPoints("3", 30L, 40, "attr2-1")
+                .addPoints( "4", 300L, 400, "attr2-2")
+                .build();
+
+
+        bindings.put("ds1", ds1);
+        bindings.put("ds2", ds2);
+
+        engine.eval("" +
+                "ds3 := union(ds1, ds2)");
+
+        assertThat(bindings).containsKey("ds3");
+        assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+
+        Dataset ds3 = (Dataset) bindings.get("ds3");
+        assertThat(ds3.getDataStructure())
+                .describedAs("data structure of d3")
+                .containsOnlyKeys(
+                        "id1",
+                        "m1",
+                        "m2",
+                        "at1"
+                );
+
+        assertThat(ds3.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", 10L, 20, "attr1-1",
+                        "2", 100L, 200, "attr1-2",
+                        "3", 30L, 40, "attr2-1",
+                        "4", 300L, 400, "attr2-2"
                 );
     }
 }
