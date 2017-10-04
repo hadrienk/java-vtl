@@ -15,6 +15,7 @@
         <module>java-vtl-script</module>
         <module>java-vtl-test</module>
         <module>java-vtl-tools</module>
+        <module>java-vtl-coverage</module>
     </modules>
 
     <name>Java VTL</name>
@@ -142,63 +143,63 @@
             </build>
         </profile>
 
-        <profile>
-            <id>travis</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>env.TRAVIS</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.7.8</version>
-                        <executions>
-                            <execution>
-                                <id>jacoco-initialize</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>post-unit-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
+        <!--<profile>-->
+            <!--<id>travis</id>-->
+            <!--<activation>-->
+                <!--<activeByDefault>false</activeByDefault>-->
+                <!--<property>-->
+                    <!--<name>env.TRAVIS</name>-->
+                    <!--<value>true</value>-->
+                <!--</property>-->
+            <!--</activation>-->
+            <!--<build>-->
+                <!--<plugins>-->
+                    <!--<plugin>-->
+                        <!--<groupId>org.jacoco</groupId>-->
+                        <!--<artifactId>jacoco-maven-plugin</artifactId>-->
+                        <!--<version>0.7.8</version>-->
+                        <!--<executions>-->
+                            <!--<execution>-->
+                                <!--<id>jacoco-initialize</id>-->
+                                <!--<goals>-->
+                                    <!--<goal>prepare-agent</goal>-->
+                                <!--</goals>-->
+                            <!--</execution>-->
+                            <!--<execution>-->
+                                <!--<id>post-unit-test</id>-->
+                                <!--<phase>test</phase>-->
+                                <!--<goals>-->
+                                    <!--<goal>report</goal>-->
+                                <!--</goals>-->
+                            <!--</execution>-->
+                        <!--</executions>-->
+                    <!--</plugin>-->
 
-                    <plugin>
-                        <groupId>com.gavinmogan</groupId>
-                        <artifactId>codacy-maven-plugin</artifactId>
-                        <version>1.0.3</version>
-                        <configuration>
-                            <commit>${env.TRAVIS_COMMIT}</commit>
-                            <projectToken>01c6bf9024ea4792b80ad19921fc68d3</projectToken>
-                            <coverageReportFile>target/site/jacoco/jacoco.xml</coverageReportFile>
-                            <failOnMissingReportFile>false</failOnMissingReportFile>
-                            <!-- <apiToken>NEEDED</apiToken> -->
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>post-unit-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>coverage</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
+                    <!--<plugin>-->
+                        <!--<groupId>com.gavinmogan</groupId>-->
+                        <!--<artifactId>codacy-maven-plugin</artifactId>-->
+                        <!--<version>1.0.3</version>-->
+                        <!--<configuration>-->
+                            <!--<commit>${env.TRAVIS_COMMIT}</commit>-->
+                            <!--<projectToken>01c6bf9024ea4792b80ad19921fc68d3</projectToken>-->
+                            <!--<coverageReportFile>target/site/jacoco/jacoco.xml</coverageReportFile>-->
+                            <!--<failOnMissingReportFile>false</failOnMissingReportFile>-->
+                            <!--&lt;!&ndash; <apiToken>NEEDED</apiToken> &ndash;&gt;-->
+                        <!--</configuration>-->
+                        <!--<executions>-->
+                            <!--<execution>-->
+                                <!--<id>post-unit-test</id>-->
+                                <!--<phase>test</phase>-->
+                                <!--<goals>-->
+                                    <!--<goal>coverage</goal>-->
+                                <!--</goals>-->
+                            <!--</execution>-->
+                        <!--</executions>-->
+                    <!--</plugin>-->
 
-                </plugins>
-            </build>
-        </profile>
+                <!--</plugins>-->
+            <!--</build>-->
+        <!--</profile>-->
 
     </profiles>
 
