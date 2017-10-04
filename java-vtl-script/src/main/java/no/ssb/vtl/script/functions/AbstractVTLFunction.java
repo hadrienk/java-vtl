@@ -2,11 +2,13 @@ package no.ssb.vtl.script.functions;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.common.collect.UnmodifiableIterator;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
 
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +34,14 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
     private final Class<T> type;
 
     protected AbstractVTLFunction(String id, Class<T> returnType, Argument... arguments) {
+        this(id, returnType, Arrays.asList(arguments));
+    }
+
+    protected AbstractVTLFunction(String id, Class<T> returnType) {
+        this(id, returnType, Collections.emptyList());
+    }
+
+    private AbstractVTLFunction(String id, Class<T> returnType, List<Argument> arguments) {
         this.id = checkNotNull(id);
         this.type = checkNotNull(returnType);
         checkArgument(!id.isEmpty());
@@ -41,17 +51,6 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
             signature.put(argument.name, argument);
 
         this.signature = signature.build();
-    }
-
-    protected AbstractVTLFunction(String id, Class<T> type) {
-        this(id, type, ImmutableMap.of());
-    }
-
-    private AbstractVTLFunction(String id, Class<T> type, ImmutableMap<String, Argument> signature) {
-        this.id = checkNotNull(id);
-        this.type = checkNotNull(type);
-        checkArgument(!id.isEmpty());
-        this.signature = checkNotNull(signature);
     }
 
     /**
@@ -82,10 +81,11 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
         // Early check since we are using iterator.
         checkArgument(arguments.size() <= signature.size(), ARGUMENT_LARGER_THAN_DEFINITION);
 
-        Iterator<VTLObject> iterator = arguments.iterator();
         ImmutableMap.Builder<String, VTLObject> namedArguments = ImmutableMap.builder();
-        for (String name : signature.keySet()) {
-            namedArguments.put(name, iterator.next());
+        UnmodifiableIterator<String> names = signature.keySet().iterator();
+        for (VTLObject argument : arguments) {
+            String name = names.next();
+            namedArguments.put(name, argument);
         }
         return namedArguments.build();
     }
@@ -138,7 +138,7 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
                 if (argument instanceof AbstractVTLFunction.OptionalArgument) {
                     value = ((OptionalArgument) argument).getDefaultValue();
                 } else {
-                    // TODO: refactor to avoid this.
+                    // TODO: refactor to avoid this since it is not testable.
                     throw new RuntimeException();
                 }
             }
@@ -171,7 +171,7 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
 
     }
 
-    abstract VTLObject safeInvoke(TypeSafeArguments arguments);
+    abstract VTLObject<T> safeInvoke(TypeSafeArguments arguments);
 
     protected static class Argument<T> implements VTLTyped<T> {
         private final String name;
