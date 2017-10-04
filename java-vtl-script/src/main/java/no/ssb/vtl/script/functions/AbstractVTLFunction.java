@@ -2,6 +2,7 @@ package no.ssb.vtl.script.functions;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
 
 import java.util.Collection;
@@ -11,21 +12,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Abstract vtl function that takes care of arguments validation.
+ * Abstract VTLFunction that takes care of arguments validation.
  * TODO: Extend a contract.
  * TODO: Add toString
  * TODO: Equals
  */
-public abstract class AbstractVTLFunction {
+public abstract class AbstractVTLFunction implements VTLFunction {
 
     public static final String ARGUMENT_LARGER_THAN_DEFINITION = "passed argument larger than definition";
     public static final String UNKNOWN_ARGUMENTS = "unknown arguments %s";
     public static final String MISSING_ARGUMENTS = "missing arguments %s";
     public static final String WRONG_ARGUMENT_TYPE = "invalid type %s for argument %s, expected %s";
+
     private final String id;
     private final ImmutableMap<String, Argument> signature;
 
@@ -40,6 +43,15 @@ public abstract class AbstractVTLFunction {
         this.signature = signature.build();
     }
 
+    @Override
+    public String toString() {
+        return toStringHelper(this)
+            .add("id", this.id)
+            .add("signature", signature)
+            // TODO .addValue(getType())
+            .toString();
+    }
+
     protected AbstractVTLFunction(String id) {
         this(id, ImmutableMap.of());
     }
@@ -50,12 +62,12 @@ public abstract class AbstractVTLFunction {
         this.signature = checkNotNull(signature);
     }
 
-    // TODO: Interface
+    @Override
     public VTLObject invoke(List<VTLObject> arguments) {
         return invoke(arguments, Collections.emptyMap());
     }
 
-    // TODO: Interface
+    @Override
     public VTLObject invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments) {
         TypeSafeArguments typeSafeArguments = createTypeSafeArguments(arguments, namedArguments);
         return safeInvoke(typeSafeArguments);
