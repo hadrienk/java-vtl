@@ -22,6 +22,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class AbstractVTLFunction {
 
+    public static final String ARGUMENT_LARGER_THAN_DEFINITION = "passed argument larger than definition";
+    public static final String UNKNOWN_ARGUMENTS = "unknown arguments %s";
+    public static final String MISSING_ARGUMENTS = "missing arguments %s";
+    public static final String WRONG_ARGUMENT_TYPE = "invalid type %s for argument %s, expected %s";
     private final String id;
     private final ImmutableMap<String, Argument> signature;
 
@@ -63,28 +67,31 @@ public abstract class AbstractVTLFunction {
         return null;
     }
 
+    /**
+     * Checks if the named arguments are of the correct types.
+     */
     private void checkNamedArgumentTypes(Map<String, VTLObject> namedArguments) {
         // TODO: exception type.
         checkArgument(namedArguments.size() > signature.size(),
-                "passed argument larger than definition"
+                ARGUMENT_LARGER_THAN_DEFINITION
         );
 
         Sets.SetView<String> unknown = Sets.difference(namedArguments.keySet(), signature.keySet());
-        checkArgument(unknown.isEmpty(), "unknown arguments %s", unknown);
+        checkArgument(unknown.isEmpty(), UNKNOWN_ARGUMENTS, unknown);
 
         Map<String, Argument> requiredSignature = signature.entrySet().stream()
                 .filter(entry -> entry.getValue() instanceof OptionalArgument)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         Sets.SetView<String> missing = Sets.difference(requiredSignature.keySet(), namedArguments.keySet());
-        checkArgument(missing.isEmpty(), "missing arguments %s", missing);
+        checkArgument(missing.isEmpty(), MISSING_ARGUMENTS, missing);
 
     }
 
     private void checkType(VTLObject value, Argument argument) {
         // TODO: exception type.
         checkArgument(argument.getType().isAssignableFrom(value.getClass()),
-                "invalid type %s for argument %s, expected %s",
+                WRONG_ARGUMENT_TYPE,
                 value.getClass(), argument.getName(), argument.getType()
         );
     }
@@ -92,7 +99,7 @@ public abstract class AbstractVTLFunction {
     private void checkArgumentsTypes(Collection<VTLObject> arguments) {
         // TODO: exception type.
         checkArgument(arguments.size() <= signature.size(),
-                "passed argument larger than definition"
+                ARGUMENT_LARGER_THAN_DEFINITION
         );
 
         Iterator<VTLObject> argumentsIt = arguments.iterator();
