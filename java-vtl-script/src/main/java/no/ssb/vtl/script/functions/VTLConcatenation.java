@@ -20,6 +20,7 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 
@@ -34,7 +35,8 @@ public class VTLConcatenation extends AbstractVTLFunction<String> {
     private static final Argument<VTLString> LEFT = new Argument<>("left", VTLString.class);
     private static final Argument<VTLString> RIGHT = new Argument<>("right", VTLString.class);
 
-    protected VTLConcatenation() {
+    @VisibleForTesting
+    VTLConcatenation() {
         super("||", String.class, LEFT, RIGHT);
     }
 
@@ -42,7 +44,7 @@ public class VTLConcatenation extends AbstractVTLFunction<String> {
     VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
 
         VTLString left = arguments.get(LEFT);
-        VTLString right = arguments.get(LEFT);
+        VTLString right = arguments.get(RIGHT);
 
         // TODO: add isNull() in VTLObject.
         if (left.get() == null || right.get() == null) {

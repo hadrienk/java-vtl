@@ -30,6 +30,8 @@ public interface VTLFunction<T> extends VTLTyped<T> {
 
     VTLObject<T> invoke(List<VTLObject> arguments);
 
+    VTLObject<T> invoke(Map<String, VTLObject> namedArguments);
+
     VTLObject<T> invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments);
 
 }

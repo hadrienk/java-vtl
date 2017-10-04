@@ -24,10 +24,8 @@ public class VTLConcatenationTest {
                         VTLObject.of("rightParameter")
                 )
         );
-
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLObject.of("leftParameter".concat("rightParameter")));
-
     }
 
     @Test
@@ -38,10 +36,7 @@ public class VTLConcatenationTest {
                         VTLObject.of("rightParameter")
                 )
         );
-
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLObject.of("leftParameter".concat("rightParameter")));
-
+        assertThat(result).isEqualTo(VTLObject.NULL);
     }
 
     @Test
@@ -52,9 +47,6 @@ public class VTLConcatenationTest {
                         VTLObject.of((String) null)
                 )
         );
-
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLObject.of("leftParameter".concat("rightParameter")));
-
+        assertThat(result).isEqualTo(VTLObject.NULL);
     }
 }
