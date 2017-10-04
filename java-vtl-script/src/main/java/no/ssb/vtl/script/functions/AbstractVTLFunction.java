@@ -22,18 +22,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * TODO: Add toString
  * TODO: Equals
  */
-public abstract class AbstractVTLFunction implements VTLFunction {
+public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
 
-    public static final String ARGUMENT_LARGER_THAN_DEFINITION = "passed argument larger than definition";
-    public static final String UNKNOWN_ARGUMENTS = "unknown arguments %s";
-    public static final String MISSING_ARGUMENTS = "missing arguments %s";
-    public static final String WRONG_ARGUMENT_TYPE = "invalid type %s for argument %s, expected %s";
+    private static final String ARGUMENT_LARGER_THAN_DEFINITION = "passed argument larger than definition";
+    private static final String UNKNOWN_ARGUMENTS = "unknown arguments %s";
+    private static final String MISSING_ARGUMENTS = "missing arguments %s";
+    private static final String WRONG_ARGUMENT_TYPE = "invalid type %s for argument %s, expected %s";
 
     private final String id;
     private final ImmutableMap<String, Argument> signature;
+    private final Class<T> type;
 
-    protected AbstractVTLFunction(String id, Argument... arguments) {
+    protected AbstractVTLFunction(String id, Class<T> returnType, Argument... arguments) {
         this.id = checkNotNull(id);
+        this.type = checkNotNull(returnType);
         checkArgument(!id.isEmpty());
 
         ImmutableMap.Builder<String, Argument> signature = ImmutableMap.builder();
@@ -43,23 +45,29 @@ public abstract class AbstractVTLFunction implements VTLFunction {
         this.signature = signature.build();
     }
 
+    protected AbstractVTLFunction(String id, Class<T> type) {
+        this(id, type, ImmutableMap.of());
+    }
+
+    private AbstractVTLFunction(String id, Class<T> type, ImmutableMap<String, Argument> signature) {
+        this.id = checkNotNull(id);
+        this.type = checkNotNull(type);
+        checkArgument(!id.isEmpty());
+        this.signature = checkNotNull(signature);
+    }
+
+    @Override
+    public Class<T> getType() {
+        return type;
+    }
+
     @Override
     public String toString() {
         return toStringHelper(this)
-            .add("id", this.id)
-            .add("signature", signature)
-            // TODO .addValue(getType())
-            .toString();
-    }
-
-    protected AbstractVTLFunction(String id) {
-        this(id, ImmutableMap.of());
-    }
-
-    private AbstractVTLFunction(String id, ImmutableMap<String, Argument> signature) {
-        this.id = checkNotNull(id);
-        checkArgument(!id.isEmpty());
-        this.signature = checkNotNull(signature);
+                .add("id", this.id)
+                .add("signature", signature)
+                // TODO .addValue(getType())
+                .toString();
     }
 
     @Override
@@ -81,9 +89,12 @@ public abstract class AbstractVTLFunction implements VTLFunction {
 
     /**
      * Checks if the named arguments are of the correct types.
+     * TODO: exception type.
      */
     private void checkNamedArgumentTypes(Map<String, VTLObject> namedArguments) {
-        // TODO: exception type.
+        if (namedArguments.isEmpty())
+            return; // No need to check if empty.
+
         checkArgument(namedArguments.size() > signature.size(),
                 ARGUMENT_LARGER_THAN_DEFINITION
         );

@@ -29,24 +29,24 @@ import no.ssb.vtl.model.VTLString;
  * leftExpr || rightExpr
  *
  */
-public class VTLConcatenation extends AbstractVTLFunction {
+public class VTLConcatenation extends AbstractVTLFunction<String> {
 
     private static final Argument<VTLString> LEFT = new Argument<>("left", VTLString.class);
     private static final Argument<VTLString> RIGHT = new Argument<>("right", VTLString.class);
 
     protected VTLConcatenation() {
-        super("||", LEFT, RIGHT);
+        super("||", String.class, LEFT, RIGHT);
     }
 
     @Override
-    VTLObject safeInvoke(TypeSafeArguments arguments) {
+    VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
 
         VTLString left = arguments.get(LEFT);
         VTLString right = arguments.get(LEFT);
 
         // TODO: add isNull() in VTLObject.
         if (left.get() == null || right.get() == null) {
-            return VTLObject.NULL;
+            return VTLObject.of((String) null);
         } else {
             return VTLObject.of(left.get().concat(right.get()));
         }

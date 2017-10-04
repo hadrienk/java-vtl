@@ -26,10 +26,10 @@ import java.util.Map;
 /**
  * Represents a VTL Function.
  */
-public interface VTLFunction {
+public interface VTLFunction<T> extends VTLTyped<T> {
 
-    VTLObject invoke(List<VTLObject> arguments);
+    VTLObject<T> invoke(List<VTLObject> arguments);
 
-    VTLObject invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments);
+    VTLObject<T> invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments);
 
 }
