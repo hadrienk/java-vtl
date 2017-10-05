@@ -42,7 +42,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.Argument<>("first", VTLString.class)
         ) {
             @Override
-            VTLObject safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -66,7 +66,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.OptionalArgument<>("first", VTLString.class, VTLObject.of("optional"))
         ) {
             @Override
-            VTLObject safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -92,7 +92,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.Argument<>("third", VTLString.class)
         ) {
             @Override
-            VTLObject safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -117,7 +117,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.OptionalArgument<>("third", VTLString.class, VTLObject.of("optional"))
         ) {
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -143,7 +143,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.Argument<>("third", VTLString.class)
         ) {
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -180,7 +180,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.Argument<>("third", VTLString.class)
         ) {
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -204,7 +204,7 @@ public class AbstractVTLFunctionTest {
                 String.class
         ) {
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 return VTLObject.of("returnedValue");
             }
         };
@@ -224,7 +224,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.OptionalArgument<>("third", VTLString.class, VTLObject.of("defaultThird"))
         ) {
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 return VTLObject.of("returnedValue");
             }
         };
@@ -261,7 +261,7 @@ public class AbstractVTLFunctionTest {
         ) {
 
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 return null;
             }
         };
@@ -279,7 +279,7 @@ public class AbstractVTLFunctionTest {
                 new AbstractVTLFunction.OptionalArgument<>("third", VTLString.class, VTLObject.of("defaultThird"))
         ) {
             @Override
-            VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
                 return VTLObject.of("returnedValue");
             }
         };
