@@ -21,7 +21,6 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.codepoetics.protonpack.StreamUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -43,8 +42,6 @@ import static org.mockito.Mockito.when;
  */
 public class SumOperationTest {
 
-    ObjectMapper mapper = new ObjectMapper();
-
     /**
      * Both Datasets must have at least one Identifier Component
      * in common (with the same name and data type).
@@ -59,7 +56,7 @@ public class SumOperationTest {
 
         SoftAssertions softly = new SoftAssertions();
         try {
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(left.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
                     "ME1", Role.MEASURE, Long.class
@@ -67,7 +64,7 @@ public class SumOperationTest {
             Throwable expectedThrowable = null;
 
             // Different name
-            when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(right.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1DIFFERENTNAME", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
                     "ME1", Role.MEASURE, Long.class
@@ -96,7 +93,7 @@ public class SumOperationTest {
                     .hasMessageContaining("ID1DIFFERENTNAME");
 
             // Different type
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(left.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
                     "ME1", Role.MEASURE, Long.class
@@ -142,7 +139,7 @@ public class SumOperationTest {
 
         SoftAssertions softly = new SoftAssertions();
         try {
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(left.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
                     "ME1", Role.MEASURE, Long.class
@@ -150,7 +147,7 @@ public class SumOperationTest {
             Throwable expectedThrowable = null;
 
             // Different measure
-            when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(right.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
                     "ME1NOTSAMEMEASURE", Role.MEASURE, Long.class

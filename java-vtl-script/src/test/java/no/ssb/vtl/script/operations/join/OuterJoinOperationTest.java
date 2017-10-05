@@ -146,7 +146,6 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "id3", IDENTIFIER, String.class,
@@ -154,7 +153,6 @@ public class OuterJoinOperationTest extends RandomizedTest {
         );
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "id3", IDENTIFIER, String.class,
@@ -216,13 +214,11 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, Integer.class,
                 "value", MEASURE, String.class
         );
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, Integer.class,
                 "value", MEASURE, String.class
         );
@@ -263,13 +259,11 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "value", MEASURE, String.class
         );
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "value", MEASURE, String.class,
                 "id2", IDENTIFIER, String.class

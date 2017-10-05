@@ -85,7 +85,7 @@ public class CheckSingleRuleOperationTest {
     public void testArgumentDatasetComponentsTooManyBooleans() throws Exception {
         Dataset dataset = mock(Dataset.class);
         when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of((s, o) -> null,
+                DataStructure.of(
                         "id1", IDENTIFIER, String.class,
                         "me1", Component.Role.MEASURE, Boolean.class,
                         "me2", Component.Role.MEASURE, Boolean.class,

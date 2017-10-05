@@ -37,7 +37,7 @@ public class DataStructureTest {
         map.put("number", "1.0");
         map.put("period", "2015");
 
-        DataStructure structure = DataStructure.of((s, o) -> null,
+        DataStructure structure = DataStructure.of(
                 "number", Component.Role.MEASURE, Double.class,
                 "period", Component.Role.IDENTIFIER, String.class,
                 "region", Component.Role.IDENTIFIER, String.class

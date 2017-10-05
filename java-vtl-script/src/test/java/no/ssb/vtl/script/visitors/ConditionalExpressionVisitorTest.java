@@ -55,7 +55,6 @@ public class ConditionalExpressionVisitorTest {
     @Before
     public void setUp() throws Exception {
         dataStructure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
                 "m2Double", Component.Role.MEASURE, Double.class,
                 "m2Long", Component.Role.MEASURE, Long.class);

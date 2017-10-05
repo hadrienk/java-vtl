@@ -95,7 +95,6 @@ public class VTLScriptEngineTest {
     public void testCalcAtoms() throws Exception {
 
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class
         );
         when(dataset.getDataStructure()).thenReturn(structure);
@@ -170,7 +169,6 @@ public class VTLScriptEngineTest {
         Dataset ds2 = mock(Dataset.class);
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -178,7 +176,6 @@ public class VTLScriptEngineTest {
                 "at1", Role.MEASURE, String.class
         );
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -321,7 +318,6 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id", Role.IDENTIFIER, String.class,
                 "integerMeasure", Role.MEASURE, Long.class,
                 "float", Role.MEASURE, Long.class
@@ -353,7 +349,6 @@ public class VTLScriptEngineTest {
     public void testJoinUnfold() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -421,7 +416,7 @@ public class VTLScriptEngineTest {
     public void testRename() throws Exception {
 
         when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of((s, o) -> null,
+                DataStructure.of(
                         "id1", Role.IDENTIFIER, String.class,
                         "me1", Role.MEASURE, String.class,
                         "at1", Role.ATTRIBUTE, String.class
@@ -453,7 +448,6 @@ public class VTLScriptEngineTest {
         Dataset dsCodeList3 = mock(Dataset.class);
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "kommune_nr", Role.IDENTIFIER, String.class,
                 "periode", Role.IDENTIFIER, String.class,
                 "kostragruppe", Role.IDENTIFIER, String.class,
@@ -494,7 +488,6 @@ public class VTLScriptEngineTest {
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "code", Role.IDENTIFIER, String.class,
                 "name", Role.MEASURE, String.class,
                 "period", Role.IDENTIFIER, String.class
@@ -576,7 +569,6 @@ public class VTLScriptEngineTest {
         when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure3 = DataStructure.of(
-                (o, aClass) -> o,
                 "code", Role.IDENTIFIER, String.class,
                 "name", Role.MEASURE, String.class,
                 "period", Role.IDENTIFIER, String.class
@@ -851,7 +843,6 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, String.class
         );
@@ -870,7 +861,6 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class
         );
@@ -888,7 +878,6 @@ public class VTLScriptEngineTest {
     public void testAggregationSumGroupBy() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -962,7 +951,6 @@ public class VTLScriptEngineTest {
     public void testAggregationSumAlong() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -1031,7 +1019,6 @@ public class VTLScriptEngineTest {
     public void testAggregationMultiple() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,

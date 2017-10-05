@@ -65,7 +65,7 @@ public class FoldOperationTest extends RandomizedTest {
         String validDimensionReference = "aDimension";
         String validMeasureReference = "aDimension";
 
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "element1", MEASURE, String.class,
                 "element2", MEASURE, String.class
         );
@@ -116,7 +116,7 @@ public class FoldOperationTest extends RandomizedTest {
     public void testConstraint() throws Exception {
 
         Dataset dataset = mock(Dataset.class);
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "m1", MEASURE, String.class,
@@ -124,7 +124,7 @@ public class FoldOperationTest extends RandomizedTest {
                 "m3", MEASURE, String.class
         );
         Dataset invalidDataset = mock(Dataset.class);
-        DataStructure wrongTypesDataset = DataStructure.of((o, aClass) -> o,
+        DataStructure wrongTypesDataset = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "m1", MEASURE, Number.class,
@@ -179,7 +179,7 @@ public class FoldOperationTest extends RandomizedTest {
     public void testFold() throws Exception {
 
         Dataset dataset = mock(Dataset.class);
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class, // TODO: What if the dataset already contains id2?
                 "measure1", MEASURE, String.class,

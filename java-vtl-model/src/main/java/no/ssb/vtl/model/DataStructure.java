@@ -119,7 +119,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
         return builder;
     }
 
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter, Map<String, Class<?>> types, Map<String, Component.Role> roles) {
+    public static DataStructure of(Map<String, Class<?>> types, Map<String, Component.Role> roles) {
         checkArgument(types.keySet().equals(roles.keySet()));
         Builder builder = builder();
         for (String name : types.keySet()) {
@@ -131,8 +131,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Component.Role role1, Class<?> type1) {
+    public static DataStructure of(String name1, Component.Role role1, Class<?> type1) {
         Builder builder = builder();
         builder.put(name1, role1, type1);
         return builder.build();
@@ -141,8 +140,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Component.Role role1, Class<?> type1,
+    public static DataStructure of(String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2) {
         return builder()
                 .put(name1, role1, type1).put(name2, role2, type2)
@@ -153,8 +151,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Component.Role role1, Class<?> type1,
+    public static DataStructure of(String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2,
                                    String name3, Component.Role role3, Class<?> type3) {
         return builder()
@@ -165,8 +162,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Component.Role role1, Class<?> type1,
+    public static DataStructure of(String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2,
                                    String name3, Component.Role role3, Class<?> type3,
                                    String name4, Component.Role role4, Class<?> type4) {
@@ -179,8 +175,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Component.Role role1, Class<?> type1,
+    public static DataStructure of(String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2,
                                    String name3, Component.Role role3, Class<?> type3,
                                    String name4, Component.Role role4, Class<?> type4,

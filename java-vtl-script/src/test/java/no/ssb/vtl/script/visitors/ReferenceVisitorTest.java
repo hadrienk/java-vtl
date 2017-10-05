@@ -56,7 +56,7 @@ public class ReferenceVisitorTest {
 
     @Before
     public void setUp() throws Exception {
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "component", IDENTIFIER, String.class
         );
         component = structure.get("component");
