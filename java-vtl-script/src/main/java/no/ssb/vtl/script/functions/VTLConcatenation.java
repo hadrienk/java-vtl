@@ -25,10 +25,7 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 
 /**
- * The "||" operator of VTL.
- *
- * leftExpr || rightExpr `||`(left, right)
- *
+ * The concatenation operator (and function) in VTL.
  */
 public class VTLConcatenation extends AbstractVTLFunction<String> {
 
