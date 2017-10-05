@@ -45,7 +45,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
 
     // TODO: Move to a central class.
-    private static final String ARGUMENT_LARGER_THAN_DEFINITION = "passed argument larger than definition";
+    private static final String INVALID_ARGUMENT_COUNT = "expected %s argument(s) but got %s";
     private static final String UNKNOWN_ARGUMENTS = "unknown arguments %s";
     private static final String MISSING_ARGUMENTS = "missing arguments %s";
 
@@ -99,7 +99,10 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
     private Map<String, VTLObject> findNames(List<VTLObject> arguments) {
 
         // Early check since we are using iterator.
-        checkArgument(arguments.size() <= signature.size(), ARGUMENT_LARGER_THAN_DEFINITION);
+        checkArgument(arguments.size() <= signature.size(),
+                INVALID_ARGUMENT_COUNT,
+                signature.size(), arguments.size()
+        );
 
         ImmutableMap.Builder<String, VTLObject> namedArguments = ImmutableMap.builder();
         UnmodifiableIterator<String> names = signature.keySet().iterator();
