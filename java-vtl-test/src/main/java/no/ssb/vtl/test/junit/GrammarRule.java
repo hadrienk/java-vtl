@@ -81,7 +81,7 @@ public class GrammarRule implements TestRule {
                     grammarURL = Resources.getResource(vtlParserClass, "VTL.g4");
                 } catch (ClassNotFoundException e) {
                     throw new RuntimeException(
-                            "could not find no.ssb.vtl.parser.VTLParser.class"
+                            "could not find no.ssb.vtl.parser.VTLParser.class, did you compile antlr project?"
                     );
                 }
             }
@@ -118,11 +118,11 @@ public class GrammarRule implements TestRule {
      *
      * @param expression the expression to parse.
      * @param rule       the rule to start from.
+     *                   @param diagnostic {@link DiagnosticErrorListener} will be used if true.
      * @return the resulting parse tree.
      * @throws Exception if the expression failed to parse.
      */
-    public ParserRuleContext parse(String expression, Rule rule) throws Exception {
-
+    public ParserRuleContext parse(String expression, Rule rule, boolean diagnostic) throws Exception {
         Multimap<Integer, String> messages = LinkedListMultimap.create();
 
         LexerInterpreter lexerInterpreter = grammar.createLexerInterpreter(
@@ -132,7 +132,13 @@ public class GrammarRule implements TestRule {
                 new CommonTokenStream(lexerInterpreter)
         );
 
-        DiagnosticErrorListener diagnosticErrorListener = new DiagnosticErrorListener();
+        BaseErrorListener errorListener;
+        if (diagnostic) {
+            errorListener = new DiagnosticErrorListener();
+        } else {
+            errorListener = new ConsoleErrorListener();
+        }
+
         BaseErrorListener ruleErrorReporter = new BaseErrorListener() {
             @Override
             public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, org.antlr.v4.runtime.RecognitionException e) {
@@ -160,8 +166,8 @@ public class GrammarRule implements TestRule {
         lexerInterpreter.removeErrorListeners();
         parserInterpreter.removeErrorListeners();
 
-        lexerInterpreter.addErrorListener(diagnosticErrorListener);
-        parserInterpreter.addErrorListener(diagnosticErrorListener);
+        lexerInterpreter.addErrorListener(errorListener);
+        parserInterpreter.addErrorListener(errorListener);
         lexerInterpreter.addErrorListener(ruleErrorReporter);
         parserInterpreter.addErrorListener(ruleErrorReporter);
 
@@ -188,6 +194,20 @@ public class GrammarRule implements TestRule {
         }
 
         return parse;
+    }
+
+    /**
+     * Parse an expression starting from the given <b>ANTLR rule</b>
+     * <p>
+     * In order to get the Rule, use the {@link #withRule(String)} method.
+     *
+     * @param expression the expression to parse.
+     * @param rule       the rule to start from.
+     * @return the resulting parse tree.
+     * @throws Exception if the expression failed to parse.
+     */
+    public ParserRuleContext parse(String expression, Rule rule) throws Exception {
+        return parse(expression, rule, false);
     }
 
 }
