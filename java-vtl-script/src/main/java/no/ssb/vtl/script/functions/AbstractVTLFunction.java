@@ -191,7 +191,7 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
 
     }
 
-    abstract VTLObject<T> safeInvoke(TypeSafeArguments arguments);
+    protected abstract VTLObject<T> safeInvoke(TypeSafeArguments arguments);
 
     protected static class Argument<T> implements VTLTyped<T> {
         private final String name;

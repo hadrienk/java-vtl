@@ -41,7 +41,7 @@ public class VTLConcatenation extends AbstractVTLFunction<String> {
     }
 
     @Override
-    VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
 
         VTLString left = arguments.get(LEFT);
         VTLString right = arguments.get(RIGHT);

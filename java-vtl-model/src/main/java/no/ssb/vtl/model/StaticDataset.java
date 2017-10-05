@@ -105,7 +105,7 @@ public class StaticDataset implements Dataset {
 
     public static class StructureBuilder {
 
-        DataStructure.Builder builder = DataStructure.builder();
+        private DataStructure.Builder builder = DataStructure.builder();
 
         public StructureBuilder addComponent(String key, Component.Role role, Class<?> type) {
             builder.put(key, role, type);
