@@ -20,27 +20,37 @@
 grammar VTL;
 start : statement+ EOF;
 
-statement : assignment | expression ;
+statement : assignment |expression ;
 
-functionCall : REG_IDENTIFIER LPAR functionParameter RPAR
-             | REG_IDENTIFIER LPAR RPAR ;
+functionCall : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
+functionParameters : namedExpression ( COMMA namedExpression)*
+                   | expression ( COMMA expression )*
+                   | expression ( COMMA expression )* COMMA namedExpression ( COMMA namedExpression)* ;
 
-functionParameter : expression ( COMMA expression )* ;
+namedExpression     : name=REG_IDENTIFIER COLON expression ;
 
-expression : variable | litteral | functionCall | datasetExpression ;
+// Expressions
+expression : LPAR expression RPAR
+           | functionCall
+           | datasetExpression
+           | expression clauseExpression
+           | variable
+           | litteral ;
 
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
+
+// TODO: Not needed, remove constant.
 litteral : constant ;
 
 assignment : variable ASSIGNMENT expression ;
 
-/* Expressions */
-datasetExpression : <assoc=right>datasetExpression clauseExpression #withClause
-           | hierarchyExpression                                    #withHierarchy
-           | relationalExpression                                   #withRelational
-           | function                                               #withFunction
-           | exprAtom                                               #withAtom
-           ;
+/* TODO: deprecate, use expression instead */
+datasetExpression : <assoc=right>datasetExpression clauseExpression     #withClause
+                  | hierarchyExpression                                 #withHierarchy
+                  | relationalExpression                                #withRelational
+                  | function                                            #withFunction
+                  | exprAtom                                            #withAtom
+                  ;
 
 hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
 hierarchyReference : datasetRef ;
@@ -55,7 +65,8 @@ getFunction : 'get' '(' datasetId ')';
 putFunction : 'put(todo)';
 
 aggregationFunction
-       : 'sum' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateSum   //TODO: This causes an ambiguity warning for an aggregation function with implicit component e.g. sum(ds) ...
+        //TODO: This causes an ambiguity warning for an aggregation function with implicit component e.g. sum(ds) ...
+       : 'sum' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateSum
        | 'avg' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateAvg
        ;
 
@@ -221,15 +232,21 @@ CROSS : 'cross' ;
 
 ROLE : 'role' ;
 
+// TODO: Rename to INTEGER_LITTERAL
 INTEGER_CONSTANT  : (PLUS|MINUS)?DIGIT+;
+// TODO: Rename to BOOLEAN_LITTERAL
 BOOLEAN_CONSTANT  : 'true' | 'false' ;
+
+// TODO: Rename to STRING_LITTERAL
 STRING_CONSTANT   :'"' (ESCAPED_QUOTE|~'"')* '"';
 fragment ESCAPED_QUOTE : '""';
 
+// TODO: Rename to FLOAT_LITTERAL
 FLOAT_CONSTANT    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
                   | (PLUS|MINUS)?(DIGIT)+ FLOATEXP
                   ;
 
+// TODO: Rename to NULL
 NULL_CONSTANT     : 'null';
 
 IMPLICIT : 'implicit' ;
@@ -251,6 +268,7 @@ MINUS : '-';
 LPAR : '(' ;
 RPAR : ')' ;
 COMMA : ',' ;
+COLON : ':' ;
 
 fragment DIGIT    : '0'..'9' ;
 fragment FLOATEXP : ('e'|'E')(PLUS|MINUS)?('0'..'9')+;
