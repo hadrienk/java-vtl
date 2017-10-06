@@ -23,8 +23,11 @@ package no.ssb.vtl.model;
 import static java.lang.String.*;
 
 public abstract class VTLNumber extends VTLObject<Number> {
-    
-    
+
+    private VTLNumber() {
+        // private.
+    }
+
     public static VTLNumber of(Number number) {
         return new VTLNumber() {
             @Override

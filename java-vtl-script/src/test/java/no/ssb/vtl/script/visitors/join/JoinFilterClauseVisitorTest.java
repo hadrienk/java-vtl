@@ -55,7 +55,6 @@ public class JoinFilterClauseVisitorTest {
     public void setUp() throws Exception {
         ds1 = mock(Dataset.class);
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class
         );
@@ -76,7 +75,6 @@ public class JoinFilterClauseVisitorTest {
         
         ds2 = mock(Dataset.class);
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class,
                 "m2", Component.Role.MEASURE, Long.class,

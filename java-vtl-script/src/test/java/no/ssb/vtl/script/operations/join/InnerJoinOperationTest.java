@@ -23,7 +23,6 @@ package no.ssb.vtl.script.operations.join;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.carrotsearch.randomizedtesting.annotations.Seed;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -52,8 +51,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 public class InnerJoinOperationTest extends RandomizedTest {
-
-    private ObjectMapper mapper = new ObjectMapper();
 
     @Test
     public void testDefaultJoin() throws Exception {

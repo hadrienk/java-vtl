@@ -20,7 +20,6 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -43,13 +42,12 @@ import static org.mockito.Mockito.*;
 
 public class UnionOperationTest {
 
-    ObjectMapper mapper = new ObjectMapper();
     private DataStructure dataStructure;
     
     
     @Before
     public void setUp() throws Exception {
-        dataStructure = DataStructure.of(mapper::convertValue,
+        dataStructure = DataStructure.of(
                 "TIME", Role.IDENTIFIER, String.class,
                 "GEO", Role.IDENTIFIER, String.class,
                 "POP", Role.MEASURE, Long.class
@@ -87,7 +85,7 @@ public class UnionOperationTest {
             UnionOperation unionOperation = new UnionOperation(dataset1, dataset2, dataset3);
             softly.assertThat(unionOperation).isNotNull();
 
-            DataStructure wrongStructure = DataStructure.of(mapper::convertValue,
+            DataStructure wrongStructure = DataStructure.of(
                     "TIME2", Role.IDENTIFIER, String.class,
                     "GEO2", Role.IDENTIFIER, String.class,
                     "POP2", Role.MEASURE, Long.class

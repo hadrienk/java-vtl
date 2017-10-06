@@ -20,6 +20,7 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -69,8 +70,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
 
     /**
      * Create a new VTLString instance.
-     *
-     * @throws NullPointerException if str is null.
      */
     public static VTLString of(String str) {
         return VTLString.of(str);
@@ -78,13 +77,33 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
 
     /**
      * Create a new VTLBoolean instance.
-     *
-     * @throws NullPointerException if str is null.
      */
     public static VTLBoolean of(Boolean bool) {
         return VTLBoolean.of(bool);
     }
 
+    /**
+     * Create a new VTLDate instance.
+     */
+    public static VTLDate of(Instant instant) {
+        return VTLDate.of(instant);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLNumber of(Long num) {
+        return VTLNumber.of((Number) num);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLNumber of(Double num) {
+        return VTLNumber.of((Number) num);
+    }
+
+    @Deprecated
     public static final VTLObject NULL = new VTLObject() {
         @Override
         public Object get() {
@@ -108,8 +127,9 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
     public abstract V get();
 
     /**
-     * Note: this class has a natural ordering that is inconsistent with equals. //TODO: Fix that
+     * Note: this class has a natural ordering that is inconsistent with equals.
      * <br/>
+     * TODO: Fix ordering?
      * TODO: Make comparable to only VTLObject
      */
     @Override
@@ -148,7 +168,7 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
     }
 
     @Override
-    public boolean equals(Object o) { //TODO
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof VTLObject)) return false;
         VTLObject<?> value = (VTLObject<?>) o;

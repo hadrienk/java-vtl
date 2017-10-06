@@ -44,7 +44,6 @@ public class BooleanExpressionVisitorTest {
     @Before
     public void setUp() throws Exception {
         dataStructure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class,
                 "m2", Component.Role.MEASURE, Double.class,

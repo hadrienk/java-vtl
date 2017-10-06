@@ -77,7 +77,7 @@ public class JoinCalcClauseVisitorTest {
         String test = "1 * 2 + a * (b - c) / d - 10";
         VTLParser parser = createParser(test);
 
-        DataStructure ds = DataStructure.of((o, aClass) -> o,
+        DataStructure ds = DataStructure.of(
                 "a", Component.Role.MEASURE, Long.class,
                 "b", Component.Role.MEASURE, Long.class,
                 "c", Component.Role.MEASURE, Long.class,
