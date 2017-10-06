@@ -20,18 +20,24 @@
 grammar VTL;
 start : statement+ EOF;
 
-statement : assignment |expression ;
+statement : assignment | expression ;
 
-functionCall : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
+nativeCall         : functionName=NATIVE_FUNCTIONS LPAR functionParameters? RPAR ;
+functionCall       : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
+
 functionParameters : namedExpression ( COMMA namedExpression)*
                    | expression ( COMMA expression )*
                    | expression ( COMMA expression )* COMMA namedExpression ( COMMA namedExpression)* ;
+
 
 namedExpression     : name=REG_IDENTIFIER COLON expression ;
 
 // Expressions
 expression : LPAR expression RPAR
+           | nativeCall
            | functionCall
+           // | unaryOperators
+           | <assoc=right> expression operatorConcat expression
            | datasetExpression
            | expression clauseExpression
            | variable
@@ -39,8 +45,22 @@ expression : LPAR expression RPAR
 
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
 
-// TODO: Not needed, remove constant.
-litteral : constant ;
+operatorConcat : op=CONCAT ;
+
+// Literal.
+litteral : nullLiteral
+         | booleanLiteral
+         | dateLiteral
+         | integerLiteral
+         | floatLiteral
+         | stringLiteral ;
+
+nullLiteral     : NULL_CONSTANT ;
+booleanLiteral  : BOOLEAN_CONSTANT ;
+dateLiteral     : 'TODO:date' ;
+integerLiteral  : INTEGER_CONSTANT ;
+floatLiteral    : FLOAT_CONSTANT ;
+stringLiteral   : STRING_CONSTANT ;
 
 assignment : variable ASSIGNMENT expression ;
 
@@ -95,7 +115,6 @@ componentRef : ( datasetRef '.')? variable ;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
-
 clauseExpression      : '[' clause ']' ;
 
 clause       : 'rename' renameParam (',' renameParam)*     #renameClause
@@ -125,7 +144,7 @@ aggregate   : 'aggregate' ;
 
 booleanExpression                                                                                       //Evaluation order of the operators
     : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
-    | ISNULL_FUNC '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
+    | FUNC_ISNULL '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
     | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix        // ??
     | left=booleanParam op=( LE | LT | GE | GT ) right=booleanParam             # BooleanEquality       // VII
     | op=NOT booleanExpression                                                  # BooleanNot            // IV
@@ -141,6 +160,10 @@ booleanParam
     ;
 
 ASSIGNMENT : ':=' ;
+
+/* Operators */
+
+CONCAT : '||' ;
 EQ : '='  ;
 NE : '<>' ;
 LE : '<=' ;
@@ -155,7 +178,50 @@ NOT : 'not' ;
 ISNULL : 'is null' ;
 ISNOTNULL : 'is not null' ;
 
-ISNULL_FUNC : 'isnull' ;
+/* Core functions */
+
+NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS ) ;
+nativeFunctions : NUMERIC_FUNCTIONS
+                | STRING_FUNCTIONS ;
+FUNC_ISNULL : 'isnull' ;
+
+// Numeric
+fragment NUMERIC_FUNCTIONS : ( FUNC_ROUND | FUNC_CEIL | FUNC_FLOOR | FUNC_ABS |
+                      FUNC_TRUNC | FUNC_EXP  | FUNC_LN    | FUNC_LOG |
+                      FUNC_POWER | FUNC_SQRT | FUNC_NROOT | FUNC_MOD |
+                      FUNC_LISTSUM
+                    ) ;
+
+FUNC_ROUND  : 'round' ;
+FUNC_CEIL   : 'ceil' ;
+FUNC_FLOOR  : 'floor' ;
+FUNC_ABS    : 'abs' ;
+FUNC_TRUNC  : 'trunc' ;
+FUNC_EXP    : 'exp' ;
+FUNC_LN     : 'ln' ;
+FUNC_LOG    : 'log' ;
+FUNC_POWER  : 'power' ;
+FUNC_SQRT   : 'sqrt' ;
+FUNC_NROOT  : 'nroot' ;
+FUNC_MOD    : 'mod' ;
+FUNC_LISTSUM: 'listsum' ;
+
+// String
+fragment STRING_FUNCTIONS : ( FUNC_LENGTH | FUNC_TRIM  | FUNC_LTRIM  | FUNC_RTRIM |
+                     FUNC_UPPER  | FUNC_LOWER | FUNC_SUBSTR | FUNC_INSTR |
+                     FUNC_D_F_S  | FUNC_REPLACE
+                   ) ;
+
+FUNC_LENGTH  : 'length' ;
+FUNC_TRIM    : 'trim' ;
+FUNC_LTRIM   : 'ltrim' ;
+FUNC_RTRIM   : 'rtrim' ;
+FUNC_UPPER   : 'upper' ;
+FUNC_LOWER   : 'lower' ;
+FUNC_SUBSTR  : 'substr' ;
+FUNC_INSTR   : 'instr' ;
+FUNC_D_F_S   : 'date_from_string' ;
+FUNC_REPLACE : 'replace' ;
 
 //WS : [ \r\t\u000C] -> skip ;
 
@@ -192,7 +258,7 @@ dateFunction
     : dateFromStringFunction
     ;
 
-dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
+dateFromStringFunction : FUNC_D_F_S '(' componentRef ',' format=STRING_CONSTANT ')';
 
 
 // Left recursive
@@ -276,4 +342,9 @@ fragment LETTER   : 'A'..'Z' | 'a'..'z';
 
 WS : [ \n\r\t\u000C] -> skip ;
 COMMENT : '/*' .*? '*/' -> skip;
+LINE_COMMENT : LineComment -> skip;
+
+fragment LineComment
+   : '//' ~ [\r\n]*
+   ;
 
