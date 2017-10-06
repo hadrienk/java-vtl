@@ -25,6 +25,10 @@ import no.ssb.vtl.parser.VTLParser;
 
 import static java.lang.String.*;
 
+/**
+ * Use {@link LiteralVisitor} instead.
+ */
+@Deprecated
 public class ParamVisitor extends VTLBaseVisitor<Object> {
     
     private final ReferenceVisitor referenceVisitor;
