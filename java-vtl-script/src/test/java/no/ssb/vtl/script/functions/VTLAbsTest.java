@@ -41,7 +41,7 @@ public class VTLAbsTest extends AbstractVTLNumberFunctionTest {
     public void testInvokeWithPositiveNumber() throws Exception {
         VTLObject<?> result = vtlFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(9)
+                        VTLNumber.of(9L)
                 )
         );
 
@@ -63,7 +63,7 @@ public class VTLAbsTest extends AbstractVTLNumberFunctionTest {
     public void testInvokeWithNegativeNumber() throws Exception {
         VTLObject<?> result = vtlFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-9)
+                        VTLNumber.of(-9L)
                 )
         );
 

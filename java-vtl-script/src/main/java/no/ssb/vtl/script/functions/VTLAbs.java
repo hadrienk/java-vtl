@@ -29,7 +29,7 @@ public class VTLAbs extends AbstractVTLFunction<Number> {
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
-    VTLAbs() {
+    public VTLAbs() {
         super("abs", Number.class, DS);
     }
 
@@ -44,7 +44,7 @@ public class VTLAbs extends AbstractVTLFunction<Number> {
             return VTLObject.of((Number)null);
         }
 
-        if (value instanceof Integer) {
+        if (value instanceof Long) {
             return VTLNumber.of(Math.abs(value.intValue()));
         } else if (value instanceof Double) {
             return VTLNumber.of(Math.abs(value.doubleValue()));
