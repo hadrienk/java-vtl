@@ -32,7 +32,7 @@ public class VTLRound extends AbstractVTLFunction<Number> {
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
 
     @VisibleForTesting
-    VTLRound() {
+    public VTLRound() {
         super("round", Number.class, DS, DECIMALS);
     }
 

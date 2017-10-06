@@ -29,7 +29,7 @@ public class VTLCeil extends AbstractVTLFunction<Number>{
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
-    VTLCeil() {
+    public VTLCeil() {
         super("ceil", Number.class, DS);
     }
 

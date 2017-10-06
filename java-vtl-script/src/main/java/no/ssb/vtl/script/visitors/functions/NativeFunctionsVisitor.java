@@ -27,6 +27,9 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.functions.VTLAbs;
+import no.ssb.vtl.script.functions.VTLCeil;
+import no.ssb.vtl.script.functions.VTLFloor;
+import no.ssb.vtl.script.functions.VTLRound;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +43,9 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLObject> {
     static {
         functions = ImmutableMap.<String, VTLFunction>builder()
                 .put("abs", new VTLAbs())
+                .put("round", new VTLRound())
+                .put("ceil", new VTLCeil())
+                .put("floor", new VTLFloor())
                 .build();
     }
 

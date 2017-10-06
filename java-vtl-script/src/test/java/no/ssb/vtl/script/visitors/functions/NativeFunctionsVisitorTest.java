@@ -55,4 +55,25 @@ public class NativeFunctionsVisitorTest {
         VTLObject result = visitor.visit(parse.expression());
         assertThat(result.get()).isEqualTo(1);
     }
+
+    @Test
+    public void testRound() throws Exception {
+        VTLParser parse = parse("round(1.75,1)");
+        VTLObject result = visitor.visit(parse.expression());
+        assertThat(result.get()).isEqualTo(1.8);
+    }
+
+    @Test
+    public void testCeil() throws Exception {
+        VTLParser parse = parse("ceil(1.5)");
+        VTLObject result = visitor.visit(parse.expression());
+        assertThat(result.get()).isEqualTo(2);
+    }
+
+    @Test
+    public void testFloor() throws Exception {
+        VTLParser parse = parse("floor(1.5)");
+        VTLObject result = visitor.visit(parse.expression());
+        assertThat(result.get()).isEqualTo(1);
+    }
 }

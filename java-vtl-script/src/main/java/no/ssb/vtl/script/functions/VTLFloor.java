@@ -31,7 +31,7 @@ public class VTLFloor extends AbstractVTLFunction<Number>{
     private static final AbstractVTLFunction.Argument<VTLNumber> DS = new AbstractVTLFunction.Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
-    VTLFloor() {
+    public VTLFloor() {
         super("floor", Number.class, DS);
     }
 
