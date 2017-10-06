@@ -116,6 +116,10 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
         }
     };
 
+    public static VTLNumber of(Number number) {
+        return VTLNumber.of(number);
+    }
+
     /**
      * Returns the value of the data point.
      */
