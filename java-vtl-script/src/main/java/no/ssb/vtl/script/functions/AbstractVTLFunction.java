@@ -159,7 +159,7 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
                     value = ((OptionalArgument) argument).getDefaultValue();
                 } else {
                     // TODO: refactor to avoid this since it is not testable.
-                    throw new RuntimeException();
+                    throw new IllegalArgumentException("Required argument not present");
                 }
             }
             builder.put(name, value);
