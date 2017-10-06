@@ -181,8 +181,7 @@ ISNOTNULL : 'is not null' ;
 /* Core functions */
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS ) ;
-nativeFunctions : NUMERIC_FUNCTIONS
-                | STRING_FUNCTIONS ;
+
 FUNC_ISNULL : 'isnull' ;
 
 // Numeric
@@ -208,8 +207,9 @@ FUNC_LISTSUM: 'listsum' ;
 
 // String
 fragment STRING_FUNCTIONS : ( FUNC_LENGTH | FUNC_TRIM  | FUNC_LTRIM  | FUNC_RTRIM |
-                     FUNC_UPPER  | FUNC_LOWER | FUNC_SUBSTR | FUNC_INSTR |
-                     FUNC_D_F_S  | FUNC_REPLACE
+                     FUNC_UPPER  | FUNC_LOWER | FUNC_SUBSTR | FUNC_INSTR
+                     // | FUNC_D_F_S
+                   | FUNC_REPLACE
                    ) ;
 
 FUNC_LENGTH  : 'length' ;
@@ -220,7 +220,7 @@ FUNC_UPPER   : 'upper' ;
 FUNC_LOWER   : 'lower' ;
 FUNC_SUBSTR  : 'substr' ;
 FUNC_INSTR   : 'instr' ;
-FUNC_D_F_S   : 'date_from_string' ;
+// TODO: Fix conflict FUNC_D_F_S   : 'date_from_string' ;
 FUNC_REPLACE : 'replace' ;
 
 //WS : [ \r\t\u000C] -> skip ;
@@ -258,7 +258,7 @@ dateFunction
     : dateFromStringFunction
     ;
 
-dateFromStringFunction : FUNC_D_F_S '(' componentRef ',' format=STRING_CONSTANT ')';
+dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
 
 
 // Left recursive
