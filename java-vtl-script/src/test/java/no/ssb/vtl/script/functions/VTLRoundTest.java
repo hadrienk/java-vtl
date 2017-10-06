@@ -110,7 +110,7 @@ public class VTLRoundTest extends AbstractVTLNumberFunctionTest {
                     )
             );
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("passed argument larger than definition");
+            assertThat(e.getMessage()).isEqualTo("expected 2 argument(s) but got 3");
         }
     }
 

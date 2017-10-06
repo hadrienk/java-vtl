@@ -37,7 +37,7 @@ public class VTLRound extends AbstractVTLFunction<Number> {
     }
 
     @Override
-    VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
         VTLNumber decimals = arguments.get(DECIMALS);

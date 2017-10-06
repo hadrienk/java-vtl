@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class AbstractVTLNumberFunctionTest
         implements VTLNumberFunctionTest {
 
-    protected AbstractVTLFunction<Number> vtlFunction;
+    AbstractVTLFunction<Number> vtlFunction;
 
     @Test
     @Override
@@ -83,7 +83,7 @@ public abstract class AbstractVTLNumberFunctionTest
                     )
             );
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("passed argument larger than definition");
+            assertThat(e.getMessage()).isEqualTo("expected 1 argument(s) but got 2");
         }
     }
 }
