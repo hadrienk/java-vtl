@@ -28,6 +28,16 @@ import java.time.Instant;
 
 public class LiteralVisitor extends VTLBaseVisitor<VTLObject> {
 
+    private static final LiteralVisitor instance = new LiteralVisitor();
+
+    public static LiteralVisitor getInstance() {
+        return instance;
+    }
+
+    private LiteralVisitor() {
+        // private
+    }
+
     @Override
     public VTLObject visitStringLiteral(VTLParser.StringLiteralContext ctx) {
         return VTLObject.of(VisitorUtil.stripQuotes(ctx.getText()));

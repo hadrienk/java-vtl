@@ -126,7 +126,8 @@ public class UnionOperation extends AbstractDatasetOperation {
         return getChildren().stream().flatMap(Dataset::getData)
                 .peek((o) -> {
                     if (seen.contains(o)) {
-                        throw new VTLRuntimeException("The resulting dataset from a union contains duplicates", "VTL-1xxx", o); //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
+                        //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
+                        throw new VTLRuntimeException("The resulting dataset from a union contains duplicates", "VTL-1xxx", o);
                     }
                 })
                 .peek(bucket::add);

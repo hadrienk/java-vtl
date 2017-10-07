@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.visitors.functions;
+package no.ssb.vtl.script.visitors;
 
 /*-
  * ========================LICENSE_START=================================
@@ -20,26 +20,29 @@ package no.ssb.vtl.script.visitors.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.visitors.LiteralVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.script.Bindings;
+import javax.script.SimpleBindings;
+import java.time.Instant;
 
-public class NativeFunctionsVisitorTest {
+public class ExpressionVisitorTest {
 
-    private NativeFunctionsVisitor visitor;
+    @Rule
+    public JUnitSoftAssertions softly = new JUnitSoftAssertions();
 
-    @Before
-    public void setUp() throws Exception {
-        visitor = new NativeFunctionsVisitor(LiteralVisitor.getInstance());
-    }
+    private Bindings bindings;
+    private ExpressionVisitor expressionVisitor;
 
     private static VTLParser parse(String expression) {
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
@@ -48,31 +51,31 @@ public class NativeFunctionsVisitorTest {
         return parser;
     }
 
-    @Test
-    public void testAbs() throws Exception {
-        VTLParser parse = parse("abs(-1)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(1);
+    @Before
+    public void setUp() throws Exception {
+        bindings = new SimpleBindings();
+        expressionVisitor = new ExpressionVisitor(bindings);
     }
 
     @Test
-    public void testRound() throws Exception {
-        VTLParser parse = parse("round(1.75,1)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(1.8);
-    }
+    public void testVariable() throws Exception {
+        VTLDate expected = VTLObject.of(Instant.now());
+        bindings.put("variable", expected);
+        bindings.put("sum", expected);
 
-    @Test
-    public void testCeil() throws Exception {
-        VTLParser parse = parse("ceil(1.5)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(2);
-    }
+        VTLObject<?> result;
+        VTLParser parse;
 
-    @Test
-    public void testFloor() throws Exception {
-        VTLParser parse = parse("floor(1.5)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(1);
+        parse = parse("variable");
+        result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result)
+                .as("object in variable [variable]")
+                .isSameAs(expected);
+
+        parse = parse("'sum'");
+        result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result)
+                .as("object in variable ['sum']")
+                .isSameAs(expected);
     }
 }

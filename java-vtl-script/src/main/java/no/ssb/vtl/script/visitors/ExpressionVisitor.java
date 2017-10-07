@@ -23,13 +23,49 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.VTLRuntimeException;
+
+import javax.script.Bindings;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 public class ExpressionVisitor extends VTLBaseVisitor<VTLObject> {
 
-    LiteralVisitor literalVisitor = new LiteralVisitor();
+    private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();
+    private final Bindings scope;
+
+    public ExpressionVisitor(Bindings scope) {
+        this.scope = checkNotNull(scope);
+    }
 
     @Override
-    public VTLObject visitLitteral(VTLParser.LitteralContext ctx) {
+    public VTLObject visitLiteral(VTLParser.LiteralContext ctx) {
         return literalVisitor.visit(ctx);
+    }
+
+    @Override
+    public VTLObject visitVariable(VTLParser.VariableContext ctx) {
+        String identifier = ctx.getText();
+
+        // Unescape.
+        if (identifier.startsWith("\'") && identifier.endsWith("\'")) {
+            identifier = identifier.substring(1, identifier.length() - 1);
+        }
+
+        if (scope.containsKey(identifier)) {
+            Object object = scope.get(identifier);
+            if (object instanceof VTLObject)
+                return (VTLObject) object;
+            else
+                throw new VTLRuntimeException(
+                        format("unknown object [%s]", object), "VTL-101", ctx
+                );
+        }
+        throw new VTLRuntimeException(
+                format("undefined variable [%s] (scope [%s]", identifier, scope),
+                "VTL-101", ctx
+        );
+
     }
 }

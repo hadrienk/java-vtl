@@ -41,14 +41,14 @@ expression : LPAR expression RPAR
            | datasetExpression
            | expression clauseExpression
            | variable
-           | litteral ;
+           | literal ;
 
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
 
 operatorConcat : op=CONCAT ;
 
 // Literal.
-litteral : nullLiteral
+literal : nullLiteral
          | booleanLiteral
          | dateLiteral
          | integerLiteral
