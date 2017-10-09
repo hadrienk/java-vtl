@@ -23,10 +23,15 @@ package no.ssb.vtl.script.functions;
 import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.error.VTLRuntimeException;
+import org.antlr.v4.runtime.ParserRuleContext;
+
+import static java.lang.String.format;
 
 public class VTLAbs extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static final String ILLEGAL_NUMBER_TYPE = "illegal number type [%s]";
 
     @VisibleForTesting
     public VTLAbs() {
@@ -49,7 +54,11 @@ public class VTLAbs extends AbstractVTLFunction<Number> {
         } else if (value instanceof Double) {
             return VTLNumber.of(Math.abs(value.doubleValue()));
         } else {
-            throw new RuntimeException("Illegal number type");
+            throw new VTLRuntimeException(
+                    format(ILLEGAL_NUMBER_TYPE, value.getClass().getSimpleName()),
+                    "VTL-1000",
+                    (ParserRuleContext) null
+            );
         }
     }
 }
