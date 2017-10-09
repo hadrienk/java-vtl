@@ -28,18 +28,18 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import static java.lang.String.format;
 
-public class VTLAbs extends AbstractVTLFunction<Number> {
+public class VTLAbs extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final String ILLEGAL_NUMBER_TYPE = "illegal number type [%s]";
 
     @VisibleForTesting
     public VTLAbs() {
-        super("abs", Number.class, DS);
+        super("abs", VTLNumber.class, DS);
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
 

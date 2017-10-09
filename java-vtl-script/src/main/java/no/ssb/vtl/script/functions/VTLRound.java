@@ -26,18 +26,18 @@ import no.ssb.vtl.model.VTLObject;
 
 import java.math.BigDecimal;
 
-public class VTLRound extends AbstractVTLFunction<Number> {
+public class VTLRound extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
 
     @VisibleForTesting
     public VTLRound() {
-        super("round", Number.class, DS, DECIMALS);
+        super("round", VTLNumber.class, DS, DECIMALS);
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
         VTLNumber decimals = arguments.get(DECIMALS);

@@ -43,7 +43,7 @@ public class TypeSafeArguments {
         this.arguments = builder.build();
     }
 
-    public <T> T get(AbstractVTLFunction.Argument<T> argumentReference) {
+    public <T extends VTLObject> T get(AbstractVTLFunction.Argument<T> argumentReference) {
         checkArgument(arguments.containsKey(argumentReference));
         return (T) arguments.get(argumentReference);
     }

@@ -24,17 +24,17 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLCeil extends AbstractVTLFunction<Number>{
+public class VTLCeil extends AbstractVTLFunction<VTLNumber>{
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
     public VTLCeil() {
-        super("ceil", Number.class, DS);
+        super("ceil", VTLNumber.class, DS);
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {

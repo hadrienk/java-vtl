@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class AbstractVTLNumberFunctionTest
         implements VTLNumberFunctionTest {
 
-    AbstractVTLFunction<Number> vtlFunction;
+    AbstractVTLFunction<VTLNumber> vtlFunction;
 
     @Test
     @Override

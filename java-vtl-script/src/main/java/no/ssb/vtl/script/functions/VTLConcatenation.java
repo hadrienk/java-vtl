@@ -27,18 +27,18 @@ import no.ssb.vtl.model.VTLString;
 /**
  * The concatenation operator (and function) in VTL.
  */
-public class VTLConcatenation extends AbstractVTLFunction<String> {
+public class VTLConcatenation extends AbstractVTLFunction<VTLString> {
 
     private static final Argument<VTLString> LEFT = new Argument<>("left", VTLString.class);
     private static final Argument<VTLString> RIGHT = new Argument<>("right", VTLString.class);
 
     @VisibleForTesting
     VTLConcatenation() {
-        super("||", String.class, LEFT, RIGHT);
+        super("||", VTLString.class, LEFT, RIGHT);
     }
 
     @Override
-    protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLString safeInvoke(TypeSafeArguments arguments) {
 
         VTLString left = arguments.get(LEFT);
         VTLString right = arguments.get(RIGHT);

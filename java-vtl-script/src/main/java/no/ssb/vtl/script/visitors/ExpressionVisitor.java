@@ -20,7 +20,9 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.VTLRuntimeException;
@@ -30,7 +32,10 @@ import javax.script.Bindings;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
-public class ExpressionVisitor extends VTLBaseVisitor<VTLObject> {
+/**
+ *
+ */
+public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();
     private final Bindings scope;
@@ -40,12 +45,23 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLObject> {
     }
 
     @Override
-    public VTLObject visitLiteral(VTLParser.LiteralContext ctx) {
-        return literalVisitor.visit(ctx);
+    public VTLExpression2 visitLiteral(VTLParser.LiteralContext ctx) {
+        VTLObject literal = literalVisitor.visit(ctx);
+        return new VTLExpression2() {
+            @Override
+            public Class<?> getType() {
+                return literal.getClass();
+            }
+
+            @Override
+            public VTLObject resolve(Bindings dataPoint) {
+                return literal;
+            }
+        };
     }
 
     @Override
-    public VTLObject visitVariable(VTLParser.VariableContext ctx) {
+    public VTLExpression2 visitVariable(VTLParser.VariableContext ctx) {
         String identifier = ctx.getText();
 
         // Unescape.
@@ -55,17 +71,31 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLObject> {
 
         if (scope.containsKey(identifier)) {
             Object object = scope.get(identifier);
-            if (object instanceof VTLObject)
-                return (VTLObject) object;
-            else
+            if (object instanceof VTLTyped) {
+                VTLTyped typed = (VTLTyped) object;
+                String finalIdentifier = identifier;
+                return new VTLExpression2() {
+
+                    @Override
+                    public Class<?> getType() {
+                        return typed.getJavaClass();
+                    }
+
+                    @Override
+                    public VTLObject resolve(Bindings bindings) {
+                        return (VTLObject) bindings.get(finalIdentifier);
+                    }
+                };
+            } else {
                 throw new VTLRuntimeException(
                         format("unknown object [%s]", object), "VTL-101", ctx
                 );
+            }
+        } else {
+            throw new VTLRuntimeException(
+                    format("undefined variable [%s] (scope [%s]", identifier, scope),
+                    "VTL-101", ctx
+            );
         }
-        throw new VTLRuntimeException(
-                format("undefined variable [%s] (scope [%s]", identifier, scope),
-                "VTL-101", ctx
-        );
-
     }
 }

@@ -20,18 +20,14 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-import java.util.List;
-import java.util.Map;
+import javax.script.Bindings;
 
 /**
- * Represents a VTL Function.
+ * Deferred expression
+ *
+ * An expression that can later be resolved using a Bindings.
  */
-public interface VTLFunction<T extends VTLObject> extends VTLTyped<T> {
+public interface VTLExpression2<T extends VTLObject> extends VTLTyped<T> {
 
-    T invoke(List<VTLObject> arguments);
-
-    T invoke(Map<String, VTLObject> namedArguments);
-
-    T invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments);
-
+    T resolve(Bindings bindings);
 }

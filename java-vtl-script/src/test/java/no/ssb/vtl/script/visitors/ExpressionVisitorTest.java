@@ -21,6 +21,7 @@ package no.ssb.vtl.script.visitors;
  */
 
 import no.ssb.vtl.model.VTLDate;
+import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
@@ -63,18 +64,18 @@ public class ExpressionVisitorTest {
         bindings.put("variable", expected);
         bindings.put("sum", expected);
 
-        VTLObject<?> result;
+        VTLExpression2<?> result;
         VTLParser parse;
 
         parse = parse("variable");
         result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result)
+        softly.assertThat(result.resolve(bindings))
                 .as("object in variable [variable]")
                 .isSameAs(expected);
 
         parse = parse("'sum'");
         result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result)
+        softly.assertThat(result.resolve(bindings))
                 .as("object in variable ['sum']")
                 .isSameAs(expected);
     }
