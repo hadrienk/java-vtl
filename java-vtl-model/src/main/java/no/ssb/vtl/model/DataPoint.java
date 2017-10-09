@@ -1,81 +1,76 @@
 package no.ssb.vtl.model;
 
-import com.google.common.base.MoreObjects;
-
-import java.util.Objects;
-import java.util.function.Supplier;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * A data point is a simple reference holder for values.
+/*-
+ * ========================LICENSE_START=================================
+ * Java VTL
+ * %%
+ * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
  */
-public abstract class DataPoint<V> implements Supplier<V> {
 
-    private final Component componentReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-    public DataPoint(Component component) {
-        this.componentReference = checkNotNull(component);
+public class DataPoint extends ArrayList<VTLObject> {
+
+    ArrayList<VTLObject> delegate;
+
+    protected DataPoint(int initialCapacity) {
+        super(initialCapacity);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DataPoint<?> dataPoint = (DataPoint<?>) o;
-        return Objects.equals(componentReference, dataPoint.componentReference) &&
-                Objects.equals(get(), dataPoint.get());
+    protected DataPoint() {
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(componentReference, get());
+    protected DataPoint(Collection<? extends VTLObject> c) {
+        super(c);
     }
 
-    /**
-     * Returns the value of the data point.
-     */
-    @Override
-    public abstract V get();
+    public DataPoint(VTLObject... values) {
+        super(Arrays.asList(values));
+    }
 
-    /**
-     * Returns the componentReference (type and role) of this data point.
-     */
-    public Component getComponent() {
-        return componentReference;
+    public DataPoint(Object... values) {
+        super(Stream.of(values).map(VTLObject::of).collect(Collectors.toList()));
+    }
+
+    public static DataPoint create(int initialCapacity) {
+        return new DataPoint(Collections.nCopies(initialCapacity, VTLObject.NULL));
+    }
+
+    public static DataPoint create(List<? extends VTLObject> components) {
+        return new DataPoint(components);
+    }
+
+    public static DataPoint create(VTLObject... values) {
+        return new DataPoint(values);
+    }
+
+    public static DataPoint create(Object... values) {
+        return new DataPoint(values);
     }
 
     @Override
     public String toString() {
-        String value = get() == null ? "[NULL]" : get().toString();
-
-        return MoreObjects.toStringHelper(super.toString())
-        //return MoreObjects.toStringHelper(this)
-                .addValue(getType().getSimpleName())
-                .addValue(getRole())
-                .addValue(getName())
-                .toString().concat(" = ").concat(value);
-    }
-
-    /**
-     * Convenience method giving the type of the data point.
-     * <p>
-     * It is strictly equivalent to getComponent().getType();
-     */
-    public Class<?> getType() {
-        return getComponent().getType();
-    }
-
-    /**
-     * Convenience method returning the {@link Component.Role} of the data point.
-     * <p>
-     * It is strictly equivalent to getComponent().getRole();
-     */
-    public Component.Role getRole() {
-        return getComponent().getRole();
-    }
-
-    public String getName() {
-        return getComponent().getName();
+        return this.stream()
+                .map((vtlObject) -> vtlObject == null ? "<null>" : vtlObject.toString())
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 }

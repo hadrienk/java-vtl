@@ -7,7 +7,7 @@
     <parent>
         <groupId>no.ssb.vtl</groupId>
         <artifactId>java-vtl-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.1.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>java-vtl-parser</artifactId>
@@ -18,15 +18,17 @@
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
-            <version>4.6</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4</artifactId>
-            <version>4.5.3</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-test</artifactId>
         </dependency>
 
     </dependencies>
@@ -36,11 +38,10 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.5</version>
                 <executions>
                     <execution>
                         <configuration>
-                            <listener>false</listener>
+                            <listener>true</listener>
                             <visitor>true</visitor>
                         </configuration>
                         <id>antlr</id>
@@ -65,4 +66,5 @@
             </resource>
         </resources>
     </build>
+
 </project>

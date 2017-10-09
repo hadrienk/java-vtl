@@ -1,19 +1,37 @@
 package no.ssb.vtl.script.operations;
 
+/*-
+ * ========================LICENSE_START=================================
+ * Java VTL
+ * %%
+ * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
+ */
+
 import com.codepoetics.protonpack.StreamUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
-import no.ssb.vtl.script.operations.join.JoinClause;
-import no.ssb.vtl.script.operations.join.WorkingDataset;
 import org.assertj.core.api.SoftAssertions;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.Map;
 
 import static no.ssb.vtl.model.Component.Role;
 import static org.mockito.Mockito.mock;
@@ -23,8 +41,6 @@ import static org.mockito.Mockito.when;
  * Created by hadrien on 21/11/2016.
  */
 public class SumOperationTest {
-
-    ObjectMapper mapper = new ObjectMapper();
 
     /**
      * Both Datasets must have at least one Identifier Component
@@ -40,18 +56,18 @@ public class SumOperationTest {
 
         SoftAssertions softly = new SoftAssertions();
         try {
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(left.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             Throwable expectedThrowable = null;
 
             // Different name
-            when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(right.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1DIFFERENTNAME", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             expectedThrowable = null;
             try {
@@ -77,10 +93,10 @@ public class SumOperationTest {
                     .hasMessageContaining("ID1DIFFERENTNAME");
 
             // Different type
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(left.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             expectedThrowable = null;
             try {
@@ -123,18 +139,18 @@ public class SumOperationTest {
 
         SoftAssertions softly = new SoftAssertions();
         try {
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(left.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1", Role.MEASURE, Integer.class
+                    "ME1", Role.MEASURE, Long.class
             ));
             Throwable expectedThrowable = null;
 
             // Different measure
-            when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
+            when(right.getDataStructure()).thenReturn(DataStructure.of(
                     "ID1", Role.IDENTIFIER, String.class,
                     "ID2", Role.IDENTIFIER, String.class,
-                    "ME1NOTSAMEMEASURE", Role.MEASURE, Integer.class
+                    "ME1NOTSAMEMEASURE", Role.MEASURE, Long.class
             ));
             expectedThrowable = null;
             try {
@@ -173,94 +189,42 @@ public class SumOperationTest {
     //@Test()
     public void testSumEx1() throws Exception {
 
-        Dataset left = mock(Dataset.class);
-        Dataset right = mock(Dataset.class);
+        StaticDataset left = StaticDataset.create()
+
+                .addComponent("TIME", Role.IDENTIFIER, String.class)
+                .addComponent("GEO", Role.IDENTIFIER, String.class)
+                .addComponent("POPULATION", Role.MEASURE, Long.class)
+
+                .addPoints("2013", "Belgium", 5L)
+                .addPoints("2013","Denmark", 2L)
+                .addPoints("2013", "France", 3L)
+                .addPoints("2013", "Spain", 4L)
+                .build();
+
+        StaticDataset right = StaticDataset.create()
+
+                .addComponent("TIME", Role.IDENTIFIER, String.class)
+                .addComponent("GEO", Role.IDENTIFIER, String.class)
+                .addComponent( "AGE", Role.IDENTIFIER, String.class)
+                .addComponent("POPULATION", Role.MEASURE, Long.class)
+
+                .addPoints("2013", "Belgium", "Total", 10L)
+                .addPoints("2013", "Greece", "Total", 11L)
+                .addPoints("2013", "Belgium", "Y15-24", null)
+                .addPoints( "2013", "Greece", "Y15-24", 2L)
+                .addPoints("2013", "Spain", "Y15-24", 6L)
+                .build();
 
         SoftAssertions softly = new SoftAssertions();
         try {
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "TIME", Role.IDENTIFIER, String.class,
-                    "GEO", Role.IDENTIFIER, String.class,
-                    "POPULATION", Role.MEASURE, Integer.class
-            ));
-
-            when(right.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "TIME", Role.IDENTIFIER, String.class,
-                    "GEO", Role.IDENTIFIER, String.class,
-                    "AGE", Role.IDENTIFIER, String.class,
-                    "POPULATION", Role.MEASURE, Integer.class
-            ));
-
-            DataStructure ld = left.getDataStructure();
-            when(left.get()).thenReturn(
-                    Stream.of(
-                            tuple(ld.wrap("TIME", "2013"),
-                                    ld.wrap("GEO", "Belgium"),
-                                    ld.wrap("POPULATION", 5)),
-                            tuple(ld.wrap("TIME", "2013"),
-                                    ld.wrap("GEO", "Denmark"),
-                                    ld.wrap("POPULATION", 2)),
-                            tuple(ld.wrap("TIME", "2013"),
-                                    ld.wrap("GEO", "France"),
-                                    ld.wrap("POPULATION", 3)),
-                            tuple(ld.wrap("TIME", "2013"),
-                                    ld.wrap("GEO", "Spain"),
-                                    ld.wrap("POPULATION", 4))
-                    )
-            );
-
-            DataStructure rd = right.getDataStructure();
-            when(right.get()).thenReturn(
-                    Stream.of(
-                            tuple(rd.wrap("TIME", "2013"),
-                                    rd.wrap("GEO", "Belgium"),
-                                    rd.wrap("AGE", "Total"),
-                                    rd.wrap("POPULATION", 10)),
-                            tuple(rd.wrap("TIME", "2013"),
-                                    rd.wrap("GEO", "Greece"),
-                                    rd.wrap("AGE", "Total"),
-                                    rd.wrap("POPULATION", 11)),
-                            tuple(rd.wrap("TIME", "2013"),
-                                    rd.wrap("GEO", "Belgium"),
-                                    rd.wrap("AGE", "Y15-24"),
-                                    rd.wrap("POPULATION", null)),
-                            tuple(rd.wrap("TIME", "2013"),
-                                    rd.wrap("GEO", "Greece"),
-                                    rd.wrap("AGE", "Y15-24"),
-                                    rd.wrap("POPULATION", 2)),
-                            tuple(rd.wrap("TIME", "2013"),
-                                    rd.wrap("GEO", "Spain"),
-                                    rd.wrap("AGE", "Y15-24"),
-                                    rd.wrap("POPULATION", 6))
-                    )
-            );
 
             InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
                     "left", left, "right", right
             ));
             SumOperation sumOperation = new SumOperation(
-                    tuple -> tuple.get(3), ld,
-                    tuple -> tuple.get(3), rd
+                    tuple -> tuple.get(3), left.getDataStructure(),
+                    tuple -> tuple.get(3), right.getDataStructure()
             );
-            join.getClauses().add(new JoinClause() {
-
-
-                @Override
-                public WorkingDataset apply(WorkingDataset workingDataset) {
-                    return new WorkingDataset() {
-                        @Override
-                        public DataStructure getDataStructure() {
-                            return sumOperation.getDataStructure();
-                        }
-
-                        @Override
-                        public Stream<Tuple> get() {
-                            return workingDataset.get().map(tuple -> sumOperation.apply(tuple, null));
-
-                        }
-                    };
-                }
-            });
 
             softly.assertThat(
                     join.getDataStructure()
@@ -273,22 +237,15 @@ public class SumOperationTest {
             );
             softly.assertThat(
                     StreamUtils.zip(
-                            left.get(), right.get(), sumOperation.getTupleOperator()
+                            left.getData(), right.getData(), sumOperation.getTupleOperator()
                     )
             ).as("data tuple of the sum operation of %s and %s", left, right)
+                    .extracting(sumDs::asMap)
+                    .extracting(Map::values)
                     .containsExactly(
-                            tuple(sumDs.wrap("TIME", "2013"),
-                                    sumDs.wrap("GEO", "Belgium"),
-                                    sumDs.wrap("AGE", "Total"),
-                                    sumDs.wrap("POPULATION", 15)),
-                            tuple(sumDs.wrap("TIME", "2013"),
-                                    sumDs.wrap("GEO", "Belgium"),
-                                    sumDs.wrap("AGE", "Y15-24"),
-                                    sumDs.wrap("POPULATION", null)),
-                            tuple(sumDs.wrap("TIME", "2013"),
-                                    sumDs.wrap("GEO", "Spain"),
-                                    sumDs.wrap("AGE", "Y15-24"),
-                                    sumDs.wrap("POPULATION", 10))
+                            DataPoint.create("2013", "Belgium", "Total", 15L),
+                            DataPoint.create("2013", "Belgium", "Y15-24", null),
+                            DataPoint.create("2013","Spain", "Y15-24",  10L)
                     );
 
         } finally {
@@ -306,43 +263,25 @@ public class SumOperationTest {
     //@Test
     public void testSumEx2() throws Exception {
 
-        Dataset left = mock(Dataset.class);
+        Dataset left = StaticDataset.create()
+                .addComponent("TIME", Role.IDENTIFIER, String.class)
+                .addComponent("REF_AREA", Role.IDENTIFIER, String.class)
+                .addComponent("PARTNER", Role.IDENTIFIER, String.class)
+                .addComponent("OBS_VALUE", Role.MEASURE, String.class)
+                .addComponent("OBS_STATUS", Role.ATTRIBUTE, String.class)
+
+                .addPoints("2010", "EU25", "CA", 20, "D")
+                .addPoints("2010", "BG", "CA", 2, "D")
+                .addPoints("2010", "RO", "CA", 2, "D")
+                .build();
 
         SoftAssertions softly = new SoftAssertions();
         try {
-            when(left.getDataStructure()).thenReturn(DataStructure.of(mapper::convertValue,
-                    "TIME", Role.IDENTIFIER, String.class,
-                    "REF_AREA", Role.IDENTIFIER, String.class,
-                    "PARTNER", Role.IDENTIFIER, String.class,
-                    "OBS_VALUE", Role.MEASURE, String.class,
-                    "OBS_STATUS", Role.ATTRIBUTE, String.class
-            ));
-
-            DataStructure ld = left.getDataStructure();
-            when(left.get()).thenReturn(
-                    Stream.of(
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "EU25"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 20),
-                                    ld.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "BG"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 2),
-                                    ld.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "RO"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 2),
-                                    ld.wrap("OBS_STATUS", "D"))
-                    )
-            );
 
             InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
                     "left", left
             ));
-            SumOperation sumOperation = new SumOperation(tuple -> tuple.get(3), ld, 1);
+            SumOperation sumOperation = new SumOperation(tuple -> tuple.get(3), left.getDataStructure(), 1);
 
             softly.assertThat(
                     join.getDataStructure()
@@ -351,24 +290,14 @@ public class SumOperationTest {
 
             DataStructure sumDs = sumOperation.getDataStructure();
             softly.assertThat(
-                    join.get()
+                    join.getData()
             ).as("data of the sum operation of %s and 1", left)
+                    .extracting(sumDs::asMap)
+                    .extracting(Map::values)
                     .containsExactly(
-                            tuple(sumDs.wrap("TIME", "2010"),
-                                    sumDs.wrap("REF_AREA", "EU25"),
-                                    sumDs.wrap("PARTNER", "CA"),
-                                    sumDs.wrap("OBS_VALUE", 21),
-                                    sumDs.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"),
-                                    sumDs.wrap("REF_AREA", "BG"),
-                                    sumDs.wrap("PARTNER", "CA"),
-                                    sumDs.wrap("OBS_VALUE", 3),
-                                    sumDs.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"),
-                                    sumDs.wrap("REF_AREA", "RO"),
-                                    sumDs.wrap("PARTNER", "CA"),
-                                    sumDs.wrap("OBS_VALUE", 3),
-                                    sumDs.wrap("OBS_STATUS", "D"))
+                            DataPoint.create("2010", "EU25", "CA", 21, "D"),
+                            DataPoint.create("2010", "BG", "CA", 3, "D"),
+                            DataPoint.create("2010", "RO", "CA", 3, "D")
                     );
 
         } finally {
@@ -385,55 +314,34 @@ public class SumOperationTest {
      */
     //@Test
     public void testSumEx3() throws Exception {
-        Dataset left = mock(Dataset.class);
-        Dataset right = mock(Dataset.class);
+
+        StaticDataset left = StaticDataset.create()
+
+                .withName("TIME", "GEO", "POPULATION")
+                .andRoles(Role.IDENTIFIER, Role.IDENTIFIER, Role.MEASURE)
+                .andTypes(String.class, String.class, Long.class)
+
+                .addPoints("2013", "Belgium", 5L)
+                .addPoints("2013","Denmark", 2L)
+                .addPoints("2013", "France", 3L)
+                .addPoints("2013", "Spain", 4L)
+                .build();
+
+        StaticDataset right = StaticDataset.create()
+
+                .withName("TIME", "GEO",  "AGE", "POPULATION")
+                .andRoles(Role.IDENTIFIER, Role.IDENTIFIER, Role.IDENTIFIER, Role.MEASURE)
+                .andTypes(String.class, String.class, String.class, Long.class)
+
+
+                .addPoints()
+                .addPoints()
+                .addPoints()
+                .addPoints()
+                .build();
 
         SoftAssertions softly = new SoftAssertions();
         try {
-
-            DataStructure ds = DataStructure.of(mapper::convertValue,
-                    "TIME", Role.IDENTIFIER, String.class,
-                    "REF_AREA", Role.IDENTIFIER, String.class,
-                    "PARTNER", Role.IDENTIFIER, String.class,
-                    "OBS_VALUE", Role.MEASURE, Integer.class,
-                    "OBS_STATUS", Role.ATTRIBUTE, String.class
-            );
-
-            // Same DS.
-            when(left.getDataStructure()).thenReturn(ds);
-            when(right.getDataStructure()).thenReturn(ds);
-
-            DataStructure ld = left.getDataStructure();
-            when(left.get()).thenReturn(
-                    Stream.of(
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "EU25"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 20),
-                                    ld.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "BG"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 2),
-                                    ld.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "RO"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 2),
-                                    ld.wrap("OBS_STATUS", "D"))
-                    )
-            );
-
-            when(right.get()).thenReturn(
-                    Stream.of(
-                            tuple(ld.wrap("TIME", "2010"),
-                                    ld.wrap("REF_AREA", "EU25"),
-                                    ld.wrap("PARTNER", "CA"),
-                                    ld.wrap("OBS_VALUE", 10),
-                                    ld.wrap("OBS_STATUS", "D")),
-                            tuple(ld.wrap("TIME", "2010"))
-                    )
-            );
 
             InnerJoinOperation join = new InnerJoinOperation(ImmutableMap.of(
                     "left", left,
@@ -443,27 +351,10 @@ public class SumOperationTest {
 
             SumOperation sumOperation = new SumOperation(
                     tuple -> tuple.get(3),
-                    ld,
-                    tuple -> tuple.get(3),
-                    ld
+                    left.getDataStructure(),
+                    tuple -> tuple.get(4),
+                    right.getDataStructure()
             );
-            join.getClauses().add(new JoinClause() {
-                @Override
-                public WorkingDataset apply(WorkingDataset workingDataset) {
-                    return new WorkingDataset() {
-                        @Override
-                        public DataStructure getDataStructure() {
-                            return workingDataset.getDataStructure();
-                        }
-
-                        @Override
-                        public Stream<Tuple> get() {
-                            return workingDataset.get().map(tuple -> sumOperation.apply(tuple, null));
-                        }
-
-                    };
-                }
-            });
 
             softly.assertThat(
                     sumOperation.getDataStructure()
@@ -472,13 +363,12 @@ public class SumOperationTest {
 
             DataStructure sumDs = join.getDataStructure();
             softly.assertThat(
-                    join.get()
+                    join.getData()
             ).as("data of the sum operation of %s and %s", left, right)
+                    .extracting(sumDs::asMap)
+                    .extracting(Map::values)
                     .containsExactly(
-                            tuple(sumDs.wrap("TIME", "2010"),
-                                    sumDs.wrap("REF_AREA", "EU25"),
-                                    sumDs.wrap("PARTNER", "CA"),
-                                    sumDs.wrap("OBS_VALUE", 30))
+                            DataPoint.create("2010", "EU25", "CA", 30L)
                     );
 
         } finally {
@@ -486,12 +376,7 @@ public class SumOperationTest {
         }
     }
 
-    private Dataset.Tuple tuple(DataPoint... components) {
-        return new Dataset.AbstractTuple() {
-            @Override
-            protected List<DataPoint> delegate() {
-                return Arrays.asList(components);
-            }
-        };
+    private DataPoint tuple(VTLObject... components) {
+        return DataPoint.create(Arrays.asList(components));
     }
 }

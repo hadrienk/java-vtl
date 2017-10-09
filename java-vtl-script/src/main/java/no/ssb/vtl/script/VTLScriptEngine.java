@@ -1,6 +1,26 @@
 package no.ssb.vtl.script;
 
 /*-
+ * ========================LICENSE_START=================================
+ * Java VTL
+ * %%
+ * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
+ */
+
+/*-
  * #%L
  * java-vtl-script
  * %%
@@ -22,20 +42,32 @@ package no.ssb.vtl.script;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.connector.Connector;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.SyntaxException;
 import no.ssb.vtl.script.error.WrappedException;
 import no.ssb.vtl.script.visitors.AssignmentVisitor;
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import javax.script.*;
+import javax.script.AbstractScriptEngine;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.TimeZone;
 
 /**
  * A VTL {@link ScriptEngine} implementation.
@@ -43,6 +75,7 @@ import java.io.StringReader;
 public class VTLScriptEngine extends AbstractScriptEngine {
 
     private final ImmutableList<Connector> connectors;
+    private TimeZone timeZone = TimeZone.getDefault();
 
     /**
      * Create a new engine instance.
@@ -51,7 +84,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
      */
     public VTLScriptEngine(Connector... connectors) {
         this.connectors = ImmutableList.copyOf(connectors);
-
+        context = new VTLScriptContext();
     }
 
     /**
@@ -63,6 +96,37 @@ public class VTLScriptEngine extends AbstractScriptEngine {
     public VTLScriptEngine(Bindings n, Connector... connectors) {
         super(n);
         this.connectors = ImmutableList.copyOf(connectors);
+        context = new VTLScriptContext();
+    }
+
+    /**
+     * Returns the default time zone of the JVM.
+     * //TODO use non-static method to be able to set up time zone per VTLScriptEngine instance. Need to also expose in Visitors
+     *
+     * @return the default time zone of the JVM.
+     */
+    public static TimeZone getTimeZone() {
+        return TimeZone.getDefault();
+    }
+
+    /**
+     * Sets a different global timezone.
+     * <p>
+     * The engine will use a different global time zone in situations no implicit time
+     * zone is defined in date conversion operations. For example:
+     * <pre>
+     *     osloTz = TimeZone.getTimeZone("Europe/Oslo");
+     *     vtlEngine.setTimeZone(osloTz);
+     *
+     *     // date will be 1999-12-31T23:00:00.000Z
+     *     vtlEngine.eval("date := date_from_string(\"2000\", \"YYYY\")");
+     *
+     * </pre>
+     *
+     * @param tz the time zone
+     */
+    public void setTimeZone(TimeZone tz) {
+        timeZone = tz;
     }
 
     @Override
@@ -82,7 +146,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                         - TypeException
                         - ConstraintException
                     - ValidationException
-                    - ScriptRuntimeException
+                    - VTLRuntimeException
             The WrappedScriptException is used to report errors that are not originating
             from the VTL Parser.
          */
@@ -100,14 +164,14 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                     if (e instanceof WrappedException) {
                         wrappedException = (WrappedException) e;
                     } else {
-                         wrappedException = new WrappedException(
-                                 msg,
-                                 recognizer,
-                                 e != null ? e.getInputStream() : null,
-                                 e != null ? (ParserRuleContext) e.getCtx() : null,
-                                 new SyntaxException(
-                                         msg, null, line, column, "VTL-0199"
-                                 )
+                        wrappedException = new WrappedException(
+                                msg,
+                                recognizer,
+                                e != null ? e.getInputStream() : null,
+                                e != null ? (ParserRuleContext) e.getCtx() : null,
+                                new SyntaxException(
+                                        msg, null, line, column, "VTL-0199"
+                                )
                         );
                     }
                     wrappedException.setLine(line);
@@ -144,7 +208,11 @@ public class VTLScriptEngine extends AbstractScriptEngine {
                 }
 
             } else {
-                throw new ScriptException((Exception) pce.getCause());
+                if (pce.getCause() != null) {
+                    throw new ScriptException(pce.getCause().getMessage());
+                } else {
+                    throw new ScriptException(pce.getMessage());
+                }
             }
         } catch (IOException | RuntimeException ioe) {
             throw new ScriptException(ioe);
@@ -153,7 +221,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
 
     @Override
     public Bindings createBindings() {
-        return new SimpleBindings(Maps.newConcurrentMap());
+        return new SimpleBindings(Maps.newLinkedHashMap());
     }
 
     @Override

@@ -1,5 +1,25 @@
 package no.ssb.vtl.script.visitors;
 
+/*-
+ * ========================LICENSE_START=================================
+ * Java VTL
+ * %%
+ * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
+ */
+
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
@@ -9,9 +29,6 @@ import java.util.LinkedList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Created by hadrien on 18/10/2016.
- */
 public class StartVisitor extends VTLBaseVisitor<LinkedList<Dataset>> {
 
     private final AssignmentVisitor assignmentVisitor;
@@ -26,11 +43,9 @@ public class StartVisitor extends VTLBaseVisitor<LinkedList<Dataset>> {
     }
 
     @Override
-    public LinkedList<Dataset> visitStart(VTLParser.StartContext ctx) {
-        for (VTLParser.StatementContext statement : ctx.statement()) {
-            Dataset assigned = assignmentVisitor.visit(statement);
-            defaultResult().add(assigned);
-        }
+    public LinkedList<Dataset> visitAssignment(VTLParser.AssignmentContext ctx) {
+        Dataset assigned = assignmentVisitor.visit(ctx);
+        defaultResult().add(assigned);
         return defaultResult();
     }
 }
