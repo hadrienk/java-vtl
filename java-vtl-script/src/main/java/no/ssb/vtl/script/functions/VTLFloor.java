@@ -24,8 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-import java.math.BigDecimal;
-
 public class VTLFloor extends AbstractVTLFunction<Number>{
 
     private static final AbstractVTLFunction.Argument<VTLNumber> DS = new AbstractVTLFunction.Argument<>("ds", VTLNumber.class);
