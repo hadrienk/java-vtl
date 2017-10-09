@@ -44,10 +44,10 @@ public class VTLExp extends AbstractVTLFunction<Number> {
             return VTLObject.of((Number)null);
         }
 
-        double exp = Math.exp(ds.get().doubleValue());
+        Double exp = Math.exp(ds.get().doubleValue());
 
         //The VTL spec does not specify the number of decimals, but the examples have 3
-        BigDecimal rounded = new BigDecimal(exp).setScale(3, BigDecimal.ROUND_HALF_UP);
+        BigDecimal rounded = new BigDecimal(exp.toString()).setScale(3, BigDecimal.ROUND_HALF_UP);
 
         return VTLNumber.of(rounded.doubleValue());
     }
