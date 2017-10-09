@@ -36,6 +36,7 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -145,7 +146,6 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "id3", IDENTIFIER, String.class,
@@ -153,7 +153,6 @@ public class OuterJoinOperationTest extends RandomizedTest {
         );
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "id3", IDENTIFIER, String.class,
@@ -164,42 +163,16 @@ public class OuterJoinOperationTest extends RandomizedTest {
         given(ds2.getDataStructure()).willReturn(structure2);
 
         given(ds1.getData()).willAnswer(o -> Stream.of(
-                tuple(
-                        structure1.wrap("id1", "1"),
-                        structure1.wrap("id2", "a"),
-                        structure1.wrap("id3", "id"),
-                        structure1.wrap("value", "left 1a")
-                ), tuple(
-                        structure1.wrap("id1", "2"),
-                        structure1.wrap("id2", "b"),
-                        structure1.wrap("id3", "id"),
-                        structure1.wrap("value", "left 2b")
-                ), tuple(
-                        structure1.wrap("id1", "3"),
-                        structure1.wrap("id2", "c"),
-                        structure1.wrap("id3", "id"),
-                        structure1.wrap("value", "left 3c")
-                )
+                tuple("1", "a", "id", "left 1a"),
+                tuple("2", "b", "id", "left 2b"),
+                tuple("3", "c", "id", "left 3c")
         ));
         given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
         given(ds2.getData()).willAnswer(o -> Stream.of(
-                tuple(
-                        structure2.wrap("id1", "2"),
-                        structure2.wrap("id2", "b"),
-                        structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "right 2b")
-                ), tuple(
-                        structure2.wrap("id1", "3"),
-                        structure2.wrap("id2", "c"),
-                        structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "right 3c")
-                ), tuple(
-                        structure2.wrap("id1", "4"),
-                        structure2.wrap("id2", "d"),
-                        structure2.wrap("id3", "id"),
-                        structure2.wrap("value", "right 4d")
-                )
+                tuple("2", "b", "id", "right 2b"),
+                tuple("3", "c", "id", "right 3c"),
+                tuple("4", "d", "id", "right 4d")
         ));
         given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
@@ -241,13 +214,11 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, Integer.class,
                 "value", MEASURE, String.class
         );
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, Integer.class,
                 "value", MEASURE, String.class
         );
@@ -288,13 +259,11 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "value", MEASURE, String.class
         );
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", IDENTIFIER, String.class,
                 "value", MEASURE, String.class,
                 "id2", IDENTIFIER, String.class
@@ -304,37 +273,17 @@ public class OuterJoinOperationTest extends RandomizedTest {
         given(ds2.getDataStructure()).willReturn(structure2);
 
         given(ds1.getData()).willAnswer(o -> Stream.of(
-                tuple(
-                        structure1.wrap("id1", "1"),
-                        structure1.wrap("value", "left 1")
-                ), tuple(
-                        structure1.wrap("id1", "2"),
-                        structure1.wrap("value", "left 2")
-                ), tuple(
-                        structure1.wrap("id1", "3"),
-                        structure1.wrap("value", "left 3")
-                )
+                tuple("1", "left 1"),
+                tuple("2", "left 2"),
+                tuple("3", "left 3")
         ));
         given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
 
         given(ds2.getData()).willAnswer(o -> Stream.of(
-                tuple(
-                        structure2.wrap("id1", "2"),
-                        structure2.wrap("value", "right 2"),
-                        structure2.wrap("id2", "b")
-//FIXME                ), tuple(
-//FIXME                  structure2.wrap("id1", "2"),
-//FIXME                  structure2.wrap("value", "right 2e"),
-//FIXME                  structure2.wrap("id2", "e")
-                ), tuple(
-                        structure2.wrap("id1", "3"),
-                        structure2.wrap("value", "right 3"),
-                        structure2.wrap("id2", "c")
-                ), tuple(
-                        structure2.wrap("id1", "4"),
-                        structure2.wrap("value", "right 4"),
-                        structure2.wrap("id2", "d")
-                )
+                tuple("2", "right 2", "b"),
+//TODO          tuple("2","right 2e", "e"),
+                tuple("3", "right 3", "c"),
+                tuple("4", "right 4", "d")
         ));
         given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
 
@@ -369,7 +318,11 @@ public class OuterJoinOperationTest extends RandomizedTest {
     }
 
     private DataPoint tuple(VTLObject... components) {
-        return DataPoint.create(asList(components));
+        return DataPoint.create(Arrays.asList(components));
+    }
+
+    private DataPoint tuple(Object... objects) {
+        return tuple(Arrays.stream(objects).map(VTLObject::of).collect(Collectors.toList()));
     }
 
     private DataPoint tuple(List<VTLObject> components) {

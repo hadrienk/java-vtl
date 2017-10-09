@@ -43,11 +43,9 @@ public class StartVisitor extends VTLBaseVisitor<LinkedList<Dataset>> {
     }
 
     @Override
-    public LinkedList<Dataset> visitStart(VTLParser.StartContext ctx) {
-        for (VTLParser.AssignmentContext assignment : ctx.assignment()) {
-            Dataset assigned = assignmentVisitor.visit(assignment);
-            defaultResult().add(assigned);
-        }
+    public LinkedList<Dataset> visitAssignment(VTLParser.AssignmentContext ctx) {
+        Dataset assigned = assignmentVisitor.visit(ctx);
+        defaultResult().add(assigned);
         return defaultResult();
     }
 }

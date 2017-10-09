@@ -51,12 +51,12 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
             return getSumOperation(dataset, getGroupByComponents(ctx, dataset));
         } else if (ctx.componentRef() != null) {
             dataset = (Dataset) referenceVisitor.visit(ctx.componentRef().datasetRef());
-            Component aggregationComponent = getComponentFromDataset(dataset, ctx.componentRef().variableRef());
+            Component aggregationComponent = getComponentFromDataset(dataset, ctx.componentRef().variable());
             return getSumOperation(dataset, getGroupByComponents(ctx, dataset), Collections.singletonList(aggregationComponent));
         } throw new ParseCancellationException("Required parameters not found");
     }
     
-    private Component getComponentFromDataset(Dataset dataset, VTLParser.VariableRefContext componentRef) {
+    private Component getComponentFromDataset(Dataset dataset, VTLParser.VariableContext componentRef) {
         String text = componentRef.getText();
         DataStructure dataStructure = dataset.getDataStructure();
         return dataStructure.get(text);
@@ -64,7 +64,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     
     private List<Component> getGroupByComponents(VTLParser.AggregateSumContext ctx, Dataset dataset) {
         List<Component> idComponents = ctx.aggregationParms().componentRef().stream()
-                .map(componentRef -> getComponentFromDataset(dataset, componentRef.variableRef()))
+                .map(componentRef -> getComponentFromDataset(dataset, componentRef.variable()))
                 .collect(Collectors.toList());
         
         Token clause = ctx.aggregationParms().aggregationClause;
@@ -92,7 +92,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     @VisibleForTesting
     AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, List<Component> aggregationComponents) {
         return new AggregationOperation(dataset, groupBy, aggregationComponents,
-                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLNumber.of(null)));
+                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLNumber.of((Number) null)));
     }
     
 }

@@ -23,29 +23,25 @@ package no.ssb.vtl.script.operations.join;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.carrotsearch.randomizedtesting.annotations.Seed;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.time.Year;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
@@ -53,80 +49,42 @@ import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class InnerJoinOperationTest extends RandomizedTest {
 
-    private ObjectMapper mapper = new ObjectMapper();
-
     @Test
     public void testDefaultJoin() throws Exception {
-        Dataset ds1 = mock(Dataset.class, "ds1");
-        Dataset ds2 = mock(Dataset.class, "ds2");
 
-        DataStructure structure1 = DataStructure.of(
-                mapper::convertValue,
-                "time", IDENTIFIER, Year.class,
-                "ref_area", IDENTIFIER, String.class,
-                "partner", IDENTIFIER, String.class,
-                "obs_value", MEASURE, Long.class,
-                "obs_status", ATTRIBUTE, String.class
-        );
+        Dataset ds1 = StaticDataset.create()
+                .withName("time", "ref_area", "partner", "obs_value", "obs_status")
+                .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
+                .andTypes(Year.class, String.class, String.class, Long.class, String.class)
 
-        DataStructure structure2 = DataStructure.of(
-                mapper::convertValue,
-                "time", IDENTIFIER, Year.class,
-                "ref_area", IDENTIFIER, String.class,
-                "partner", IDENTIFIER, String.class,
-                "obs_value", MEASURE, Long.class,
-                "obs_status", ATTRIBUTE, String.class
-        );
+                .addPoints(Year.of(2010), "EU25", "CA", 20L, "E")
+                .addPoints(Year.of(2010), "EU25", "BG", 2L, "P")
+                .addPoints(Year.of(2010), "EU25", "RO", 2L, "P")
 
-        given(ds1.getDataStructure()).willReturn(structure1);
-        given(ds2.getDataStructure()).willReturn(structure2);
+                .build();
 
-        given(ds1.getData(any(Order.class))).willReturn(Optional.empty());
-        given(ds1.getData()).willAnswer(o -> Stream.of(
-                tuple(
-                        structure1.wrap("time", Year.of(2010)),
-                        structure1.wrap("ref_area", "EU25"),
-                        structure1.wrap("partner", "CA"),
-                        structure1.wrap("obs_value", 20L),
-                        structure1.wrap("obs_status", "E")
-                ), tuple(
-                        structure1.wrap("time", Year.of(2010)),
-                        structure1.wrap("ref_area", "EU25"),
-                        structure1.wrap("partner", "BG"),
-                        structure1.wrap("obs_value", 2L),
-                        structure1.wrap("obs_status", "P")
-                ), tuple(
-                        structure1.wrap("time", Year.of(2010)),
-                        structure1.wrap("ref_area", "EU25"),
-                        structure1.wrap("partner", "RO"),
-                        structure1.wrap("obs_value", 2L),
-                        structure1.wrap("obs_status", "P")
-                )
-        ));
+        Dataset ds2 = StaticDataset.create()
 
-        given(ds2.getData(any(Order.class))).willReturn(Optional.empty());
-        given(ds2.getData()).willAnswer(o -> Stream.of(
-                tuple(
-                        structure2.wrap("time", Year.of(2010)),
-                        structure2.wrap("ref_area", "EU25"),
-                        structure2.wrap("partner", "CA"),
-                        structure2.wrap("obs_value", 10L),
-                        structure2.wrap("obs_status", "P")
-                )
-        ));
+                .withName("time", "ref_area", "partner", "obs_value", "obs_status")
+                .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
+                .andTypes(Year.class, String.class, String.class, Long.class, String.class)
+
+                .addPoints(Year.of(2010), "EU25", "CA", 10L,"P")
+
+                .build();
 
         AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
         new VTLPrintStream(System.out).println(result);
 
-        assertThat(result.getDataStructure())
+        DataStructure structure = result.getDataStructure();
+        DataStructure structure1 = ds1.getDataStructure();
+        DataStructure structure2 = ds2.getDataStructure();
+
+        assertThat(structure)
                 .containsOnly(
                         entry("time", structure1.get("time")),
                         entry("ref_area", structure1.get("ref_area")),
@@ -138,10 +96,10 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 );
 
         assertThat(result.getData())
-                .flatExtracting(tuple -> tuple)
                 .flatExtracting(dataPoint -> {
-                    Component component = dataPoint.getComponent();
-                    return Arrays.asList(component.getRole(), component, dataPoint.get());
+                    return structure.asMap(dataPoint).entrySet().stream()
+                            .flatMap(e -> Stream.of(e.getKey().getRole(), e.getKey(), e.getValue().get()))
+                            .collect(Collectors.toList());
                 })
 
                 .startsWith(
@@ -173,36 +131,26 @@ public class InnerJoinOperationTest extends RandomizedTest {
         Map<String, Dataset> datasets = Maps.newLinkedHashMap();
         for (int i = 0; i < datasetAmount; i++) {
 
-            DataStructure structure = DataStructure.of(
-                    mapper::convertValue,
-                    "id1", IDENTIFIER, Year.class,
-                    "id2", IDENTIFIER, String.class,
-                    "id3", IDENTIFIER, Instant.class,
-                    "measure", MEASURE, Long.class,
-                    "attribute", ATTRIBUTE, String.class
-            );
-            Dataset dataset = mock(Dataset.class, "Mocked dataset" + i);
-            when(dataset.getDataStructure()).thenReturn(structure);
-            datasets.put("ds" + i, dataset);
-
-            allComponents.addAll(structure.values());
+            StaticDataset.ValueBuilder datasetBuilder = StaticDataset.create()
+                    .withName("id1", "id2", "id3", "measure", "attribute")
+                    .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
+                    .andTypes(Year.class, String.class, Instant.class, Long.class, String.class);
 
             int j = i;
-            when(dataset.getData()).then(invocation ->
-                    IntStream.rangeClosed(0, rowAmount)
-                            .boxed()
-                            .map(rowNum ->
-                                    tuple(
-                                            structure.wrap("id1", Year.of(2000)),
-                                            structure.wrap("id2", "id" + rowNum),
-                                            structure.wrap("id3", Instant.ofEpochMilli(60 * 60 * 24 * 100)),
-                                            structure.wrap("measure", (long) (j + rowNum)),
-                                            structure.wrap("attribute", "attribute-" + j + "-" + rowNum)
-                                    )
-                            )
-            );
-            when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
-            new VTLPrintStream(System.out).println(dataset);
+            for (int rowNum = 0; rowNum < rowAmount; rowNum++) {
+                datasetBuilder.addPoints(Year.of(2000),
+                        "id" + rowNum,
+                        Instant.ofEpochMilli(60 * 60 * 24 * 100),
+                        (long) (j + rowNum),
+                        "attribute-" + j + "-" + rowNum
+                );
+            }
+
+            StaticDataset dataset = datasetBuilder.build();
+            datasets.put("ds" + i, dataset);
+            allComponents.addAll(dataset.getDataStructure().values());
+
+            new VTLPrintStream(System.out).println(datasetBuilder);
         }
 
         InnerJoinOperation result = new InnerJoinOperation(datasets);
@@ -233,75 +181,49 @@ public class InnerJoinOperationTest extends RandomizedTest {
     }
 
     @Test
+    public void testJoinWithOneDatasetForwardsDistinctCount() {
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id", IDENTIFIER, String.class)
+                .addPoints("a")
+                .addPoints("b")
+                .addPoints("c")
+                .addPoints("d")
+                .build();
+
+        Optional<Long> originalSize = ds1.getSize();
+        Optional<Map<String, Integer>> originalDistinctValues = ds1.getDistinctValuesCount();
+
+        Map<String, Dataset> map = Maps.newLinkedHashMap();
+        map.put("ds1", ds1);
+        InnerJoinOperation innerJoinOperation = new InnerJoinOperation(map);
+
+        assertThat(innerJoinOperation.getSize()).isEqualTo(originalSize);
+        assertThat(innerJoinOperation.getDistinctValuesCount()).isEqualTo(originalDistinctValues);
+
+    }
+
+    @Test
     public void testInnerJoinWithCodeListDataset() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        Dataset dsCodeList2 = mock(Dataset.class);
 
-        DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
-                "kommune_nr", Component.Role.IDENTIFIER, String.class,
-                "periode", Component.Role.IDENTIFIER, Instant.class, //TODO String?
-                "m1", Component.Role.MEASURE, Long.class,
-                "at1", Component.Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure1);
+        Dataset ds1 = StaticDataset.create()
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                 (Map) ImmutableMap.of(
-                        "kommune_nr", "0101",
-                        "periode", Instant.parse("2015-01-01T00:00:00.00Z"),
-                        "m1", 100L,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "kommune_nr", "0111",
-                        "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
-                        "m1", 101L,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "kommune_nr", "9000",
-                        "periode", Instant.parse("2014-01-01T00:00:00.00Z"),
-                        "m1", 102L,
-                        "at1", "attr3"
-                )
-        ).map(structure1::wrap));
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+                .withName("kommune_nr", "periode", "m1", "at1")
+                .andRoles(IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
+                .andTypes(String.class, Instant.class, Long.class, String.class)
+                .addPoints( "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100L, "attr1")
+                .addPoints("0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101L, "attr2")
+                .addPoints("9000", Instant.parse("2014-01-01T00:00:00.00Z"), 102L, "attr3")
+                .build();
 
-        DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
-                "kommune_nr", Component.Role.IDENTIFIER, String.class, //code
-                "name", Component.Role.MEASURE, String.class,
-                "validFrom", Component.Role.IDENTIFIER, Instant.class,
-                "validTo", Component.Role.IDENTIFIER, Instant.class
-        );
-
-        when(dsCodeList2.getDataStructure()).thenReturn(structure2);
-
-        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(dsCodeList2.getData()).then(invocation -> Stream.of(
-                tuple(
-                        structure2.wrap("kommune_nr", "0101"),
-                        structure2.wrap("name", "Halden"),
-                        structure2.wrap("validFrom",  Instant.parse("2013-01-01T00:00:00.00Z")),
-                        structure2.wrap("validTo", null)
-                ),
-                tuple(
-                        structure2.wrap("kommune_nr", "0111"),
-                        structure2.wrap("name", "Hvaler"),
-                        structure2.wrap("validFrom", Instant.parse("2015-01-01T00:00:00.00Z")),
-                        structure2.wrap("validTo", null)
-                ),
-                tuple(
-                        structure2.wrap("kommune_nr", "1001"),
-                        structure2.wrap("name", "Kristiansand"),
-                        structure2.wrap("validFrom", Instant.parse("2013-01-01T00:00:00.00Z")),
-                        structure2.wrap("validTo", Instant.parse("2015-01-01T00:00:00.00Z"))
-                )
-        ));
-        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
-
+        Dataset dsCodeList2 = StaticDataset.create()
+                .withName("kommune_nr", "name", "validFrom", "validTo")
+                .andRoles(IDENTIFIER, MEASURE, IDENTIFIER, IDENTIFIER)
+                .andTypes(String.class, /*code*/ String.class, Instant.class, Instant.class)
+                .addPoints("0101", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null)
+                .addPoints("0111", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null)
+                .addPoints("1001", "Kristiansand", Instant.parse("2013-01-01T00:00:00.00Z"), Instant.parse("2015-01-01T00:00:00.00Z"))
+                .build();
 
         AbstractJoinOperation ds3 = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "dsCodeList2", dsCodeList2));
 
@@ -310,13 +232,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
         new VTLPrintStream(System.out).println(ds3);
 
         assertThat(ds3.getDataStructure().getRoles()).contains(
-                entry("kommune_nr", Component.Role.IDENTIFIER),
-                entry("periode", Component.Role.IDENTIFIER),
-                entry("ds1_m1", Component.Role.MEASURE),
-                entry("ds1_at1", Component.Role.ATTRIBUTE),
-                entry("dsCodeList2_name", Component.Role.MEASURE),
-                entry("validFrom", Component.Role.IDENTIFIER),
-                entry("validTo", Component.Role.IDENTIFIER)
+                entry("kommune_nr", IDENTIFIER),
+                entry("periode", IDENTIFIER),
+                entry("ds1_m1", MEASURE),
+                entry("ds1_at1", ATTRIBUTE),
+                entry("dsCodeList2_name", MEASURE),
+                entry("validFrom", IDENTIFIER),
+                entry("validTo", IDENTIFIER)
         );
 
         assertThat(ds3.getData()).flatExtracting(input -> input)
@@ -325,9 +247,5 @@ public class InnerJoinOperationTest extends RandomizedTest {
                         "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100L, "attr1", "Halden", Instant.parse("2013-01-01T00:00:00.00Z"), null,
                         "0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101L, "attr2", "Hvaler", Instant.parse("2015-01-01T00:00:00.00Z"), null
                 );
-    }
-
-    private DataPoint tuple(VTLObject... components) {
-        return DataPoint.create(Arrays.asList(components));
     }
 }

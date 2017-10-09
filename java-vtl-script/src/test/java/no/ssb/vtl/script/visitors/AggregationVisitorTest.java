@@ -51,7 +51,7 @@ public class AggregationVisitorTest {
     
     @Before
     public void setUp() throws Exception {
-        dataStructureSingleMeasure = DataStructure.of((o, aClass) -> o,
+        dataStructureSingleMeasure = DataStructure.of(
                 "time", Component.Role.IDENTIFIER, String.class,
                 "geo", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class);
@@ -69,7 +69,7 @@ public class AggregationVisitorTest {
                 dataStructureSingleMeasure);
     
     
-        DataStructure dataStructureMultiMeasure = DataStructure.of((o, aClass) -> o,
+        DataStructure dataStructureMultiMeasure = DataStructure.of(
                 "time",Component.Role.IDENTIFIER,String.class,
                 "geo", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE,Long.class,

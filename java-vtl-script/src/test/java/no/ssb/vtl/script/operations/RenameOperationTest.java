@@ -132,7 +132,7 @@ public class RenameOperationTest {
 
         Dataset dataset = mock(Dataset.class);
 
-        DataStructure structure = DataStructure.of((s, o) -> null,
+        DataStructure structure = DataStructure.of(
                 "Ia", Role.IDENTIFIER, String.class,
                 "Ma", Role.MEASURE, String.class,
                 "Aa", Role.ATTRIBUTE, String.class

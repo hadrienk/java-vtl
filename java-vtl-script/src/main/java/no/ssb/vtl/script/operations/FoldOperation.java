@@ -134,7 +134,7 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
 
                 String columnName = childStructure.getName(component);
 
-                DataPoint newDataPoint = dataStructure.wrap();
+                DataPoint newDataPoint = DataPoint.create(dataStructure.size());
                 Map<Component, VTLObject> resultAsMap = dataStructure.asMap(newDataPoint);
 
                 // Put the new values

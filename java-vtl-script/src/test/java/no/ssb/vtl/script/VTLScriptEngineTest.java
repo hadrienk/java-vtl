@@ -48,6 +48,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
@@ -59,19 +60,19 @@ import javax.script.ScriptException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.*;
-import static org.assertj.core.api.Assertions.*;
+import static no.ssb.vtl.model.Component.Role;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VTLScriptEngineTest {
 
@@ -94,7 +95,6 @@ public class VTLScriptEngineTest {
     public void testCalcAtoms() throws Exception {
 
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class
         );
         when(dataset.getDataStructure()).thenReturn(structure);
@@ -114,10 +114,10 @@ public class VTLScriptEngineTest {
                 "    testString2 := \"test \"\"escaped\"\" string\",\n" +
                 "    testBoolean := true" +
                 "}");
-    
+
         assertThat(bindings).containsKey("resultat");
         assertThat(bindings.get("resultat")).isInstanceOf(Dataset.class);
-    
+
         Dataset resultat = (Dataset) bindings.get("resultat");
         assertThat(resultat.getDataStructure())
                 .describedAs("data structure of resultat")
@@ -129,7 +129,7 @@ public class VTLScriptEngineTest {
                         "testString2",
                         "testBoolean"
                 );
-    
+
         assertThat(resultat.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
@@ -169,7 +169,6 @@ public class VTLScriptEngineTest {
         Dataset ds2 = mock(Dataset.class);
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -177,7 +176,6 @@ public class VTLScriptEngineTest {
                 "at1", Role.MEASURE, String.class
         );
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -262,29 +260,18 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testJoinFold() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Long.class,
-                "m3", Role.MEASURE, Long.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.getData()).then(invocation -> Stream.of(
-                Arrays.asList("1", 101L, 102L, 103L),
-                Arrays.asList("2", 201L, 202L, 203L),
-                Arrays.asList("3", 301L, 302L, 303L)
-        ).map(list -> {
-            Iterator<?> it = list.iterator();
-            List<VTLObject> points = Lists.newArrayList();
-            for (String name : ds.keySet()) {
-                Object value = it.hasNext() ? it.next() : null;
-                points.add(ds.wrap(name, value));
-            }
-            return DataPoint.create(points);
-        }));
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Long.class)
+                .addComponent("m3", Role.MEASURE, Long.class)
+
+                .addPoints("1", 101L, 102L, 103L)
+                .addPoints("2", 201L, 202L, 203L)
+                .addPoints("3", 301L, 302L, 303L)
+
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
@@ -331,7 +318,6 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id", Role.IDENTIFIER, String.class,
                 "integerMeasure", Role.MEASURE, Long.class,
                 "float", Role.MEASURE, Long.class
@@ -363,7 +349,6 @@ public class VTLScriptEngineTest {
     public void testJoinUnfold() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -431,7 +416,7 @@ public class VTLScriptEngineTest {
     public void testRename() throws Exception {
 
         when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of((s, o) -> null,
+                DataStructure.of(
                         "id1", Role.IDENTIFIER, String.class,
                         "me1", Role.MEASURE, String.class,
                         "at1", Role.ATTRIBUTE, String.class
@@ -463,7 +448,6 @@ public class VTLScriptEngineTest {
         Dataset dsCodeList3 = mock(Dataset.class);
 
         DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
                 "kommune_nr", Role.IDENTIFIER, String.class,
                 "periode", Role.IDENTIFIER, String.class,
                 "kostragruppe", Role.IDENTIFIER, String.class,
@@ -504,7 +488,6 @@ public class VTLScriptEngineTest {
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
                 "code", Role.IDENTIFIER, String.class,
                 "name", Role.MEASURE, String.class,
                 "period", Role.IDENTIFIER, String.class
@@ -586,7 +569,6 @@ public class VTLScriptEngineTest {
         when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
 
         DataStructure structure3 = DataStructure.of(
-                (o, aClass) -> o,
                 "code", Role.IDENTIFIER, String.class,
                 "name", Role.MEASURE, String.class,
                 "period", Role.IDENTIFIER, String.class
@@ -756,32 +738,15 @@ public class VTLScriptEngineTest {
     @Test
     public void testNvlAsClause() throws Exception {
 
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                tuple(
-                        ds.wrap("id1", "1"),
-                        ds.wrap("m1", 1L),
-                        ds.wrap("m2", null)
-                ),
-                tuple(
-                        ds.wrap("id1", "2"),
-                        ds.wrap("m1", null),
-                        ds.wrap("m2", "str2")
-                ),
-                tuple(
-                        ds.wrap("id1", "3"),
-                        ds.wrap("m1", null),
-                        ds.wrap("m2", null)
-                )
-        ));
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, String.class)
+
+                .addPoints("1", 1L, VTLObject.NULL)
+                .addPoints("2", VTLObject.NULL, "str2")
+                .addPoints("3", VTLObject.NULL, VTLObject.NULL)
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
@@ -819,19 +784,12 @@ public class VTLScriptEngineTest {
     @Test(expected = ScriptException.class)
     public void testNvlAsClauseNotEqualTypes() throws Exception {
 
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.getData()).then(invocation -> Stream.of(
-                tuple(
-                        ds.wrap("id1", "1"),
-                        ds.wrap("m1", null)
-                )
-        ));
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+
+                .addPoints("1", VTLObject.NULL)
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
@@ -843,24 +801,12 @@ public class VTLScriptEngineTest {
     @Test
     public void testDateFromStringAsClause() throws Exception {
 
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                tuple(
-                        ds.wrap("id1", "1"),
-                        ds.wrap("m1", "2017")
-                ),
-                tuple(
-                        ds.wrap("id1", "2"),
-                        ds.wrap("m1", null)
-                )
-        ));
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, String.class)
+                .addPoints("1", "2017")
+                .addPoints("2", null)
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
@@ -897,7 +843,6 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, String.class
         );
@@ -916,7 +861,6 @@ public class VTLScriptEngineTest {
 
         Dataset ds1 = mock(Dataset.class);
         DataStructure ds = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class
         );
@@ -934,7 +878,6 @@ public class VTLScriptEngineTest {
     public void testAggregationSumGroupBy() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -1008,7 +951,6 @@ public class VTLScriptEngineTest {
     public void testAggregationSumAlong() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -1077,7 +1019,6 @@ public class VTLScriptEngineTest {
     public void testAggregationMultiple() throws Exception {
         Dataset ds1 = mock(Dataset.class);
         DataStructure structure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, Long.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
@@ -1151,67 +1092,37 @@ public class VTLScriptEngineTest {
     
     @Test
     public void testUnion() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        Dataset ds2 = mock(Dataset.class);
-    
-        DataStructure structure1 = DataStructure.of(
-                (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.MEASURE, String.class
-        );
-        DataStructure structure2 = DataStructure.of(
-                (o, aClass) -> o,
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.MEASURE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure1);
-        when(ds2.getDataStructure()).thenReturn(structure2);
-    
-        when(ds1.getData()).then(invocation -> Stream.of(
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "1",
-                        "m1", 10L,
-                        "m2", 20,
-                        "at1", "attr1-1"
-                )),
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "2",
-                        "m1", 100L,
-                        "m2", 200,
-                        "at1", "attr1-2"
-                ))
-        ));
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-    
-        when(ds2.getData()).then(invocation -> Stream.of(
-                structure2.wrap(ImmutableMap.of(
-                        "id1", "3",
-                        "m1", 30L,
-                        "m2", 40,
-                        "at1", "attr2-1"
-                )),
-                structure2.wrap(ImmutableMap.of(
-                        "id1", "4",
-                        "m1", 300L,
-                        "m2", 400,
-                        "at1", "attr2-2"
-                ))
-        ));
-        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
-    
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
+
+                .addPoints( "1", 10L, 20, "attr1-1")
+                .addPoints( "2", 100L, 200, "attr1-2")
+                .build();
+
+        Dataset ds2 = StaticDataset.create()
+               .addComponent("id1", Role.IDENTIFIER, String.class)
+               .addComponent("m1", Role.MEASURE, Long.class)
+               .addComponent("m2", Role.MEASURE, Double.class)
+               .addComponent("at1", Role.MEASURE, String.class)
+
+                .addPoints("3", 30L, 40, "attr2-1")
+                .addPoints( "4", 300L, 400, "attr2-2")
+                .build();
+
+
         bindings.put("ds1", ds1);
         bindings.put("ds2", ds2);
-    
+
         engine.eval("" +
                 "ds3 := union(ds1, ds2)");
-    
+
         assertThat(bindings).containsKey("ds3");
         assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
-    
+
         Dataset ds3 = (Dataset) bindings.get("ds3");
         assertThat(ds3.getDataStructure())
                 .describedAs("data structure of d3")
@@ -1221,7 +1132,7 @@ public class VTLScriptEngineTest {
                         "m2",
                         "at1"
                 );
-    
+
         assertThat(ds3.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
@@ -1231,9 +1142,5 @@ public class VTLScriptEngineTest {
                         "3", 30L, 40, "attr2-1",
                         "4", 300L, 400, "attr2-2"
                 );
-    }
-    
-    private DataPoint tuple(VTLObject... components) {
-        return DataPoint.create(Arrays.asList(components));
     }
 }

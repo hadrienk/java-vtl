@@ -24,11 +24,10 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.check.CheckSingleRuleOperation;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Optional;
 
-import static java.util.Optional.*;
+import static java.util.Optional.ofNullable;
 
 public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
@@ -60,7 +59,7 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitVariableRef(VTLParser.VariableRefContext ctx) {
+    public Dataset visitVariable(VTLParser.VariableContext ctx) {
         return (Dataset) referenceVisitor.visit(ctx);
     }
 

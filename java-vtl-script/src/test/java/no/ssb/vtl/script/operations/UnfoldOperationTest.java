@@ -99,7 +99,7 @@ public class UnfoldOperationTest {
     public void testConstraint() throws Exception {
 
         Set<String> validElements = Sets.newHashSet("some value");
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "measure1", MEASURE, String.class
@@ -149,7 +149,7 @@ public class UnfoldOperationTest {
         Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
         Dataset dataset = mock(Dataset.class);
 
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "measure1", MEASURE, String.class,
@@ -180,7 +180,7 @@ public class UnfoldOperationTest {
         Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
         Dataset dataset = mock(Dataset.class);
 
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
                 "measure1", MEASURE, String.class,

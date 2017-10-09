@@ -29,8 +29,9 @@ import java.util.function.Function;
  * but we are not there yet) but still exposes its type.
  *
  */
-public abstract class VTLExpression implements Function<DataPoint, VTLObject> {
-    
+public abstract class VTLExpression implements Function<DataPoint, VTLObject>, VTLTyped {
+
+    @Override
     public abstract Class<?> getType();
     
     @Override

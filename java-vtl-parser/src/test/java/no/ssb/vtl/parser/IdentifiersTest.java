@@ -44,31 +44,31 @@ public class IdentifiersTest extends GrammarTest {
 
     @Test(expected = Exception.class)
     public void testIdentifierWithLineBreaks() throws Exception {
-        parse("'ident\nifier'", "identifier");
+        parse("'ident\nifier'", "variable");
     }
 
     @Test
     public void testIdentifierQuotes() throws Exception {
-        parse("'ident''ifier'", "identifier");
+        parse("'ident''ifier'", "variable");
     }
 
     @Test(expected = Exception.class)
     public void testIdentifierReserved() throws Exception {
-        parse("identifier", "identifier");
+        parse("identifier", "variable");
     }
 
     @Test
     public void testIdentifier() throws Exception {
-        parse("identifierId", "identifier");
+        parse("identifierId", "variable");
     }
 
     @Test(expected = Exception.class)
     public void testInvalidIdentifier() throws Exception {
-        parse("123identifier", "identifier");
+        parse("123identifier", "variable");
     }
 
     @Test
     public void testQuotedInvalidIdentifier() throws Exception {
-        parse("'123identifier'", "identifier");
+        parse("'123identifier'", "variable");
     }
 }

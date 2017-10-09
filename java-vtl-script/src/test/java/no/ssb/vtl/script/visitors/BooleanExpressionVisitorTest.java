@@ -44,7 +44,6 @@ public class BooleanExpressionVisitorTest {
     @Before
     public void setUp() throws Exception {
         dataStructure = DataStructure.of(
-                (o, aClass) -> o,
                 "id1", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class,
                 "m2", Component.Role.MEASURE, Double.class,
@@ -52,7 +51,7 @@ public class BooleanExpressionVisitorTest {
                 "at1", Component.Role.ATTRIBUTE, String.class);
         visitor = new BooleanExpressionVisitor(null, dataStructure);
         dataPointWithValues = dataStructure.wrap(ImmutableMap.of("id1", "1", "m1", 20L, "m2", 10.0, "m3", 10L, "at1", "blabla"));
-        dataPointWithNull = dataStructure.wrap();
+        dataPointWithNull = DataPoint.create(dataStructure.size());
         
         
     }

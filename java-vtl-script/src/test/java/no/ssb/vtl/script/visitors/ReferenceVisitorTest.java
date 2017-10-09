@@ -56,7 +56,7 @@ public class ReferenceVisitorTest {
 
     @Before
     public void setUp() throws Exception {
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "component", IDENTIFIER, String.class
         );
         component = structure.get("component");
@@ -94,7 +94,7 @@ public class ReferenceVisitorTest {
                     .hasMessageContaining("datasetNotFound")
                     .hasMessageContaining("not found");
 
-            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("variableNotFound").variableRef()))
+            softly.assertThatThrownBy(() -> referenceVisitor.visit(parse("variableNotFound").variable()))
                     .describedAs("exception when component not found")
                     .hasMessageContaining("variable")
                     .hasMessageContaining("variableNotFound")

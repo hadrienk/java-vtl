@@ -1,4 +1,4 @@
-package no.ssb.vtl.script;
+package no.ssb.vtl.model;
 
 /*-
  * ========================LICENSE_START=================================
@@ -20,8 +20,22 @@ package no.ssb.vtl.script;
  * =========================LICENSE_END==================================
  */
 
-/**
- * Created by hadrien on 24/10/2016.
- */
-public class ViralPropagation {
+public abstract class VTLString extends VTLObject<String> {
+
+    private VTLString() {
+        // private.
+    }
+
+    public static VTLString of(String string) {
+        return new VTLString() {
+            /**
+             * Returns the value of the data point.
+             */
+            @Override
+            public String get() {
+                return string;
+            }
+        };
+    }
+
 }

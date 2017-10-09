@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FilterOperationTest {
 
@@ -56,7 +56,7 @@ public class FilterOperationTest {
     @Test
     public void testPredicateReturnsNull() throws Exception {
 
-        FilterOperation resultBooleanNull = new FilterOperation(dataset, dp -> VTLBoolean.of(null));
+        FilterOperation resultBooleanNull = new FilterOperation(dataset, dp -> null);
         assertThat(resultBooleanNull.getData()).isEmpty();
 
         FilterOperation resultNull = new FilterOperation(dataset, dp -> null);

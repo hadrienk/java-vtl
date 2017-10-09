@@ -22,6 +22,7 @@ package no.ssb.vtl.script.visitors;
 
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ public class VisitorUtilTest {
         CommonToken token = new CommonToken(Token.DEFAULT_CHANNEL, null);
         TerminalNodeImpl terminalNode = new TerminalNodeImpl(token);
 
-        assertThat(VisitorUtil.stripQuotes(null)).isNull();
+        assertThat(VisitorUtil.stripQuotes((TerminalNode) null)).isNull();
 
         assertThat(VisitorUtil.stripQuotes(terminalNode)).isNull();
 

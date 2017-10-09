@@ -7,7 +7,7 @@
     <parent>
         <groupId>no.ssb.vtl</groupId>
         <artifactId>java-vtl-parent</artifactId>
-        <version>0.1.3-SNAPSHOT</version>
+        <version>0.1.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>java-vtl-coverage</artifactId>
@@ -34,8 +34,8 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <property>
-                    <name>env.TRAVIS</name>
-                    <value>true</value>
+                    <name>env.TRAVIS_PULL_REQUEST_SLUG</name>
+                    <value>statisticsnorway/java-vtl</value>
                 </property>
             </activation>
             <build>
@@ -67,10 +67,10 @@
                         <version>1.0.3</version>
                         <configuration>
                             <commit>${env.TRAVIS_COMMIT}</commit>
-                            <projectToken>01c6bf9024ea4792b80ad19921fc68d3</projectToken>
                             <coverageReportFile>target/site/jacoco-aggregate/jacoco.xml</coverageReportFile>
                             <failOnMissingReportFile>false</failOnMissingReportFile>
-                            <!-- <apiToken>NEEDED</apiToken> -->
+                            <!--<projectToken>${env.CODACY_PROJECT_TOKEN</projectToken>-->
+                            <!--<apiToken>${env.CODACY_API_TOKEN}</apiToken>-->
                         </configuration>
                         <executions>
                             <execution>
