@@ -38,9 +38,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLObject> {
 
-    static ImmutableMap<String, VTLFunction> functions;
+    private static ImmutableMap<String, VTLFunction> functions;
 
     static {
+        // TODO(hadrien): I'd like to use VTLParser.FUNC_* here. If someone has an idea?
         functions = ImmutableMap.<String, VTLFunction>builder()
                 .put("abs", new VTLAbs())
                 .put("round", new VTLRound())
