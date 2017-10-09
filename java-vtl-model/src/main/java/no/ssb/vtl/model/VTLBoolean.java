@@ -20,7 +20,7 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLBoolean extends VTLObject<Boolean> {
+public abstract class VTLBoolean extends VTLObject<Boolean> implements VTLTyped<VTLBoolean> {
 
     private VTLBoolean() {
         // private.
@@ -28,6 +28,11 @@ public abstract class VTLBoolean extends VTLObject<Boolean> {
 
     public static VTLBoolean of(Boolean value) {
         return new VTLBoolean() {
+            @Override
+            public Class<VTLBoolean> getType() {
+                return VTLBoolean.class;
+            }
+
             @Override
             public Boolean get() {
                 return value;

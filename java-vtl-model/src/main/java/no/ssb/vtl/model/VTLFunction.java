@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * Represents a VTL Function.
  */
-public interface VTLFunction<T> extends VTLTyped<T> {
+public interface VTLFunction<T> extends VTLTyped<VTLObject<T>> {
 
     VTLObject<T> invoke(List<VTLObject> arguments);
 

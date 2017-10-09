@@ -22,7 +22,7 @@ package no.ssb.vtl.model;
 
 import static java.lang.String.*;
 
-public abstract class VTLNumber extends VTLObject<Number> {
+public abstract class VTLNumber extends VTLObject<Number> implements VTLTyped<VTLNumber> {
 
     private VTLNumber() {
         // private.
@@ -30,6 +30,12 @@ public abstract class VTLNumber extends VTLObject<Number> {
 
     public static VTLNumber of(Number number) {
         return new VTLNumber() {
+            
+            @Override
+            public Class<VTLNumber> getType() {
+                return VTLNumber.class;
+            }
+
             @Override
             public Number get() {
                 return number;

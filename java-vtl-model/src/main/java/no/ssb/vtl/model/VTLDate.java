@@ -28,7 +28,7 @@ import java.util.TimeZone;
 import static java.lang.String.*;
 
 // TODO: The spec specifies that date format should be configurable.
-public abstract class VTLDate extends VTLObject<Instant> {
+public abstract class VTLDate extends VTLObject<Instant> implements VTLTyped<VTLDate> {
 
     private VTLDate() {
         // private
@@ -43,6 +43,11 @@ public abstract class VTLDate extends VTLObject<Instant> {
 
         return new VTLDate() {
             @Override
+            public Class<VTLDate> getType() {
+                return VTLDate.class;
+            }
+
+            @Override
             public Instant get() {
                 DateTimeFormatter formatter =
                         DateTimeFormatter.ofPattern("yyyy");
@@ -56,6 +61,11 @@ public abstract class VTLDate extends VTLObject<Instant> {
     public static VTLDate of(Instant instant) {
 
         return new VTLDate() {
+            @Override
+            public Class<VTLDate> getType() {
+                return VTLDate.class;
+            }
+
             @Override
             public Instant get() {
                 return instant;
