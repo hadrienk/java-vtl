@@ -26,12 +26,12 @@ package no.ssb.vtl.model;
 public interface VTLTyped<T extends VTLObject> {
 
     /**
-     * Deprecated: The name is confusing. getJavaClass() should be used instead.
+     * Deprecated: The name is confusing. getVTLType() should be used instead.
      */
     @Deprecated
     Class<T> getType();
 
-    default Class<T> getJavaClass() {
+    default Class<T> getVTLType() {
         return getType();
     }
 

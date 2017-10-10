@@ -79,7 +79,7 @@ public class ExpressionVisitorTest {
         softly.assertThat(result.resolve(bindings))
                 .as("object in variable [variable]")
                 .isSameAs(expected);
-        softly.assertThat(result.getJavaClass())
+        softly.assertThat(result.getVTLType())
                 .as("type of variable [variable]")
                 .isEqualTo(VTLDate.class);
 
@@ -88,7 +88,7 @@ public class ExpressionVisitorTest {
         softly.assertThat(result.resolve(bindings))
                 .as("object in variable ['sum']")
                 .isSameAs(expected);
-        softly.assertThat(result.getJavaClass())
+        softly.assertThat(result.getVTLType())
                 .as("type of variable ['sum']")
                 .isEqualTo(VTLDate.class);
     }

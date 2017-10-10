@@ -96,7 +96,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
                 @Override
                 public Class getType() {
-                    return functionInstance.getJavaClass();
+                    return functionInstance.getVTLType();
                 }
             };
 

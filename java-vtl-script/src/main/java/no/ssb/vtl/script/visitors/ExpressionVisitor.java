@@ -92,7 +92,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
 
                     @Override
                     public Class<?> getType() {
-                        return typed.getJavaClass();
+                        return typed.getVTLType();
                     }
 
                     @Override

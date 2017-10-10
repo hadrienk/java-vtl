@@ -266,7 +266,7 @@ public class AbstractVTLFunctionTest {
             }
         };
 
-        assertThat(function.getJavaClass()).isSameAs(VTLString.class);
+        assertThat(function.getVTLType()).isSameAs(VTLString.class);
     }
 
     @Test
