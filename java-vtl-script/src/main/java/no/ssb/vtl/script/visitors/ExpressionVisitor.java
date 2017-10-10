@@ -26,6 +26,7 @@ import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 
 import javax.script.Bindings;
 
@@ -38,6 +39,7 @@ import static java.lang.String.format;
 public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();
+    private final NativeFunctionsVisitor nativeFunctionsVisitor = new NativeFunctionsVisitor(this);
     private final Bindings scope;
 
     public ExpressionVisitor(Bindings scope) {
@@ -47,6 +49,9 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     @Override
     public VTLExpression2 visitLiteral(VTLParser.LiteralContext ctx) {
         VTLObject literal = literalVisitor.visit(ctx);
+
+        // Literal are always resolved.
+        // TODO: Litteral extends Expression2?
         return new VTLExpression2() {
             @Override
             public Class<?> getType() {
@@ -58,6 +63,12 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                 return literal;
             }
         };
+
+    }
+
+    @Override
+    public VTLExpression2 visitNativeCall(VTLParser.NativeCallContext ctx) {
+        return nativeFunctionsVisitor.visit(ctx);
     }
 
     @Override
@@ -72,6 +83,9 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         if (scope.containsKey(identifier)) {
             Object object = scope.get(identifier);
             if (object instanceof VTLTyped) {
+
+                // Save the type and identifier.
+                // TODO: VariableReference extends VTLExpression2 ?
                 VTLTyped typed = (VTLTyped) object;
                 String finalIdentifier = identifier;
                 return new VTLExpression2() {
@@ -86,6 +100,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                         return (VTLObject) bindings.get(finalIdentifier);
                     }
                 };
+
             } else {
                 throw new VTLRuntimeException(
                         format("unknown object [%s]", object), "VTL-101", ctx

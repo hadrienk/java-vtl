@@ -26,10 +26,14 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
 
+import javax.script.Bindings;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -39,12 +43,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * TODO: Rename to reflect scalar assignment
  */
 public class CalcOperation extends AbstractUnaryDatasetOperation {
-    
+
     private VTLExpression componentExpression;
     private final String variableName;
     private final Component.Role role;
     private final Boolean implicit;
-    
+
     public CalcOperation(Dataset dataset, VTLExpression componentExpression, String identifier, Component.Role role, Boolean implicit) {
         super(checkNotNull(dataset));
         this.componentExpression = checkNotNull(componentExpression);
@@ -53,7 +57,7 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
         // TODO: move to visitor and reuse Pawel's helper.
         this.variableName = removeQuoteIfNeeded(identifier);
     }
-    
+
     @Override
     protected DataStructure computeDataStructure() {
 
@@ -89,7 +93,7 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
 
         return builder.build();
     }
-    
+
     private static String removeQuoteIfNeeded(String key) {
         if (!key.isEmpty() && key.length() > 3) {
             if (key.charAt(0) == '\'' && key.charAt(key.length() - 1) == '\'') {
@@ -102,6 +106,12 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> getData() {
         return getChild().getData().map(dataPoint -> {
+
+            // TODO:
+            VTLExpression2 expression2 = null;
+            VTLObject resolved = expression2.resolve(new RowBindings(getDataStructure(), dataPoint));
+
+
             VTLObject object = componentExpression.apply(dataPoint);
             dataPoint.add(object);
             return dataPoint;
@@ -116,5 +126,76 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Optional<Long> getSize() {
         return getChild().getSize();
+    }
+
+    private static class RowBindings implements Bindings {
+
+        final DataStructure structure;
+        final DataPoint dataPoint;
+
+        private RowBindings(DataStructure structure, DataPoint dataPoint) {
+            this.structure = structure;
+            this.dataPoint = dataPoint;
+        }
+
+        @Override
+        public Object put(String name, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ?> toMerge) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Set<String> keySet() {
+            return structure.keySet();
+        }
+
+        @Override
+        public Collection<Object> values() {
+            return (Collection) dataPoint;
+        }
+
+        @Override
+        public Set<Entry<String, Object>> entrySet() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int size() {
+            return structure.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return structure.isEmpty();
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return structure.containsKey(key);
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Object get(Object key) {
+            return structure.asMap(dataPoint).get(structure.get(key));
+        }
+
+        @Override
+        public Object remove(Object key) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

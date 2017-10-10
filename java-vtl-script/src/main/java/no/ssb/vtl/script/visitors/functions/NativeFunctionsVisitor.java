@@ -22,6 +22,9 @@ package no.ssb.vtl.script.visitors.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
@@ -31,12 +34,15 @@ import no.ssb.vtl.script.functions.VTLCeil;
 import no.ssb.vtl.script.functions.VTLFloor;
 import no.ssb.vtl.script.functions.VTLRound;
 
+import javax.script.Bindings;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLObject> {
+public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     private static ImmutableMap<String, VTLFunction> functions;
 
@@ -50,40 +56,69 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLObject> {
                 .build();
     }
 
-    private final VTLBaseVisitor<VTLObject> expressionVisitor;
+    private final VTLBaseVisitor<VTLExpression2> expressionVisitor;
 
-    public NativeFunctionsVisitor(VTLBaseVisitor<VTLObject> expressionVisitor) {
+    public NativeFunctionsVisitor(VTLBaseVisitor<VTLExpression2> expressionVisitor) {
         this.expressionVisitor = checkNotNull(expressionVisitor);
     }
 
     @Override
-    public VTLObject visitNativeCall(VTLParser.NativeCallContext ctx) {
+    public VTLExpression2 visitNativeCall(VTLParser.NativeCallContext ctx) {
         if (functions.containsKey(ctx.functionName.getText())) {
-            VTLFunction functionInstance = functions.get(ctx.functionName.getText());
+
             VTLParser.FunctionParametersContext parameters = ctx.functionParameters();
-            return functionInstance.invoke(
-                    evaluateParamerers(parameters.expression()),
-                    evaluateNamedParameters(parameters.namedExpression())
-            );
+
+            return new VTLExpression2() {
+
+                VTLFunction functionInstance = functions.get(ctx.functionName.getText());
+                List<VTLExpression2> parametersExp = evaluateParamerers(parameters.expression());
+                Map<String, VTLExpression2> namedParametersExp = evaluateNamedParameters(parameters.namedExpression());
+
+                @Override
+                public VTLObject resolve(Bindings bindings) {
+                    // Resolve the expressions.
+                    ArrayList<Object> resolvedParameters = Lists.newArrayList();
+                    for (VTLExpression2 expression2 : parametersExp) {
+                        resolvedParameters.add(expression2.resolve(bindings));
+                    }
+                    LinkedHashMap<Object, Object> resolvedNamedParameters = Maps.newLinkedHashMap();
+                    for (Map.Entry<String, VTLExpression2> entry : namedParametersExp.entrySet()) {
+                        resolvedNamedParameters.put(
+                                entry.getKey(),
+                                entry.getValue().resolve(bindings)
+                        );
+                    }
+                    return functionInstance.invoke(
+                            resolvedParameters,
+                            resolvedNamedParameters
+                    );
+                }
+
+                @Override
+                public Class getType() {
+                    return functionInstance.getJavaClass();
+                }
+            };
+
         } else {
             throw new UnsupportedOperationException("NOT IMPLEMENTED");
         }
     }
 
-    private Map<String, VTLObject> evaluateNamedParameters(List<VTLParser.NamedExpressionContext> namedExpressionContexts) {
-        ImmutableMap.Builder<String, VTLObject> builder = ImmutableMap.builder();
+    private Map<String, VTLExpression2> evaluateNamedParameters(List<VTLParser.NamedExpressionContext> namedExpressionContexts) {
+        ImmutableMap.Builder<String, VTLExpression2> builder = ImmutableMap.builder();
         for (VTLParser.NamedExpressionContext expressionContext : namedExpressionContexts) {
             String name = expressionContext.name.getText();
-            VTLObject value = expressionVisitor.visit(expressionContext);
+            VTLExpression2 value = expressionVisitor.visit(expressionContext);
             builder.put(name, value);
         }
         return builder.build();
     }
 
-    private List<VTLObject> evaluateParamerers(List<VTLParser.ExpressionContext> expression) {
-        ImmutableList.Builder<VTLObject> builder = ImmutableList.builder();
+    private List<VTLExpression2> evaluateParamerers(List<VTLParser.ExpressionContext> expression) {
+        ImmutableList.Builder<VTLExpression2> builder = ImmutableList.builder();
         for (VTLParser.ExpressionContext expressionContext : expression) {
-            VTLObject value = expressionVisitor.visit(expressionContext);
+            VTLExpression2 value = expressionVisitor.visit(expressionContext);
             builder.add(value);
         }
         return builder.build();

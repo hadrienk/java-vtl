@@ -189,8 +189,7 @@ public class DataStructure extends ForwardingMap<String, Component> {
     /**
      * Creates a new data structure.
      */
-    public static DataStructure of(BiFunction<Object, Class<?>, ?> converter,
-                                   String name1, Component.Role role1, Class<?> type1,
+    public static DataStructure of(String name1, Component.Role role1, Class<?> type1,
                                    String name2, Component.Role role2, Class<?> type2,
                                    String name3, Component.Role role3, Class<?> type3,
                                    String name4, Component.Role role4, Class<?> type4,

@@ -59,6 +59,13 @@ public class ExpressionVisitorTest {
     }
 
     @Test
+    public void testFunctions() throws Exception {
+        VTLParser parse = parse("abs(round(-15.12,1))");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.resolve(null)).isNotNull();
+    }
+
+    @Test
     public void testVariable() throws Exception {
         VTLDate expected = VTLObject.of(Instant.now());
         bindings.put("variable", expected);
@@ -72,11 +79,17 @@ public class ExpressionVisitorTest {
         softly.assertThat(result.resolve(bindings))
                 .as("object in variable [variable]")
                 .isSameAs(expected);
+        softly.assertThat(result.getJavaClass())
+                .as("type of variable [variable]")
+                .isEqualTo(VTLDate.class);
 
         parse = parse("'sum'");
         result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.resolve(bindings))
                 .as("object in variable ['sum']")
                 .isSameAs(expected);
+        softly.assertThat(result.getJavaClass())
+                .as("type of variable ['sum']")
+                .isEqualTo(VTLDate.class);
     }
 }
