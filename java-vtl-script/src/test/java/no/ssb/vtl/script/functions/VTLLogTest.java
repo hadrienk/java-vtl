@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.util.Lists;
@@ -28,59 +29,64 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class VTLRoundTest extends AbstractVTLNumberFunctionTest {
+public class VTLLogTest extends AbstractVTLNumberFunctionTest {
 
     @Before
     public void setUp() {
-        vtlFunction = new VTLRound();
+        vtlFunction = new VTLLog();
     }
 
     @Test
     @Override
-    public void testInvokeWithPositiveNumber() {
+    public void testInvokeWithPositiveNumber() throws Exception {
         VTLObject<?> result = vtlFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(0.5377),
+                        VTLNumber.of(1024),
                         VTLNumber.of(2)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(0.54));
+        assertThat(result).isEqualTo(VTLNumber.of(10.0));
 
         result = vtlFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(1.52222),
-                        VTLNumber.of(4)
+                        VTLNumber.of(1024),
+                        VTLNumber.of(10)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(1.5222));
+        assertThat(result).isEqualTo(VTLNumber.of(3.0102999566398116));
     }
 
     @Test
     @Override
-    public void testInvokeWithNegativeNumber() {
-        VTLObject<?> result = vtlFunction.invoke(
-                Lists.newArrayList(
-                        VTLNumber.of(-0.1234),
-                        VTLNumber.of(2)
-                )
-        );
+    public void testInvokeWithNegativeNumber() throws Exception {
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(-0.12));
+        try {
+            vtlFunction.invoke(
+                    Lists.newArrayList(
+                            VTLNumber.of(-1024),
+                            VTLNumber.of(2)
+                    )
+            );
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).isEqualTo("The number must be greater than zero");
+        }
 
-        result = vtlFunction.invoke(
-                Lists.newArrayList(
-                        VTLNumber.of(-9.3456789),
-                        VTLNumber.of(4)
-                )
-        );
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(-9.3457));
+        try {
+            vtlFunction.invoke(
+                    Lists.newArrayList(
+                            VTLNumber.of(1024),
+                            VTLNumber.of(-10)
+                    )
+            );
+        } catch (IllegalArgumentException e) {
+
+            assertThat(e.getMessage()).isEqualTo("The base must be greater than zero");
+        }
     }
 
     @Test
@@ -123,7 +129,7 @@ public class VTLRoundTest extends AbstractVTLNumberFunctionTest {
                     )
             );
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("missing arguments [decimals]");
+            assertThat(e.getMessage()).isEqualTo("missing arguments [base]");
         }
     }
 
@@ -148,21 +154,7 @@ public class VTLRoundTest extends AbstractVTLNumberFunctionTest {
                     )
             );
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("Number of decimals must be equal to or greater than zero");
-        }
-    }
-
-    @Test
-    public void testInvokeWithNegativeDecimalNumber() throws Exception {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(3.444445),
-                            VTLNumber.of(-5)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("Number of decimals must be equal to or greater than zero");
+            assertThat(e.getMessage()).isEqualTo("The base must be greater than zero");
         }
     }
 }
