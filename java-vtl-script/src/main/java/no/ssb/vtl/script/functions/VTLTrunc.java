@@ -52,7 +52,7 @@ public class VTLTrunc extends AbstractVTLFunction<Number> {
             throw new IllegalArgumentException("Number of decimals must be equal to or greater than zero");
         }
 
-        BigDecimal bigDecimal = new BigDecimal(ds.get().toString());
+        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
         BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_DOWN);
 
         return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());

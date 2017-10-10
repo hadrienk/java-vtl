@@ -24,8 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-import java.math.BigDecimal;
-
 public class VTLExp extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
@@ -44,11 +42,6 @@ public class VTLExp extends AbstractVTLFunction<Number> {
             return VTLObject.of((Number)null);
         }
 
-        Double exp = Math.exp(ds.get().doubleValue());
-
-        //The VTL spec does not specify the number of decimals, but the examples have 3
-        BigDecimal rounded = new BigDecimal(exp.toString()).setScale(3, BigDecimal.ROUND_HALF_UP);
-
-        return VTLNumber.of(rounded.doubleValue());
+        return VTLNumber.of(Math.exp(ds.get().doubleValue()));
     }
 }
