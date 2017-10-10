@@ -54,7 +54,7 @@ public class NativeFunctionsVisitorTest {
     public void testAbs() throws Exception {
         VTLParser parse = parse("abs(-1)");
         VTLExpression2 result = visitor.visit(parse.expression());
-        assertThat(result.resolve(null)).isEqualTo(1);
+        assertThat(result.resolve(null).get()).isEqualTo(1);
     }
 
     @Test

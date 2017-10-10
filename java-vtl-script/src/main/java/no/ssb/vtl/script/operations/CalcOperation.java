@@ -26,7 +26,6 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression;
-import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
 
 import javax.script.Bindings;
@@ -108,8 +107,8 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
         return getChild().getData().map(dataPoint -> {
 
             // TODO:
-            VTLExpression2 expression2 = null;
-            VTLObject resolved = expression2.resolve(new RowBindings(getDataStructure(), dataPoint));
+            // VTLExpression2 expression2 = null;
+            // VTLObject resolved = expression2.resolve(new RowBindings(getDataStructure(), dataPoint));
 
 
             VTLObject object = componentExpression.apply(dataPoint);

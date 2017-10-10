@@ -35,8 +35,6 @@ import no.ssb.vtl.script.functions.VTLFloor;
 import no.ssb.vtl.script.functions.VTLRound;
 
 import javax.script.Bindings;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,18 +74,20 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
                 @Override
                 public VTLObject resolve(Bindings bindings) {
-                    // Resolve the expressions.
-                    ArrayList<Object> resolvedParameters = Lists.newArrayList();
+
+                    // Resolve the parameters.
+                    List<Object> resolvedParameters = Lists.newArrayList();
                     for (VTLExpression2 expression2 : parametersExp) {
                         resolvedParameters.add(expression2.resolve(bindings));
                     }
-                    LinkedHashMap<Object, Object> resolvedNamedParameters = Maps.newLinkedHashMap();
+                    Map<Object, Object> resolvedNamedParameters = Maps.newLinkedHashMap();
                     for (Map.Entry<String, VTLExpression2> entry : namedParametersExp.entrySet()) {
                         resolvedNamedParameters.put(
                                 entry.getKey(),
                                 entry.getValue().resolve(bindings)
                         );
                     }
+
                     return functionInstance.invoke(
                             resolvedParameters,
                             resolvedNamedParameters
