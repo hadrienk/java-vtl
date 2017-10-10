@@ -25,8 +25,9 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.join.DataPointBindings;
 
 import java.util.Map;
 import java.util.Optional;
@@ -35,45 +36,39 @@ import java.util.stream.Stream;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Deprecated, use join assignment instead.
- */
-@Deprecated
-public class CalcOperation extends AbstractUnaryDatasetOperation {
+public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
-    private VTLExpression componentExpression;
-    private final String variableName;
+    private final VTLExpression2 expression;
     private final Component.Role role;
     private final Boolean implicit;
+    private final String identifier;
 
-    public CalcOperation(Dataset dataset, VTLExpression componentExpression, String identifier, Component.Role role, Boolean implicit) {
+    public JoinAssignment(Dataset dataset, VTLExpression2 expression, String identifier, Component.Role role, Boolean implicit) {
         super(checkNotNull(dataset));
-        this.componentExpression = checkNotNull(componentExpression);
+        this.expression = checkNotNull(expression);
         this.role = checkNotNull(role);
         this.implicit = checkNotNull(implicit);
-        // TODO: move to visitor and reuse Pawel's helper.
-        this.variableName = removeQuoteIfNeeded(identifier);
+        this.identifier = checkNotNull(identifier);
     }
 
     @Override
     protected DataStructure computeDataStructure() {
-
         DataStructure.Builder builder = DataStructure.builder();
         DataStructure dataStructure = getChild().getDataStructure();
         for (Map.Entry<String, Component> entry : dataStructure.entrySet()) {
-            if (entry.getKey().equals(variableName))
+            if (entry.getKey().equals(identifier))
                 continue;
             builder.put(entry.getKey(), entry.getValue());
         }
 
-        Class<?> type = componentExpression.getType();
+        Class<?> type = expression.getVTLType();
 
-        if (dataStructure.containsKey(variableName)) {
-            Component existingComponent = dataStructure.get(variableName);
+        if (dataStructure.containsKey(identifier)) {
+            Component existingComponent = dataStructure.get(identifier);
 
             // Overriding identifier is not permitted.
             checkArgument(existingComponent.getRole() != Component.Role.IDENTIFIER,
-                    "an identifier %s already exists in %s", variableName, getChild()
+                    "an identifier %s already exists in %s", identifier, getChild()
             );
 
             // Implicit fails if a component with the same name but a different role
@@ -81,32 +76,27 @@ public class CalcOperation extends AbstractUnaryDatasetOperation {
             if (implicit) {
                 checkArgument(role.equals(existingComponent.getRole()),
                         "the role of the component %s must be %s",
-                        variableName, existingComponent.getRole()
+                        identifier, existingComponent.getRole()
                 );
             }
         }
 
-        builder.put(variableName, role, type);
+        builder.put(identifier, role, type);
 
         return builder.build();
     }
 
-    private static String removeQuoteIfNeeded(String key) {
-        if (!key.isEmpty() && key.length() > 3) {
-            if (key.charAt(0) == '\'' && key.charAt(key.length() - 1) == '\'') {
-                return key.substring(1, key.length() - 1);
-            }
-        }
-        return key;
-    }
-
     @Override
     public Stream<DataPoint> getData() {
-        return getChild().getData().map(dataPoint -> {
-            VTLObject object = componentExpression.apply(dataPoint);
-            dataPoint.add(object);
-            return dataPoint;
-        });
+        DataPointBindings dataPointBindings = new DataPointBindings(getDataStructure());
+        return getChild().getData()
+                .map(dataPointBindings::setDataPoint)
+                .peek(bindings -> {
+                    VTLExpression2 expression2 = null;
+                    VTLObject resolved = expression2.resolve(bindings);
+                    bindings.put(identifier, resolved);
+                })
+                .map(DataPointBindings::getDataPoint);
     }
 
     @Override
