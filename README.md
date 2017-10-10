@@ -185,11 +185,11 @@ Boolean|not|![usable](http://progressed.io/bar/80)|Only inside join expression (
 Mathematical|unary plus and minus|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Mathematical|addition, substraction|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Mathematical|multiplication, division|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|round|![todo][todo]
-Mathematical|abs|![todo][todo]
+Mathematical|round, ceil, floor|![done][done]
+Mathematical|abs|![done][done]
 Mathematical|trunc|![todo][todo]
 Mathematical|power, exp, nroot|![todo][todo]
-Mathematical|in, log|![todo][todo]
+Mathematical|ln, log|![todo][todo]
 Mathematical|mod|![todo][todo]
 String|length|![todo][todo]
 String|concatenation|![todo][todo]
