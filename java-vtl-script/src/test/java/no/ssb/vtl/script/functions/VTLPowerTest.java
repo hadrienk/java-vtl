@@ -6,7 +6,7 @@ package no.ssb.vtl.script.functions;
  * * Java VTL
  *  *
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  *  *
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.util.Lists;
@@ -32,11 +33,11 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
+public class VTLPowerTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
-    public void setUp() {
-        vtlBinaryFunction = new VTLTrunc();
+    public void setUp() throws Exception {
+        vtlBinaryFunction = new VTLPower();
     }
 
     @Test
@@ -44,33 +45,33 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
     public void testInvokeWithPositiveNumber() throws Exception {
         VTLObject<?> result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(5.12345),
+                        VTLNumber.of(5),
                         VTLNumber.of(2)
-                )
+                        )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(5.12));
+        assertThat(result).isEqualTo(VTLNumber.of(25.0));
 
         result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(5.88888),
+                        VTLNumber.of(3),
                         VTLNumber.of(3)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(5.888));
+        assertThat(result).isEqualTo(VTLNumber.of(27.0));
 
         result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(5.432),
-                        VTLNumber.of(0)
+                        VTLNumber.of(3.4),
+                        VTLNumber.of(1.2)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(5));
+        assertThat(result).isEqualTo(VTLNumber.of(4.342848711597634));
     }
 
     @Test
@@ -78,23 +79,48 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
     public void testInvokeWithNegativeNumber() throws Exception {
         VTLObject<?> result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-5.6667),
-                        VTLNumber.of(3)
-                )
-        );
-
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(-5.666));
-
-        result = vtlBinaryFunction.invoke(
-                Lists.newArrayList(
                         VTLNumber.of(-5),
                         VTLNumber.of(2)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(-5.00));
+        assertThat(result).isEqualTo(VTLNumber.of(25.0));
+
+        result = vtlBinaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of(3),
+                        VTLNumber.of(-3)
+                )
+        );
+
+        assertThat(result).isNotNull();
+        assertThat(result).isEqualTo(VTLNumber.of(0.037037037037037035));
+
+        result = vtlBinaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of(-3.4),
+                        VTLNumber.of(-1.2)
+                )
+        );
+
+        assertThat(result).isNotNull();
+        assertThat(result).isEqualTo(VTLNumber.of(Double.NaN));
+    }
+
+    @Test
+    @Override
+    public void testInvokeWithNullValue() {
+
+        VTLObject<?> result = vtlBinaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of((Number)null),
+                        VTLNumber.of(4)
+                )
+        );
+
+        assertThat(result).isEqualTo(VTLNumber.of((Number)null));
+
     }
 
     @Test
@@ -104,23 +130,10 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
                 Lists.newArrayList(
                         VTLNumber.of(4),
                         VTLNumber.of((Number) null)
-                        )
-        ))
-                .as("exception when passing null where not null is expected")
-                .hasMessage("Number of decimals must be equal to or greater than zero")
-                .isExactlyInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void testInvokeWithNegativeDecimalNumber() throws Exception {
-        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
-                Lists.newArrayList(
-                        VTLNumber.of(3.444445),
-                        VTLNumber.of(-5)
                 )
         ))
-                .as("exception when passing a negative number where a positive value is expected")
-                .hasMessage("Number of decimals must be equal to or greater than zero")
+                .as("exception when passing null where not null is expected")
+                .hasMessage("Exponent must be a valid number")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -27,18 +27,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class VTLLnTest extends AbstractVTLNumberFunctionTest {
+public class VTLLnTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlFunction = new VTLLn();
+        vtlUnaryFunction = new VTLLn();
     }
 
     @Test
     @Override
     public void testInvokeWithPositiveNumber() throws Exception {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(148)
                 )
@@ -47,7 +48,7 @@ public class VTLLnTest extends AbstractVTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLNumber.of(4.997212273764115));
 
-        result = vtlFunction.invoke(
+        result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(1)
                 )
@@ -60,15 +61,13 @@ public class VTLLnTest extends AbstractVTLNumberFunctionTest {
     @Test
     @Override
     public void testInvokeWithNegativeNumber() throws Exception {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(-99)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("The number must be greater than zero");
-        }
-
+        assertThatThrownBy(() -> vtlUnaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of(-99)
+                )
+        ))
+                .as("exception when passing negative number where positive is expected")
+                .hasMessage("The number must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

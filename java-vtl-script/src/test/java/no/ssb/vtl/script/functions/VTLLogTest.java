@@ -28,18 +28,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class VTLLogTest extends AbstractVTLNumberFunctionTest {
+public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlFunction = new VTLLog();
+        vtlBinaryFunction = new VTLLog();
     }
 
     @Test
     @Override
     public void testInvokeWithPositiveNumber() throws Exception {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(1024),
                         VTLNumber.of(2)
@@ -49,7 +50,7 @@ public class VTLLogTest extends AbstractVTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLNumber.of(10.0));
 
-        result = vtlFunction.invoke(
+        result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(1024),
                         VTLNumber.of(10)
@@ -64,97 +65,39 @@ public class VTLLogTest extends AbstractVTLNumberFunctionTest {
     @Override
     public void testInvokeWithNegativeNumber() throws Exception {
 
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(-1024),
-                            VTLNumber.of(2)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("The number must be greater than zero");
-        }
-
-
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(1024),
-                            VTLNumber.of(-10)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-
-            assertThat(e.getMessage()).isEqualTo("The base must be greater than zero");
-        }
-    }
-
-    @Test
-    @Override
-    public void testInvokeWithString() throws Exception {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of("3.444445"),
-                            VTLNumber.of(4)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("invalid type class no.ssb.vtl.model.VTLString$1 for argument ds, expected class no.ssb.vtl.model.VTLNumber");
-        }
-    }
-
-    @Test
-    @Override
-    public void testInvokeWithTooManyArguments() {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(3.444445),
-                            VTLNumber.of(4),
-                            VTLNumber.of(11)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("expected 2 argument(s) but got 3");
-        }
-    }
-
-    @Test
-    public void testInvokeWithTooFewArguments() {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(3.444445)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("missing arguments [base]");
-        }
-    }
-
-    @Test
-    @Override
-    public void testInvokeWithNullValue() {
-
-        VTLObject<?> result = vtlFunction.invoke(
+        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of((Number)null),
-                        VTLNumber.of(4)
+                        VTLNumber.of(-1024),
+                        VTLNumber.of(2)
                 )
-        );
+        ))
+                .as("exception when passing negative number where positive is expected")
+                .hasMessage("The number must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
 
-        assertThat(result).isEqualTo(VTLNumber.of((Number)null));
+        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of(1024),
+                        VTLNumber.of(-10)
+                )
+        ))
+                .as("exception when passing negative number where positive is expected")
+                .hasMessage("The base must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
+    }
 
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of((Number) null),
-                            VTLNumber.of(4)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("The base must be greater than zero");
-        }
+    @Test
+    @Override
+    public void testInvokeWithNullAsSecondParameter() {
+
+        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of(4),
+                        VTLNumber.of((Number) null)
+                )
+        ))
+                .as("exception when passing <=0 where >0 is expected")
+                .hasMessage("The base must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }
