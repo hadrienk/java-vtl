@@ -49,7 +49,7 @@ public class VTLRound extends AbstractVTLFunction<Number> {
             throw new IllegalArgumentException("Number of decimals must be equal to or greater than zero");
         }
 
-        BigDecimal bigDecimal = new BigDecimal(ds.get().toString());
+        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
         BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_HALF_UP);
 
         return VTLObject.of(rounded.doubleValue());

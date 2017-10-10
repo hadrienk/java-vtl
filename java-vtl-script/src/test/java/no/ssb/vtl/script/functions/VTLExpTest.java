@@ -48,7 +48,7 @@ public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(148.413));
+        assertThat(result).isEqualTo(VTLNumber.of(148.4131591025766));
 
         result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
@@ -57,7 +57,7 @@ public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(44355.855));
+        assertThat(result).isEqualTo(VTLNumber.of(44355.85513029784));
     }
 
     @Test
@@ -70,7 +70,7 @@ public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(0.368));
+        assertThat(result).isEqualTo(VTLNumber.of(0.36787944117144233));
 
         result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
@@ -79,6 +79,6 @@ public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(0.000));
+        assertThat(result).isEqualTo(VTLNumber.of(1.200724908678636E-5));
     }
 }
