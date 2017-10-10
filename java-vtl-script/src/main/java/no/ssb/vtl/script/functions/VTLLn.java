@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,14 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<Number>{
+public class VTLLn extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
+
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", Number.class, DS);
+    VTLLn() {
+        super("in", Number.class, DS);
     }
 
     @Override
@@ -41,6 +42,10 @@ public class VTLFloor extends AbstractVTLFunction<Number>{
             return VTLObject.of((Number)null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        if(ds.get().intValue() <= 0) {
+            throw new IllegalArgumentException("The number must be greater than zero");
+        }
+
+        return VTLNumber.of(Math.log(ds.get().doubleValue()));
     }
 }

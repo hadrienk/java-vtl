@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class VTLAbsTest extends AbstractVTLNumberUnaryFunctionTest {
-
+public class VTLLnTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlUnaryFunction = new VTLAbs();
+        vtlUnaryFunction = new VTLLn();
     }
 
     @Test
@@ -41,42 +41,33 @@ public class VTLAbsTest extends AbstractVTLNumberUnaryFunctionTest {
     public void testInvokeWithPositiveNumber() throws Exception {
         VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(9L)
+                        VTLNumber.of(148)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9));
+        assertThat(result).isEqualTo(VTLNumber.of(4.997212273764115));
 
         result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(9.12345)
+                        VTLNumber.of(1)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9.12345));
+        assertThat(result).isEqualTo(VTLNumber.of(0.0));
     }
 
     @Test
     @Override
     public void testInvokeWithNegativeNumber() throws Exception {
-        VTLObject<?> result = vtlUnaryFunction.invoke(
+        assertThatThrownBy(() -> vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-9L)
+                        VTLNumber.of(-99)
                 )
-        );
-
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9));
-
-        result = vtlUnaryFunction.invoke(
-                Lists.newArrayList(
-                        VTLNumber.of(-9.12345)
-                )
-        );
-
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9.12345));
+        ))
+                .as("exception when passing negative number where positive is expected")
+                .hasMessage("The number must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -1,17 +1,20 @@
 package no.ssb.vtl.script.functions;
 
-/*-
- * ========================LICENSE_START=================================
- * Java VTL
+/*
+ * -
+ *  * ========================LICENSE_START=================================
+ * * Java VTL
+ *  *
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
+ *  *
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,23 +27,24 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<Number>{
+public class VTLSqrt extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", Number.class, DS);
+    VTLSqrt() {
+        super("sqrt", Number.class, DS);
     }
+
 
     @Override
     protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Number) null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        return VTLNumber.of(Math.sqrt(ds.get().doubleValue()));
     }
 }

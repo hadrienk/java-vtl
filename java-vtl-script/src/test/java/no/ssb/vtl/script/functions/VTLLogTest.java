@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.util.Lists;
@@ -29,86 +30,74 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
+public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlBinaryFunction = new VTLRound();
+        vtlBinaryFunction = new VTLLog();
     }
 
     @Test
     @Override
-    public void testInvokeWithPositiveNumber() {
+    public void testInvokeWithPositiveNumber() throws Exception {
         VTLObject<?> result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(0.5377),
+                        VTLNumber.of(1024),
                         VTLNumber.of(2)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(0.54));
+        assertThat(result).isEqualTo(VTLNumber.of(10.0));
 
         result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(1.52222),
-                        VTLNumber.of(4)
+                        VTLNumber.of(1024),
+                        VTLNumber.of(10)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(1.5222));
+        assertThat(result).isEqualTo(VTLNumber.of(3.0102999566398116));
     }
 
     @Test
     @Override
-    public void testInvokeWithNegativeNumber() {
-        VTLObject<?> result = vtlBinaryFunction.invoke(
+    public void testInvokeWithNegativeNumber() throws Exception {
+
+        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-0.1234),
+                        VTLNumber.of(-1024),
                         VTLNumber.of(2)
                 )
-        );
+        ))
+                .as("exception when passing negative number where positive is expected")
+                .hasMessage("The number must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(-0.12));
-
-        result = vtlBinaryFunction.invoke(
+        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-9.3456789),
-                        VTLNumber.of(4)
+                        VTLNumber.of(1024),
+                        VTLNumber.of(-10)
                 )
-        );
-
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(-9.3457));
+        ))
+                .as("exception when passing negative number where positive is expected")
+                .hasMessage("The base must be greater than zero")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
-
 
     @Test
     @Override
     public void testInvokeWithNullAsSecondParameter() {
+
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(4),
                         VTLNumber.of((Number) null)
                 )
         ))
-                .as("exception when passing null where not null is expected")
-                .hasMessage("Number of decimals must be equal to or greater than zero")
-                .isExactlyInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void testInvokeWithNegativeDecimalNumber() throws Exception {
-        assertThatThrownBy(() -> vtlBinaryFunction.invoke(
-                Lists.newArrayList(
-                        VTLNumber.of(3.444445),
-                        VTLNumber.of(-5)
-                )
-        ))
-                .as("exception when passing a negative number where a positive value is expected")
-                .hasMessage("Number of decimals must be equal to or greater than zero")
+                .as("exception when passing <=0 where >0 is expected")
+                .hasMessage("The base must be greater than zero")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

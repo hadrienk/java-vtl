@@ -45,17 +45,13 @@ public class VTLRound extends AbstractVTLFunction<Number> {
         if (ds.get() == null) {
             return VTLObject.of((Number)null);
         }
-        if (decimals.get() == null) {
-            decimals = VTLNumber.of(0);
-        }
-
-        if (decimals.get().intValue() < 0) {
+        if (decimals.get() == null || decimals.get().intValue() < 0) {
             throw new IllegalArgumentException("Number of decimals must be equal to or greater than zero");
         }
 
-        BigDecimal bigDecimal = new BigDecimal(ds.get().doubleValue());
+        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
         BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_HALF_UP);
 
-        return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());
+        return VTLObject.of(rounded.doubleValue());
     }
 }

@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,37 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<Number>{
+public class VTLLog extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static final Argument<VTLNumber> BASE = new Argument<>("base", VTLNumber.class);
 
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", Number.class, DS);
+    VTLLog() {
+        super("log", Number.class, DS, BASE);
     }
 
     @Override
     protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
+        VTLNumber base = arguments.get(BASE);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLNumber.of((Number)null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        //The number must be greater than zero
+        if(ds.get().intValue() <= 0) {
+            throw new IllegalArgumentException("The number must be greater than zero");
+        }
+
+        //The base must be greater than zero
+        if (base.get() == null || base.get().intValue() <= 0) {
+            throw new IllegalArgumentException("The base must be greater than zero");
+        }
+
+        double result = Math.log(ds.get().doubleValue()) / Math.log(base.get().doubleValue());
+
+        return VTLNumber.of(result);
     }
 }
