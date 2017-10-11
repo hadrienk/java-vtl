@@ -45,17 +45,14 @@ public class VTLNroot extends AbstractVTLFunction<Number> {
         if (ds.get() == null) {
             return VTLObject.of((Number)null);
         }
-        if (index.get() == null) {
-            throw new IllegalArgumentException("The index cannot be null");
+
+        //index cannot be 0 or zero
+        if (index.get() == null || index.get().intValue() == 0) {
+            throw new IllegalArgumentException("The index cannot be null or zero");
         }
 
         int indexInt = index.get().intValue();
         double value = ds.get().doubleValue();
-
-        //index cannot be 0
-        if (indexInt == 0) {
-            throw new IllegalArgumentException("Index cannot be zero");
-        }
 
         //Index must be integer
         if (index.get().doubleValue() > indexInt) {

@@ -70,7 +70,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
                 )
         ))
                 .as("exception when zero is passed where zero is not allowed")
-                .hasMessage("Index cannot be zero")
+                .hasMessage("The index cannot be null or zero")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
 
         result = vtlBinaryFunction.invoke(
@@ -139,7 +139,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
                 )
         ))
                 .as("exception when passing null where null is not allowed")
-                .hasMessage("The index cannot be null")
+                .hasMessage("The index cannot be null or zero")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }
