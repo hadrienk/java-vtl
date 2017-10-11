@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,38 +24,44 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-import java.math.BigDecimal;
-
 import static java.lang.String.format;
 
-public class VTLTrunc extends AbstractVTLFunction<Number> {
+public class VTLLog extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
-    private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
+    private static final Argument<VTLNumber> BASE = new Argument<>("base", VTLNumber.class);
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
 
     @VisibleForTesting
-    VTLTrunc() {
-        super("trunc", Number.class, DS, DECIMALS);
+    VTLLog() {
+        super("log", Number.class, DS, BASE);
     }
 
     @Override
     protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
-
         VTLNumber ds = arguments.get(DS);
-        VTLNumber decimals = arguments.get(DECIMALS);
+        VTLNumber base = arguments.get(BASE);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLNumber.of((Number)null);
         }
-        if (decimals.get() == null || decimals.get().intValue() < 0) {
+
+        //The number must be greater than zero
+        if(ds.get().intValue() <= 0) {
             throw new IllegalArgumentException(
-                    format("%s must be equal to or greater than zero, was %s", DECIMALS, decimals)
+                    format(ARGUMENT_GREATER_THAT_ZERO, DS, ds)
             );
         }
 
-        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
-        BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_DOWN);
+        //The base must be greater than zero
+        if (base.get() == null || base.get().intValue() <= 0) {
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, BASE, base)
+            );
+        }
 
-        return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());
+        double result = Math.log(ds.get().doubleValue()) / Math.log(base.get().doubleValue());
+
+        return VTLNumber.of(result);
     }
 }

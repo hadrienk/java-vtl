@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,38 +24,33 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-import java.math.BigDecimal;
-
 import static java.lang.String.format;
 
-public class VTLTrunc extends AbstractVTLFunction<Number> {
+public class VTLLn extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
-    private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+
 
     @VisibleForTesting
-    VTLTrunc() {
-        super("trunc", Number.class, DS, DECIMALS);
+    VTLLn() {
+        super("ln", Number.class, DS);
     }
 
     @Override
     protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
-
         VTLNumber ds = arguments.get(DS);
-        VTLNumber decimals = arguments.get(DECIMALS);
 
         if (ds.get() == null) {
             return VTLObject.of((Number)null);
         }
-        if (decimals.get() == null || decimals.get().intValue() < 0) {
+
+        if(ds.get().intValue() <= 0) {
             throw new IllegalArgumentException(
-                    format("%s must be equal to or greater than zero, was %s", DECIMALS, decimals)
+                    format(ARGUMENT_GREATER_THAT_ZERO, DS, ds)
             );
         }
 
-        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
-        BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_DOWN);
-
-        return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());
+        return VTLNumber.of(Math.log(ds.get().doubleValue()));
     }
 }

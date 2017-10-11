@@ -21,9 +21,6 @@ package no.ssb.vtl.script.functions;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * =========================LICENSE_END==================================
- *
- *
- *
  */
 
 import no.ssb.vtl.model.VTLNumber;
@@ -34,17 +31,17 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class VTLExpTest extends AbstractVTLNumberFunctionTest {
+public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlFunction = new VTLExp();
+        vtlUnaryFunction = new VTLExp();
     }
 
     @Test
     @Override
     public void testInvokeWithPositiveNumber() throws Exception {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(5)
                 )
@@ -53,7 +50,7 @@ public class VTLExpTest extends AbstractVTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLNumber.of(148.4131591025766));
 
-        result = vtlFunction.invoke(
+        result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(10.7)
                 )
@@ -66,7 +63,7 @@ public class VTLExpTest extends AbstractVTLNumberFunctionTest {
     @Test
     @Override
     public void testInvokeWithNegativeNumber() throws Exception {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(-1)
                 )
@@ -75,7 +72,7 @@ public class VTLExpTest extends AbstractVTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLNumber.of(0.36787944117144233));
 
-        result = vtlFunction.invoke(
+        result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(-11.33)
                 )

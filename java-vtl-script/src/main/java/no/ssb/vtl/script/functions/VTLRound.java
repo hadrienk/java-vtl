@@ -26,8 +26,11 @@ import no.ssb.vtl.model.VTLObject;
 
 import java.math.BigDecimal;
 
+import static java.lang.String.format;
+
 public class VTLRound extends AbstractVTLFunction<Number> {
 
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
 
@@ -43,19 +46,17 @@ public class VTLRound extends AbstractVTLFunction<Number> {
         VTLNumber decimals = arguments.get(DECIMALS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Number) null);
         }
-        if (decimals.get() == null) {
-            decimals = VTLNumber.of(0);
-        }
-
-        if (decimals.get().intValue() < 0) {
-            throw new IllegalArgumentException("Number of decimals must be equal to or greater than zero");
+        if (decimals.get() == null || decimals.get().intValue() < 0) {
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, DECIMALS, decimals)
+            );
         }
 
         BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
         BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_HALF_UP);
 
-        return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());
+        return VTLObject.of(rounded.doubleValue());
     }
 }

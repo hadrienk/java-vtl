@@ -26,7 +26,7 @@ import no.ssb.vtl.model.VTLObject;
 
 public class VTLFloor extends AbstractVTLFunction<Number>{
 
-    private static final AbstractVTLFunction.Argument<VTLNumber> DS = new AbstractVTLFunction.Argument<>("ds", VTLNumber.class);
+    private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
     public VTLFloor() {
