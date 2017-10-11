@@ -20,7 +20,9 @@
 grammar VTL;
 start : statement+ EOF;
 
-statement : assignment | expression ;
+statement : assignment ;
+
+assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
 nativeCall         : functionName=NATIVE_FUNCTIONS LPAR functionParameters? RPAR ;
 functionCall       : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
@@ -29,23 +31,30 @@ functionParameters : namedExpression ( COMMA namedExpression)*
                    | expression ( COMMA expression )*
                    | expression ( COMMA expression )* COMMA namedExpression ( COMMA namedExpression)* ;
 
-
 namedExpression     : name=REG_IDENTIFIER COLON expression ;
 
 // Expressions
-expression : LPAR expression RPAR
-           | nativeCall
-           | functionCall
-           // | unaryOperators
-           | <assoc=right> expression operatorConcat expression
-           | datasetExpression
-           | expression clauseExpression
-           | variable
-           | literal ;
+expression : LPAR expression RPAR                                               # precedenceExpr
+           | nativeCall                                                         # functionExpr
+           | functionCall                                                       # functionExpr
+
+           | op=(NOT | PLUS | MINUS) right=expression                           # unaryExpr
+           | left=expression op=(ISNULL|ISNOTNULL)                              # postfixExpr
+           | <assoc=right> left=expression op=CONCAT right=expression           # binaryExpr
+           | left=expression op=(MUL | DIV) right=expression                    # binaryExpr
+           | left=expression op=(PLUS | MINUS) right=expression                 # binaryExpr
+           | left=expression op=(LE | LT | GE | GT | EQ | NE) right=expression  # binaryExpr
+           | left=expression op=AND right=expression                            # binaryExpr
+           | left=expression op=(OR|XOR) right=expression                       # binaryExpr
+
+           | membershipExpression                                               # membershipExpr
+           | variable                                                           # variableExpr
+           | literal                                                            # literalExpr
+           ;
+
+membershipExpression : leff=variable op=MEMBERSHIP right=variable ;
 
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
-
-operatorConcat : op=CONCAT ;
 
 // Literal.
 literal : nullLiteral
@@ -61,8 +70,6 @@ dateLiteral     : 'TODO:date' ;
 integerLiteral  : INTEGER_CONSTANT ;
 floatLiteral    : FLOAT_CONSTANT ;
 stringLiteral   : STRING_CONSTANT ;
-
-assignment : variable ASSIGNMENT expression ;
 
 /* TODO: deprecate, use expression instead */
 datasetExpression : <assoc=right>datasetExpression clauseExpression     #withClause
@@ -134,7 +141,7 @@ renameParam : from=componentRef 'as' to=variable ( ROLE role=componentRole )? ;
 
 filter      : 'filter' booleanExpression ;
 
-keep        : 'keep' booleanExpression ( ',' booleanExpression )* ;
+keep        : 'keep' variable ( ',' variable )* ;
 
 calc        : 'calc' ;
 
@@ -162,6 +169,8 @@ booleanParam
 ASSIGNMENT : ':=' ;
 
 /* Operators */
+
+MEMBERSHIP : '.' ;
 
 CONCAT : '||' ;
 EQ : '='  ;
@@ -223,8 +232,6 @@ FUNC_INSTR   : 'instr' ;
 // TODO: Fix conflict FUNC_D_F_S   : 'date_from_string' ;
 FUNC_REPLACE : 'replace' ;
 
-//WS : [ \r\t\u000C] -> skip ;
-
 relationalExpression : unionExpression | joinExpression ;
 
 unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
@@ -235,7 +242,8 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalcExpression # joinCalcClause
+//joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalcExpression # joinCalcClause
+joinClause : joinAssignment                     # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -243,6 +251,9 @@ joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalc
            | joinFoldExpression                 # joinFoldClause
            | joinUnfoldExpression               # joinUnfoldClause
            ;
+
+joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expression ;
+
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
 joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=variable ',' measure=variable ;
@@ -259,18 +270,6 @@ dateFunction
     ;
 
 dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
-
-
-// Left recursive
-joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
-                   | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
-                   | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
-                   | conditionalExpression                                                              #joinCalcCondition
-                   | dateFunction                                                                       #joinCalcDate
-                   | componentRef                                                                       #joinCalcReference
-                   | constant                                                                           #joinCalcAtom
-                   | booleanExpression                                                                  #joinCalcBoolean
-                   ;
 
 
 // Drop clause
@@ -328,6 +327,8 @@ ESCAPED_IDENTIFIER:  QUOTE (~['\r\n] | '\'\'')+ QUOTE;
 
 fragment QUOTE : '\'';
 
+MUL : '*' ;
+DIV : '/' ;
 PLUS : '+';
 MINUS : '-';
 

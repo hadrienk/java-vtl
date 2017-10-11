@@ -38,7 +38,20 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A wrapper around Datapoint that exposes it as a {@link javax.script.Bindings}.
+ * A wrapper around {@link DataPoint} that exposes it as a {@link javax.script.Bindings}.
+ * <p>
+ * Usage example:
+ * <code><pre>
+ * DataPointBindings dataPointBindings = new DataPointBindings(ds.getDataStructure());
+ * List<DataPoint> pointList = ds.getData()
+ *     .map(dataPointBindings::setDataPoint)
+ *     .peek(bindings -> {
+ *         bindings.put("id", VTLObject.of("newId"));
+ *         bindings.put("measure", VTLObject.of("newMeasure"));
+ *     })
+ *     .map(DataPointBindings::getDataPoint)
+ *     .collect(Collectors.toList());
+ * </pre></code>
  */
 public class DataPointBindings implements Bindings {
 
@@ -50,14 +63,14 @@ public class DataPointBindings implements Bindings {
         this.dataStructure = checkNotNull(dataStructure);
     }
 
+    public DataPoint getDataPoint() {
+        return dataPoint;
+    }
+
     public DataPointBindings setDataPoint(DataPoint dataPoint) {
         this.dataPoint = dataPoint;
         this.map = dataStructure.asMap(this.dataPoint);
         return this;
-    }
-
-    public DataPoint getDataPoint() {
-        return dataPoint;
     }
 
     @Override
@@ -83,7 +96,7 @@ public class DataPointBindings implements Bindings {
 
     @Override
     public Collection<Object> values() {
-        return (Collection)map.values();
+        return (Collection) map.values();
     }
 
     @Override
