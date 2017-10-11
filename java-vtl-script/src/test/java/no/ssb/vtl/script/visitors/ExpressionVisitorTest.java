@@ -66,6 +66,41 @@ public class ExpressionVisitorTest {
     }
 
     @Test
+    public void testConcat() throws Exception {
+        VTLParser parse = parse("\"string\" || \"string\"");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo("stringstring");
+    }
+
+    @Test
+    public void testDivision() throws Exception {
+        VTLParser parse = parse("-5 / 0.05");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(-100.0);
+    }
+
+    @Test
+    public void testMultiplication() throws Exception {
+        VTLParser parse = parse("-1.5 * -10");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(15.0);
+    }
+
+    @Test
+    public void testAddition() throws Exception {
+        VTLParser parse = parse("-10 + 15");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(5L);
+    }
+
+    @Test
+    public void testSubtraction() throws Exception {
+        VTLParser parse = parse("-10 - 15");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(-25L);
+    }
+
+    @Test
     public void testVariable() throws Exception {
         VTLDate expected = VTLObject.of(Instant.now());
         bindings.put("variable", expected);

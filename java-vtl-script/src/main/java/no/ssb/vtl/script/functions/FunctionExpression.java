@@ -27,6 +27,7 @@ import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
 
 import javax.script.Bindings;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,10 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression2 {
 
     public FunctionExpression(VTLFunction<T> wrappedFunction, Map<String, VTLExpression2> namedArguments) {
         this(wrappedFunction, Collections.emptyList(), namedArguments);
+    }
+
+    public FunctionExpression(VTLFunction<T> wrappedFunction, VTLExpression2... arguments) {
+        this(wrappedFunction, Arrays.asList(arguments));
     }
 
     @Override

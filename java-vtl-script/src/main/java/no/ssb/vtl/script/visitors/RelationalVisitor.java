@@ -50,7 +50,7 @@ public class RelationalVisitor extends VTLBaseVisitor<Dataset> {
     public Dataset visitUnionExpression(VTLParser.UnionExpressionContext ctx) {
         List<Dataset> datasets = Lists.newArrayList();
         for (VTLParser.DatasetExpressionContext datasetExpressionContext : ctx.datasetExpression()) {
-            Dataset dataset = assignmentVisitor.visit(datasetExpressionContext);
+            Dataset dataset = (Dataset) assignmentVisitor.visit(datasetExpressionContext);
             datasets.add(dataset);
         }
         return new UnionOperation(datasets);
