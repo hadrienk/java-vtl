@@ -26,14 +26,14 @@ import no.ssb.vtl.model.VTLObject;
 
 import java.math.BigDecimal;
 
-public class VTLRound extends AbstractVTLFunction<Number> {
+public class VTLTrunc extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
 
     @VisibleForTesting
-    public VTLRound() {
-        super("round", Number.class, DS, DECIMALS);
+    VTLTrunc() {
+        super("trunc", Number.class, DS, DECIMALS);
     }
 
     @Override
@@ -48,13 +48,12 @@ public class VTLRound extends AbstractVTLFunction<Number> {
         if (decimals.get() == null) {
             decimals = VTLNumber.of(0);
         }
-
         if (decimals.get().intValue() < 0) {
             throw new IllegalArgumentException("Number of decimals must be equal to or greater than zero");
         }
 
         BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
-        BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_HALF_UP);
+        BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_DOWN);
 
         return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());
     }
