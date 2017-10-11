@@ -26,10 +26,8 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.CalcOperation;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.visitors.ComponentRoleVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
@@ -40,7 +38,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -118,27 +115,27 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         return workingDataset = currentDataset;
     }
 
-    @Override
-    public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-
-        // Create the expression.
-        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
-        VTLExpression componentExpression = visitor.visit(ctx);
-
-        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(ctx.role));
-        Boolean implicit = ctx.implicit != null;
-
-        // Calculate name
-        String componentName = ctx.variable().getText();
-
-        return new CalcOperation(
-                workingDataset,
-                componentExpression,
-                componentName,
-                componentRole.orElse(Component.Role.MEASURE),
-                implicit
-        );
-    }
+//    @Override
+//    public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
+//
+//        // Create the expression.
+//        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
+//        VTLExpression componentExpression = visitor.visit(ctx);
+//
+//        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(ctx.role));
+//        Boolean implicit = ctx.implicit != null;
+//
+//        // Calculate name
+//        String componentName = ctx.variable().getText();
+//
+//        return new CalcOperation(
+//                workingDataset,
+//                componentExpression,
+//                componentName,
+//                componentRole.orElse(Component.Role.MEASURE),
+//                implicit
+//        );
+//    }
 
     @Override
     public Dataset visitJoinFoldClause(VTLParser.JoinFoldClauseContext ctx) {

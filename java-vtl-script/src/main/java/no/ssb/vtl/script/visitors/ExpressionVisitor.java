@@ -20,7 +20,6 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
@@ -31,7 +30,6 @@ import no.ssb.vtl.script.functions.VTLConcatenation;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 
 import javax.script.Bindings;
-
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -99,6 +97,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             case VTLParser.LE:
 
         }
+        return null; //TODO.
     }
 
     @Override

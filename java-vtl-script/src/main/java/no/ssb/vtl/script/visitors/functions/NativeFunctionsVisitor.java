@@ -22,19 +22,17 @@ package no.ssb.vtl.script.visitors.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.functions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
 import no.ssb.vtl.script.functions.VTLFloor;
 import no.ssb.vtl.script.functions.VTLRound;
 
-import javax.script.Bindings;
 import java.util.List;
 import java.util.Map;
 
@@ -63,43 +61,15 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
     @Override
     public VTLExpression2 visitNativeCall(VTLParser.NativeCallContext ctx) {
         if (functions.containsKey(ctx.functionName.getText())) {
+            VTLFunction<VTLObject> functionInstance = functions.get(ctx.functionName.getText());
 
+            // Evaluate parameter expressions.
             VTLParser.FunctionParametersContext parameters = ctx.functionParameters();
+            List<VTLExpression2> parametersExp = evaluateParamerers(parameters.expression());
+            Map<String, VTLExpression2> namedParametersExp = evaluateNamedParameters(parameters.namedExpression());
 
-            return new VTLExpression2() {
-
-                VTLFunction functionInstance = functions.get(ctx.functionName.getText());
-                List<VTLExpression2> parametersExp = evaluateParamerers(parameters.expression());
-                Map<String, VTLExpression2> namedParametersExp = evaluateNamedParameters(parameters.namedExpression());
-
-                @Override
-                public VTLObject resolve(Bindings bindings) {
-
-                    // Resolve the parameters.
-                    List<Object> resolvedParameters = Lists.newArrayList();
-                    for (VTLExpression2 expression2 : parametersExp) {
-                        resolvedParameters.add(expression2.resolve(bindings));
-                    }
-                    Map<Object, Object> resolvedNamedParameters = Maps.newLinkedHashMap();
-                    for (Map.Entry<String, VTLExpression2> entry : namedParametersExp.entrySet()) {
-                        resolvedNamedParameters.put(
-                                entry.getKey(),
-                                entry.getValue().resolve(bindings)
-                        );
-                    }
-
-                    return functionInstance.invoke(
-                            resolvedParameters,
-                            resolvedNamedParameters
-                    );
-                }
-
-                @Override
-                public Class getType() {
-                    return functionInstance.getVTLType();
-                }
-            };
-
+            // Wrap function as an expression.
+            return new FunctionExpression<>(functionInstance, parametersExp, namedParametersExp);
         } else {
             throw new UnsupportedOperationException("NOT IMPLEMENTED");
         }

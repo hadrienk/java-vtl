@@ -75,9 +75,8 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
 
             ImmutableMap.Builder<Component, String> names = ImmutableMap.builder();
             ImmutableMap.Builder<Component, Component.Role> roles = ImmutableMap.builder();
-
-            // TODO: Maybe use a singleton?
-            ComponentRoleVisitor roleVisitor = new ComponentRoleVisitor();
+            
+            ComponentRoleVisitor roleVisitor = ComponentRoleVisitor.getInstance();
 
             for (VTLParser.RenameParamContext parameter : parameters) {
                 Component from = (Component) visitor.visit(parameter.from);
