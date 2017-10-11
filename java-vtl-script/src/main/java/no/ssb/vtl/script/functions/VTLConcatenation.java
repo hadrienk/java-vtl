@@ -33,7 +33,7 @@ public class VTLConcatenation extends AbstractVTLFunction<VTLString> {
     private static final Argument<VTLString> RIGHT = new Argument<>("right", VTLString.class);
 
     @VisibleForTesting
-    VTLConcatenation() {
+    public VTLConcatenation() {
         super("||", VTLString.class, LEFT, RIGHT);
     }
 

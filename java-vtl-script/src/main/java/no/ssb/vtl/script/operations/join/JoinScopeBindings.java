@@ -39,6 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * A special kind of scope that exposes a flattened view of the component
  * of the datasets that is used to create join scopes.
  */
+@Deprecated
 final class JoinScopeBindings implements Bindings {
 
     private final ImmutableSet<String> datasetNames;

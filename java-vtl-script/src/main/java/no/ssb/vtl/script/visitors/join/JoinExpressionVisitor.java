@@ -52,7 +52,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     private ReferenceVisitor referenceVisitor;
     private Dataset workingDataset;
     private Bindings joinScope;
-    private static final ComponentRoleVisitor ROLE_VISITOR = new ComponentRoleVisitor();
+    private static final ComponentRoleVisitor ROLE_VISITOR = ComponentRoleVisitor.getInstance();
 
     public JoinExpressionVisitor(ScriptContext context) {
         joinDefVisitor = new JoinDefinitionVisitor(context);
@@ -92,11 +92,6 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
 
         return finalDataset;
-//        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(joinScope);
-//        Function<WorkingDataset, WorkingDataset> joinClause = joinBodyVisitor.visitJoinBody(ctx.joinBody());
-//        WorkingDataset workingDataset = joinOperation.workDataset();
-//
-//        return joinClause.apply(workingDataset);
     }
     
     @Override

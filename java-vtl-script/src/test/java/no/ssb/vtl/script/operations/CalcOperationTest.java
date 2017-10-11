@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
 
+@Deprecated
 public class CalcOperationTest {
 
     private VTLExpression expression;

@@ -20,15 +20,19 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.script.functions.VTLConcatenation;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 
 import javax.script.Bindings;
+
+import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -64,6 +68,37 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             }
         };
 
+    }
+
+    @Override
+    public VTLExpression2 visitPrecedenceExpr(VTLParser.PrecedenceExprContext ctx) {
+        return visit(ctx.expression());
+    }
+
+    @Override
+    public VTLExpression2 visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
+        VTLExpression2 leftExpression = visit(ctx.left);
+        VTLExpression2 rightExpression = visit(ctx.right);
+        switch (ctx.op.getType()) {
+            case VTLParser.CONCAT:
+                VTLConcatenation concat = new VTLConcatenation();
+                return new VTLExpression2() {
+                    @Override
+                    public VTLObject resolve(Bindings bindings) {
+                        return concat.invoke(Arrays.asList(
+                                leftExpression.resolve(bindings),
+                                rightExpression.resolve(bindings)
+                        ));
+                    }
+
+                    @Override
+                    public Class getType() {
+                        return concat.getVTLType();
+                    }
+                };
+            case VTLParser.LE:
+
+        }
     }
 
     @Override

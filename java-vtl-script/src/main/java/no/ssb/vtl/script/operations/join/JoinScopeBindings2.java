@@ -29,23 +29,26 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
 import javax.script.Bindings;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A special kind of scope that exposes a flattened view of the component
- * of the datasets that is used to create join scopes.
+ * A bindings wrapper that exposes datasets and their components as {@link no.ssb.vtl.model.VTLTyped}
  */
 @Deprecated
-final class JoinScopeBindings implements Bindings {
+final class JoinScopeBindings2 implements Bindings {
 
     private final ImmutableSet<String> datasetNames;
     private final Map<String, Object> scope = Maps.newHashMap();
 
-    JoinScopeBindings(Map<String, Dataset> datasets) {
+    JoinScopeBindings2(Map<String, Dataset> datasets) {
         checkNotNull(datasets);
         this.datasetNames = ImmutableSet.copyOf(datasets.keySet());
         //this.scope.putAll(datasets);
