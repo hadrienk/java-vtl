@@ -1,17 +1,20 @@
 package no.ssb.vtl.script.functions;
 
-/*-
- * ========================LICENSE_START=================================
- * Java VTL
+/*
+ * -
+ *  * ========================LICENSE_START=================================
+ * * Java VTL
+ *  *
  * %%
  * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ *  *
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,12 +31,11 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class VTLAbsTest extends AbstractVTLNumberUnaryFunctionTest {
-
+public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlUnaryFunction = new VTLAbs();
+        vtlUnaryFunction = new VTLExp();
     }
 
     @Test
@@ -41,21 +43,21 @@ public class VTLAbsTest extends AbstractVTLNumberUnaryFunctionTest {
     public void testInvokeWithPositiveNumber() throws Exception {
         VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(9L)
+                        VTLNumber.of(5)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9));
+        assertThat(result).isEqualTo(VTLNumber.of(148.4131591025766));
 
         result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(9.12345)
+                        VTLNumber.of(10.7)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9.12345));
+        assertThat(result).isEqualTo(VTLNumber.of(44355.85513029784));
     }
 
     @Test
@@ -63,20 +65,20 @@ public class VTLAbsTest extends AbstractVTLNumberUnaryFunctionTest {
     public void testInvokeWithNegativeNumber() throws Exception {
         VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-9L)
+                        VTLNumber.of(-1)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9));
+        assertThat(result).isEqualTo(VTLNumber.of(0.36787944117144233));
 
         result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of(-9.12345)
+                        VTLNumber.of(-11.33)
                 )
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(9.12345));
+        assertThat(result).isEqualTo(VTLNumber.of(1.200724908678636E-5));
     }
 }

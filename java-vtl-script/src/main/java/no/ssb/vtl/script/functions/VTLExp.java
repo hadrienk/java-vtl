@@ -24,23 +24,24 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
+public class VTLExp extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
 
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", VTLNumber.class, DS);
+    VTLExp() {
+        super("exp", VTLNumber.class, DS);
     }
 
     @Override
     protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
             return VTLObject.of((Number)null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        return VTLNumber.of(Math.exp(ds.get().doubleValue()));
     }
 }

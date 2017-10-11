@@ -28,17 +28,17 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class VTLFloorTest extends AbstractVTLNumberFunctionTest {
+public class VTLFloorTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlFunction = new VTLFloor();
+        vtlUnaryFunction = new VTLFloor();
     }
 
     @Test
     @Override
     public void testInvokeWithPositiveNumber() throws Exception {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(5.99)
                 )
@@ -47,7 +47,7 @@ public class VTLFloorTest extends AbstractVTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLNumber.of(5));
 
-        result = vtlFunction.invoke(
+        result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(5.22)
                 )
@@ -61,7 +61,7 @@ public class VTLFloorTest extends AbstractVTLNumberFunctionTest {
     @Test
     @Override
     public void testInvokeWithNegativeNumber() {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(-4.99)
                 )
@@ -70,7 +70,7 @@ public class VTLFloorTest extends AbstractVTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLNumber.of(-5));
 
-        result = vtlFunction.invoke(
+        result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(-4.33)
                 )

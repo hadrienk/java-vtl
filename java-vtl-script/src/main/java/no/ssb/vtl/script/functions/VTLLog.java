@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,25 +22,45 @@ package no.ssb.vtl.script.functions;
 
 import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
-import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
+import static java.lang.String.format;
+
+public class VTLLog extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static final Argument<VTLNumber> BASE = new Argument<>("base", VTLNumber.class);
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
 
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", VTLNumber.class, DS);
+    VTLLog() {
+        super("log", VTLNumber.class, DS, BASE);
     }
 
     @Override
     protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
+        VTLNumber base = arguments.get(BASE);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLNumber.of((Number)null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        //The number must be greater than zero
+        if(ds.get().intValue() <= 0) {
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, DS, ds)
+            );
+        }
+
+        //The base must be greater than zero
+        if (base.get() == null || base.get().intValue() <= 0) {
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, BASE, base)
+            );
+        }
+
+        double result = Math.log(ds.get().doubleValue()) / Math.log(base.get().doubleValue());
+
+        return VTLNumber.of(result);
     }
 }

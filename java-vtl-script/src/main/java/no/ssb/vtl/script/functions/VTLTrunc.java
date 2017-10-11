@@ -24,23 +24,38 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
+import java.math.BigDecimal;
+
+import static java.lang.String.format;
+
+public class VTLTrunc extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
 
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", VTLNumber.class, DS);
+    VTLTrunc() {
+        super("trunc", VTLNumber.class, DS, DECIMALS);
     }
 
     @Override
     protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+
         VTLNumber ds = arguments.get(DS);
+        VTLNumber decimals = arguments.get(DECIMALS);
 
         if (ds.get() == null) {
             return VTLObject.of((Number)null);
         }
+        if (decimals.get() == null || decimals.get().intValue() < 0) {
+            throw new IllegalArgumentException(
+                    format("%s must be equal to or greater than zero, was %s", DECIMALS, decimals)
+            );
+        }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
+        BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_DOWN);
+
+        return decimals.get().intValue() > 0 ? VTLObject.of(rounded.doubleValue()) : VTLObject.of(rounded.intValue());
     }
 }

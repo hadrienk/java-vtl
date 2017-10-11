@@ -26,16 +26,17 @@ import org.assertj.core.util.Lists;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public abstract class AbstractVTLNumberFunctionTest
+public abstract class AbstractVTLNumberUnaryFunctionTest
         implements VTLNumberFunctionTest {
 
-    AbstractVTLFunction<VTLNumber> vtlFunction;
+    AbstractVTLFunction<VTLNumber> vtlUnaryFunction;
 
     @Test
     @Override
     public void testInvokeWithNullValue() throws Exception {
-        VTLObject<?> result = vtlFunction.invoke(
+        VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of((Number) null)
                 )
@@ -47,43 +48,40 @@ public abstract class AbstractVTLNumberFunctionTest
     @Test
     @Override
     public void testInvokeWithString() throws Exception {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of("3.444445")
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("invalid type class no.ssb.vtl.model.VTLString$1 for argument ds, expected class no.ssb.vtl.model.VTLNumber");
-        }
+        assertThatThrownBy(() -> vtlUnaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of("3.444445")
+                )
+        ))
+                .as("Exception when passing String argument where Number is expected")
+                .hasMessage("invalid type class no.ssb.vtl.model.VTLString$1 for argument ds, expected class no.ssb.vtl.model.VTLNumber")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
 
     @Test
     @Override
     public void testInvokeWithEmptyArgumentsList() throws Exception {
-        try {
-            vtlFunction.invoke(
-                    Lists.emptyList()
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("Required argument not present");
-        }
+        assertThatThrownBy(() -> vtlUnaryFunction.invoke(
+                Lists.emptyList()
+        ))
+                .as("exception when passing no arguments")
+                .hasMessage("Required argument not present")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
 
     @Test
     @Override
     public void testInvokeWithTooManyArguments() throws Exception {
-        try {
-            vtlFunction.invoke(
-                    Lists.newArrayList(
-                            VTLNumber.of(3.444445),
-                            VTLNumber.of(4)
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("expected 1 argument(s) but got 2");
-        }
+        assertThatThrownBy(() -> vtlUnaryFunction.invoke(
+                Lists.newArrayList(
+                        VTLNumber.of(3.444445),
+                        VTLNumber.of(4)
+                )
+        ))
+                .as("exception when passing too many arguments")
+                .hasMessage("expected 1 argument(s) but got 2")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

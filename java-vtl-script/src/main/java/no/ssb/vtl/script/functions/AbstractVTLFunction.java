@@ -20,6 +20,7 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
@@ -214,6 +215,13 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
             return type;
         }
 
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("name", name)
+                    .add("type", type.getSimpleName())
+                    .toString();
+        }
     }
 
     protected static class OptionalArgument<A extends VTLObject> extends Argument<A> {

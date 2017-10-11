@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2017 Arild Johan Takvam-Borge
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,17 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
+import static java.lang.String.format;
+
+public class VTLLn extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+
 
     @VisibleForTesting
-    public VTLFloor() {
-        super("floor", VTLNumber.class, DS);
+    VTLLn() {
+        super("ln", VTLNumber.class, DS);
     }
 
     @Override
@@ -41,6 +45,12 @@ public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
             return VTLObject.of((Number)null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        if(ds.get().intValue() <= 0) {
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, DS, ds)
+            );
+        }
+
+        return VTLNumber.of(Math.log(ds.get().doubleValue()));
     }
 }
