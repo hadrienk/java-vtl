@@ -27,10 +27,16 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
+import static java.lang.String.format;
+
 public class VTLNroot extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> INDEX = new Argument<>("index", VTLNumber.class);
+
+    public static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
+    public static final String ARGUMENT_WRONG_TYPE = "%s must be an integer, was %s";
+    public static final String ARGUMENT_GREATER_THAN_ZERO_EVEN_INDEX = "%s must be greater than zero when %s is even, was %s";
 
     @VisibleForTesting
     VTLNroot() {
@@ -48,20 +54,27 @@ public class VTLNroot extends AbstractVTLFunction<Number> {
 
         //index cannot be 0 or zero
         if (index.get() == null || index.get().intValue() == 0) {
-            throw new IllegalArgumentException("The index cannot be null or zero");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_NULL_OR_ZERO, INDEX, index)
+            );
         }
 
         int indexInt = index.get().intValue();
         double value = ds.get().doubleValue();
 
         //Index must be integer
+        // TODO: Adjust when VTLInteger and VTLFloat are done.
         if (index.get().doubleValue() > indexInt) {
-            throw new IllegalArgumentException("Index must be of type Integer");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_WRONG_TYPE, DS, index)
+            );
         }
 
         //Only accept negative number if index is uneven
         if (indexInt % 2 == 0 && value < 0) {
-            throw new IllegalArgumentException("The number must be greater than zero when index is even");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAN_ZERO_EVEN_INDEX, DS, INDEX, value)
+            );
         }
 
         //Compute on absolute value and negate if original value was negative

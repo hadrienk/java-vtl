@@ -67,7 +67,7 @@ public class VTLLnTest extends AbstractVTLNumberUnaryFunctionTest {
                 )
         ))
                 .as("exception when passing negative number where positive is expected")
-                .hasMessage("The number must be greater than zero")
+                .hasMessage("Argument{name=ds, type=VTLNumber} must be greater than zero, was -99")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

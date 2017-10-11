@@ -24,10 +24,13 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
+import static java.lang.String.format;
+
 public class VTLLog extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> BASE = new Argument<>("base", VTLNumber.class);
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
 
     @VisibleForTesting
     VTLLog() {
@@ -45,12 +48,16 @@ public class VTLLog extends AbstractVTLFunction<Number> {
 
         //The number must be greater than zero
         if(ds.get().intValue() <= 0) {
-            throw new IllegalArgumentException("The number must be greater than zero");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, DS, ds)
+            );
         }
 
         //The base must be greater than zero
         if (base.get() == null || base.get().intValue() <= 0) {
-            throw new IllegalArgumentException("The base must be greater than zero");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, BASE, base)
+            );
         }
 
         double result = Math.log(ds.get().doubleValue()) / Math.log(base.get().doubleValue());

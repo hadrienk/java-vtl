@@ -26,6 +26,8 @@ import no.ssb.vtl.model.VTLObject;
 
 import java.math.BigDecimal;
 
+import static java.lang.String.format;
+
 public class VTLTrunc extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
@@ -46,7 +48,9 @@ public class VTLTrunc extends AbstractVTLFunction<Number> {
             return VTLObject.of((Number)null);
         }
         if (decimals.get() == null || decimals.get().intValue() < 0) {
-            throw new IllegalArgumentException("Number of decimals must be equal to or greater than zero");
+            throw new IllegalArgumentException(
+                    format("%s must be equal to or greater than zero, was %s", DECIMALS, decimals)
+            );
         }
 
         BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());

@@ -27,10 +27,13 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
+import static java.lang.String.format;
+
 public class VTLPower extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> EXP = new Argument<>("base", VTLNumber.class);
+    public static final String ARGUMENT_MUST_BE_NUMBER = "%s must be a valid number, was %s";
 
     @VisibleForTesting
     VTLPower() {
@@ -47,7 +50,9 @@ public class VTLPower extends AbstractVTLFunction<Number> {
         }
 
         if (exp.get() == null) {
-            throw new IllegalArgumentException("Exponent must be a valid number");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_MUST_BE_NUMBER, EXP, exp)
+            );
         }
 
         return VTLNumber.of(Math.pow(ds.get().doubleValue(), exp.get().doubleValue()));

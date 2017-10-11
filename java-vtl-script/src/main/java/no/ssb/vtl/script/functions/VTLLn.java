@@ -24,14 +24,17 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
+import static java.lang.String.format;
+
 public class VTLLn extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
 
 
     @VisibleForTesting
     VTLLn() {
-        super("in", Number.class, DS);
+        super("ln", Number.class, DS);
     }
 
     @Override
@@ -43,7 +46,9 @@ public class VTLLn extends AbstractVTLFunction<Number> {
         }
 
         if(ds.get().intValue() <= 0) {
-            throw new IllegalArgumentException("The number must be greater than zero");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_GREATER_THAT_ZERO, DS, ds)
+            );
         }
 
         return VTLNumber.of(Math.log(ds.get().doubleValue()));

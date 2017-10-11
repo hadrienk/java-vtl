@@ -133,7 +133,7 @@ public class VTLPowerTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing null where not null is expected")
-                .hasMessage("Exponent must be a valid number")
+                .hasMessage("Argument{name=base, type=VTLNumber} must be a valid number, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

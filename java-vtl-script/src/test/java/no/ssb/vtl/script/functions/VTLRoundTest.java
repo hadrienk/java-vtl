@@ -95,7 +95,7 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing null where not null is expected")
-                .hasMessage("Number of decimals must be equal to or greater than zero")
+                .hasMessage("Argument{name=decimals, type=VTLNumber} must be greater than zero, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
@@ -108,7 +108,7 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing a negative number where a positive value is expected")
-                .hasMessage("Number of decimals must be equal to or greater than zero")
+                .hasMessage("Argument{name=decimals, type=VTLNumber} must be greater than zero, was -5")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

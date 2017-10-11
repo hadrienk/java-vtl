@@ -27,10 +27,13 @@ import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
+import static java.lang.String.format;
+
 public class VTLMod extends AbstractVTLFunction<Number> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DENOMINATOR = new Argument<>("denominator", VTLNumber.class);
+    public static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
 
     @VisibleForTesting
     VTLMod() {
@@ -47,7 +50,9 @@ public class VTLMod extends AbstractVTLFunction<Number> {
             return VTLObject.of((Number)null);
         }
         if (denominator.get() == null || denominator.get().doubleValue() == 0.0) {
-            throw new IllegalArgumentException("Denominator cannot be null or zero");
+            throw new IllegalArgumentException(
+                    format(ARGUMENT_NULL_OR_ZERO, DENOMINATOR, denominator)
+            );
         }
 
         return VTLNumber.of(ds.get().doubleValue() % denominator.get().doubleValue());

@@ -72,7 +72,7 @@ public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing negative number where positive is expected")
-                .hasMessage("The number must be greater than zero")
+                .hasMessage("Argument{name=ds, type=VTLNumber} must be greater than zero, was -1024")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
@@ -82,7 +82,7 @@ public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing negative number where positive is expected")
-                .hasMessage("The base must be greater than zero")
+                .hasMessage("Argument{name=base, type=VTLNumber} must be greater than zero, was -10")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
@@ -97,7 +97,7 @@ public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing <=0 where >0 is expected")
-                .hasMessage("The base must be greater than zero")
+                .hasMessage("Argument{name=base, type=VTLNumber} must be greater than zero, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

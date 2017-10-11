@@ -102,7 +102,7 @@ public class VTLModTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing zero where zero is not allowed")
-                .hasMessage("Denominator cannot be null or zero")
+                .hasMessage("Argument{name=denominator, type=VTLNumber} cannot be null or zero, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }

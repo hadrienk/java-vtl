@@ -70,7 +70,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
                 )
         ))
                 .as("exception when zero is passed where zero is not allowed")
-                .hasMessage("The index cannot be null or zero")
+                .hasMessage("Argument{name=index, type=VTLNumber} cannot be null or zero, was 0")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
 
         result = vtlBinaryFunction.invoke(
@@ -90,7 +90,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
                 )
         ))
                 .as("exception when passing a double where an int is expected")
-                .hasMessage("Index must be of type Integer")
+                .hasMessage("Argument{name=ds, type=VTLNumber} must be an integer, was 1.99")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
 
     }
@@ -125,7 +125,8 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
                 )
         ))
                 .as("exception when passing a negative value where a positive value is expected")
-                .hasMessage("The number must be greater than zero when index is even")
+                .hasMessage("Argument{name=ds, type=VTLNumber} must be greater than zero" +
+                        " when Argument{name=index, type=VTLNumber} is even, was -25.0")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
@@ -139,7 +140,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
                 )
         ))
                 .as("exception when passing null where null is not allowed")
-                .hasMessage("The index cannot be null or zero")
+                .hasMessage("Argument{name=index, type=VTLNumber} cannot be null or zero, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }
