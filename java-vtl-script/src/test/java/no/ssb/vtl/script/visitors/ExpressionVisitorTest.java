@@ -155,6 +155,20 @@ public class ExpressionVisitorTest {
         builder.put("null %s false", "or", vtlNull);
         builder.put("null %s null", "or", vtlNull);
 
+        builder.put("true %s true", "xor", vtlFalse);
+        builder.put("true %s false", "xor", vtlTrue);
+        builder.put("true %s null", "xor",  vtlNull);
+        builder.put("false %s true", "xor", vtlTrue);
+        builder.put("false %s false", "xor", vtlFalse);
+        builder.put("false %s null", "xor", vtlNull);
+        builder.put("null %s true", "xor", vtlNull);
+        builder.put("null %s false", "xor", vtlNull);
+        builder.put("null %s null", "xor", vtlNull);
+
+        builder.put("%s true", "not", vtlFalse);
+        builder.put("%s false", "not", vtlTrue);
+        builder.put("%s null", "not", vtlNull);
+
         for (Table.Cell<String, String, VTLBoolean> test : builder.build().cellSet()) {
             String exprTpl = checkNotNull(test.getRowKey());
             String op = test.getColumnKey();

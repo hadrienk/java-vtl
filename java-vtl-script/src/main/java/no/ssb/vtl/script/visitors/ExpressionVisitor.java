@@ -33,8 +33,10 @@ import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;
 import no.ssb.vtl.script.functions.VTLDivision;
 import no.ssb.vtl.script.functions.VTLMultiplication;
+import no.ssb.vtl.script.functions.VTLNot;
 import no.ssb.vtl.script.functions.VTLOr;
 import no.ssb.vtl.script.functions.VTLSubtraction;
+import no.ssb.vtl.script.functions.VTLXor;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
@@ -83,6 +85,17 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
+    public VTLExpression2 visitUnaryExpr(VTLParser.UnaryExprContext ctx) {
+        VTLExpression2 operand = visit(ctx.expression());
+        switch (ctx.op.getType()) {
+            case VTLParser.NOT:
+                return new FunctionExpression<>(VTLNot.getInstance(), operand);
+            default:
+                throw new ParseCancellationException("unknown operator " + ctx.op.getText());
+        }
+    }
+
+    @Override
     public VTLExpression2 visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
         VTLExpression2 leftExpression = visit(ctx.left);
         VTLExpression2 rightExpression = visit(ctx.right);
@@ -116,8 +129,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                 return new FunctionExpression<>(VTLAnd.getInstance(), leftExpression, rightExpression);
             case VTLParser.OR:
                 return  new FunctionExpression<>(VTLOr.getInstance(), leftExpression, rightExpression);
-            //case VTLParser.XOR:
-//                return left.xor(right);
+            case VTLParser.XOR:
+                return new FunctionExpression<>(VTLXor.getInstance(), leftExpression, rightExpression);
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }
