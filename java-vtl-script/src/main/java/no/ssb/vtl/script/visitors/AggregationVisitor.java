@@ -48,12 +48,15 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
         Dataset dataset;
         if (ctx.datasetRef() != null) {
             dataset = (Dataset) referenceVisitor.visit(ctx.datasetRef());
-            return getSumOperation(dataset, getGroupByComponents(ctx, dataset));
-        } else if (ctx.componentRef() != null) {
-            dataset = (Dataset) referenceVisitor.visit(ctx.componentRef().datasetRef());
-            Component aggregationComponent = getComponentFromDataset(dataset, ctx.componentRef().variable());
-            return getSumOperation(dataset, getGroupByComponents(ctx, dataset), Collections.singletonList(aggregationComponent));
-        } throw new ParseCancellationException("Required parameters not found");
+
+            if (ctx.variable() != null) {
+                Component aggregationComponent = getComponentFromDataset(dataset, ctx.variable());
+                return getSumOperation(dataset, getGroupByComponents(ctx, dataset), Collections.singletonList(aggregationComponent));
+            } else {
+                return getSumOperation(dataset, getGroupByComponents(ctx, dataset));
+            }
+        }
+        throw new ParseCancellationException("Required parameters not found");
     }
     
     private Component getComponentFromDataset(Dataset dataset, VTLParser.VariableContext componentRef) {
