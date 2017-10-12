@@ -20,6 +20,10 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLNumber;
@@ -38,6 +42,10 @@ import org.junit.Test;
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.time.Instant;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 public class ExpressionVisitorTest {
 
@@ -105,6 +113,101 @@ public class ExpressionVisitorTest {
         VTLExpression2 result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-25L);
+    }
+
+    @Test
+    public void testPrecedence() throws Exception {
+        VTLParser parse = parse("(-10 - 15) * 2");
+        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.resolve(null).get()).isEqualTo(-50L);
+
+        parse = parse("-10 - 15 * 2");
+        result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.resolve(null).get()).isEqualTo(-40L);
+    }
+
+    @Test
+    public void testBooleanOperators() {
+        VTLBoolean vtlTrue = VTLBoolean.of(true);
+        VTLBoolean vtlFalse = VTLBoolean.of(false);
+        VTLBoolean vtlNull = VTLBoolean.of((Boolean) null);
+
+        ImmutableTable.Builder<String, String, VTLBoolean> builder = ImmutableTable.builder();
+        builder.put("true %s true", "and", vtlTrue);
+        builder.put("true %s false", "and", vtlFalse);
+        builder.put("true %s null", "and",  vtlNull);
+        builder.put("false %s true", "and", vtlFalse);
+        builder.put("false %s false", "and", vtlFalse);
+        builder.put("false %s null", "and", vtlFalse);
+        builder.put("null %s true", "and", vtlNull);
+        builder.put("null %s false", "and", vtlFalse);
+        builder.put("null %s null", "and", vtlNull);
+
+        builder.put("true %s true", "or", vtlTrue);
+        builder.put("true %s false", "or", vtlTrue);
+        builder.put("true %s null", "or",  vtlTrue);
+        builder.put("false %s true", "or", vtlTrue);
+        builder.put("false %s false", "or", vtlFalse);
+        builder.put("false %s null", "or", vtlNull);
+        builder.put("null %s true", "or", vtlTrue);
+        builder.put("null %s false", "or", vtlNull);
+        builder.put("null %s null", "or", vtlNull);
+
+        for (Table.Cell<String, String, VTLBoolean> test : builder.build().cellSet()) {
+            String exprTpl = checkNotNull(test.getRowKey());
+            String op = test.getColumnKey();
+            String expr = format(exprTpl, op);
+
+            VTLParser parse = parse(expr);
+            VTLExpression2 result = expressionVisitor.visit(parse.expression());
+            softly.assertThat(result.resolve(null).get())
+                    .as("result of the expression [%s]", expr)
+                    .isEqualTo(test.getValue());
+        }
+    }
+
+    @Test
+    public void testEqualityOperators() throws Exception {
+        ImmutableMap.Builder<String, Boolean> tests = ImmutableMap.<String, Boolean>builder()
+                .put("1 > 0", true)
+                .put("0 > 1", false)
+                .put("-1 > -2", true)
+                .put("-2 > -1", false)
+                .put("1 >= 1", true)
+                .put("1 >= 0", true)
+                .put("0 >= 1", false)
+                .put("-1 >= -2", true)
+                .put("-2 >= -1", false)
+
+                .put("1 < 0", false)
+                .put("0 < 1", true)
+                .put("-1 < -2", false)
+                .put("-2 < -1", true)
+                .put("1 <= 1", true)
+                .put("1 <= 0", false)
+                .put("0 <= 1", true)
+                .put("-1 <= -2", false)
+                .put("-2 <= -1", true)
+
+                .put("\"b\" > \"a\"", true)
+                .put("\"a\" > \"b\"", false)
+
+                .put("1.5 > 0.5", true)
+                .put("0.5 > 1.5", false)
+                .put("-0.5 > -1.5", true)
+                .put("-1.5 > -0.5", false);
+
+                // TODO: Dates
+
+        for (Map.Entry<String, Boolean> test : tests.build().entrySet()) {
+            VTLParser parse = parse(test.getKey());
+            VTLExpression2 result = expressionVisitor.visit(parse.expression());
+            softly.assertThat(result.resolve(null).get())
+                    .as("result of the expression [%s]", test.getKey())
+                    .isEqualTo(test.getValue());
+        }
     }
 
     @Test
