@@ -20,6 +20,7 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
@@ -33,8 +34,10 @@ import no.ssb.vtl.script.functions.VTLDivision;
 import no.ssb.vtl.script.functions.VTLMultiplication;
 import no.ssb.vtl.script.functions.VTLSubtraction;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import javax.script.Bindings;
+import java.util.function.BiPredicate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -83,7 +86,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         VTLExpression2 rightExpression = visit(ctx.right);
         switch (ctx.op.getType()) {
             case VTLParser.CONCAT:
-                // TODO: Singletons.
+                // TODO: Singleton.
                 return new FunctionExpression<>(new VTLConcatenation(), leftExpression, rightExpression);
             case VTLParser.MUL:
                 return new FunctionExpression<>(VTLMultiplication.getInstance(), leftExpression, rightExpression);
@@ -93,9 +96,38 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                 return new FunctionExpression<>(VTLAddition.getInstance(), leftExpression, rightExpression);
             case VTLParser.MINUS:
                 return new FunctionExpression<>(VTLSubtraction.getInstance(), leftExpression, rightExpression);
+
+            case VTLParser.EQ:
+                return getBooleanExpression((left, right) -> left.compareTo(right) == 0, leftExpression, rightExpression);
+            case VTLParser.NE:
+                return getBooleanExpression((left, right) -> left.compareTo(right) != 0, leftExpression, rightExpression);
+            case VTLParser.LE:
+                return getBooleanExpression((l, r) ->  l.compareTo(r) <= 0, leftExpression, rightExpression);
+            case VTLParser.LT:
+                return getBooleanExpression((l, r) -> l.compareTo(r) < 0, leftExpression, rightExpression);
+            case VTLParser.GE:
+                return getBooleanExpression((l, r) -> l.compareTo(r) >= 0, leftExpression, rightExpression);
+            case VTLParser.GT:
+                return getBooleanExpression((l, r) -> l.compareTo(r) > 0, leftExpression, rightExpression);
             default:
-                throw new UnsupportedOperationException("unknown operator " + ctx.op.getText());
+                throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }
+    }
+
+    private VTLExpression2 getBooleanExpression(BiPredicate<VTLObject, VTLObject> predicate, VTLExpression2 leftExpression, VTLExpression2 rightExpression) {
+        return new VTLExpression2() {
+            @Override
+            public VTLObject resolve(Bindings bindings) {
+                VTLObject left = leftExpression.resolve(bindings);
+                VTLObject right = rightExpression.resolve(bindings);
+                return VTLBoolean.of(predicate.test(left, right));
+            }
+
+            @Override
+            public Class getType() {
+                return VTLBoolean.class;
+            }
+        };
     }
 
     @Override
