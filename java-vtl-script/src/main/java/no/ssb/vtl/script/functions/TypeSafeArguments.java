@@ -48,9 +48,15 @@ public class TypeSafeArguments {
         return (T) arguments.get(argumentReference);
     }
 
+    public <T extends VTLObject> T getNullable(AbstractVTLFunction.Argument<T> argumentReference, T valueIfNull) {
+        checkArgument(arguments.containsKey(argumentReference));
+        T value = (T) arguments.get(argumentReference);
+        return value.get() == null ? valueIfNull : value;
+    }
+
     private static VTLObject checkType(VTLObject value, AbstractVTLFunction.Argument argument) {
         // TODO: exception type.
-        checkArgument(argument.getType().isAssignableFrom(value.getClass()),
+        checkArgument(value.get() == null || argument.getType().isAssignableFrom(value.getClass()),
                 WRONG_ARGUMENT_TYPE,
                 value.getClass(), argument.getName(), argument.getType()
         );

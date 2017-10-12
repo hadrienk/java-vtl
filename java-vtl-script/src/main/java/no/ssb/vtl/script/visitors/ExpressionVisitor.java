@@ -29,9 +29,11 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.functions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAddition;
+import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;
 import no.ssb.vtl.script.functions.VTLDivision;
 import no.ssb.vtl.script.functions.VTLMultiplication;
+import no.ssb.vtl.script.functions.VTLOr;
 import no.ssb.vtl.script.functions.VTLSubtraction;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -109,6 +111,13 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                 return getBooleanExpression((l, r) -> l.compareTo(r) >= 0, leftExpression, rightExpression);
             case VTLParser.GT:
                 return getBooleanExpression((l, r) -> l.compareTo(r) > 0, leftExpression, rightExpression);
+
+            case VTLParser.AND:
+                return new FunctionExpression<>(VTLAnd.getInstance(), leftExpression, rightExpression);
+            case VTLParser.OR:
+                return  new FunctionExpression<>(VTLOr.getInstance(), leftExpression, rightExpression);
+            //case VTLParser.XOR:
+//                return left.xor(right);
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }

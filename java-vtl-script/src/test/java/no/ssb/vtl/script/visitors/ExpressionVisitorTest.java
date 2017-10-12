@@ -162,7 +162,7 @@ public class ExpressionVisitorTest {
 
             VTLParser parse = parse(expr);
             VTLExpression2 result = expressionVisitor.visit(parse.expression());
-            softly.assertThat(result.resolve(null).get())
+            softly.assertThat(result.resolve(null))
                     .as("result of the expression [%s]", expr)
                     .isEqualTo(test.getValue());
         }
