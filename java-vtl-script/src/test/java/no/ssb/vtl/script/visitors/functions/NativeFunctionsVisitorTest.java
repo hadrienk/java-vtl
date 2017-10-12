@@ -77,4 +77,60 @@ public class NativeFunctionsVisitorTest {
         VTLExpression2 result = visitor.visit(parse.expression());
         assertThat(result.resolve(null).get()).isEqualTo(1);
     }
+
+    @Test
+    public void testExp() throws Exception {
+        VTLParser parser = parse("exp(5)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(148.4131591025766);
+    }
+
+    @Test
+    public void testLn() throws Exception {
+        VTLParser parser = parse("ln(148)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(4.997212273764115);
+    }
+
+    @Test
+    public void testLog() throws Exception {
+        VTLParser parser = parse("log(1024, 2)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(10d);
+    }
+
+    @Test
+    public void testMod() throws Exception {
+        VTLParser parser = parse("mod(10, 3)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(1d);
+    }
+
+    @Test
+    public void testNroot() throws Exception {
+        VTLParser parser = parse("nroot(25, 2)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(5d);
+    }
+
+    @Test
+    public void testPower() throws Exception {
+        VTLParser parser = parse("power(5, 2)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(25d);
+    }
+
+    @Test
+    public void testSqrt() throws Exception {
+        VTLParser parser = parse("sqrt(9)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(3d);
+    }
+
+    @Test
+    public void testTrunc() throws Exception {
+        VTLParser parser = parse("trunc(1.566, 1)");
+        VTLExpression2<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(1.5);
+    }
 }

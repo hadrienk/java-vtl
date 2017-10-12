@@ -32,10 +32,15 @@ import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
 import no.ssb.vtl.script.functions.VTLExp;
 import no.ssb.vtl.script.functions.VTLFloor;
+import no.ssb.vtl.script.functions.VTLLn;
+import no.ssb.vtl.script.functions.VTLLog;
+import no.ssb.vtl.script.functions.VTLMod;
+import no.ssb.vtl.script.functions.VTLNroot;
+import no.ssb.vtl.script.functions.VTLPower;
 import no.ssb.vtl.script.functions.VTLRound;
+import no.ssb.vtl.script.functions.VTLSqrt;
+import no.ssb.vtl.script.functions.VTLTrunc;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -47,19 +52,19 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     static {
         // TODO(hadrien): I'd like to use VTLParser.FUNC_* here. If someone has an idea?
-        Field[] declaredFields = VTLParser.class.getDeclaredFields();
-        List<Field> staticFields = new ArrayList<>();
-        for (Field field : declaredFields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getName().startsWith("FUNC_")) {
-                staticFields.add(field);
-            }
-        }
         functions = ImmutableMap.<String, VTLFunction>builder()
                 .put("abs", VTLAbs.getInstance())
                 .put("round", VTLRound.getInstance())
                 .put("ceil", VTLCeil.getInstance())
                 .put("floor", VTLFloor.getInstance())
                 .put("exp", VTLExp.getInstance())
+                .put("ln", VTLLn.getInstance())
+                .put("log", VTLLog.getInstance())
+                .put("mod", VTLMod.getInstance())
+                .put("nroot", VTLNroot.getInstance())
+                .put("power", VTLPower.getInstance())
+                .put("sqrt", VTLSqrt.getInstance())
+                .put("trunc", VTLTrunc.getInstance())
                 .build();
     }
 
