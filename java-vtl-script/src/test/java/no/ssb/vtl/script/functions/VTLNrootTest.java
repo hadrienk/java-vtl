@@ -36,7 +36,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
 
     @Before
     public void setUp() throws Exception {
-        vtlBinaryFunction = new VTLNroot();
+        vtlBinaryFunction = VTLNroot.getInstance();
     }
 
     @Test

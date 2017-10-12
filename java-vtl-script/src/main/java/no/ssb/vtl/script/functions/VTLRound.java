@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -30,13 +29,20 @@ import static java.lang.String.format;
 
 public class VTLRound extends AbstractVTLFunction<VTLNumber> {
 
-    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+    private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
+    private static VTLRound instance;
 
-    @VisibleForTesting
-    public VTLRound() {
+    private VTLRound() {
         super("round", VTLNumber.class, DS, DECIMALS);
+    }
+
+    public static VTLRound getInstance() {
+        if (instance == null) {
+            instance = new VTLRound();
+        }
+        return instance;
     }
 
     @Override

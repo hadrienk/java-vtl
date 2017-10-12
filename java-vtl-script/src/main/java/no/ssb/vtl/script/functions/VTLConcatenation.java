@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 
@@ -31,10 +30,17 @@ public class VTLConcatenation extends AbstractVTLFunction<VTLString> {
 
     private static final Argument<VTLString> LEFT = new Argument<>("left", VTLString.class);
     private static final Argument<VTLString> RIGHT = new Argument<>("right", VTLString.class);
+    private static VTLConcatenation instance;
 
-    @VisibleForTesting
-    public VTLConcatenation() {
+    private VTLConcatenation() {
         super("||", VTLString.class, LEFT, RIGHT);
+    }
+
+    public static VTLConcatenation getInstance() {
+        if (instance == null) {
+            instance = new VTLConcatenation();
+        }
+        return instance;
     }
 
     @Override

@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -28,13 +27,19 @@ import static java.lang.String.format;
 
 public class VTLLn extends AbstractVTLFunction<VTLNumber> {
 
+    private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
-    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+    private static VTLLn instance;
 
-
-    @VisibleForTesting
-    VTLLn() {
+    private VTLLn() {
         super("ln", VTLNumber.class, DS);
+    }
+
+    public static VTLLn getInstance() {
+        if (instance == null) {
+            instance = new VTLLn();
+        }
+        return instance;
     }
 
     @Override

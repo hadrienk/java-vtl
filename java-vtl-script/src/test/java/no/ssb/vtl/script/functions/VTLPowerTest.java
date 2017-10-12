@@ -37,7 +37,7 @@ public class VTLPowerTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() throws Exception {
-        vtlBinaryFunction = new VTLPower();
+        vtlBinaryFunction = VTLPower.getInstance();
     }
 
     @Test

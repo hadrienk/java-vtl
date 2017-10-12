@@ -20,17 +20,23 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 public class VTLCeil extends AbstractVTLFunction<VTLNumber>{
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLCeil instance;
 
-    @VisibleForTesting
-    public VTLCeil() {
+    private VTLCeil() {
         super("ceil", VTLNumber.class, DS);
+    }
+
+    public static VTLCeil getInstance() {
+        if (instance == null) {
+            instance = new VTLCeil();
+        }
+        return instance;
     }
 
     @Override

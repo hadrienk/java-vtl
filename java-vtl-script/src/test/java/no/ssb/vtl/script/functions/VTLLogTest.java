@@ -34,7 +34,7 @@ public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlBinaryFunction = new VTLLog();
+        vtlBinaryFunction = VTLLog.getInstance();
     }
 
     @Test

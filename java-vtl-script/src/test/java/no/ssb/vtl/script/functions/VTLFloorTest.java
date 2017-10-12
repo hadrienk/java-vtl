@@ -32,7 +32,7 @@ public class VTLFloorTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlUnaryFunction = new VTLFloor();
+        vtlUnaryFunction = VTLFloor.getInstance();
     }
 
     @Test

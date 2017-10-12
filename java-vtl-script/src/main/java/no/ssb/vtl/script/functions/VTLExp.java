@@ -20,17 +20,23 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 public class VTLExp extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLExp instance;
 
-    @VisibleForTesting
-    VTLExp() {
+    private VTLExp() {
         super("exp", VTLNumber.class, DS);
+    }
+
+    public static VTLExp getInstance() {
+        if (instance == null) {
+            instance = new VTLExp();
+        }
+        return instance;
     }
 
     @Override

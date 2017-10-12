@@ -23,17 +23,23 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 public class VTLSqrt extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLSqrt instance;
 
-    @VisibleForTesting
-    VTLSqrt() {
+    private VTLSqrt() {
         super("sqrt", VTLNumber.class, DS);
+    }
+
+    public static VTLSqrt getInstance() {
+        if (instance == null) {
+            instance = new VTLSqrt();
+        }
+        return instance;
     }
 
 

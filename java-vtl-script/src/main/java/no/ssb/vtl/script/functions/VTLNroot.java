@@ -23,7 +23,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -31,16 +30,23 @@ import static java.lang.String.format;
 
 public class VTLNroot extends AbstractVTLFunction<VTLNumber> {
 
+    private static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
+    private static final String ARGUMENT_WRONG_TYPE = "%s must be an integer, was %s";
+    private static final String ARGUMENT_GREATER_THAN_ZERO_EVEN_INDEX = "%s must be greater than zero when %s is even, was %s";
+
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> INDEX = new Argument<>("index", VTLNumber.class);
+    private static VTLNroot instance;
 
-    public static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
-    public static final String ARGUMENT_WRONG_TYPE = "%s must be an integer, was %s";
-    public static final String ARGUMENT_GREATER_THAN_ZERO_EVEN_INDEX = "%s must be greater than zero when %s is even, was %s";
-
-    @VisibleForTesting
-    VTLNroot() {
+    private VTLNroot() {
         super("nroot", VTLNumber.class, DS, INDEX);
+    }
+
+    public static VTLNroot getInstance() {
+        if (instance == null) {
+            instance = new VTLNroot();
+        }
+        return instance;
     }
 
     @Override

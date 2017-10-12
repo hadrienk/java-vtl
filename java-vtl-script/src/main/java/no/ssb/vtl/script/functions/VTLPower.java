@@ -23,7 +23,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -31,13 +30,20 @@ import static java.lang.String.format;
 
 public class VTLPower extends AbstractVTLFunction<VTLNumber> {
 
+    private static final String ARGUMENT_MUST_BE_NUMBER = "%s must be a valid number, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> EXP = new Argument<>("base", VTLNumber.class);
-    public static final String ARGUMENT_MUST_BE_NUMBER = "%s must be a valid number, was %s";
+    private static VTLPower instance;
 
-    @VisibleForTesting
-    VTLPower() {
+    private VTLPower() {
         super("power", VTLNumber.class, DS, EXP);
+    }
+
+    public static VTLPower getInstance() {
+        if (instance == null) {
+            instance = new VTLPower();
+        }
+        return instance;
     }
 
     @Override

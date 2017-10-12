@@ -76,6 +76,34 @@ public class ExpressionVisitorTest {
     }
 
     @Test
+    public void testAbs() throws Exception {
+        VTLParser parser = parse("abs(-99)");
+        VTLExpression2<?> result = expressionVisitor.visit(parser.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(99);
+    }
+
+    @Test
+    public void testCeil() throws Exception {
+        VTLParser parser = parse("ceil(1.1)");
+        VTLExpression2<?> result = expressionVisitor.visit(parser.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(2);
+    }
+
+    @Test
+    public void testFloor() throws Exception {
+        VTLParser parser = parse("floor(1.1)");
+        VTLExpression2<?> result = expressionVisitor.visit(parser.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(1);
+    }
+
+    @Test
+    public void testExp() throws Exception {
+        VTLParser parser = parse("exp(5)");
+        VTLExpression2<?> result = expressionVisitor.visit(parser.expression());
+        softly.assertThat(result.resolve(null).get()).isEqualTo(148.4131591025766);
+    }
+
+    @Test
     public void testConcat() throws Exception {
         VTLParser parse = parse("\"string\" || \"string\"");
         VTLExpression2 result = expressionVisitor.visit(parse.expression());

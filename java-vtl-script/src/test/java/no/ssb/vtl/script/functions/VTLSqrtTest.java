@@ -35,7 +35,7 @@ public class VTLSqrtTest extends AbstractVTLNumberUnaryFunctionTest{
 
     @Before
     public void setUp() throws Exception {
-        vtlUnaryFunction = new VTLSqrt();
+        vtlUnaryFunction = VTLSqrt.getInstance();
     }
 
     @Test

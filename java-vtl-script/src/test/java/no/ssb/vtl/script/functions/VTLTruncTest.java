@@ -36,7 +36,7 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlBinaryFunction = new VTLTrunc();
+        vtlBinaryFunction = VTLTrunc.getInstance();
     }
 
     @Test

@@ -33,7 +33,7 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlBinaryFunction = new VTLRound();
+        vtlBinaryFunction = VTLRound.getInstance();
     }
 
     @Test

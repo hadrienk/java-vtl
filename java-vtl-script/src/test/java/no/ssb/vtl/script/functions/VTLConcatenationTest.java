@@ -33,7 +33,7 @@ public class VTLConcatenationTest {
 
     @Before
     public void setUp() throws Exception {
-        vtlConcatenation = new VTLConcatenation();
+        vtlConcatenation = VTLConcatenation.getInstance();
     }
 
     @Test

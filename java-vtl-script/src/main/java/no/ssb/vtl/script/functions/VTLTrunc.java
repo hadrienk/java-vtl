@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -32,10 +31,17 @@ public class VTLTrunc extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
+    private static VTLTrunc instance;
 
-    @VisibleForTesting
-    VTLTrunc() {
+    private VTLTrunc() {
         super("trunc", VTLNumber.class, DS, DECIMALS);
+    }
+
+    public static VTLTrunc getInstance() {
+        if (instance == null) {
+            instance = new VTLTrunc();
+        }
+        return instance;
     }
 
     @Override

@@ -13,8 +13,9 @@ public class VTLAddition extends AbstractVTLFunction<VTLNumber> {
     }
 
     public static VTLAddition getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new VTLAddition();
+        }
         return instance;
     }
 

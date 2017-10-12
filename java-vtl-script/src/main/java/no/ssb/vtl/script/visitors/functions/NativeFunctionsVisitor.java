@@ -30,9 +30,12 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.functions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
+import no.ssb.vtl.script.functions.VTLExp;
 import no.ssb.vtl.script.functions.VTLFloor;
 import no.ssb.vtl.script.functions.VTLRound;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -44,11 +47,19 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     static {
         // TODO(hadrien): I'd like to use VTLParser.FUNC_* here. If someone has an idea?
+        Field[] declaredFields = VTLParser.class.getDeclaredFields();
+        List<Field> staticFields = new ArrayList<>();
+        for (Field field : declaredFields) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getName().startsWith("FUNC_")) {
+                staticFields.add(field);
+            }
+        }
         functions = ImmutableMap.<String, VTLFunction>builder()
-                .put("abs", new VTLAbs())
-                .put("round", new VTLRound())
-                .put("ceil", new VTLCeil())
-                .put("floor", new VTLFloor())
+                .put("abs", VTLAbs.getInstance())
+                .put("round", VTLRound.getInstance())
+                .put("ceil", VTLCeil.getInstance())
+                .put("floor", VTLFloor.getInstance())
+                .put("exp", VTLExp.getInstance())
                 .build();
     }
 

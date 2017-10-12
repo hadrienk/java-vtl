@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class VTLModTest extends AbstractVTLNumberBinaryFunctionTest {
     @Before
     public void setUp() throws Exception {
-        vtlBinaryFunction = new VTLMod();
+        vtlBinaryFunction = VTLMod.getInstance();
     }
 
     @Override

@@ -20,20 +20,26 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 
 import static java.lang.String.format;
 
 public class VTLLog extends AbstractVTLFunction<VTLNumber> {
 
+    private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> BASE = new Argument<>("base", VTLNumber.class);
-    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+    private static VTLLog instance;
 
-    @VisibleForTesting
-    VTLLog() {
+    private VTLLog() {
         super("log", VTLNumber.class, DS, BASE);
+    }
+
+    public static VTLLog getInstance() {
+        if (instance == null) {
+            instance = new VTLLog();
+        }
+        return instance;
     }
 
     @Override

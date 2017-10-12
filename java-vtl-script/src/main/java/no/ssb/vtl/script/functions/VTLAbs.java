@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
@@ -32,10 +31,17 @@ public class VTLAbs extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final String ILLEGAL_NUMBER_TYPE = "illegal number type [%s]";
+    private static VTLAbs instance;
 
-    @VisibleForTesting
-    public VTLAbs() {
+    private VTLAbs() {
         super("abs", VTLNumber.class, DS);
+    }
+
+    public static VTLAbs getInstance() {
+        if (instance == null) {
+            instance = new VTLAbs();
+        }
+        return instance;
     }
 
     @Override

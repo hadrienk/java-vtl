@@ -20,17 +20,23 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLFloor instance;
 
-    @VisibleForTesting
-    public VTLFloor() {
+    private VTLFloor() {
         super("floor", VTLNumber.class, DS);
+    }
+
+    public static VTLFloor getInstance() {
+        if (instance == null) {
+            instance = new VTLFloor();
+        }
+        return instance;
     }
 
     @Override

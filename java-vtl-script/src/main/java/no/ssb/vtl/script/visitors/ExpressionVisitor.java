@@ -102,7 +102,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         switch (ctx.op.getType()) {
             case VTLParser.CONCAT:
                 // TODO: Singleton.
-                return new FunctionExpression<>(new VTLConcatenation(), leftExpression, rightExpression);
+                return new FunctionExpression<>(VTLConcatenation.getInstance(), leftExpression, rightExpression);
             case VTLParser.MUL:
                 return new FunctionExpression<>(VTLMultiplication.getInstance(), leftExpression, rightExpression);
             case VTLParser.DIV:
