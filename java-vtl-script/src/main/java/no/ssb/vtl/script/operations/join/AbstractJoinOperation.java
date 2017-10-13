@@ -49,7 +49,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -380,7 +379,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             DataStructure structure = datasets.get(datasetName).getDataStructure();
             for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
                 if (!componentEntry.getValue().isIdentifier()) {
-                    if (componentIsUnique(datasetName, componentEntry)) {
+                    if (componentNameIsUnique(datasetName, componentEntry.getKey())) {
                         newDataStructure.put(componentEntry.getKey(), componentEntry.getValue());
                     } else {
                         newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
@@ -395,18 +394,13 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return newDataStructure.build();
     }
 
-    /** Checks if component is unique among other datasets  */
-    private boolean componentIsUnique(String datasetName, Map.Entry<String, Component> componentEntry) {
+    /** Checks if component name is unique among other datasets  */
+    private boolean componentNameIsUnique(String datasetName, String componentName) {
         for (String otherDatasetName : datasets.keySet()) {
-            if (!Objects.equals(datasetName, otherDatasetName)) {
+            if (!datasetName.equals(otherDatasetName)) {
                 DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
-                for (Map.Entry<String, Component> otherComponentEntry : structure.entrySet()) {
-                    if (Objects.equals(componentEntry.getKey(), otherComponentEntry.getKey())
-                            && Objects.equals(componentEntry.getValue().getType(), otherComponentEntry.getValue().getType())
-                            && Objects.equals(componentEntry.getValue().getRole(), otherComponentEntry.getValue().getRole())
-                            && Objects.equals(componentEntry.getValue().getClass(), otherComponentEntry.getValue().getClass())) {
-                        return false;
-                    }
+                if (!Sets.intersection(structure.keySet(), Sets.newHashSet(componentName)).isEmpty()) {
+                    return false;
                 }
             }
         }
