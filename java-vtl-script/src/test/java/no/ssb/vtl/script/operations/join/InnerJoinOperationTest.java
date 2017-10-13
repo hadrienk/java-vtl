@@ -211,7 +211,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 .withName("kommune_nr", "periode", "m1", "at1")
                 .andRoles(IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
                 .andTypes(String.class, Instant.class, Long.class, String.class)
-                .addPoints( "0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100L, "attr1")
+                .addPoints("0101", Instant.parse("2015-01-01T00:00:00.00Z"), 100L, "attr1")
                 .addPoints("0111", Instant.parse("2014-01-01T00:00:00.00Z"), 101L, "attr2")
                 .addPoints("9000", Instant.parse("2014-01-01T00:00:00.00Z"), 102L, "attr3")
                 .build();
@@ -234,9 +234,9 @@ public class InnerJoinOperationTest extends RandomizedTest {
         assertThat(ds3.getDataStructure().getRoles()).contains(
                 entry("kommune_nr", IDENTIFIER),
                 entry("periode", IDENTIFIER),
-                entry("ds1_m1", MEASURE),
-                entry("ds1_at1", ATTRIBUTE),
-                entry("dsCodeList2_name", MEASURE),
+                entry("m1", MEASURE),
+                entry("at1", ATTRIBUTE),
+                entry("name", MEASURE),
                 entry("validFrom", IDENTIFIER),
                 entry("validTo", IDENTIFIER)
         );
