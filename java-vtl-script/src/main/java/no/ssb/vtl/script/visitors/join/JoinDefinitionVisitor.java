@@ -45,6 +45,7 @@ import static com.google.common.base.Preconditions.*;
  */
 public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJoinOperation> {
 
+    @Deprecated
     private final ReferenceVisitor referenceVisitor;
 
     public JoinDefinitionVisitor(ScriptContext context) {

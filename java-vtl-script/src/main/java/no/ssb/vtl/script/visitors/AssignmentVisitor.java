@@ -43,7 +43,6 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression2;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
@@ -52,7 +51,7 @@ import javax.script.ScriptContext;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Assignment visitor.
@@ -85,14 +84,20 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
         aggregationVisitor = new AggregationVisitor(referenceVisitor);
     }
 
+
     
     @Override
     public Object visitAssignment(VTLParser.AssignmentContext ctx) {
         String name = ctx.variable().getText();
-        VTLExpression2 expression = expressionVisitor.visit(ctx.expression());
-        VTLObject resolved = expression.resolve(bindings);
-        bindings.put(name, resolved);
-        return resolved;
+        Object value;
+        if (ctx.datasetExpression() != null) {
+            value = visit(ctx.datasetExpression());
+        } else {
+            VTLExpression2 expression = expressionVisitor.visit(ctx.expression());
+            value = expression.resolve(bindings);
+        }
+        bindings.put(name, value);
+        return value;
     }
 
     @Override

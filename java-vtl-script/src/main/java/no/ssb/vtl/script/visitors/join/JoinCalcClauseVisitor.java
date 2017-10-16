@@ -28,6 +28,7 @@ import no.ssb.vtl.script.visitors.VTLScalarExpressionVisitor;
 /**
  * Visitor for join calc clauses.
  */
+@Deprecated
 public class JoinCalcClauseVisitor extends VTLScalarExpressionVisitor<VTLExpression> {
 
     private final ReferenceVisitor referenceVisitor;

@@ -58,11 +58,11 @@ public class InnerJoinOperationTest extends RandomizedTest {
         Dataset ds1 = StaticDataset.create()
                 .withName("time", "ref_area", "partner", "obs_value", "obs_status")
                 .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                .andTypes(Year.class, String.class, String.class, Long.class, String.class)
+                .andTypes(Instant.class, String.class, String.class, Long.class, String.class)
 
-                .addPoints(Year.of(2010), "EU25", "CA", 20L, "E")
-                .addPoints(Year.of(2010), "EU25", "BG", 2L, "P")
-                .addPoints(Year.of(2010), "EU25", "RO", 2L, "P")
+                .addPoints(Instant.ofEpochMilli(0), "EU25", "CA", 20L, "E")
+                .addPoints(Instant.ofEpochMilli(0), "EU25", "BG", 2L, "P")
+                .addPoints(Instant.ofEpochMilli(0), "EU25", "RO", 2L, "P")
 
                 .build();
 
@@ -70,9 +70,9 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
                 .withName("time", "ref_area", "partner", "obs_value", "obs_status")
                 .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                .andTypes(Year.class, String.class, String.class, Long.class, String.class)
+                .andTypes(Instant.class, String.class, String.class, Long.class, String.class)
 
-                .addPoints(Year.of(2010), "EU25", "CA", 10L,"P")
+                .addPoints(Instant.ofEpochMilli(0), "EU25", "CA", 10L,"P")
 
                 .build();
 
@@ -103,7 +103,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 })
 
                 .startsWith(
-                        IDENTIFIER, structure1.get("time"), Year.of(2010),
+                        IDENTIFIER, structure1.get("time"), Instant.ofEpochMilli(0),
                         IDENTIFIER, structure1.get("ref_area"), "EU25",
                         IDENTIFIER, structure1.get("partner"), "CA",
                         MEASURE, structure1.get("obs_value"), 20L,
@@ -134,7 +134,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
             StaticDataset.ValueBuilder datasetBuilder = StaticDataset.create()
                     .withName("id1", "id2", "id3", "measure", "attribute")
                     .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                    .andTypes(Year.class, String.class, Instant.class, Long.class, String.class);
+                    .andTypes(Instant.class, String.class, Instant.class, Long.class, String.class);
 
             int j = i;
             for (int rowNum = 0; rowNum < rowAmount; rowNum++) {

@@ -48,7 +48,10 @@ public class JoinAssignmentVisitor extends VTLBaseVisitor<JoinAssignment> {
         this.workingDataset = workingDataset;
     }
 
-
+    @Override
+    public JoinAssignment visitMembershipExpression(VTLParser.MembershipExpressionContext ctx) {
+        return super.visitMembershipExpression(ctx);
+    }
 
     @Override
     public JoinAssignment visitJoinAssignment(VTLParser.JoinAssignmentContext ctx) {

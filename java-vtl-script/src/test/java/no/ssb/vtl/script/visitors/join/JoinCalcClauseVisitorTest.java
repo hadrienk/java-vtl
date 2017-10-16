@@ -21,6 +21,7 @@ package no.ssb.vtl.script.visitors.join;
  */
 
 @SuppressWarnings("PointlessArithmeticExpression")
+@Deprecated
 public class JoinCalcClauseVisitorTest {
 
 //    @Test

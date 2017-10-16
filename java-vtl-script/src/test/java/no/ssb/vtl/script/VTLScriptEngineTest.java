@@ -9,9 +9,9 @@ package no.ssb.vtl.script;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,9 +29,9 @@ package no.ssb.vtl.script;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -165,61 +165,27 @@ public class VTLScriptEngineTest {
     @Test
     public void testJoin() throws Exception {
 
-        Dataset ds1 = mock(Dataset.class);
-        Dataset ds2 = mock(Dataset.class);
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
 
-        DataStructure structure1 = DataStructure.of(
-                "id1", Role.IDENTIFIER, String.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.MEASURE, String.class
-        );
-        DataStructure structure2 = DataStructure.of(
-                "id1", Role.IDENTIFIER, String.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at2", Role.MEASURE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure1);
-        when(ds2.getDataStructure()).thenReturn(structure2);
+                .addPoints("1", "1", 0L, 0, "attr1-1")
+                .addPoints( "2", "2", 100L, 200, "attr1-2")
+                .build();
 
-        when(ds1.getData()).then(invocation -> Stream.of(
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "1",
-                        "id2", "1",
-                        "m1", 10L,
-                        "m2", 20,
-                        "at1", "attr1-1"
-                )),
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "2",
-                        "id2", "2",
-                        "m1", 100L,
-                        "m2", 200,
-                        "at1", "attr1-2"
-                ))
-        ));
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+        Dataset ds2 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at2", Role.MEASURE, String.class)
 
-        when(ds2.getData()).then(invocation -> Stream.of(
-                structure2.wrap(ImmutableMap.of(
-                        "id1", "1",
-                        "id2", "1",
-                        "m1", 30L,
-                        "m2", 40,
-                        "at2", "attr2-1"
-                )),
-                structure2.wrap(ImmutableMap.of(
-                        "id1", "2",
-                        "id2", "2",
-                        "m1", 300L,
-                        "m2", 400,
-                        "at2", "attr2-2"
-                ))
-        ));
-        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
+                .addPoints( "1", "1", 30L, 40, "attr2-1")
+                .addPoints("2", "2", 00L, 00, "attr2-2")
+                .build();
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", ds2);
@@ -873,7 +839,7 @@ public class VTLScriptEngineTest {
         );
 
     }
-    
+
     @Test
     public void testAggregationSumGroupBy() throws Exception {
         Dataset ds1 = mock(Dataset.class);
@@ -885,7 +851,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure);
-    
+
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
@@ -922,23 +888,23 @@ public class VTLScriptEngineTest {
                         "at1", "attr2"
                 )
         ).map(structure::wrap));
-    
+
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1.m1) group by id1");
-    
+
         assertThat(bindings).containsKey("ds2");
         Dataset ds2 = (Dataset) bindings.get("ds2");
-    
+
         assertThat(ds2.getDataStructure().getRoles()).containsOnly(
                 entry("id1", Role.IDENTIFIER),
                 entry("m1", Role.MEASURE)
         );
-    
+
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
                 entry("id1", Long.class),
                 entry("m1", Long.class)
         );
-    
+
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
@@ -946,7 +912,7 @@ public class VTLScriptEngineTest {
                         2L, 201L + 202L
                 );
     }
-    
+
     @Test
     public void testAggregationSumAlong() throws Exception {
         Dataset ds1 = mock(Dataset.class);
@@ -957,7 +923,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure);
-        
+
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
@@ -990,23 +956,23 @@ public class VTLScriptEngineTest {
                         "at1", "attr2"
                 )
         ).map(structure::wrap));
-        
+
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1) along id2");
-        
+
         assertThat(bindings).containsKey("ds2");
         Dataset ds2 = (Dataset) bindings.get("ds2");
-        
+
         assertThat(ds2.getDataStructure().getRoles()).containsOnly(
                 entry("id1", Role.IDENTIFIER),
                 entry("m1", Role.MEASURE)
         );
-        
+
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
                 entry("id1", Long.class),
                 entry("m1", Long.class)
         );
-        
+
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
@@ -1014,7 +980,7 @@ public class VTLScriptEngineTest {
                         2L, 201L + 202L
                 );
     }
-    
+
     @Test
     public void testAggregationMultiple() throws Exception {
         Dataset ds1 = mock(Dataset.class);
@@ -1026,7 +992,7 @@ public class VTLScriptEngineTest {
                 "at1", Role.ATTRIBUTE, String.class
         );
         when(ds1.getDataStructure()).thenReturn(structure);
-        
+
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
         when(ds1.getData()).then(invocation -> Stream.of(
                 (Map) ImmutableMap.of(
@@ -1063,25 +1029,25 @@ public class VTLScriptEngineTest {
                         "at1", "attr2"
                 )
         ).map(structure::wrap));
-        
+
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1) group by id1");
-        
+
         assertThat(bindings).containsKey("ds2");
         Dataset ds2 = (Dataset) bindings.get("ds2");
-        
+
         assertThat(ds2.getDataStructure().getRoles()).containsOnly(
                 entry("id1", Role.IDENTIFIER),
                 entry("m1", Role.MEASURE),
                 entry("m2", Role.MEASURE)
         );
-        
+
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
                 entry("id1", Long.class),
                 entry("m1", Long.class),
                 entry("m2", Double.class)
         );
-        
+
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
@@ -1089,7 +1055,7 @@ public class VTLScriptEngineTest {
                         2L, 403L, 2.1d + 2.2d
                 );
     }
-    
+
     @Test
     public void testUnion() throws Exception {
 

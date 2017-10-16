@@ -26,10 +26,13 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.operations.JoinAssignment;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.visitors.ComponentRoleVisitor;
+import no.ssb.vtl.script.visitors.ExpressionVisitor;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 
 import javax.script.Bindings;
@@ -38,11 +41,13 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.util.Optional.ofNullable;
 
+// TODO: Rename to JoinBodyVisitor.
 public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     private final JoinDefinitionVisitor joinDefVisitor;
@@ -57,6 +62,8 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
+        // Get the abstract join opration (inner, outer, cross).
+
         AbstractJoinOperation joinOperation = joinDefVisitor.visit(ctx.joinDefinition());
         joinScope = joinOperation.getJoinScope();
 
@@ -115,27 +122,28 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         return workingDataset = currentDataset;
     }
 
-//    @Override
-//    public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-//
-//        // Create the expression.
-//        JoinCalcClauseVisitor visitor = new JoinCalcClauseVisitor(referenceVisitor, workingDataset.getDataStructure());
-//        VTLExpression componentExpression = visitor.visit(ctx);
-//
-//        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(ctx.role));
-//        Boolean implicit = ctx.implicit != null;
-//
-//        // Calculate name
-//        String componentName = ctx.variable().getText();
-//
-//        return new CalcOperation(
-//                workingDataset,
-//                componentExpression,
-//                componentName,
-//                componentRole.orElse(Component.Role.MEASURE),
-//                implicit
-//        );
-//    }
+    @Override
+    public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(joinScope);
+
+        VTLParser.JoinAssignmentContext joinAssignment = ctx.joinAssignment();
+
+        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(joinAssignment.role));
+        Boolean implicit = joinAssignment.implicit != null;
+
+        VTLExpression2 expression = expressionVisitor.visit(joinAssignment.expression());
+
+        // Calculate name
+        String componentName = joinAssignment.variable().getText();
+
+        return new JoinAssignment(
+                workingDataset,
+                expression,
+                componentName,
+                componentRole.orElse(Component.Role.MEASURE),
+                implicit
+        );
+    }
 
     @Override
     public Dataset visitJoinFoldClause(VTLParser.JoinFoldClauseContext ctx) {

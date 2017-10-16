@@ -64,7 +64,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         VTLObject literal = literalVisitor.visit(ctx);
 
         // Literal are always resolved.
-        // TODO: Litteral extends Expression2?
+        // TODO: Literal extends Expression2?
         return new VTLExpression2() {
             @Override
             public Class<?> getType() {

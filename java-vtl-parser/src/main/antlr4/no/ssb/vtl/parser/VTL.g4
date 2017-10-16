@@ -242,7 +242,6 @@ joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* (
 
 joinBody : joinClause (',' joinClause)* ;
 
-//joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalcExpression # joinCalcClause
 joinClause : joinAssignment                     # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause

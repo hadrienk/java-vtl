@@ -214,12 +214,12 @@ public class OuterJoinOperationTest extends RandomizedTest {
         Dataset ds2 = mock(Dataset.class, "ds2");
 
         DataStructure structure1 = DataStructure.of(
-                "id1", IDENTIFIER, Integer.class,
+                "id1", IDENTIFIER, Long.class,
                 "value", MEASURE, String.class
         );
 
         DataStructure structure2 = DataStructure.of(
-                "id1", IDENTIFIER, Integer.class,
+                "id1", IDENTIFIER, Long.class,
                 "value", MEASURE, String.class
         );
 
