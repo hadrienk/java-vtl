@@ -85,9 +85,8 @@ getFunction : 'get' '(' datasetId ')';
 putFunction : 'put(todo)';
 
 aggregationFunction
-        //TODO: This causes an ambiguity warning for an aggregation function with implicit component e.g. sum(ds) ...
-       : 'sum' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateSum
-       | 'avg' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateAvg
+       : 'sum' '(' (datasetRef('.' variable)?) ')' aggregationParms  #aggregateSum
+       | 'avg' '(' (datasetRef('.' variable)?) ')' aggregationParms  #aggregateAvg
        ;
 
 aggregationParms: aggregationClause=(GROUP_BY|ALONG) componentRef (',' componentRef)*;

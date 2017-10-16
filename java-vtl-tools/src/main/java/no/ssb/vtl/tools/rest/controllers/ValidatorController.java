@@ -91,12 +91,8 @@ public class ValidatorController {
 
         ErrorListener errorListener = new ErrorListener();
         lexer.addErrorListener(errorListener);
-        parser.addErrorListener(new DiagnosticErrorListener());
         parser.addErrorListener(errorListener);
     
-        //Should not be reported as an error. The expression works TODO: A warning might be more appropriate
-//        parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
-
         parser.start();
 
         return errorListener.getSyntaxErrors();
