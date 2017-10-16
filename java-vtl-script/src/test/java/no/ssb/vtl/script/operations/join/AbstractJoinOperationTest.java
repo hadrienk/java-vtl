@@ -473,6 +473,39 @@ public class AbstractJoinOperationTest {
 
     }
 
+    @Test
+    public void testComponentNameIsUnique() {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure s1 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("me2", Role.MEASURE, Long.class)
+                .put("me3", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
+                .build();
+        when(ds1.getDataStructure()).thenReturn(s1);
+
+        Dataset ds2 = mock(Dataset.class);
+        DataStructure s2 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
+                .build();
+        when(ds2.getDataStructure()).thenReturn(s2);
+
+        TestAbstractJoinOperation joinOperation = new TestAbstractJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+
+        assertThat(joinOperation.componentNameIsUnique("ds1", "me1"))
+                .isFalse();
+        assertThat(joinOperation.componentNameIsUnique("ds1", "me2"))
+                .isTrue();
+        assertThat(joinOperation.componentNameIsUnique("ds1", "me3"))
+                .isTrue();
+        assertThat(joinOperation.componentNameIsUnique("ds1", "at1"))
+                .isFalse();
+    }
+
     private static class TestAbstractJoinOperation extends AbstractJoinOperation {
 
         List<List<DataPoint>> leftMiss = Lists.newArrayList();

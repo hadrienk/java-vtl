@@ -395,7 +395,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     /** Checks if component name is unique among other datasets  */
-    private boolean componentNameIsUnique(String datasetName, String componentName) {
+    boolean componentNameIsUnique(String datasetName, String componentName) {
         for (String otherDatasetName : datasets.keySet()) {
             if (!datasetName.equals(otherDatasetName)) {
                 DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
