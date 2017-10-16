@@ -379,7 +379,11 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             DataStructure structure = datasets.get(datasetName).getDataStructure();
             for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
                 if (!componentEntry.getValue().isIdentifier()) {
-                    newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                    if (componentNameIsUnique(datasetName, componentEntry.getKey())) {
+                        newDataStructure.put(componentEntry.getKey(), componentEntry.getValue());
+                    } else {
+                        newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                    }
                 } else {
                     if (ids.add(componentEntry.getKey())) {
                         newDataStructure.put(componentEntry);
@@ -388,6 +392,23 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             }
         }
         return newDataStructure.build();
+    }
+
+    /**
+     * Checks if component name is unique among other datasets  
+     */
+    @VisibleForTesting
+    boolean componentNameIsUnique(String datasetName, String componentName) {
+        for (String otherDatasetName : datasets.keySet()) {
+            if (!datasetName.equals(otherDatasetName)) {
+                DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
+                if (!Sets.intersection(structure.keySet(), Sets.newHashSet(componentName)).isEmpty()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     public Bindings getJoinScope() {

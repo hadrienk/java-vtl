@@ -169,10 +169,12 @@ public class VTLScriptEngineTest {
         Dataset ds2 = mock(Dataset.class);
 
         DataStructure structure1 = DataStructure.of(
+                (o, aClass) -> o,
                 "id1", Role.IDENTIFIER, String.class,
                 "id2", Role.IDENTIFIER, String.class,
                 "m1", Role.MEASURE, Long.class,
                 "m2", Role.MEASURE, Double.class,
+                "m3", Role.MEASURE, Double.class,
                 "at1", Role.MEASURE, String.class
         );
         DataStructure structure2 = DataStructure.of(
@@ -186,21 +188,25 @@ public class VTLScriptEngineTest {
         when(ds2.getDataStructure()).thenReturn(structure2);
 
         when(ds1.getData()).then(invocation -> Stream.of(
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "1",
-                        "id2", "1",
-                        "m1", 10L,
-                        "m2", 20,
-                        "at1", "attr1-1"
-                )),
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "2",
-                        "id2", "2",
-                        "m1", 100L,
-                        "m2", 200,
-                        "at1", "attr1-2"
+                structure1.wrap(new ImmutableMap.Builder<String, Object>()
+                        .put("id1", "1")
+                        .put("id2", "1")
+                        .put("m1", 10L)
+                        .put("m2", 20)
+                        .put("m3", 30)
+                        .put("at1", "attr1-1")
+                        .build()
+                ),
+                structure1.wrap(new ImmutableMap.Builder<String, Object>()
+                        .put("id1", "2")
+                        .put("id2", "2")
+                        .put("m1", 100L)
+                        .put("m2", 200)
+                        .put("m3", 300)
+                        .put("at1", "attr1-2")
+                        .build()
                 ))
-        ));
+        );
         when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
 
         when(ds2.getData()).then(invocation -> Stream.of(
@@ -225,13 +231,13 @@ public class VTLScriptEngineTest {
         bindings.put("ds2", ds2);
 
         engine.eval("" +
-                "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
+                "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, m3, d2.m1, d2.m2, at1, at2
                 "  filter id1 = \"1\" and m1 = 30 or m1 = 10," +            //TODO: precedence
-                "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
-                "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
+                "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +           // id1, id2, ds1.m1, ds1.m2, m3, d2.m1, d2.m2, at1, at2, ident
+                "  keep ident, ds1.m1, m3, ds2.m1, ds2.m2," +               // id1, id2, ds1.m1, m3, ds2.m1, ds2.m2, ident
                 "  boolTest := (ds1.m1 = 10)," +
-                "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
-                "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +  // renamedId1, id2, m1, m2, ident
+                "  drop ds2.m1," +                                          // id1, id2, ds1.m1, m3, ds2.m2, ident
+                "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +  // renamedId1, id2, m1, m2, m3, ident
                 "}" +
                 "");
 
@@ -246,6 +252,7 @@ public class VTLScriptEngineTest {
                         "id2",
                         "m2",
                         "m1",
+                        "m3",
                         "ident",
                         "boolTest"
                 );
@@ -254,7 +261,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "1", 10L, 40, 0L, true
+                        "1", "1", 10L, 30, 40, 0L, true
                 );
     }
 
@@ -672,8 +679,8 @@ public class VTLScriptEngineTest {
                 entry("periode", Component.Role.IDENTIFIER),
                 entry("kostragruppe", Component.Role.IDENTIFIER),
                 entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("dsBoolean0_kommune_nr_RESULTAT", Component.Role.MEASURE),
-                entry("dsBoolean1_kostragruppe_RESULTAT", Component.Role.MEASURE)
+                entry("kommune_nr_RESULTAT", Component.Role.MEASURE),
+                entry("kostragruppe_RESULTAT", Component.Role.MEASURE)
         );
 
         assertThat(ds3valid.getDataStructure().getRoles()).contains(
@@ -681,8 +688,8 @@ public class VTLScriptEngineTest {
                 entry("periode", Component.Role.IDENTIFIER),
                 entry("kostragruppe", Component.Role.IDENTIFIER),
                 entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("dsBoolean0_kommune_nr_RESULTAT", Component.Role.MEASURE),
-                entry("dsBoolean1_kostragruppe_RESULTAT", Component.Role.MEASURE)
+                entry("kommune_nr_RESULTAT", Component.Role.MEASURE),
+                entry("kostragruppe_RESULTAT", Component.Role.MEASURE)
         );
 
         // Should only contain the "non valid" rows.
@@ -701,22 +708,22 @@ public class VTLScriptEngineTest {
                 assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2015");
                 assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG15");
                 assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(true);
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(false);
             } else if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("9000")) {
                 assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
                 assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
                 assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
                 assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(false);
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(true);
             } else if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("0111")) {
                 assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0111");
                 assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
                 assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
                 assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(false);
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(true);
             }
         }
 
@@ -731,8 +738,8 @@ public class VTLScriptEngineTest {
         assertThat(map.get(ds3ValidDataStruct.get("periode")).get()).isEqualTo("2015");
         assertThat(map.get(ds3ValidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
         assertThat(map.get(ds3ValidDataStruct.get("errorcode")).get()).isNull();
-        assertThat(map.get(ds3ValidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(true);
-        assertThat(map.get(ds3ValidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+        assertThat(map.get(ds3ValidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(true);
+        assertThat(map.get(ds3ValidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(true);
     }
 
     @Test
