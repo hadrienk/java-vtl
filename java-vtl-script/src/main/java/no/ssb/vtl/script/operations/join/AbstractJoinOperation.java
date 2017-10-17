@@ -40,8 +40,6 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.Closer;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import javax.script.Bindings;
-import javax.script.SimpleBindings;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,7 +75,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private final ImmutableMap<String, Dataset> datasets;
     private final ImmutableSet<Component> commonIdentifiers;
 
-    private final Bindings joinScope;
+    private final ComponentBindings joinScope;
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(Lists.newArrayList(checkNotNull(namedDatasets).values()));
@@ -133,45 +131,8 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * datasets.
      */
     @VisibleForTesting
-    static Bindings createJoinScope(Map<String, Dataset> namedDatasets) {
-        SimpleBindings bindings = new SimpleBindings();
-
-        List<DatasetBindings> bindingsList = Lists.newArrayList();
-        for (String datasetName : namedDatasets.keySet()) {
-            DatasetBindings datasetBindings = new DatasetBindings(namedDatasets.get(datasetName));
-            bindingsList.add(datasetBindings);
-            bindings.put(datasetName, datasetBindings);
-        }
-
-        // Figure out the component that are
-        Set<String> unique = Sets.newHashSet();
-        Set<String> ambiguous = Sets.newHashSet();
-        for (DatasetBindings datasetBindings : bindingsList) {
-            Set<String> identifiers = datasetBindings.keySet();
-            for (String identifier : identifiers) {
-                if (ambiguous.contains(identifier))
-                    continue;
-                
-                if (unique.contains(identifier)) {
-                    unique.remove(identifier);
-                    ambiguous.add(identifier);
-                } else {
-                    unique.add(identifier);
-                }
-            }
-        }
-
-        // Add all components that can be accessed without ambiguity.
-        for (DatasetBindings datasetBindings : bindingsList) {
-            for (String identifier : datasetBindings.keySet()) {
-                if (unique.contains(identifier) && !bindings.containsKey(identifier)) {
-                    bindings.put(identifier, datasetBindings.get(identifier));
-                }
-            }
-        }
-
-
-        return bindings;
+    static ComponentBindings createJoinScope(Map<String, Dataset> namedDatasets) {
+        return new ComponentBindings(namedDatasets);
     }
 
     /**
@@ -355,7 +316,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         }));
     }
 
-    private ImmutableSet<Component> getCommonIdentifiers() {
+    protected ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
     }
 
@@ -434,7 +395,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return newDataStructure.build();
     }
 
-    public Bindings getJoinScope() {
+    public ComponentBindings getJoinScope() {
         return joinScope;
     }
 

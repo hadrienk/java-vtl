@@ -30,6 +30,7 @@ import no.ssb.vtl.script.operations.join.CrossJoinOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import no.ssb.vtl.script.operations.join.OuterJoinOperation;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.RelationalVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 import org.antlr.v4.runtime.Token;
 
@@ -48,15 +49,26 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
     @Deprecated
     private final ReferenceVisitor referenceVisitor;
 
+    private RelationalVisitor relationalVisitor;
+
+    @Deprecated
     public JoinDefinitionVisitor(ScriptContext context) {
         checkNotNull(context);
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         referenceVisitor = new ReferenceVisitor(bindings);
     }
 
+    @Deprecated
+    public JoinDefinitionVisitor(RelationalVisitor relationalVisitor) {
+        this.relationalVisitor = checkNotNull(relationalVisitor);
+        referenceVisitor = null;
+    }
+
     private Dataset getDataset(VTLParser.DatasetRefContext ref) {
-        Object referencedObject = referenceVisitor.visit(ref);
-        return (Dataset) referencedObject; //TODO: Is this always safe? Hadrien: Yes, DatasetRefContext and ComponentRefContext will return the correct type
+        return relationalVisitor.visit(ref);
+
+//        Object referencedObject = referenceVisitor.visit(ref);
+//        return (Dataset) referencedObject; //TODO: Is this always safe? Hadrien: Yes, DatasetRefContext and ComponentRefContext will return the correct type
     }
 
     private ImmutableMap<String, Dataset> extractDatasets(List<VTLParser.DatasetRefContext> ctx) {
@@ -64,14 +76,19 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
                     .collect(ImmutableMap.toImmutableMap(
                             // TODO: Need to support alias here. The spec forgot it.
                             datasetRefContext -> datasetRefContext.variable().getText(),
-                            datasetRefContext -> (Dataset) referenceVisitor.visit(datasetRefContext)
+                            datasetRefContext -> (Dataset) relationalVisitor.visit(datasetRefContext)
                     ));
     }
 
     private ImmutableSet<Component> extractIdentifierComponents(List<VTLParser.ComponentRefContext> ctx) {
-        return ctx.stream()
-                    .map(componentRefContext -> (Component) referenceVisitor.visit(componentRefContext))
-                    .collect(ImmutableSet.toImmutableSet());
+        ImmutableSet.Builder<Component> builder = ImmutableSet.builder();
+        for (VTLParser.ComponentRefContext componentRefContext : ctx) {
+            Dataset dataset = relationalVisitor.visit(componentRefContext.datasetRef());
+            String componentName = componentRefContext.variable().getText();
+            Component component = dataset.getDataStructure().get(componentName);
+            builder.add(component);
+        }
+        return builder.build();
     }
 
     @Override

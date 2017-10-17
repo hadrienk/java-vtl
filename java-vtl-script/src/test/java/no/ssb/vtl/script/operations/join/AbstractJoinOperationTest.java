@@ -34,7 +34,6 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.VTLTyped;
 import org.junit.Test;
 
 import javax.script.Bindings;
@@ -65,8 +64,8 @@ import static org.mockito.Mockito.when;
 public class AbstractJoinOperationTest {
 
     @Test
+    // TODO: Move to ComponentBindingsTest
     public void testJoinBindingsOneDataset() throws Exception {
-
 
         StaticDataset t1 = StaticDataset.create()
                 .addComponent("id1", Role.IDENTIFIER, String.class)
@@ -74,7 +73,6 @@ public class AbstractJoinOperationTest {
                 .addComponent("uni1", Role.IDENTIFIER, Double.class)
                 .addComponent("m1", Role.MEASURE, Instant.class)
                 .addComponent("a1", Role.MEASURE, Boolean.class)
-                .addPoints(null, null, null ,null, null)
                 .build();
 
         Bindings result = AbstractJoinOperation.createJoinScope(ImmutableMap.of(
@@ -83,59 +81,6 @@ public class AbstractJoinOperationTest {
 
         assertThat(result).containsOnlyKeys("id1", "id2", "uni1", "m1", "a1", "t1");
 
-    }
-
-    @Test
-    public void testJoinBindings() throws Exception {
-
-
-        StaticDataset t1 = StaticDataset.create()
-                .addComponent("id1", Role.IDENTIFIER, String.class)
-                .addComponent("id2", Role.IDENTIFIER, Long.class)
-                .addComponent("uni1", Role.IDENTIFIER, Double.class)
-                .addComponent("m1", Role.MEASURE, Instant.class)
-                .addComponent("a1", Role.MEASURE, Boolean.class)
-                .addComponent("t3", Role.MEASURE, Boolean.class)
-                .addPoints(null, null, null ,null, null, null)
-                .build();
-
-        StaticDataset t2 = StaticDataset.create()
-                .addComponent("id1", Role.IDENTIFIER, String.class)
-                .addComponent("id2", Role.IDENTIFIER, Long.class)
-                .addComponent("uni2", Role.IDENTIFIER, Double.class)
-                .addComponent("uni5", Role.MEASURE, Instant.class)
-                .addComponent("a1", Role.MEASURE, Boolean.class)
-                .addComponent("t1", Role.MEASURE, Boolean.class)
-                .addPoints(null, null, null ,null, null, null)
-                .build();
-
-        StaticDataset t3 = StaticDataset.create()
-                .addComponent("id1", Role.IDENTIFIER, String.class)
-                .addComponent("id2", Role.IDENTIFIER, Long.class)
-                .addComponent("uni3", Role.IDENTIFIER, Double.class)
-                .addComponent("m1", Role.MEASURE, Instant.class)
-                .addComponent("uni4", Role.MEASURE, Boolean.class)
-                .addComponent("t2", Role.MEASURE, Boolean.class)
-                .addPoints(null, null, null ,null, null, null)
-                .build();
-
-        Bindings result = AbstractJoinOperation.createJoinScope(ImmutableMap.of(
-                "t1", t1,
-                "t2", t2,
-                "t3", t3
-        ));
-
-        assertThat(result).containsOnlyKeys("uni4", "uni5", "uni2", "uni3", "uni1", "t1", "t2", "t3");
-
-        assertThat(result.get("uni1")).isInstanceOf(VTLTyped.class);
-        assertThat(result.get("uni2")).isInstanceOf(VTLTyped.class);
-        assertThat(result.get("uni3")).isInstanceOf(VTLTyped.class);
-        assertThat(result.get("uni4")).isInstanceOf(VTLTyped.class);
-        assertThat(result.get("uni5")).isInstanceOf(VTLTyped.class);
-
-        assertThat(result.get("t1")).isInstanceOf(DatasetBindings.class);
-        assertThat(result.get("t2")).isInstanceOf(DatasetBindings.class);
-        assertThat(result.get("t3")).isInstanceOf(DatasetBindings.class);
     }
 
     @Test

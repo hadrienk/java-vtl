@@ -20,26 +20,6 @@ package no.ssb.vtl.script;
  * =========================LICENSE_END==================================
  */
 
-/*-
- * #%L
- * java-vtl-script
- * %%
- * Copyright (C) 2016 Hadrien Kohl
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.connectors.Connector;
@@ -163,6 +143,62 @@ public class VTLScriptEngineTest {
     }
 
     @Test
+    public void testSimpleJoin() throws Exception {
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
+
+                .addPoints("1", "1", -50L, 1.5D, "attr1-1")
+                .addPoints( "2", "2", 100L, 0.123456789, "attr1-2")
+                .build();
+
+        Dataset ds2 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at2", Role.MEASURE, String.class)
+
+                .addPoints( "1", "1", 30L, -1.0D, "attr2-1")
+                .addPoints("2", "2", -40L, 0.987654321, "attr2-2")
+                .build();
+
+        bindings.put("ds1", ds1);
+        bindings.put("ds2", ds2);
+
+        engine.eval("" +
+                "ds3 := [ds1, ds2] {" +
+                "  at := at1 || at2," +
+                "  m1 := ds1.m1 + ds2.m1," +
+                "  m2 := ds1.m2 + ds2.m2," +
+                "  keep at, m1, m2" +
+                "}" +
+                "");
+
+        assertThat(bindings).containsKey("ds3");
+        assertThat(bindings.get("ds3")).isInstanceOf(Dataset.class);
+
+        Dataset ds3 = (Dataset) bindings.get("ds3");
+        assertThat(ds3.getDataStructure())
+                .describedAs("data structure of d3")
+                .containsOnlyKeys(
+                        "id2", "m1", "m2", "id1", "at"
+                );
+
+        assertThat(ds3.getData())
+                .flatExtracting(input -> input)
+                .extracting(VTLObject::get)
+                .containsExactly(
+                        "1", "1", "attr1-1"+ "attr2-1", (-50L + 30), 0.5D,
+                        "2", "2", "attr1-2" + "attr2-2", 60L, 1.11111111D
+                );
+    }
+
+    @Test
     public void testJoin() throws Exception {
 
         Dataset ds1 = StaticDataset.create()
@@ -192,7 +228,7 @@ public class VTLScriptEngineTest {
 
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
-                "  filter id1 = \"1\" and m1 = 30 or m1 = 10," +            //TODO: precedence
+                "  filter id1 = \"1\" and ds2.m1 = 30," + // or ds1.m1 = 10," +            //TODO: precedence
                 "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
                 "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
                 "  boolTest := (ds1.m1 = 10)," +

@@ -46,13 +46,28 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ComponentBindings extends SimpleBindings {
 
-    private static final Map<Class<?>, Class<? extends VTLObject>> typeMap = ImmutableMap.of(
-            String.class, VTLString.class,
-            Long.class, VTLNumber.class,
-            Double.class, VTLNumber.class,
-            Instant.class, VTLDate.class,
-            Boolean.class, VTLBoolean.class
-    );
+    private static final Map<Class<?>, Class<? extends VTLObject>> typeMap;
+
+    static {
+        typeMap = ImmutableMap.<Class<?>, Class<? extends VTLObject>>builder()
+                .put(String.class, VTLString.class)
+                .put(Long.class, VTLNumber.class)
+                .put(Double.class, VTLNumber.class)
+                .put(Instant.class, VTLDate.class)
+                .put(Boolean.class, VTLBoolean.class)
+                .put(VTLString.class, VTLString.class)
+                .put(VTLNumber.class, VTLNumber.class)
+                .put(VTLDate.class, VTLDate.class)
+                .put(VTLBoolean.class, VTLBoolean.class)
+                .build();
+    }
+
+    @Override
+    public Object put(String name, Object value) {
+        if (value instanceof Component)
+            value = new ComponentReference((Component) value);
+        return super.put(name, value);
+    }
 
     public ComponentBindings(Map<String, Dataset> namedDatasets) {
         List<ComponentBindings> bindingsList = Lists.newArrayList();

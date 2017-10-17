@@ -21,7 +21,6 @@ package no.ssb.vtl.script.visitors;
  */
 
 import com.google.common.collect.Queues;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
@@ -36,6 +35,7 @@ import static java.lang.String.format;
 /**
  * The reference visitor tries to find references to object in a Bindings.
  */
+@Deprecated
 public class ReferenceVisitor extends VTLBaseVisitor<Object> {
 
     private Deque<Map<String, ?>> stack = Queues.newArrayDeque();
@@ -98,20 +98,20 @@ public class ReferenceVisitor extends VTLBaseVisitor<Object> {
      *
      * @param ctx
      */
-    @Override
-    public Object visitComponentRef(VTLParser.ComponentRefContext ctx) {
-        // Ensure data type component.
-        Component component;
-        if (ctx.datasetRef() != null) {
-            Dataset ds = (Dataset) visit(ctx.datasetRef());
-            this.stack.push(ds.getDataStructure());
-            component = checkType(ctx.getText(), visit(ctx.variable()), Component.class);
-            this.stack.pop();
-        } else {
-            component = checkType(ctx.getText(), visit(ctx.variable()), Component.class);
-        }
-        return component;
-    }
+//    @Override
+//    public Object visitComponentRef(VTLParser.ComponentRefContext ctx) {
+//        // Ensure data type component.
+//        Component component;
+//        if (ctx.datasetRef() != null) {
+//            Dataset ds = (Dataset) visit(ctx.datasetRef());
+//            this.stack.push(ds.getDataStructure());
+//            component = checkType(ctx.getText(), visit(ctx.variable()), Component.class);
+//            this.stack.pop();
+//        } else {
+//            component = checkType(ctx.getText(), visit(ctx.variable()), Component.class);
+//        }
+//        return component;
+//    }
 
     /**
      * {@inheritDoc}

@@ -142,9 +142,13 @@ variable := [left, right] {
 
     keep component1,
     keep component1, component2, component3,
+    keep ds.component1,
+    keep ds.component1, ds.component2, ds.component3,
 
     drop component1,
     drop component1, component2, component3,
+    drop ds.component1,
+    drop ds.component1, ds.component2, ds.component3,
 
     variable := func1(null,"string","string" || "string",
         1, -1, 0,

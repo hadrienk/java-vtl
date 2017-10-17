@@ -24,7 +24,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
-public class ComponentRoleVisitor extends VTLBaseVisitor<Component.Role> {
+public final class ComponentRoleVisitor extends VTLBaseVisitor<Component.Role> {
 
     private static ComponentRoleVisitor instance;
 

@@ -53,6 +53,16 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
     public static VTLObject of(Object o) {
         if (o == null)
             return VTLObject.NULL;
+        if (o instanceof String)
+            return VTLObject.of((String) o);
+        if (o instanceof Double)
+            return VTLObject.of((Double) o);
+        if (o instanceof Long)
+            return VTLObject.of((Long) o);
+        if (o instanceof Integer)
+            return VTLObject.of(((Integer)o).longValue());
+        if (o instanceof Instant)
+            return VTLObject.of((Instant) o);
 
         if (o instanceof VTLObject) {
             // TODO: Fail here, this only makes the contract of the method confusing. Will be solved with sub types.

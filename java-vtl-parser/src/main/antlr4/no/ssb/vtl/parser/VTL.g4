@@ -116,8 +116,14 @@ checkColumns : ( 'measures' | 'condition' ) ;
 errorCode : STRING_CONSTANT ;
 errorLevel : INTEGER_CONSTANT ;
 
+// TODO: Remove
 datasetRef: variable ;
 
+// TODO: Replace
+//componentRef : membershipExpression
+//             | variable
+//             ;
+variableExpression : membershipExpression | variable ;
 componentRef : ( datasetRef '.')? variable ;
 
 constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
@@ -139,7 +145,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 // ]
 renameParam : from=componentRef 'as' to=variable ( ROLE role=componentRole )? ;
 
-filter      : 'filter' booleanExpression ;
+filter      : 'filter' expression ;
 
 keep        : 'keep' variable ( ',' variable )* ;
 
@@ -149,6 +155,7 @@ attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
 
+// TODO: remove.
 booleanExpression                                                                                       //Evaluation order of the operators
     : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
     | FUNC_ISNULL '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
@@ -272,10 +279,10 @@ dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_C
 
 
 // Drop clause
-joinDropExpression : 'drop' componentRef (',' componentRef)* ;
+joinDropExpression : 'drop' variableExpression (',' variableExpression)* ;
 
 // Keep clause
-joinKeepExpression : 'keep' componentRef (',' componentRef)* ;
+joinKeepExpression : 'keep' variableExpression (',' variableExpression)* ;
 
 // TODO: Use in keep, drop and calc.
 // TODO: Make this the membership operator.
@@ -283,10 +290,10 @@ joinKeepExpression : 'keep' componentRef (',' componentRef)* ;
 
 // Rename clause
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
-joinRenameParameter  : from=componentRef 'to' to=variable ;
+joinRenameParameter  : from=variableExpression 'to' to=variable ;
 
 // Filter clause
-joinFilterExpression : 'filter' booleanExpression ;
+joinFilterExpression : 'filter' expression ;
 
 componentRole : role=(IDENTIFIER | MEASURE | ATTRIBUTE);
 

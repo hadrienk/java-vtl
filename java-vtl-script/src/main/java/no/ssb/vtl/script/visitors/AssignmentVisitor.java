@@ -76,7 +76,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
 
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
-        relationalVisitor = new RelationalVisitor(this, context);
+        relationalVisitor = new RelationalVisitor(expressionVisitor);
 
         ReferenceVisitor referenceVisitor = new ReferenceVisitor(this.bindings);
         checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);

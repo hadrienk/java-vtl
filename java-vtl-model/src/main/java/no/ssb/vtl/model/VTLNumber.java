@@ -24,18 +24,17 @@ import static java.lang.String.*;
 
 public abstract class VTLNumber extends VTLObject<Number> implements VTLTyped<VTLNumber> {
 
+    @Override
+    public Class<VTLNumber> getType() {
+        return VTLNumber.class;
+    }
+
     private VTLNumber() {
         // private.
     }
 
     public static VTLNumber of(Number number) {
         return new VTLNumber() {
-            
-            @Override
-            public Class<VTLNumber> getType() {
-                return VTLNumber.class;
-            }
-
             @Override
             public Number get() {
                 return number;

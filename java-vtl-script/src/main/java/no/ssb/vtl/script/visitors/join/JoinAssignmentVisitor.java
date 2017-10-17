@@ -37,6 +37,7 @@ import static java.util.Optional.ofNullable;
 /**
  *
  */
+@Deprecated
 public class JoinAssignmentVisitor extends VTLBaseVisitor<JoinAssignment> {
 
     private final ExpressionVisitor expressionVisitor;
@@ -69,7 +70,7 @@ public class JoinAssignmentVisitor extends VTLBaseVisitor<JoinAssignment> {
                 expression2,
                 componentName,
                 componentRole.orElse(Component.Role.MEASURE),
-                implicit
+                implicit, null
         );
     }
 }

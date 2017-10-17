@@ -27,6 +27,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 
 import java.util.Map;
@@ -42,13 +43,26 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     private final Component.Role role;
     private final Boolean implicit;
     private final String identifier;
+    private final ComponentBindings componentBindings;
 
-    public JoinAssignment(Dataset dataset, VTLExpression2 expression, String identifier, Component.Role role, Boolean implicit) {
+    public JoinAssignment(Dataset dataset, VTLExpression2 expression, String identifier, Component.Role role,
+                          Boolean implicit) {
         super(checkNotNull(dataset));
         this.expression = checkNotNull(expression);
         this.role = checkNotNull(role);
         this.implicit = checkNotNull(implicit);
         this.identifier = checkNotNull(identifier);
+        this.componentBindings = null;
+    }
+
+    public JoinAssignment(Dataset dataset, VTLExpression2 expression, String identifier, Component.Role role,
+                          Boolean implicit, ComponentBindings componentBindings) {
+        super(checkNotNull(dataset));
+        this.expression = checkNotNull(expression);
+        this.role = checkNotNull(role);
+        this.implicit = checkNotNull(implicit);
+        this.identifier = checkNotNull(identifier);
+        this.componentBindings = checkNotNull(componentBindings);
     }
 
     @Override
@@ -81,19 +95,19 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             }
         }
 
-        builder.put(identifier, role, type);
-
-        return builder.build();
+        DataStructure newDataStructure = builder.put(identifier, role, type).build();
+        componentBindings.put(identifier, newDataStructure.get(identifier));
+        return newDataStructure;
     }
 
     @Override
     public Stream<DataPoint> getData() {
-        DataPointBindings dataPointBindings = new DataPointBindings(getDataStructure());
+        DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
         return getChild().getData()
+                .peek(dataPoint -> dataPoint.add(VTLObject.NULL))
                 .map(dataPointBindings::setDataPoint)
                 .peek(bindings -> {
-                    VTLExpression2 expression2 = null;
-                    VTLObject resolved = expression2.resolve(bindings);
+                    VTLObject resolved = expression.resolve(dataPointBindings);
                     bindings.put(identifier, resolved);
                 })
                 .map(DataPointBindings::getDataPoint);

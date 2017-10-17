@@ -24,14 +24,13 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.KeepOperation;
-import no.ssb.vtl.script.operations.join.WorkingDataset;
 import no.ssb.vtl.script.visitors.ReferenceVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Visit the keep clauses.
@@ -39,24 +38,28 @@ import static com.google.common.base.Preconditions.*;
 public class JoinKeepClauseVisitor  extends VTLDatasetExpressionVisitor<KeepOperation> {
 
     private final Dataset dataset;
-    private final ReferenceVisitor referenceVisitor;
+    private final ComponentVisitor componentVisitor;
 
     @Deprecated
-    public JoinKeepClauseVisitor(WorkingDataset dataset) {
+    private final ReferenceVisitor referenceVisitor;
+
+    public JoinKeepClauseVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
+        this.componentVisitor = checkNotNull(componentVisitor);
         referenceVisitor = null;
     }
 
+    @Deprecated
     public JoinKeepClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
         this.dataset = checkNotNull(dataset);
         this.referenceVisitor = checkNotNull(referenceVisitor);
+        this.componentVisitor = null;
     }
 
     @Override
     public KeepOperation visitJoinKeepExpression(VTLParser.JoinKeepExpressionContext ctx) {
-        Set<Component> components = ctx.componentRef().stream()
-                .map(referenceVisitor::visit)
-                .map(o -> (Component) o) //TODO: Safe? Yup!
+        Set<Component> components = ctx.variableExpression().stream()
+                .map(componentVisitor::visit)
                 .collect(Collectors.toSet());
         return new KeepOperation(dataset, components);
     }

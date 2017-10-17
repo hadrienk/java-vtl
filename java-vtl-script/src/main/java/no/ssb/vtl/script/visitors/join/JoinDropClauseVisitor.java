@@ -39,24 +39,29 @@ import static com.google.common.base.Preconditions.*;
 public class JoinDropClauseVisitor extends VTLDatasetExpressionVisitor<DropOperation> {
 
     private final Dataset dataset;
-    private final ReferenceVisitor referenceVisitor;
+    private final ComponentVisitor componentVisitor;
 
     @Deprecated
     public JoinDropClauseVisitor(WorkingDataset dataset) {
         this.dataset = checkNotNull(dataset, "dataset was null");
-        this.referenceVisitor = null;
+        this.componentVisitor = null;
     }
 
+    @Deprecated
     public JoinDropClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
         this.dataset = checkNotNull(dataset);
-        this.referenceVisitor = checkNotNull(referenceVisitor);
+        this.componentVisitor = null;
+    }
+
+    public JoinDropClauseVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
+        this.dataset = checkNotNull(dataset);
+        this.componentVisitor = checkNotNull(componentVisitor);
     }
 
     @Override
     public DropOperation visitJoinDropExpression(VTLParser.JoinDropExpressionContext ctx) {
-        Set<Component> components = ctx.componentRef().stream()
-                .map(referenceVisitor::visit)
-                .map(o -> (Component) o) //TODO: Safe?
+        Set<Component> components = ctx.variableExpression().stream()
+                .map(componentVisitor::visit)
                 .collect(Collectors.toSet());
         return new DropOperation(dataset, components);
     }
