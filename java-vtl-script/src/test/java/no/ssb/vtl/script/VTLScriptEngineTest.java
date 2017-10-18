@@ -72,18 +72,12 @@ public class VTLScriptEngineTest {
     }
 
     @Test
-    public void testCalcAtoms() throws Exception {
+    public void testAssignmentLiterals() throws Exception {
 
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, String.class
-        );
-        when(dataset.getDataStructure()).thenReturn(structure);
-        when(dataset.getData()).then(invocation -> Stream.of(
-                structure.wrap(ImmutableMap.of(
-                        "id1", "1"
-                ))
-        ));
-        when(dataset.getData(any(Order.class))).thenReturn(Optional.empty());
+        StaticDataset dataset = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addPoints("1")
+                .build();
 
         bindings.put("t1", dataset);
         engine.eval("/* test */\n" +

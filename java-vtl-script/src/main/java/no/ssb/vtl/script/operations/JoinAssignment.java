@@ -95,9 +95,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             }
         }
 
-        DataStructure newDataStructure = builder.put(identifier, role, type).build();
-        componentBindings.put(identifier, newDataStructure.get(identifier));
-        return newDataStructure;
+        return builder.put(identifier, role, type).build();
     }
 
     @Override
@@ -105,7 +103,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
         Stream<DataPoint> data = getChild().getData();
 
-        // TODO: Allow putting new values in the DataPointBindings.
+        // TODO: Allow putting new values in the DataPointBindings. To do that, the asMap() should accept larger structures.
         if (!getChild().getDataStructure().containsKey(identifier))
             data = data.peek(dataPoint -> dataPoint.add(VTLObject.NULL));
 

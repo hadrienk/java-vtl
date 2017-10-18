@@ -20,7 +20,12 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLString extends VTLObject<String> {
+public abstract class VTLString extends VTLObject<String> implements VTLTyped<VTLString> {
+
+    @Override
+    public Class<VTLString> getType() {
+        return VTLString.class;
+    }
 
     private VTLString() {
         // private.

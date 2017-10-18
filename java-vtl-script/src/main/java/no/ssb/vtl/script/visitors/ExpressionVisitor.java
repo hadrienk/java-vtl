@@ -82,6 +82,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
 
             @Override
             public Class<?> getType() {
+                if (literal instanceof VTLTyped)
+                    return ((VTLTyped) literal).getVTLType();
                 return literal.getClass();
             }
 

@@ -114,25 +114,33 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        // The expression visitor operates on a scope that contains the component reference.
-        VTLParser.JoinAssignmentContext joinAssignment = ctx.joinAssignment();
+        try {
+            // The expression visitor operates on a scope that contains the component reference.
+            VTLParser.JoinAssignmentContext joinAssignment = ctx.joinAssignment();
 
-        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(joinAssignment.role));
-        Boolean implicit = joinAssignment.implicit != null;
+            Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(joinAssignment.role));
+            Boolean implicit = joinAssignment.implicit != null;
 
-        VTLExpression2 expression = expressionVisitor.visit(joinAssignment.expression());
+            VTLExpression2 expression = expressionVisitor.visit(joinAssignment.expression());
 
-        // Calculate name
-        String componentName = joinAssignment.variable().getText();
+            // Calculate name
+            String componentName = joinAssignment.variable().getText();
 
-        return new JoinAssignment(
-                workingDataset,
-                expression,
-                componentName,
-                componentRole.orElse(Component.Role.MEASURE),
-                implicit,
-                joinScope // TODO: Rename to component bindings.
-        );
+
+            JoinAssignment result = new JoinAssignment(
+                    workingDataset,
+                    expression,
+                    componentName,
+                    componentRole.orElse(Component.Role.MEASURE),
+                    implicit,
+                    joinScope // TODO: Rename to component bindings.
+            );
+            joinScope.putAll(new ComponentBindings(result));
+            return result;
+        } catch (Exception e) {
+            System.out.println(ctx.getText());
+            throw e;
+        }
     }
 
     @Override

@@ -122,8 +122,8 @@ public class ComponentBindings extends SimpleBindings {
             this.component = checkNotNull(component);
 
             Class<?> type = component.getType();
-            checkArgument(typeMap.containsKey(component.getType()),
-                    "unknown type %s", type.getSimpleName());
+            checkArgument(typeMap.containsKey(type),
+                    "unknown type %s", type);
 
             this.type = typeMap.get(type);
 
