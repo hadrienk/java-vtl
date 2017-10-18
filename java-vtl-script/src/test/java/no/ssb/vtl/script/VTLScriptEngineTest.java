@@ -1138,10 +1138,10 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 10L, 20, "attr1-1",
-                        "2", 100L, 200, "attr1-2",
-                        "3", 30L, 40, "attr2-1",
-                        "4", 300L, 400, "attr2-2"
+                        "1", 10L, 20L, "attr1-1",
+                        "2", 100L, 200L, "attr1-2",
+                        "3", 30L, 40L, "attr2-1",
+                        "4", 300L, 400L, "attr2-2"
                 );
     }
 }
