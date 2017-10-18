@@ -103,9 +103,13 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> getData() {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
-        return getChild().getData()
-                .peek(dataPoint -> dataPoint.add(VTLObject.NULL))
-                .map(dataPointBindings::setDataPoint)
+        Stream<DataPoint> data = getChild().getData();
+
+        // TODO: Allow putting new values in the DataPointBindings.
+        if (!getChild().getDataStructure().containsKey(identifier))
+            data = data.peek(dataPoint -> dataPoint.add(VTLObject.NULL));
+
+        return data.map(dataPointBindings::setDataPoint)
                 .peek(bindings -> {
                     VTLObject resolved = expression.resolve(dataPointBindings);
                     bindings.put(identifier, resolved);

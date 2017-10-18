@@ -73,14 +73,12 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     public Stream<DataPoint> getData() {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
         return getChild().getData()
-                .peek(dataPoint -> dataPoint.add(null))
                 .map(dataPointBindings::setDataPoint)
                 .filter(bindings -> {
                     VTLBoolean resolved = (VTLBoolean) predicate.resolve(dataPointBindings);
                     return resolved.get();
                 })
                 .map(DataPointBindings::getDataPoint);
-        //return getChild().getData().filter(predicate);
     }
 
     @Override

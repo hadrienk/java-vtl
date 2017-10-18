@@ -208,8 +208,9 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at1", Role.MEASURE, String.class)
 
-                .addPoints("1", "1", 0L, 0, "attr1-1")
-                .addPoints( "2", "2", 100L, 200, "attr1-2")
+                .addPoints("1", "1", 0L, 0.0, "attr1-1")
+                .addPoints( "1", "2", 10L, 200.0, "attr1-2")
+
                 .build();
 
         Dataset ds2 = StaticDataset.create()
@@ -219,8 +220,9 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at2", Role.MEASURE, String.class)
 
-                .addPoints( "1", "1", 30L, 40, "attr2-1")
-                .addPoints("2", "2", 00L, 00, "attr2-2")
+                .addPoints( "1", "1", 30L, 40.0, "attr2-1")
+                .addPoints("1", "2", 0L, 0.0, "attr2-2")
+
                 .build();
 
         bindings.put("ds1", ds1);
@@ -228,12 +230,12 @@ public class VTLScriptEngineTest {
 
         engine.eval("" +
                 "ds3 := [ds1, ds2]{" +                                      // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2
-                "  filter id1 = \"1\" and ds2.m1 = 30," + // or ds1.m1 = 10," +            //TODO: precedence
-                "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, d2.m1, d2.m2, at1, at2, ident
-                "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                   // id1, id2, ds1.m1, ds2.m1, ds2.m2, ident
-                "  boolTest := (ds1.m1 = 10)," +
-                "  drop ds2.m1," +                                          // id1, id2, ds1.m1, ds2.m2, ident
-                "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +  // renamedId1, id2, m1, m2, ident
+                "  filter id1 = \"1\" and ds2.m1 = 30 or ds1.m1 = 10," +            //TODO: precedence
+                "  ident := ds1.m1 + ds2.m2 - ds1.m2 - ds2.m1," +            // id1, id2, ds1.m1, ds1.m2, ds2.m1, ds2.m2, at1, at2, ident
+                "  keep ident, ds1.m1, ds2.m1, ds2.m2," +                    // id1, id2, ds1.m1, ds2.m1, ds2.m2                  , ident
+                "  boolTest := (ds1.m1 = 10)," +                             // id1, id2, ds1.m1, ds2.m1, ds2.m2                  , ident, boolTest
+                "  drop ds2.m1," +                                           // id1, id2, ds1.m1,       , ds2.m2                  , ident, boolTest
+                "  rename id1 to renamedId1, ds1.m1 to m1, ds2.m2 to m2" +   // renamedId1, id2, m1, m2, ident, boolTest
                 "}" +
                 "");
 
@@ -256,7 +258,8 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "1", 10L, 40, 0L, true
+                        "1", "1", 0L, 40.0, 10.0, false,
+                        "1", "2", 10L, 0.0, -190.0, true
                 );
     }
 
