@@ -81,7 +81,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
             // Evaluate parameter expressions.
             VTLParser.FunctionParametersContext parameters = ctx.functionParameters();
-            List<VTLExpression2> parametersExp = evaluateParamerers(parameters.expression());
+            List<VTLExpression2> parametersExp = evaluateParameters(parameters.expression());
             Map<String, VTLExpression2> namedParametersExp = evaluateNamedParameters(parameters.namedExpression());
 
             // Wrap function as an expression.
@@ -101,7 +101,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
         return builder.build();
     }
 
-    private List<VTLExpression2> evaluateParamerers(List<VTLParser.ExpressionContext> expression) {
+    private List<VTLExpression2> evaluateParameters(List<VTLParser.ExpressionContext> expression) {
         ImmutableList.Builder<VTLExpression2> builder = ImmutableList.builder();
         for (VTLParser.ExpressionContext expressionContext : expression) {
             VTLExpression2 value = expressionVisitor.visit(expressionContext);
