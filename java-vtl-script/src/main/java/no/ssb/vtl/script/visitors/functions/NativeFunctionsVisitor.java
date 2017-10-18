@@ -36,6 +36,7 @@ import no.ssb.vtl.script.functions.VTLLn;
 import no.ssb.vtl.script.functions.VTLLog;
 import no.ssb.vtl.script.functions.VTLMod;
 import no.ssb.vtl.script.functions.VTLNroot;
+import no.ssb.vtl.script.functions.VTLNvl;
 import no.ssb.vtl.script.functions.VTLPower;
 import no.ssb.vtl.script.functions.VTLRound;
 import no.ssb.vtl.script.functions.VTLSqrt;
@@ -44,6 +45,7 @@ import no.ssb.vtl.script.functions.VTLTrunc;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
@@ -72,6 +74,28 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     public NativeFunctionsVisitor(VTLBaseVisitor<VTLExpression2> expressionVisitor) {
         this.expressionVisitor = checkNotNull(expressionVisitor);
+    }
+
+    @Override
+    public VTLExpression2 visitNvlFunction(VTLParser.NvlFunctionContext ctx) {
+        VTLParser.ExpressionContext nullableCtx = ctx.expression(0);
+        VTLParser.ExpressionContext replacementCtx = ctx.expression(1);
+        VTLExpression2 nullable = expressionVisitor.visit(nullableCtx);
+        VTLExpression2 replacement = expressionVisitor.visit(replacementCtx);
+
+        checkArgument(
+                nullable.getVTLType().equals(replacement.getVTLType()),
+                "%s and %s must be of the same type",
+                nullableCtx.getText(),
+                replacementCtx.getText()
+        );
+
+        return new FunctionExpression<VTLObject>(new VTLNvl(), nullable, replacement) {
+            @Override
+            public Class getType() {
+                return nullable.getVTLType();
+            }
+        };
     }
 
     @Override

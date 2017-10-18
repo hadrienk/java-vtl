@@ -29,7 +29,9 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
@@ -742,9 +744,9 @@ public class VTLScriptEngineTest {
                 .addComponent("m1", Role.MEASURE, Long.class)
                 .addComponent("m2", Role.MEASURE, String.class)
 
-                .addPoints("1", 1L, VTLObject.NULL)
-                .addPoints("2", VTLObject.NULL, "str2")
-                .addPoints("3", VTLObject.NULL, VTLObject.NULL)
+                .addPoints("1", 1L, null)
+                .addPoints("2", null, "str2")
+                .addPoints("3", null, null)
                 .build();
 
         bindings.put("ds1", ds1);
@@ -765,9 +767,9 @@ public class VTLScriptEngineTest {
         );
 
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
-                entry("id1", String.class),
-                entry("m11", Long.class),
-                entry("m22", String.class)
+                entry("id1", String.class), // TODO: Should be VTLString.
+                entry("m11", VTLNumber.class),
+                entry("m22", VTLString.class)
         );
 
         assertThat(ds2.getData())

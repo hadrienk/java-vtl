@@ -169,7 +169,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitNativeCall(VTLParser.NativeCallContext ctx) {
+    public VTLExpression2 visitFunctionCall(VTLParser.FunctionCallContext ctx) {
         return nativeFunctionsVisitor.visit(ctx);
     }
 

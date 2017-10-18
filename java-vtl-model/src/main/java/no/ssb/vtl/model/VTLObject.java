@@ -64,18 +64,19 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
         if (o instanceof Instant)
             return VTLObject.of((Instant) o);
 
-        if (o instanceof VTLObject) {
-            // TODO: Fail here, this only makes the contract of the method confusing. Will be solved with sub types.
-            return (VTLObject) o;
-        }
-
-        return new VTLObject<Object>(){
-
-            @Override
-            public Object get() {
-                return o;
-            }
-        };
+        throw new IllegalArgumentException("could not create a VTLObject from " + o);
+//        if (o instanceof VTLObject) {
+//            // TODO: Fail here, this only makes the contract of the method confusing. Will be solved with sub types.
+//            return (VTLObject) o;
+//        }
+//
+//        return new VTLObject<Object>(){
+//
+//            @Override
+//            public Object get() {
+//                return o;
+//            }
+//        };
     }
 
     /**

@@ -24,8 +24,12 @@ statement : assignment ;
 
 assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
+
+functionCall       : nvlFunction
+                   | nativeCall
+                   | functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
+
 nativeCall         : functionName=NATIVE_FUNCTIONS LPAR functionParameters? RPAR ;
-functionCall       : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
 
 functionParameters : namedExpression ( COMMA namedExpression)*
                    | expression ( COMMA expression )*
@@ -35,7 +39,7 @@ namedExpression     : name=REG_IDENTIFIER COLON expression ;
 
 // Expressions
 expression : LPAR expression RPAR                                               # precedenceExpr
-           | nativeCall                                                         # functionExpr
+//           | nativeCall                                                         # functionExpr
            | functionCall                                                       # functionExpr
 
            | op=(NOT | PLUS | MINUS) right=expression                           # unaryExpr
@@ -196,6 +200,8 @@ ISNOTNULL : 'is not null' ;
 
 /* Core functions */
 
+nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
+
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS ) ;
 
 FUNC_ISNULL : 'isnull' ;
@@ -265,10 +271,12 @@ joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expr
 joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=variable ',' measure=variable ;
 joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
+// TODO: REMOVE
 conditionalExpression
     : nvlExpression
     ;
 
+// TODO: REMOVE
 nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
 
 dateFunction
