@@ -66,6 +66,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
             return VTLObject.of((Integer)o);
         if (o instanceof Instant)
             return VTLObject.of((Instant) o);
+        if (o instanceof Boolean)
+            return VTLObject.of((Boolean) o);
 
         throw new IllegalArgumentException("could not create a VTLObject from " + o + " (" + o.getClass() + ")");
     }

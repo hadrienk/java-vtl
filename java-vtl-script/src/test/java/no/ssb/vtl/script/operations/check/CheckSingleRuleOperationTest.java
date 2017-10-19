@@ -155,7 +155,7 @@ public class CheckSingleRuleOperationTest {
                 .andTypes(String.class, String.class, String.class, Boolean.class)
 
                 .addPoints("0101", "0101", "measure 0101", true)
-                .addPoints("9990", VTLObject.NULL, "measure 9990", false)
+                .addPoints("9990", null, "measure 9990", false)
                 .addPoints("0104", "0104", "measure 0104", true)
                 .build();
 
