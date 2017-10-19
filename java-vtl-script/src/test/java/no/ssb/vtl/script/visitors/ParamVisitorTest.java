@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
+@Deprecated
 public class ParamVisitorTest {
 
     private ParamVisitor visitor;

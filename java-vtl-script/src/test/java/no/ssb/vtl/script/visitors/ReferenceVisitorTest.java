@@ -41,6 +41,7 @@ import javax.script.SimpleBindings;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static org.mockito.Mockito.*;
 
+@Deprecated
 public class ReferenceVisitorTest {
 
     private SimpleBindings bindings;

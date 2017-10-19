@@ -157,24 +157,6 @@ attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
 
-// TODO: remove.
-booleanExpression                                                                                       //Evaluation order of the operators
-    : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
-    | FUNC_ISNULL '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
-    | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix        // ??
-    | left=booleanParam op=( LE | LT | GE | GT ) right=booleanParam             # BooleanEquality       // VII
-    | op=NOT booleanExpression                                                  # BooleanNot            // IV
-    | left=booleanParam op=( EQ | NE ) right=booleanParam                       # BooleanEquality       // IX
-    | booleanExpression op=AND booleanExpression                                # BooleanAlgebra        // X
-    | booleanExpression op=(OR|XOR) booleanExpression                           # BooleanAlgebra        // XI
-    | BOOLEAN_CONSTANT                                                          # BooleanConstant
-    ;
-
-booleanParam
-    : componentRef
-    | constant
-    ;
-
 ASSIGNMENT : ':=' ;
 
 /* Operators */
@@ -198,6 +180,11 @@ ISNOTNULL : 'is not null' ;
 
 /* Core functions */
 
+dateFunction
+    : dateFromStringFunction
+    ;
+
+dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
 nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS ) ;
@@ -267,25 +254,15 @@ joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expr
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
 joinFoldExpression      : 'fold' variableExpression (',' variableExpression)* 'to' dimension=variable ',' measure=variable ;
+
+// TODO: variableName instead of STRING_CONSTANT?
 joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
-
-
-dateFunction
-    : dateFromStringFunction
-    ;
-
-dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
-
 
 // Drop clause
 joinDropExpression : 'drop' variableExpression (',' variableExpression)* ;
 
 // Keep clause
 joinKeepExpression : 'keep' variableExpression (',' variableExpression)* ;
-
-// TODO: Use in keep, drop and calc.
-// TODO: Make this the membership operator.
-// TODO: Revise this when the final version of the specification precisely define if the rename needs ' or not.
 
 // Rename clause
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
