@@ -51,7 +51,7 @@ public class VTLTrunc extends AbstractVTLFunction<VTLNumber> {
         VTLNumber decimals = arguments.get(DECIMALS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
         if (decimals.get() == null || decimals.get().intValue() < 0) {
             throw new IllegalArgumentException(

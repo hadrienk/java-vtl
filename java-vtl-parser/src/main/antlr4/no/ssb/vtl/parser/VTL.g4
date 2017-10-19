@@ -39,14 +39,13 @@ namedExpression     : name=REG_IDENTIFIER COLON expression ;
 
 // Expressions
 expression : LPAR expression RPAR                                               # precedenceExpr
-//           | nativeCall                                                         # functionExpr
            | functionCall                                                       # functionExpr
 
            | op=(NOT | PLUS | MINUS) right=expression                           # unaryExpr
            | left=expression op=(ISNULL|ISNOTNULL)                              # postfixExpr
            | <assoc=right> left=expression op=CONCAT right=expression           # binaryExpr
-           | left=expression op=(MUL | DIV) right=expression                    # binaryExpr
-           | left=expression op=(PLUS | MINUS) right=expression                 # binaryExpr
+           | left=expression op=(MUL | DIV) right=expression                    # arithmeticExpr
+           | left=expression op=(PLUS | MINUS) right=expression                 # arithmeticExpr
            | left=expression op=(LE | LT | GE | GT | EQ | NE) right=expression  # binaryExpr
            | left=expression op=AND right=expression                            # binaryExpr
            | left=expression op=(OR|XOR) right=expression                       # binaryExpr
@@ -58,6 +57,7 @@ expression : LPAR expression RPAR                                               
 
 membershipExpression : leff=variable op=MEMBERSHIP right=variable ;
 
+// TODO: Rename to variableName.
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
 
 // Literal.
@@ -106,9 +106,10 @@ aggregationParms: aggregationClause=(GROUP_BY|ALONG) componentRef (',' component
 ALONG : 'along' ;
 GROUP_BY : 'group by' ;
 
+// TODO: Remove
 datasetId : STRING_CONSTANT ;
 
-/* Atom */
+// TODO: Remove
 exprAtom : datasetRef;
 
 checkFunction : 'check' '(' checkParam ')';
@@ -123,10 +124,7 @@ errorLevel : INTEGER_CONSTANT ;
 // TODO: Remove
 datasetRef: variable ;
 
-// TODO: Replace
-//componentRef : membershipExpression
-//             | variable
-//             ;
+// TODO: Remove
 variableExpression : membershipExpression | variable ;
 componentRef : ( datasetRef '.')? variable ;
 
@@ -268,16 +266,9 @@ joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expr
 
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
-joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=variable ',' measure=variable ;
-joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
+joinFoldExpression      : 'fold' variableExpression (',' variableExpression)* 'to' dimension=variable ',' measure=variable ;
+joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
 
-// TODO: REMOVE
-conditionalExpression
-    : nvlExpression
-    ;
-
-// TODO: REMOVE
-nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
 
 dateFunction
     : dateFromStringFunction

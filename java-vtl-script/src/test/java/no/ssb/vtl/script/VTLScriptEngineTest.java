@@ -29,9 +29,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
-import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
@@ -768,8 +766,8 @@ public class VTLScriptEngineTest {
 
         assertThat(ds2.getDataStructure().getTypes()).containsOnly(
                 entry("id1", String.class), // TODO: Should be VTLString.
-                entry("m11", VTLNumber.class),
-                entry("m22", VTLString.class)
+                entry("m11", Long.class),
+                entry("m22", String.class)
         );
 
         assertThat(ds2.getData())

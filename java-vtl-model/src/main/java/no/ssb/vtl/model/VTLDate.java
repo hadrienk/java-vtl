@@ -34,6 +34,11 @@ public abstract class VTLDate extends VTLObject<Instant> implements VTLTyped<VTL
         // private
     }
 
+    @Override
+    public Class<VTLDate> getVTLType() {
+        return VTLDate.class;
+    }
+
     public static VTLDate of(String input, String dateFormat, TimeZone timeZone) {
 
         if (!canParse(dateFormat)) {
@@ -42,10 +47,6 @@ public abstract class VTLDate extends VTLObject<Instant> implements VTLTyped<VTL
         }
 
         return new VTLDate() {
-            @Override
-            public Class<VTLDate> getType() {
-                return VTLDate.class;
-            }
 
             @Override
             public Instant get() {
@@ -61,10 +62,6 @@ public abstract class VTLDate extends VTLObject<Instant> implements VTLTyped<VTL
     public static VTLDate of(Instant instant) {
 
         return new VTLDate() {
-            @Override
-            public Class<VTLDate> getType() {
-                return VTLDate.class;
-            }
 
             @Override
             public Instant get() {
@@ -75,11 +72,7 @@ public abstract class VTLDate extends VTLObject<Instant> implements VTLTyped<VTL
     }
 
     public static boolean canParse(String dateFormat) {
-        if (!"YYYY".equals(dateFormat)) {
-            return false;
-        }
-
-        return true;
+        return "YYYY".equals(dateFormat);
     }
 
 }

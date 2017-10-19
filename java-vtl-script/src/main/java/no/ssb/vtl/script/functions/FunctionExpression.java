@@ -78,7 +78,7 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression2 {
     }
 
     @Override
-    public Class getType() {
+    public Class getVTLType() {
         return wrappedFunction.getVTLType();
     }
 }

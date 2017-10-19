@@ -46,7 +46,7 @@ public class JoinFoldClauseVisitor extends VTLDatasetExpressionVisitor<FoldOpera
         String dimension = ctx.dimension.getText();
         String measure = ctx.measure.getText();
 
-        Set<Component> elements = ctx.componentRef().stream()
+        Set<Component> elements = ctx.variableExpression().stream()
                 .map(componentVisitor::visit)
                 .collect(ImmutableSet.toImmutableSet());
 

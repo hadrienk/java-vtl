@@ -115,7 +115,7 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
     }
 
     @Override
-    public Class<T> getType() {
+    public Class<T> getVTLType() {
         return type;
     }
 
@@ -124,7 +124,7 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         return toStringHelper(this)
                 .add("id", this.id)
                 .add("signature", signature)
-                .addValue(getType())
+                .addValue(getVTLType())
                 .toString();
     }
 
@@ -211,7 +211,7 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         }
 
         @Override
-        public Class<A> getType() {
+        public Class<A> getVTLType() {
             return type;
         }
 

@@ -56,9 +56,9 @@ public class TypeSafeArguments {
 
     private static VTLObject checkType(VTLObject value, AbstractVTLFunction.Argument argument) {
         // TODO: exception type.
-        checkArgument(value.get() == null || argument.getType().isAssignableFrom(value.getClass()),
+        checkArgument(value.get() == null || argument.getVTLType().isAssignableFrom(value.getClass()),
                 WRONG_ARGUMENT_TYPE,
-                value.getClass(), argument.getName(), argument.getType()
+                value.getClass(), argument.getName(), argument.getVTLType()
         );
         return value;
     }

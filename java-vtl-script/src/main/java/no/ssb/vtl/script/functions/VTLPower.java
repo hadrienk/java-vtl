@@ -52,7 +52,7 @@ public class VTLPower extends AbstractVTLFunction<VTLNumber> {
         VTLNumber exp = arguments.get(EXP);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number) null);
+            return VTLObject.of((Double) null);
         }
 
         if (exp.get() == null) {

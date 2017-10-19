@@ -23,6 +23,9 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
@@ -81,10 +84,10 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             }
 
             @Override
-            public Class<?> getType() {
+            public Class<?> getVTLType() {
                 if (literal instanceof VTLTyped)
                     return ((VTLTyped) literal).getVTLType();
-                return literal.getClass();
+                return VTLObject.class;
             }
 
             @Override
@@ -112,21 +115,55 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
+    public VTLExpression2 visitArithmeticExpr(VTLParser.ArithmeticExprContext ctx) {
+        VTLExpression2 leftExpression = visit(ctx.left);
+        VTLExpression2 rightExpression = visit(ctx.right);
+
+        // Arithmetic expression types are function of the type of the operands.
+        switch (ctx.op.getType()) {
+            case VTLParser.MUL:
+                return new FunctionExpression<VTLNumber>(VTLMultiplication.getInstance(), leftExpression, rightExpression) {
+                    @Override
+                    public Class getVTLType() {
+                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
+                            return VTLFloat.class;
+                        return VTLInteger.class;
+                    }
+                };
+            case VTLParser.DIV:
+                return new FunctionExpression<>(VTLDivision.getInstance(), leftExpression, rightExpression);
+            case VTLParser.PLUS:
+                return new FunctionExpression<VTLNumber>(VTLAddition.getInstance(), leftExpression, rightExpression) {
+                    @Override
+                    public Class getVTLType() {
+                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
+                            return VTLFloat.class;
+                        return VTLInteger.class;
+                    }
+                };
+            case VTLParser.MINUS:
+                return new FunctionExpression<VTLNumber>(VTLSubtraction.getInstance(), leftExpression, rightExpression) {
+                    @Override
+                    public Class getVTLType() {
+                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
+                            return VTLFloat.class;
+                        return VTLInteger.class;
+                    }
+                };
+
+            default:
+                throw new ParseCancellationException("unknown operator " + ctx.op.getText());
+        }
+    }
+
+    @Override
     public VTLExpression2 visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
         VTLExpression2 leftExpression = visit(ctx.left);
         VTLExpression2 rightExpression = visit(ctx.right);
         switch (ctx.op.getType()) {
+
             case VTLParser.CONCAT:
-                // TODO: Singleton.
                 return new FunctionExpression<>(VTLConcatenation.getInstance(), leftExpression, rightExpression);
-            case VTLParser.MUL:
-                return new FunctionExpression<>(VTLMultiplication.getInstance(), leftExpression, rightExpression);
-            case VTLParser.DIV:
-                return new FunctionExpression<>(VTLDivision.getInstance(), leftExpression, rightExpression);
-            case VTLParser.PLUS:
-                return new FunctionExpression<>(VTLAddition.getInstance(), leftExpression, rightExpression);
-            case VTLParser.MINUS:
-                return new FunctionExpression<>(VTLSubtraction.getInstance(), leftExpression, rightExpression);
 
             case VTLParser.EQ:
                 return getBooleanExpression((left, right) -> left.compareTo(right) == 0, leftExpression, rightExpression);
@@ -162,9 +199,10 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             }
 
             @Override
-            public Class getType() {
+            public Class getVTLType() {
                 return VTLBoolean.class;
             }
+
         };
     }
 
@@ -189,9 +227,10 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                 }
 
                 @Override
-                public Class getType() {
+                public Class getVTLType() {
                     return typed.getVTLType();
                 }
+
             };
         } else {
             throw new UnsupportedOperationException("[" + leftIdentifier + "] was not a dataset");
@@ -224,7 +263,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             return new VTLExpression2() {
 
                 @Override
-                public Class<?> getType() {
+                public Class<?> getVTLType() {
                     return typed.getVTLType();
                 }
 
@@ -243,7 +282,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
                 }
 
                 @Override
-                public Class getType() {
+                public Class getVTLType() {
                     return VTLDataset.class;
                 }
             };

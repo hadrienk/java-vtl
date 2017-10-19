@@ -22,26 +22,14 @@ package no.ssb.vtl.model;
 
 import static java.lang.String.*;
 
-public abstract class VTLNumber extends VTLObject<Number> implements VTLTyped<VTLNumber> {
+public abstract class VTLNumber<T extends Number> extends VTLObject<T> {
 
-    @Override
-    public Class<VTLNumber> getType() {
-        return VTLNumber.class;
-    }
-
-    private VTLNumber() {
+    VTLNumber() {
         // private.
     }
 
-    public static VTLNumber of(Number number) {
-        return new VTLNumber() {
-            @Override
-            public Number get() {
-                return number;
-            }
-        };
-        
-    }
+    @Override
+    public abstract T get();
     
     public VTLNumber add(VTLNumber addend) {
         return add(addend.get());
@@ -62,7 +50,7 @@ public abstract class VTLNumber extends VTLObject<Number> implements VTLTyped<VT
     }
     
     public VTLNumber subtract(VTLNumber subtrahend) {
-        return subtract(subtrahend.get());
+        return subtract((Number) subtrahend.get());
     }
     
     public VTLNumber subtract(Number subtrahend) {
@@ -76,11 +64,10 @@ public abstract class VTLNumber extends VTLObject<Number> implements VTLTyped<VT
         throw new RuntimeException(
                 format("unsupported number types %s, %s", minuend.getClass(), subtrahend.getClass())
         );
-        
     }
     
     public VTLNumber multiply(VTLNumber multiplicand) {
-        return multiply(multiplicand.get());
+        return multiply((Number) multiplicand.get());
     }
     
     public VTLNumber multiply(Number multiplicand) {
@@ -94,7 +81,7 @@ public abstract class VTLNumber extends VTLObject<Number> implements VTLTyped<VT
     }
     
     public VTLNumber divide(VTLNumber divisor) {
-        return divide(divisor.get());
+        return divide((Number) divisor.get());
     }
     
     public VTLNumber divide(Number divisor) {

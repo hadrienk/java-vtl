@@ -23,7 +23,7 @@ package no.ssb.vtl.model;
 public abstract class VTLString extends VTLObject<String> implements VTLTyped<VTLString> {
 
     @Override
-    public Class<VTLString> getType() {
+    public Class<VTLString> getVTLType() {
         return VTLString.class;
     }
 

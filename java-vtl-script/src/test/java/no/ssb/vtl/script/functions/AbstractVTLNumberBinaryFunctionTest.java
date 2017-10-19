@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public abstract class AbstractVTLNumberBinaryFunctionTest implements VTLNumberFunctionTest {
 
-    AbstractVTLFunction<VTLNumber> vtlBinaryFunction;
+    AbstractVTLFunction<? extends VTLNumber> vtlBinaryFunction;
 
     @Test
     @Override
@@ -96,12 +96,12 @@ public abstract class AbstractVTLNumberBinaryFunctionTest implements VTLNumberFu
 
         VTLObject<?> result = vtlBinaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of((Number) null),
+                        VTLNumber.of((Double) null),
                         VTLNumber.of(4)
                 )
         );
 
-        assertThat(result).isEqualTo(VTLNumber.of((Number) null));
+        assertThat(result).isEqualTo(VTLNumber.of((Double) null));
     }
 
     @Test

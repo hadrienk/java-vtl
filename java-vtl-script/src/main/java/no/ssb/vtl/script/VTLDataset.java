@@ -7,7 +7,7 @@ import no.ssb.vtl.model.VTLTyped;
 public abstract class VTLDataset extends VTLObject<Dataset> implements VTLTyped<VTLDataset> {
 
     @Override
-    public Class<VTLDataset> getType() {
+    public Class<VTLDataset> getVTLType() {
         return VTLDataset.class;
     }
 

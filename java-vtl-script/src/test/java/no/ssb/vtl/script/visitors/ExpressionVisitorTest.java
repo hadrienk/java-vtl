@@ -26,7 +26,8 @@ import com.google.common.collect.Table;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLExpression2;
-import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.parser.VTLLexer;
@@ -87,7 +88,7 @@ public class ExpressionVisitorTest {
     public void testDivision() throws Exception {
         VTLParser parse = parse("-5 / 0.05");
         VTLExpression2 result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLFloat.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-100.0);
     }
 
@@ -95,15 +96,22 @@ public class ExpressionVisitorTest {
     public void testMultiplication() throws Exception {
         VTLParser parse = parse("-1.5 * -10");
         VTLExpression2 result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLFloat.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(15.0);
+
+        parse = parse("5 * 10");
+        result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
+        softly.assertThat(result.resolve(null).get()).isEqualTo(50L);
     }
+
+
 
     @Test
     public void testAddition() throws Exception {
         VTLParser parse = parse("-10 + 15");
         VTLExpression2 result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(5L);
     }
 
@@ -111,7 +119,7 @@ public class ExpressionVisitorTest {
     public void testSubtraction() throws Exception {
         VTLParser parse = parse("-10 - 15");
         VTLExpression2 result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-25L);
     }
 
@@ -119,12 +127,12 @@ public class ExpressionVisitorTest {
     public void testPrecedence() throws Exception {
         VTLParser parse = parse("(-10 - 15) * 2");
         VTLExpression2 result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-50L);
 
         parse = parse("-10 - 15 * 2");
         result = expressionVisitor.visit(parse.expression());
-        softly.assertThat(result.getVTLType()).isEqualTo(VTLNumber.class);
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-40L);
     }
 

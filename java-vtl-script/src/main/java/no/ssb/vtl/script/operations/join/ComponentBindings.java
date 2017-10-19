@@ -27,7 +27,8 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
-import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.model.VTLTyped;
@@ -46,19 +47,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ComponentBindings extends SimpleBindings {
 
-    private static final Map<Class<?>, Class<? extends VTLObject>> typeMap;
+    private static final Map<Class<?>, Class<? extends VTLObject>> javaToVTL;
+    private static final Map<Class<? extends VTLObject>, Class<?>> VTLToJava;
 
     static {
-        typeMap = ImmutableMap.<Class<?>, Class<? extends VTLObject>>builder()
+        javaToVTL = ImmutableMap.<Class<?>, Class<? extends VTLObject>>builder()
                 .put(String.class, VTLString.class)
-                .put(Long.class, VTLNumber.class)
-                .put(Double.class, VTLNumber.class)
+                .put(Long.class, VTLInteger.class)
+                .put(Double.class, VTLFloat.class)
                 .put(Instant.class, VTLDate.class)
                 .put(Boolean.class, VTLBoolean.class)
-                .put(VTLString.class, VTLString.class)
-                .put(VTLNumber.class, VTLNumber.class)
-                .put(VTLDate.class, VTLDate.class)
-                .put(VTLBoolean.class, VTLBoolean.class)
+                .build();
+
+        VTLToJava = ImmutableMap.<Class<? extends VTLObject>, Class<?>>builder()
+                .put(VTLString.class, String.class)
+                .put(VTLInteger.class, Long.class)
+                .put(VTLFloat.class, Double.class)
+                .put(VTLDate.class, Instant.class)
+                .put(VTLBoolean.class, Boolean.class)
                 .build();
     }
 
@@ -122,10 +128,10 @@ public class ComponentBindings extends SimpleBindings {
             this.component = checkNotNull(component);
 
             Class<?> type = component.getType();
-            checkArgument(typeMap.containsKey(type),
+            checkArgument(javaToVTL.containsKey(type),
                     "unknown type %s", type);
 
-            this.type = typeMap.get(type);
+            this.type = javaToVTL.get(type);
 
         }
 
@@ -134,7 +140,7 @@ public class ComponentBindings extends SimpleBindings {
         }
 
         @Override
-        public Class<?> getType() {
+        public Class<? extends VTLObject> getVTLType() {
             return this.type;
         }
     }

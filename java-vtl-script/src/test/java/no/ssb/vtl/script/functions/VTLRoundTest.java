@@ -91,7 +91,7 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(4),
-                        VTLNumber.of((Number) null)
+                        VTLNumber.of((Double) null)
                 )
         ))
                 .as("exception when passing null where not null is expected")

@@ -92,7 +92,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
 
         return new FunctionExpression<VTLObject>(new VTLNvl(), nullable, replacement) {
             @Override
-            public Class getType() {
+            public Class getVTLType() {
                 return nullable.getVTLType();
             }
         };

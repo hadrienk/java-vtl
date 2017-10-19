@@ -30,9 +30,6 @@ import java.util.function.Function;
 public abstract class VTLExpression implements Function<DataPoint, VTLObject>, VTLTyped {
 
     @Override
-    public abstract Class<?> getType();
-
-    @Override
     public String toString() {
         return "VTLExpression";
     }
@@ -60,7 +57,7 @@ public abstract class VTLExpression implements Function<DataPoint, VTLObject>, V
                 }
 
                 @Override
-                public Class<?> getType() {
+                public Class<?> getVTLType() {
                     return type;
                 }
 

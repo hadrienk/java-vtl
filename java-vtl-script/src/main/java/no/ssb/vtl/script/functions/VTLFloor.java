@@ -20,16 +20,17 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
+public class VTLFloor extends AbstractVTLFunction<VTLInteger>{
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static VTLFloor instance;
 
     private VTLFloor() {
-        super("floor", VTLNumber.class, DS);
+        super("floor", VTLInteger.class, DS);
     }
 
     public static VTLFloor getInstance() {
@@ -40,13 +41,13 @@ public class VTLFloor extends AbstractVTLFunction<VTLNumber>{
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLInteger safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Long) null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        return VTLNumber.of((long) Math.floor(ds.get().doubleValue()));
     }
 }

@@ -48,7 +48,7 @@ public class VTLLog extends AbstractVTLFunction<VTLNumber> {
         VTLNumber base = arguments.get(BASE);
 
         if (ds.get() == null) {
-            return VTLNumber.of((Number)null);
+            return VTLNumber.of((Double) null);
         }
 
         //The number must be greater than zero

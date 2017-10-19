@@ -23,12 +23,13 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 import static java.lang.String.format;
 
-public class VTLNroot extends AbstractVTLFunction<VTLNumber> {
+public class VTLNroot extends AbstractVTLFunction<VTLFloat> {
 
     private static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
     private static final String ARGUMENT_WRONG_TYPE = "%s must be an integer, was %s";
@@ -39,7 +40,7 @@ public class VTLNroot extends AbstractVTLFunction<VTLNumber> {
     private static VTLNroot instance;
 
     private VTLNroot() {
-        super("nroot", VTLNumber.class, DS, INDEX);
+        super("nroot", VTLFloat.class, DS, INDEX);
     }
 
     public static VTLNroot getInstance() {
@@ -50,12 +51,12 @@ public class VTLNroot extends AbstractVTLFunction<VTLNumber> {
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
         VTLNumber index = arguments.get(INDEX);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         //index cannot be 0 or zero

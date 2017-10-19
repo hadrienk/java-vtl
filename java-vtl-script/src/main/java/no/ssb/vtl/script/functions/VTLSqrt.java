@@ -23,16 +23,17 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLSqrt extends AbstractVTLFunction<VTLNumber> {
+public class VTLSqrt extends AbstractVTLFunction<VTLFloat> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static VTLSqrt instance;
 
     private VTLSqrt() {
-        super("sqrt", VTLNumber.class, DS);
+        super("sqrt", VTLFloat.class, DS);
     }
 
     public static VTLSqrt getInstance() {
@@ -44,11 +45,11 @@ public class VTLSqrt extends AbstractVTLFunction<VTLNumber> {
 
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number) null);
+            return VTLObject.of((Double) null);
         }
 
         return VTLNumber.of(Math.sqrt(ds.get().doubleValue()));

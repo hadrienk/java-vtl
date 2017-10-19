@@ -7,6 +7,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLExpression2;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLString;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
@@ -32,8 +33,8 @@ public class JoinAssignmentTest {
             }
 
             @Override
-            public Class<?> getType() {
-                return String.class;
+            public Class<?> getVTLType() {
+                return VTLString.class;
             }
 
         };

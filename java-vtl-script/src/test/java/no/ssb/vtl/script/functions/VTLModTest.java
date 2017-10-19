@@ -98,7 +98,7 @@ public class VTLModTest extends AbstractVTLNumberBinaryFunctionTest {
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(-5),
-                        VTLNumber.of((Number)null)
+                        VTLNumber.of((Double) null)
                 )
         ))
                 .as("exception when passing zero where zero is not allowed")

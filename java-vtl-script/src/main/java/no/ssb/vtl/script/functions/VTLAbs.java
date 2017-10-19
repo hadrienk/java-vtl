@@ -52,7 +52,7 @@ public class VTLAbs extends AbstractVTLFunction<VTLNumber> {
         Number value = ds.get();
 
         if (value == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         if (value instanceof Long) {

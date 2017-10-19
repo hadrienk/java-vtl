@@ -23,12 +23,13 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 import static java.lang.String.format;
 
-public class VTLMod extends AbstractVTLFunction<VTLNumber> {
+public class VTLMod extends AbstractVTLFunction<VTLFloat> {
 
     private static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
@@ -36,7 +37,7 @@ public class VTLMod extends AbstractVTLFunction<VTLNumber> {
     private static VTLMod instance;
 
     private VTLMod() {
-        super("mod", VTLNumber.class, DS, DENOMINATOR);
+        super("mod", VTLFloat.class, DS, DENOMINATOR);
     }
 
     public static VTLMod getInstance() {
@@ -47,13 +48,13 @@ public class VTLMod extends AbstractVTLFunction<VTLNumber> {
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
         VTLNumber denominator = arguments.get(DENOMINATOR);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
         if (denominator.get() == null || denominator.get().doubleValue() == 0.0) {
             throw new IllegalArgumentException(

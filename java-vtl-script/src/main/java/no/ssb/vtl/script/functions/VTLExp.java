@@ -20,16 +20,17 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLExp extends AbstractVTLFunction<VTLNumber> {
+public class VTLExp extends AbstractVTLFunction<VTLFloat> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static VTLExp instance;
 
     private VTLExp() {
-        super("exp", VTLNumber.class, DS);
+        super("exp", VTLFloat.class, DS);
     }
 
     public static VTLExp getInstance() {
@@ -40,12 +41,12 @@ public class VTLExp extends AbstractVTLFunction<VTLNumber> {
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         return VTLNumber.of(Math.exp(ds.get().doubleValue()));

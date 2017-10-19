@@ -6,7 +6,8 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
-import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.model.VTLTyped;
 import org.junit.Test;
@@ -32,8 +33,8 @@ public class ComponentBindingsTest {
         ComponentBindings bindings = new ComponentBindings(dataset);
 
         assertThat(((VTLTyped<?>) bindings.get("c1")).getVTLType()).isEqualTo(VTLString.class);
-        assertThat(((VTLTyped<?>) bindings.get("c2")).getVTLType()).isEqualTo(VTLNumber.class);
-        assertThat(((VTLTyped<?>) bindings.get("c3")).getVTLType()).isEqualTo(VTLNumber.class);
+        assertThat(((VTLTyped<?>) bindings.get("c2")).getVTLType()).isEqualTo(VTLInteger.class);
+        assertThat(((VTLTyped<?>) bindings.get("c3")).getVTLType()).isEqualTo(VTLFloat.class);
         assertThat(((VTLTyped<?>) bindings.get("c4")).getVTLType()).isEqualTo(VTLDate.class);
         assertThat(((VTLTyped<?>) bindings.get("c5")).getVTLType()).isEqualTo(VTLBoolean.class);
 

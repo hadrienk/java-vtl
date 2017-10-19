@@ -58,15 +58,15 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
             case UNION:
                 return (left, right) -> {
                     // TODO: Change when the type system supports more.
-                    VTLNumber leftNumber = VTLNumber.of((Number) left.get());
-                    VTLNumber rightNumber = VTLNumber.of((Number) right.get());
+                    VTLNumber leftNumber = VTLNumber.of((Double) left.get());
+                    VTLNumber rightNumber = VTLNumber.of((Double) right.get());
                     return VTLObject.of(leftNumber.add(rightNumber.get()));
                 };
             case COMPLEMENT:
                 return (left, right) -> {
                     // TODO: Change when the type system supports more.
-                    VTLNumber leftNumber = VTLNumber.of((Number) left.get());
-                    VTLNumber rightNumber = VTLNumber.of((Number) right.get());
+                    VTLNumber leftNumber = VTLNumber.of((Double) left.get());
+                    VTLNumber rightNumber = VTLNumber.of((Double) right.get());
                     return VTLObject.of(leftNumber.subtract(rightNumber.get()));
                 };
             default:

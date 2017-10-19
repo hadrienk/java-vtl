@@ -21,6 +21,7 @@ package no.ssb.vtl.script.visitors.functions;
  */
 
 import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.ExpressionVisitor;
@@ -54,7 +55,7 @@ public class NativeFunctionsVisitorTest {
     public void testAbs() throws Exception {
         VTLParser parse = parse("abs(-1)");
         VTLExpression2 result = visitor.visit(parse.expression());
-        assertThat(result.resolve(null).get()).isEqualTo(1);
+        assertThat(result.resolve(null).get()).isEqualTo(1L);
     }
 
     @Test
@@ -68,14 +69,16 @@ public class NativeFunctionsVisitorTest {
     public void testCeil() throws Exception {
         VTLParser parse = parse("ceil(1.5)");
         VTLExpression2 result = visitor.visit(parse.expression());
-        assertThat(result.resolve(null).get()).isEqualTo(2);
+        assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
+        assertThat(result.resolve(null).get()).isEqualTo(2L);
     }
 
     @Test
     public void testFloor() throws Exception {
         VTLParser parse = parse("floor(1.5)");
         VTLExpression2 result = visitor.visit(parse.expression());
-        assertThat(result.resolve(null).get()).isEqualTo(1);
+        assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
+        assertThat(result.resolve(null).get()).isEqualTo(1L);
     }
 
     @Test

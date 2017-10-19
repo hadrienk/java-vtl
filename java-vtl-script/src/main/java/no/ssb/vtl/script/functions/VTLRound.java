@@ -20,6 +20,7 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -27,7 +28,7 @@ import java.math.BigDecimal;
 
 import static java.lang.String.format;
 
-public class VTLRound extends AbstractVTLFunction<VTLNumber> {
+public class VTLRound extends AbstractVTLFunction<VTLFloat> {
 
     private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
@@ -35,7 +36,7 @@ public class VTLRound extends AbstractVTLFunction<VTLNumber> {
     private static VTLRound instance;
 
     private VTLRound() {
-        super("round", VTLNumber.class, DS, DECIMALS);
+        super("round", VTLFloat.class, DS, DECIMALS);
     }
 
     public static VTLRound getInstance() {
@@ -46,13 +47,13 @@ public class VTLRound extends AbstractVTLFunction<VTLNumber> {
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
         VTLNumber decimals = arguments.get(DECIMALS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number) null);
+            return VTLObject.of((Float) null);
         }
         if (decimals.get() == null || decimals.get().intValue() < 0) {
             throw new IllegalArgumentException(

@@ -26,13 +26,13 @@ public abstract class VTLBoolean extends VTLObject<Boolean> implements VTLTyped<
         // private.
     }
 
+    @Override
+    public Class<VTLBoolean> getVTLType() {
+        return VTLBoolean.class;
+    }
+
     public static VTLBoolean of(Boolean value) {
         return new VTLBoolean() {
-            @Override
-            public Class<VTLBoolean> getType() {
-                return VTLBoolean.class;
-            }
-
             @Override
             public Boolean get() {
                 return value;

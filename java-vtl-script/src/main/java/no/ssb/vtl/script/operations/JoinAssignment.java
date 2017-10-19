@@ -25,11 +25,17 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -65,6 +71,22 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         this.componentBindings = checkNotNull(componentBindings);
     }
 
+    Class<?> convertToComponentType(Class<? extends VTLObject> vtlType) {
+        if (vtlType == VTLString.class)
+            return String.class;
+        if (vtlType == VTLInteger.class)
+            return Long.class;
+        if (vtlType == VTLFloat.class)
+            return Double.class;
+        if (vtlType == VTLInteger.class)
+            return Long.class;
+        if (vtlType == VTLDate.class)
+            return Instant.class;
+        if (vtlType == VTLBoolean.class)
+            return Boolean.class;
+        throw new IllegalArgumentException("not a VTL type " + vtlType);
+    }
+
     @Override
     protected DataStructure computeDataStructure() {
         DataStructure.Builder builder = DataStructure.builder();
@@ -75,7 +97,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             builder.put(entry.getKey(), entry.getValue());
         }
 
-        Class<?> type = expression.getVTLType();
+        Class<?> type = convertToComponentType(expression.getVTLType());
 
         if (dataStructure.containsKey(identifier)) {
             Component existingComponent = dataStructure.get(identifier);
@@ -94,7 +116,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
                 );
             }
         }
-
+        // TODO: Bug, Component needs the Java type.
         return builder.put(identifier, role, type).build();
     }
 

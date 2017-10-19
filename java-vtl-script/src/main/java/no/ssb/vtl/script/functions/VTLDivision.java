@@ -20,16 +20,17 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 
-public class VTLDivision extends AbstractVTLFunction<VTLNumber> {
+public class VTLDivision extends AbstractVTLFunction<VTLFloat> {
 
     private static final Argument<VTLNumber> LEFT = new Argument<>("left", VTLNumber.class);
     private static final Argument<VTLNumber> RIGHT = new Argument<>("right", VTLNumber.class);
     private static VTLDivision instance;
 
     private VTLDivision() {
-        super("/", VTLNumber.class, LEFT, RIGHT);
+        super("/", VTLFloat.class, LEFT, RIGHT);
     }
 
     public static VTLDivision getInstance() {
@@ -39,10 +40,10 @@ public class VTLDivision extends AbstractVTLFunction<VTLNumber> {
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber left = arguments.get(LEFT);
         VTLNumber right = arguments.get(RIGHT);
-        return left.divide(right);
+        return (VTLFloat) left.divide(right);
     }
 }
 

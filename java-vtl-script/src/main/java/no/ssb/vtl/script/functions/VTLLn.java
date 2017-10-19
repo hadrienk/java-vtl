@@ -20,19 +20,20 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 import static java.lang.String.format;
 
-public class VTLLn extends AbstractVTLFunction<VTLNumber> {
+public class VTLLn extends AbstractVTLFunction<VTLFloat> {
 
     private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static VTLLn instance;
 
     private VTLLn() {
-        super("ln", VTLNumber.class, DS);
+        super("ln", VTLFloat.class, DS);
     }
 
     public static VTLLn getInstance() {
@@ -43,11 +44,11 @@ public class VTLLn extends AbstractVTLFunction<VTLNumber> {
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         if(ds.get().intValue() <= 0) {

@@ -93,7 +93,7 @@ public class VTLLogTest extends AbstractVTLNumberBinaryFunctionTest {
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(4),
-                        VTLNumber.of((Number) null)
+                        VTLNumber.of((Double) null)
                 )
         ))
                 .as("exception when passing <=0 where >0 is expected")

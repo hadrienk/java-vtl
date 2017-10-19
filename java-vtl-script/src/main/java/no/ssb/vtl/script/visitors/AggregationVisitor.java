@@ -25,6 +25,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.AggregationOperation;
 import org.antlr.v4.runtime.Token;
@@ -92,7 +93,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     @VisibleForTesting
     AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, List<Component> aggregationComponents) {
         return new AggregationOperation(dataset, groupBy, aggregationComponents,
-                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLNumber.of((Number) null)));
+                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLObject.of((Double) null)));
     }
     
 }
