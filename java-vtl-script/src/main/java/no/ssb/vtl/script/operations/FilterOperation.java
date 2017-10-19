@@ -76,7 +76,8 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
                 .map(dataPointBindings::setDataPoint)
                 .filter(bindings -> {
                     VTLBoolean resolved = (VTLBoolean) predicate.resolve(dataPointBindings);
-                    return resolved.get();
+                    Boolean predicate = resolved.get();
+                    return predicate == null ? false : predicate;
                 })
                 .map(DataPointBindings::getDataPoint);
     }

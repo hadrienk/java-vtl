@@ -20,53 +20,81 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
+import javax.script.Bindings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FilterOperationTest {
 
     private Dataset dataset;
+    private ComponentBindings componentBindings;
+
+    private static VTLExpression2 NULL = new VTLExpression2() {
+        @Override
+        public VTLObject resolve(Bindings bindings) {
+            return VTLBoolean.of((Boolean) null);
+        }
+
+        @Override
+        public Class getVTLType() {
+            return VTLBoolean.class;
+        }
+    };
+
+    private static VTLExpression2 FALSE = new VTLExpression2() {
+        @Override
+        public VTLObject resolve(Bindings bindings) {
+            return VTLBoolean.of(false);
+        }
+
+        @Override
+        public Class getVTLType() {
+            return VTLBoolean.class;
+        }
+    };
+
+    private static VTLExpression2 TRUE = new VTLExpression2() {
+        @Override
+        public VTLObject resolve(Bindings bindings) {
+            return VTLBoolean.of(true);
+        }
+
+        @Override
+        public Class getVTLType() {
+            return VTLBoolean.class;
+        }
+    };
 
     @Before
     public void setUp() throws Exception {
-        DataStructure structure = DataStructure.builder()
-                .put("id", Component.Role.IDENTIFIER, String.class)
+        dataset= StaticDataset.create()
+                .addComponent("id", Component.Role.IDENTIFIER, String.class)
+                .addPoints("idValue")
                 .build();
-
-        DataPoint dataPoint = structure.wrap(ImmutableMap.of("id", "idValue"));
-        List<DataPoint> dataPoints = Collections.singletonList(dataPoint);
-
-        dataset = new TestableDataset(structure, dataPoints);
+        componentBindings = new ComponentBindings(dataset);
     }
 
     @Test
     public void testPredicateReturnsNull() throws Exception {
 
-        FilterOperation resultBooleanNull = new FilterOperation(dataset, dp -> null);
+        FilterOperation resultBooleanNull = new FilterOperation(dataset, NULL, componentBindings);
         assertThat(resultBooleanNull.getData()).isEmpty();
-
-        FilterOperation resultNull = new FilterOperation(dataset, dp -> null);
-        assertThat(resultNull.getData()).isEmpty();
     }
 
     @Test
     public void testPredicateReturnsFalse() throws Exception {
 
-        FilterOperation result = new FilterOperation(dataset, dp -> VTLBoolean.of(Boolean.FALSE));
+        FilterOperation result = new FilterOperation(dataset, FALSE, componentBindings);
         assertThat(result.getData()).isEmpty();
     }
 
@@ -74,39 +102,8 @@ public class FilterOperationTest {
     @Test
     public void testPredicateReturnsTrue() throws Exception {
 
-        FilterOperation result = new FilterOperation(dataset, dp -> VTLBoolean.of(Boolean.TRUE));
+        FilterOperation result = new FilterOperation(dataset, TRUE, componentBindings);
         assertThat(result.getData()).isNotEmpty();
-    }
-
-    private static class TestableDataset implements Dataset {
-
-        private final List<DataPoint> dataPoints;
-        private final DataStructure structure;
-
-        private TestableDataset(DataStructure structure, List<DataPoint> dataPoints) {
-            this.dataPoints = dataPoints;
-            this.structure = structure;
-        }
-
-        @Override
-        public Stream<DataPoint> getData() {
-            return dataPoints.stream();
-        }
-
-        @Override
-        public Optional<Map<String, Integer>> getDistinctValuesCount() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Long> getSize() {
-            return Optional.of((long) dataPoints.size());
-        }
-
-        @Override
-        public DataStructure getDataStructure() {
-            return structure;
-        }
     }
 }
 
