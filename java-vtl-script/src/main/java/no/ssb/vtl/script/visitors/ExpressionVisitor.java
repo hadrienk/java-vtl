@@ -213,7 +213,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
 
     @Override
     public VTLExpression2 visitMembershipExpression(VTLParser.MembershipExpressionContext ctx) {
-        String leftIdentifier = checkVariableExist(scope, ctx.leff);
+        String leftIdentifier = checkVariableExist(scope, ctx.left);
         Object object = scope.get(leftIdentifier);
         if (object instanceof Bindings) {
             Bindings bindings = (Bindings) object;

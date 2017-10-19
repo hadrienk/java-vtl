@@ -45,7 +45,7 @@ public abstract class AbstractVariableVisitor<T> extends VTLBaseVisitor<T> {
 
     @Override
     public T visitMembershipExpression(VTLParser.MembershipExpressionContext ctx) {
-        String leftIdentifier = checkVariableExist(bindings, ctx.leff);
+        String leftIdentifier = checkVariableExist(bindings, ctx.left);
         Object object = bindings.get(leftIdentifier);
         if (object instanceof Bindings) {
             Bindings bindings = (Bindings) object;

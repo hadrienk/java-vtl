@@ -55,7 +55,7 @@ expression : LPAR expression RPAR                                               
            | literal                                                            # literalExpr
            ;
 
-membershipExpression : leff=variable op=MEMBERSHIP right=variable ;
+membershipExpression : left=variable op=MEMBERSHIP right=variable ;
 
 // TODO: Rename to variableName.
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
