@@ -51,7 +51,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.Year;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,47 +66,63 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-import static java.util.stream.Collectors.*;
-import static no.ssb.vtl.model.Component.Role.*;
-import static no.ssb.vtl.script.operations.hierarchy.HierarchyOperation.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toList;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static no.ssb.vtl.script.operations.hierarchy.HierarchyOperation.findPaths;
+import static no.ssb.vtl.script.operations.hierarchy.HierarchyOperation.sortTopologically;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 public class HierarchyOperationTest extends RandomizedTest {
 
     private static VTLPrintStream PS = new VTLPrintStream(System.out);
     private static ObjectMapper MAPPER = new ObjectMapper();
 
+    private static Instant createInstant(int year) {
+        return OffsetDateTime.of(
+                year,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0,
+                ZoneOffset.UTC
+        ).toInstant();
+    }
     private static List<Object> createAggregatedPopulation() {
         return Lists.newArrayList(
-                Year.of(2000), "Austria", 2000L, -2000L,
-                Year.of(2000), "Belgium", 2000L, -2000L,
-                Year.of(2000), "European Union", 10000L, -10000L,
-                Year.of(2000), "Luxembourg", 2000L, -2000L,
-                Year.of(2000), "Benelux", 6000L, -6000L,
-                Year.of(2000), "Italy", 2000L, -2000L,
-                Year.of(2000), "Holland", 2000L, -2000L,
-                Year.of(2001), "Austria", 2001L, -2001L,
-                Year.of(2001), "Belgium", 2001L, -2001L,
-                Year.of(2001), "European Union", 10005L, -10005L,
-                Year.of(2001), "Luxembourg", 2001L, -2001L,
-                Year.of(2001), "Benelux", 6003L, -6003L,
-                Year.of(2001), "Italy", 2001L, -2001L,
-                Year.of(2001), "Holland", 2001L, -2001L,
-                Year.of(2002), "Austria", 2002L, -2002L,
-                Year.of(2002), "Belgium", 2002L, -2002L,
-                Year.of(2002), "European Union", 10010L, -10010L,
-                Year.of(2002), "Luxembourg", 2002L, -2002L,
-                Year.of(2002), "Benelux", 6006L, -6006L,
-                Year.of(2002), "Italy", 2002L, -2002L,
-                Year.of(2002), "Holland", 2002L, -2002L,
-                Year.of(2003), "Austria", 2003L, -2003L,
-                Year.of(2003), "Belgium", 2003L, -2003L,
-                Year.of(2003), "European Union", 10015L, -10015L,
-                Year.of(2003), "Luxembourg", 2003L, -2003L,
-                Year.of(2003), "Benelux", 6009L, -6009L,
-                Year.of(2003), "Italy", 2003L, -2003L,
-                Year.of(2003), "Holland", 2003L, -2003L
+                createInstant(2000), "Austria", 2000L, -2000L,
+                createInstant(2000), "Belgium", 2000L, -2000L,
+                createInstant(2000), "European Union", 10000L, -10000L,
+                createInstant(2000), "Luxembourg", 2000L, -2000L,
+                createInstant(2000), "Benelux", 6000L, -6000L,
+                createInstant(2000), "Italy", 2000L, -2000L,
+                createInstant(2000), "Holland", 2000L, -2000L,
+                createInstant(2001), "Austria", 2001L, -2001L,
+                createInstant(2001), "Belgium", 2001L, -2001L,
+                createInstant(2001), "European Union", 10005L, -10005L,
+                createInstant(2001), "Luxembourg", 2001L, -2001L,
+                createInstant(2001), "Benelux", 6003L, -6003L,
+                createInstant(2001), "Italy", 2001L, -2001L,
+                createInstant(2001), "Holland", 2001L, -2001L,
+                createInstant(2002), "Austria", 2002L, -2002L,
+                createInstant(2002), "Belgium", 2002L, -2002L,
+                createInstant(2002), "European Union", 10010L, -10010L,
+                createInstant(2002), "Luxembourg", 2002L, -2002L,
+                createInstant(2002), "Benelux", 6006L, -6006L,
+                createInstant(2002), "Italy", 2002L, -2002L,
+                createInstant(2002), "Holland", 2002L, -2002L,
+                createInstant(2003), "Austria", 2003L, -2003L,
+                createInstant(2003), "Belgium", 2003L, -2003L,
+                createInstant(2003), "European Union", 10015L, -10015L,
+                createInstant(2003), "Luxembourg", 2003L, -2003L,
+                createInstant(2003), "Benelux", 6009L, -6009L,
+                createInstant(2003), "Italy", 2003L, -2003L,
+                createInstant(2003), "Holland", 2003L, -2003L
         );
     }
 
@@ -210,11 +229,11 @@ public class HierarchyOperationTest extends RandomizedTest {
                 .put("OtherPopulation", MEASURE, Long.class)
                 .build();
 
-        List<Year> years = Lists.newArrayList(
-                Year.of(2000),
-                Year.of(2001),
-                Year.of(2002),
-                Year.of(2003)
+        List<Instant> years = Lists.newArrayList(
+                Year.of(2000).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                Year.of(2001).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                Year.of(2002).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                Year.of(2003).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC)
         );
 
         List<String> countries = Lists.newArrayList(
@@ -226,13 +245,14 @@ public class HierarchyOperationTest extends RandomizedTest {
         );
 
         ArrayList<DataPoint> data = Lists.newArrayList();
-        for (Year year : years) {
+        for (Instant instant : years) {
             for (String country : countries) {
+                int year = instant.atOffset(ZoneOffset.UTC).getYear();
                 DataPoint point = structure.wrap(ImmutableMap.of(
-                        "Year", year,
+                        "Year", instant,
                         "Country", country,
-                        "Population", (long) year.getValue(), //randomIntBetween(0, 20)
-                        "OtherPopulation", (long) year.getValue() * -1
+                        "Population", (long) year, //randomIntBetween(0, 20)
+                        "OtherPopulation", (long) year * -1
                 ));
                 data.add(point);
             }

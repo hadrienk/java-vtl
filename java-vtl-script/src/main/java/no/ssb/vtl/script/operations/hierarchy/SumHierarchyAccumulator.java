@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.*;
  */
 public class SumHierarchyAccumulator implements HierarchyAccumulator {
 
-    private static Map<Class<?>, Object> TYPEMAP = ImmutableMap.<Class<?>, Object>builder()
+    private static Map<Class<?>, Object> ZEROS = ImmutableMap.<Class<?>, Object>builder()
             .put(Long.class, 0L)
             .put(Double.class, 0D)
             .put(Number.class, 0D)
@@ -44,7 +44,7 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
 
     public SumHierarchyAccumulator(Class<?> type) {
         // TODO: Change when the type system supports more.
-        identity = checkNotNull((Number) TYPEMAP.get(type));
+        identity = checkNotNull((Number) ZEROS.get(type));
     }
 
     @Override
@@ -57,17 +57,15 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
         switch (sign) {
             case UNION:
                 return (left, right) -> {
-                    // TODO: Change when the type system supports more.
-                    VTLNumber leftNumber = VTLNumber.of((Double) left.get());
-                    VTLNumber rightNumber = VTLNumber.of((Double) right.get());
-                    return VTLObject.of(leftNumber.add(rightNumber.get()));
+                    VTLNumber leftNumber = (VTLNumber) left;
+                    VTLNumber rightNumber = (VTLNumber) right;
+                    return leftNumber.add(rightNumber);
                 };
             case COMPLEMENT:
                 return (left, right) -> {
-                    // TODO: Change when the type system supports more.
-                    VTLNumber leftNumber = VTLNumber.of((Double) left.get());
-                    VTLNumber rightNumber = VTLNumber.of((Double) right.get());
-                    return VTLObject.of(leftNumber.subtract(rightNumber.get()));
+                    VTLNumber leftNumber = (VTLNumber) left;
+                    VTLNumber rightNumber = (VTLNumber) right;
+                    return leftNumber.subtract(rightNumber.get());
                 };
             default:
                 throw new IllegalArgumentException(String.format("unknown sign %s", sign));

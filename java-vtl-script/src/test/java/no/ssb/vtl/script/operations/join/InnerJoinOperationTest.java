@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.Year;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +139,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
 
             int j = i;
             for (int rowNum = 0; rowNum < rowAmount; rowNum++) {
-                datasetBuilder.addPoints(Year.of(2000),
+                datasetBuilder.addPoints(Year.of(2000).atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC).toInstant(),
                         "id" + rowNum,
                         Instant.ofEpochMilli(60 * 60 * 24 * 100),
                         (long) (j + rowNum),
