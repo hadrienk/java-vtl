@@ -193,8 +193,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         return new VTLExpression2() {
             @Override
             public VTLObject resolve(Bindings bindings) {
-                VTLObject left = (VTLObject) leftExpression.resolve(bindings);
-                VTLObject right = (VTLObject) rightExpression.resolve(bindings);
+                VTLObject left = leftExpression.resolve(bindings);
+                VTLObject right = rightExpression.resolve(bindings);
                 return VTLBoolean.of(predicate.test(left, right));
             }
 
