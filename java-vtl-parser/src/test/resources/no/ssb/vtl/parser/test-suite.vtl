@@ -35,11 +35,13 @@ variable := +0.0001
 variable := true
 variable := false
 
-/*
-// TODO: Arithmetic
+// Date
+variable := 2000-01-01T00:00:00.000Z
+variable := 2000-01-01T00:00:00.000+00:15
+
+// Arithmetic
 variable := 1 + 1 - 2
 variable := 10 * -10 / +10
-//*/
 
 /* String operators and function */
 
@@ -153,8 +155,8 @@ variable := [left, right] {
     variable := func1(null,"string","string" || "string",
         1, -1, 0,
         1.0, -0.5,
-        // TODO: (true or false) and true,
-        // TODO (1 - 2) + 3 / 4,
+        (true or false) and true,
+        (1 - 2) + 3 / 4,
         func2(
             component
         ),

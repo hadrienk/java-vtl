@@ -68,12 +68,12 @@ literal : nullLiteral
          | floatLiteral
          | stringLiteral ;
 
-nullLiteral     : NULL_CONSTANT ;
-booleanLiteral  : BOOLEAN_CONSTANT ;
-dateLiteral     : 'TODO:date' ;
-integerLiteral  : INTEGER_CONSTANT ;
-floatLiteral    : FLOAT_CONSTANT ;
-stringLiteral   : STRING_CONSTANT ;
+nullLiteral     : NULL ;
+booleanLiteral  : BOOLEAN_LITERAL ;
+dateLiteral     : DATE_LITERAL ;
+integerLiteral  : INTEGER_LITERAL ;
+floatLiteral    : FLOAT_LITERAL ;
+stringLiteral   : STRING_LITERAL ;
 
 /* TODO: deprecate, use expression instead */
 datasetExpression : <assoc=right>datasetExpression clauseExpression     #withClause
@@ -83,8 +83,8 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression     #withCla
                   | variable                                            #withAtom
                   ;
 
-hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
-hierarchyReference : datasetRef ;
+hierarchyExpression : 'hierarchy' '(' variable ',' variableExpression ',' hierarchyReference ',' BOOLEAN_LITERAL ( ',' ('sum' | 'prod') )? ')' ;
+hierarchyReference : variableExpression ;
 
 // TODO: Move to expression.
 function : getFunction               #withGet
@@ -93,22 +93,18 @@ function : getFunction               #withGet
          | aggregationFunction       #withAggregation
          ;
 
-getFunction : 'get' '(' datasetId ')';
-putFunction : 'put(todo)';
+getFunction : 'get' LPAR STRING_LITERAL RPAR;
+putFunction : 'put' LPAR STRING_LITERAL RPAR;
 
 aggregationFunction
-        //TODO: This causes an ambiguity warning for an aggregation function with implicit component e.g. sum(ds) ...
-       : 'sum' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateSum
-       | 'avg' '(' (datasetRef|componentRef) ')' aggregationParms       #aggregateAvg
+       : 'sum' '(' variableExpression ')' aggregationParms       #aggregateSum
+       | 'avg' '(' variableExpression ')' aggregationParms       #aggregateAvg
        ;
 
-aggregationParms: aggregationClause=(GROUP_BY|ALONG) componentRef (',' componentRef)*;
+aggregationParms: aggregationClause=(GROUP_BY|ALONG) variableExpression (',' variableExpression)*;
 
 ALONG : 'along' ;
 GROUP_BY : 'group by' ;
-
-// TODO: Remove
-datasetId : STRING_CONSTANT ;
 
 checkFunction : 'check' '(' checkParam ')';
 
@@ -116,17 +112,10 @@ checkParam : variableExpression (',' checkRows)? (',' checkColumns)? (',' 'error
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
-errorCode : STRING_CONSTANT ;
-errorLevel : INTEGER_CONSTANT ;
+errorCode : STRING_LITERAL ;
+errorLevel : INTEGER_LITERAL ;
 
-// TODO: Remove
-datasetRef: variable ;
-
-// TODO: Remove
 variableExpression : membershipExpression | variable ;
-componentRef : ( datasetRef '.')? variable ;
-
-constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
 
 clauseExpression      : '[' clause ']' ;
 
@@ -229,7 +218,7 @@ unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
 
 joinExpression : '[' joinDefinition ']' '{' joinBody '}';
 
-joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* ( 'on' componentRef (',' componentRef )* )? ;
+joinDefinition : type=( INNER | OUTER | CROSS )? variable (',' variable )* ( 'on' variableExpression (',' variableExpression )* )? ;
 
 joinBody : joinClause (',' joinClause)* ;
 
@@ -248,8 +237,8 @@ joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expr
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
 joinFoldExpression      : 'fold' variableExpression (',' variableExpression)* 'to' dimension=variable ',' measure=variable ;
 
-// TODO: variableName instead of STRING_CONSTANT?
-joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
+// TODO: variableName instead of STRING?
+joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' STRING_LITERAL (',' STRING_LITERAL)* ;
 
 // Drop clause
 joinDropExpression : 'drop' variableExpression (',' variableExpression)* ;
@@ -272,22 +261,26 @@ CROSS : 'cross' ;
 
 ROLE : 'role' ;
 
-// TODO: Rename to INTEGER_LITTERAL
-INTEGER_CONSTANT  : (PLUS|MINUS)?DIGIT+;
-// TODO: Rename to BOOLEAN_LITTERAL
-BOOLEAN_CONSTANT  : 'true' | 'false' ;
+// "2000-01-01T00:00:00.000Z"
+DATE_LITERAL : FULL_DATE 'T' FULL_TIME ('Z' | OFFSET ) ;
+fragment FULL_DATE : DIGIT4 '-' DIGIT2 '-' DIGIT2 ;
+fragment FULL_TIME : DIGIT2 ':' DIGIT2 ':' DIGIT2 ( '.' DIGIT+ )? ;
+fragment OFFSET : ('+' | '-' ) DIGIT+ ':' DIGIT+ ;
+fragment DIGIT4 : DIGIT2 DIGIT2 ;
+fragment DIGIT2 : DIGIT DIGIT ;
 
-// TODO: Rename to STRING_LITTERAL
-STRING_CONSTANT   :'"' (ESCAPED_QUOTE|~'"')* '"';
+INTEGER_LITERAL  : (PLUS|MINUS)?DIGIT+;
+
+BOOLEAN_LITERAL  : 'true' | 'false' ;
+
+STRING_LITERAL   :'"' (ESCAPED_QUOTE|~'"')* '"';
 fragment ESCAPED_QUOTE : '""';
 
-// TODO: Rename to FLOAT_LITTERAL
-FLOAT_CONSTANT    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
-                  | (PLUS|MINUS)?(DIGIT)+ FLOATEXP
-                  ;
+FLOAT_LITERAL    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
+         | (PLUS|MINUS)?(DIGIT)+ FLOATEXP
+         ;
 
-// TODO: Rename to NULL
-NULL_CONSTANT     : 'null';
+NULL     : 'null';
 
 IMPLICIT : 'implicit' ;
 
