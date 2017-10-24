@@ -59,7 +59,7 @@ public class VTLObjectTest {
     public void testDifferentNumberCompare() throws Exception {
 
         VTLObject one = VTLObject.of(new Double(1));
-        VTLObject two = VTLObject.of(new Integer(2));
+        VTLObject two = VTLObject.of(new Long(2));
         VTLObject otherOne = VTLObject.of(new Long(1));
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
@@ -67,13 +67,13 @@ public class VTLObjectTest {
                     .hasMessageContaining(" 1.0 ")
                     .hasMessageContaining("Double")
                     .hasMessageContaining(" 2 ")
-                    .hasMessageContaining("Integer");
+                    .hasMessageContaining("Long");
 
             softly.assertThatThrownBy(() -> two.compareTo(one))
                     .hasMessageContaining(" 2 ")
                     .hasMessageContaining("Double")
                     .hasMessageContaining(" 1.0 ")
-                    .hasMessageContaining("Integer");
+                    .hasMessageContaining("Long");
 
             softly.assertThatThrownBy(() -> assertThat(one.compareTo(otherOne)))
                     .hasMessageContaining(" 1 ")
