@@ -86,6 +86,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression     #withCla
 hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
 hierarchyReference : datasetRef ;
 
+// TODO: Move to expression.
 function : getFunction               #withGet
          | putFunction               #withPut
          | checkFunction             #withCheck
@@ -114,7 +115,7 @@ exprAtom : datasetRef;
 
 checkFunction : 'check' '(' checkParam ')';
 
-checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
+checkParam : variableExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;

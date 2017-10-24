@@ -31,18 +31,17 @@ import static java.util.Optional.ofNullable;
 
 public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final RelationalVisitor relationalVisitor;
-    private final ReferenceVisitor referenceVisitor;
+    private final RelationalVisitor datasetExpressionVisitor;
 
-    public CheckVisitor(RelationalVisitor relationalVisitor, ReferenceVisitor referenceVisitor) {
-        this.relationalVisitor = relationalVisitor;
-        this.referenceVisitor = referenceVisitor;
+    public CheckVisitor(RelationalVisitor relationalVisitor) {
+        this.datasetExpressionVisitor = relationalVisitor;
     }
     
     @Override
     public Dataset visitCheckFunction(VTLParser.CheckFunctionContext ctx) {
         VTLParser.CheckParamContext checkParamContext = ctx.checkParam();
-        Dataset dataset = visit(checkParamContext.datasetExpression());
+
+        Dataset dataset = datasetExpressionVisitor.visit(checkParamContext.variableExpression());
 
         CheckSingleRuleOperation.ComponentsToReturn componentsToReturn = getComponentsToReturn(checkParamContext.checkColumns());
         CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
@@ -59,13 +58,8 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
     }
 
     @Override
-    public Dataset visitVariable(VTLParser.VariableContext ctx) {
-        return (Dataset) referenceVisitor.visit(ctx);
-    }
-
-    @Override
     public Dataset visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        return relationalVisitor.visit(ctx);
+        return datasetExpressionVisitor.visit(ctx);
     }
 
 
