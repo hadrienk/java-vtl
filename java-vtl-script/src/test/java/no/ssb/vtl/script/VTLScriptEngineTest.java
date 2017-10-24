@@ -67,7 +67,10 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", dataset);
         engine.eval("ds2 := ds1");
 
-        assertThat(bindings).contains(entry("ds2", dataset));
+        assertThat(bindings).containsKey("ds2");
+        Object ds2 = bindings.get("ds2");
+        assertThat(ds2).isInstanceOf(VTLDataset.class);
+        assertThat(((VTLDataset) ds2).get()).isSameAs(dataset);
 
     }
 
@@ -442,191 +445,57 @@ public class VTLScriptEngineTest {
     @Test
     public void testCheckSingleRule() throws Exception {
 
-        Dataset ds1 = mock(Dataset.class);
-        Dataset dsCodeList2 = mock(Dataset.class);
-        Dataset dsCodeList3 = mock(Dataset.class);
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("kommune_nr", Role.IDENTIFIER, String.class)
+                .addComponent("periode", Role.IDENTIFIER, String.class)
+                .addComponent("kostragruppe", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
 
-        DataStructure structure1 = DataStructure.of(
-                "kommune_nr", Role.IDENTIFIER, String.class,
-                "periode", Role.IDENTIFIER, String.class,
-                "kostragruppe", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure1);
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "kommune_nr", "0101",
-                        "periode", "2015",
-                        "kostragruppe", "EKG14",
-                        "m1", 100L,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "kommune_nr", "0101",
-                        "periode", "2015",
-                        "kostragruppe", "EKG15",
-                        "m1", 110L,
-                        "at1", "attr4"
-                ),
-                ImmutableMap.of(
-                        "kommune_nr", "0111",
-                        "periode", "2014",
-                        "kostragruppe", "EKG14",
-                        "m1", 101L,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "kommune_nr", "9000",
-                        "periode", "2014",
-                        "kostragruppe", "EKG14",
-                        "m1", 102L,
-                        "at1", "attr3"
-                )
-        ).map(structure1::wrap));
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+                .addPoints("0101", "2015", "EKG14", 100L, "attr1")
+                .addPoints("0101", "2015", "EKG15", 110L, "attr4")
+                .addPoints( "0111", "2014", "EKG14", 101L, "attr2")
+                .addPoints( "9000", "2014", "EKG14", 102L, "attr3")
+                .build();
 
-        DataStructure structure2 = DataStructure.of(
-                "code", Role.IDENTIFIER, String.class,
-                "name", Role.MEASURE, String.class,
-                "period", Role.IDENTIFIER, String.class
-        );
-        when(dsCodeList2.getDataStructure()).thenReturn(structure2);
+        Dataset dsCodeList2 = StaticDataset.create()
+                .addComponent("code", Role.IDENTIFIER, String.class)
+                .addComponent("name", Role.MEASURE, String.class)
+                .addComponent("period", Role.IDENTIFIER, String.class)
 
-        when(dsCodeList2.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden 2010-2013",
-                        "period", "2010"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden 2010-2013",
-                        "period", "2011"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden 2010-2013",
-                        "period", "2012"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden",
-                        "period", "2013"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden",
-                        "period", "2014"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden",
-                        "period", "2015"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden",
-                        "period", "2016"
-                ),
-                ImmutableMap.of(
-                        "code", "0101",
-                        "name", "Halden",
-                        "period", "2017"
-                ),
-                ImmutableMap.of(
-                        "code", "0111",
-                        "name", "Hvaler",
-                        "period", "2015"
-                ),
-                ImmutableMap.of(
-                        "code", "0111",
-                        "name", "Hvaler",
-                        "period", "2016"
-                ),
-                ImmutableMap.of(
-                        "code", "0111",
-                        "name", "Hvaler",
-                        "period", "2017"
-                ),
-                ImmutableMap.of(
-                        "code", "1001",
-                        "name", "Kristiansand",
-                        "period", "2013"
-                ),
-                ImmutableMap.of(
-                        "code", "1001",
-                        "name", "Kristiansand",
-                        "period", "2014"
-                ),
-                ImmutableMap.of(
-                        "code", "1001",
-                        "name", "Kristiansand",
-                        "period", "2015"
-                )
-        ).map(structure2::wrap));
-        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
+                .addPoints("0101", "Halden 2010-2013", "2010")
+                .addPoints("0101", "Halden 2010-2013", "2011")
+                .addPoints("0101", "Halden 2010-2013", "2012")
+                .addPoints("0101", "Halden", "2013")
+                .addPoints("0101", "Halden", "2014")
+                .addPoints("0101", "Halden", "2015")
+                .addPoints("0101", "Halden", "2016")
+                .addPoints("0101", "Halden", "2017")
+                .addPoints("0111", "Hvaler", "2015")
+                .addPoints("0111", "Hvaler", "2016")
+                .addPoints("0111", "Hvaler", "2017")
+                .addPoints("1001", "Kristiansand", "2013")
+                .addPoints("1001", "Kristiansand", "2014")
+                .addPoints("1001", "Kristiansand", "2015")
+                .build();
 
-        DataStructure structure3 = DataStructure.of(
-                "code", Role.IDENTIFIER, String.class,
-                "name", Role.MEASURE, String.class,
-                "period", Role.IDENTIFIER, String.class
-        );
-        when(dsCodeList3.getDataStructure()).thenReturn(structure3);
 
-        when(dsCodeList3.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2010"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2011"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2012"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2013"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2014"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2015"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2016"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG14",
-                        "name", "Bergen, Trondheim og Stavanger",
-                        "period", "2017"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG15",
-                        "name", "Oslo kommune",
-                        "period", "2016"
-                ),
-                ImmutableMap.of(
-                        "code", "EKG15",
-                        "name", "Oslo kommune",
-                        "period", "2017"
-                )
-        ).map(structure2::wrap));
-        when(dsCodeList2.getData(any(Order.class))).thenReturn(Optional.empty());
+        Dataset dsCodeList3 = StaticDataset.create()
+                .addComponent("code", Role.IDENTIFIER, String.class)
+                .addComponent("name", Role.MEASURE, String.class)
+                .addComponent("period", Role.IDENTIFIER, String.class)
+
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2010")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2011")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2012")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2013")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2014")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2015")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2016")
+                .addPoints("EKG14", "Bergen, Trondheim og Stavanger", "2017")
+                .addPoints("EKG15", "Oslo kommune", "2016")
+                .addPoints("EKG15", "Oslo kommune", "2017")
+                .build();
 
         bindings.put("ds1", ds1);
         bindings.put("ds2", dsCodeList2);
@@ -634,13 +503,13 @@ public class VTLScriptEngineTest {
 
         VTLPrintStream out = new VTLPrintStream(System.out);
         engine.eval("" +
-                "ds2r := ds2[rename code as kommune_nr, period as periode]" +
+                "ds2r := [ds2]{rename code to kommune_nr, period to periode}" +
                 "dsBoolean0 := [outer ds1, ds2r]{" +
                 "   ds2_CONDITION := name is not null," +
                 "   rename name to ds2_name," +
                 "   kommune_nr_RESULTAT := ds2_CONDITION" +
                 "}"+
-                "ds3r := ds3[rename code as kostragruppe, period as periode]" +
+                "ds3r := [ds3]{rename code to kostragruppe, period to periode}" +
                 "dsBoolean1 := [outer ds1, ds3r]{" +
                 "   ds3_CONDITION := name is not null," +
                 "   rename name to ds3_name," +
@@ -653,9 +522,9 @@ public class VTLScriptEngineTest {
                 "ds4valid   := check(dsBoolean3, valid, measures)"
         );
 
-//        out.println(bindings.get("dsBoolean0"));
-//        out.println(bindings.get("dsBoolean1"));
-//        out.println(bindings.get("dsBoolean3"));
+        out.println(bindings.get("dsBoolean0"));
+        out.println(bindings.get("dsBoolean1"));
+        out.println(bindings.get("dsBoolean3"));
         out.println(bindings.get("ds4invalid"));
 
         assertThat(bindings).containsKey("ds4invalid");
