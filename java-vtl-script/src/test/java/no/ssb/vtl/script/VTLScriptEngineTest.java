@@ -538,8 +538,8 @@ public class VTLScriptEngineTest {
                 entry("periode", Component.Role.IDENTIFIER),
                 entry("kostragruppe", Component.Role.IDENTIFIER),
                 entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("dsBoolean0_kommune_nr_RESULTAT", Component.Role.MEASURE),
-                entry("dsBoolean1_kostragruppe_RESULTAT", Component.Role.MEASURE)
+                entry("kommune_nr_RESULTAT", Component.Role.MEASURE),
+                entry("kostragruppe_RESULTAT", Component.Role.MEASURE)
         );
 
         assertThat(ds3valid.getDataStructure().getRoles()).contains(
@@ -547,8 +547,8 @@ public class VTLScriptEngineTest {
                 entry("periode", Component.Role.IDENTIFIER),
                 entry("kostragruppe", Component.Role.IDENTIFIER),
                 entry("errorcode", Component.Role.ATTRIBUTE),
-                entry("dsBoolean0_kommune_nr_RESULTAT", Component.Role.MEASURE),
-                entry("dsBoolean1_kostragruppe_RESULTAT", Component.Role.MEASURE)
+                entry("kommune_nr_RESULTAT", Component.Role.MEASURE),
+                entry("kostragruppe_RESULTAT", Component.Role.MEASURE)
         );
 
         // Should only contain the "non valid" rows.
@@ -567,22 +567,22 @@ public class VTLScriptEngineTest {
                 assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2015");
                 assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG15");
                 assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(true);
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(false);
             } else if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("9000")) {
                 assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("9000");
                 assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
                 assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
                 assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(false);
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(true);
             } else if (map.get(ds3InvalidDataStruct.get("kommune_nr")).get().equals("0111")) {
                 assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr")).get()).isEqualTo("0111");
                 assertThat(map.get(ds3InvalidDataStruct.get("periode")).get()).isEqualTo("2014");
                 assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
                 assertThat(map.get(ds3InvalidDataStruct.get("errorcode")).get()).isEqualTo("TEST_ERROR_CODE");
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(false);
-                assertThat(map.get(ds3InvalidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+                assertThat(map.get(ds3InvalidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(false);
+                assertThat(map.get(ds3InvalidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(true);
             }
         }
 
@@ -597,8 +597,8 @@ public class VTLScriptEngineTest {
         assertThat(map.get(ds3ValidDataStruct.get("periode")).get()).isEqualTo("2015");
         assertThat(map.get(ds3ValidDataStruct.get("kostragruppe")).get()).isEqualTo("EKG14");
         assertThat(map.get(ds3ValidDataStruct.get("errorcode")).get()).isNull();
-        assertThat(map.get(ds3ValidDataStruct.get("dsBoolean0_kommune_nr_RESULTAT")).get()).isEqualTo(true);
-        assertThat(map.get(ds3ValidDataStruct.get("dsBoolean1_kostragruppe_RESULTAT")).get()).isEqualTo(true);
+        assertThat(map.get(ds3ValidDataStruct.get("kommune_nr_RESULTAT")).get()).isEqualTo(true);
+        assertThat(map.get(ds3ValidDataStruct.get("kostragruppe_RESULTAT")).get()).isEqualTo(true);
     }
 
     @Test
