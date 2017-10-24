@@ -25,7 +25,7 @@ statement : assignment ;
 assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
 
-functionCall       : nvlFunction
+functionCall       : nvlFunction // TODO: Create one rule per function?
                    | nativeCall
                    | functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
 
@@ -181,11 +181,6 @@ ISNOTNULL : 'is not null' ;
 
 /* Core functions */
 
-dateFunction
-    : dateFromStringFunction
-    ;
-
-dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
 nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS ) ;
@@ -216,7 +211,7 @@ FUNC_LISTSUM: 'listsum' ;
 // String
 fragment STRING_FUNCTIONS : ( FUNC_LENGTH | FUNC_TRIM  | FUNC_LTRIM  | FUNC_RTRIM |
                      FUNC_UPPER  | FUNC_LOWER | FUNC_SUBSTR | FUNC_INSTR
-                     // | FUNC_D_F_S
+                   | FUNC_D_F_S
                    | FUNC_REPLACE
                    ) ;
 
@@ -228,7 +223,7 @@ FUNC_UPPER   : 'upper' ;
 FUNC_LOWER   : 'lower' ;
 FUNC_SUBSTR  : 'substr' ;
 FUNC_INSTR   : 'instr' ;
-// TODO: Fix conflict FUNC_D_F_S   : 'date_from_string' ;
+FUNC_D_F_S   : 'date_from_string' ;
 FUNC_REPLACE : 'replace' ;
 
 relationalExpression : unionExpression | joinExpression ;

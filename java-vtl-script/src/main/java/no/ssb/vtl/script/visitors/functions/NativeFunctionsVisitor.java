@@ -30,6 +30,7 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.functions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
+import no.ssb.vtl.script.functions.VTLDateFromString;
 import no.ssb.vtl.script.functions.VTLExp;
 import no.ssb.vtl.script.functions.VTLFloor;
 import no.ssb.vtl.script.functions.VTLLn;
@@ -67,6 +68,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression2> {
                 .put("power", VTLPower.getInstance())
                 .put("sqrt", VTLSqrt.getInstance())
                 .put("trunc", VTLTrunc.getInstance())
+                .put("date_from_string", VTLDateFromString.getInstance())
                 .build();
     }
 
