@@ -44,18 +44,18 @@ public class VTLAnd extends AbstractVTLFunction<VTLBoolean> {
         VTLBoolean left = arguments.getNullable(LEFT, booleanNull);
         VTLBoolean right = arguments.getNullable(RIGHT, booleanNull);
 
-        if (left != booleanNull) {
+        if (!booleanNull.equals(left)) {
             if (!left.get()) {
                 return VTLBoolean.of(false);
             } else {
-                if (right != booleanNull) {
+                if (!booleanNull.equals(right)) {
                     return VTLBoolean.of(left.get() && right.get());
                 } else {
                     return booleanNull;
                 }
             }
         } else {
-            if (right != booleanNull) {
+            if (!booleanNull.equals(right)) {
                 if (!right.get()) {
                     return VTLBoolean.of(false);
                 } else {

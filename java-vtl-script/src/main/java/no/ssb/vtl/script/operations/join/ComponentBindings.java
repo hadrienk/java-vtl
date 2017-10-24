@@ -48,7 +48,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ComponentBindings extends SimpleBindings {
 
     private static final Map<Class<?>, Class<? extends VTLObject>> javaToVTL;
-    private static final Map<Class<? extends VTLObject>, Class<?>> VTLToJava;
 
     static {
         javaToVTL = ImmutableMap.<Class<?>, Class<? extends VTLObject>>builder()
@@ -58,21 +57,16 @@ public class ComponentBindings extends SimpleBindings {
                 .put(Instant.class, VTLDate.class)
                 .put(Boolean.class, VTLBoolean.class)
                 .build();
-
-        VTLToJava = ImmutableMap.<Class<? extends VTLObject>, Class<?>>builder()
-                .put(VTLString.class, String.class)
-                .put(VTLInteger.class, Long.class)
-                .put(VTLFloat.class, Double.class)
-                .put(VTLDate.class, Instant.class)
-                .put(VTLBoolean.class, Boolean.class)
-                .build();
     }
 
     @Override
     public Object put(String name, Object value) {
+        Object wrapped;
         if (value instanceof Component)
-            value = new ComponentReference((Component) value);
-        return super.put(name, value);
+            wrapped = new ComponentReference((Component) value);
+        else
+            wrapped = value;
+        return super.put(name, wrapped);
     }
 
     public ComponentBindings(Map<String, Dataset> namedDatasets) {

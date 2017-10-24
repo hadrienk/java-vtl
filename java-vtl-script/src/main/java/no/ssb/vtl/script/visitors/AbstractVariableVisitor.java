@@ -56,7 +56,7 @@ public abstract class AbstractVariableVisitor<T> extends VTLBaseVisitor<T> {
     private static String unEscape(String identifier) {
         // Unescape.
         if (identifier.startsWith("\'") && identifier.endsWith("\'")) {
-            identifier = identifier.substring(1, identifier.length() - 1);
+            return identifier.substring(1, identifier.length() - 1);
         }
         return identifier;
     }

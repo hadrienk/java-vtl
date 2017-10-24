@@ -53,9 +53,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**
- *
+ * TODO: extend abstract variable visitor.
+ * TODO: Reduce complexity.
  */
-// TODO: extend abstract variable visitor.
 public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();

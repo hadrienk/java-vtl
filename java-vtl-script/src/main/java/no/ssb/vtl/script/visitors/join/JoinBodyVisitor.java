@@ -30,31 +30,26 @@ import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.visitors.ComponentRoleVisitor;
 import no.ssb.vtl.script.visitors.ComponentVisitor;
-import no.ssb.vtl.script.visitors.ExpressionVisitor;
 import no.ssb.vtl.script.visitors.DatasetExpressionVisitor;
+import no.ssb.vtl.script.visitors.ExpressionVisitor;
 
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Optional.ofNullable;
 
-// TODO: Rename to JoinBodyVisitor.
 public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
-
-    private DatasetExpressionVisitor datasetExpressionVisitor;
 
     private final JoinDefinitionVisitor joinDefVisitor;
 
     private ExpressionVisitor expressionVisitor;
     private Dataset workingDataset;
-    private ComponentBindings joinScope;
+    private ComponentBindings componentBindings;
     private static final ComponentRoleVisitor ROLE_VISITOR = ComponentRoleVisitor.getInstance();
     private ComponentVisitor componentVisitor;
 
     public JoinBodyVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
-        this.datasetExpressionVisitor = checkNotNull(datasetExpressionVisitor);
-        joinDefVisitor = new JoinDefinitionVisitor(datasetExpressionVisitor); // TODO
+        joinDefVisitor = new JoinDefinitionVisitor(datasetExpressionVisitor);
     }
 
     @Override
@@ -64,10 +59,10 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
         AbstractJoinOperation joinOperation = joinDefVisitor.visit(ctx.joinDefinition());
 
         // Holds the component references.
-        joinScope = joinOperation.getJoinScope();
+        componentBindings = joinOperation.getJoinScope();
         workingDataset = joinOperation;
-        expressionVisitor = new ExpressionVisitor(joinScope);
-        componentVisitor = new ComponentVisitor(joinScope);
+        expressionVisitor = new ExpressionVisitor(componentBindings);
+        componentVisitor = new ComponentVisitor(componentBindings);
 
         return visit(ctx.joinBody());
     }
@@ -76,7 +71,8 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
     protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
         Dataset currentDataset = firstNonNull(nextResult, aggregate);
         // Update the component scope.
-        joinScope.putAll(new ComponentBindings(currentDataset));
+        // We might need to make bindings immutable and link the scope with each other.
+        componentBindings.putAll(new ComponentBindings(currentDataset));
         return workingDataset = currentDataset;
     }
 
@@ -100,9 +96,9 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
                 componentName,
                 componentRole.orElse(Component.Role.MEASURE),
                 implicit,
-                joinScope // TODO: Rename to component bindings.
+                componentBindings
         );
-        joinScope.putAll(new ComponentBindings(result));
+        componentBindings.putAll(new ComponentBindings(result));
         return result;
     }
 
@@ -132,7 +128,7 @@ public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
-        FilterVisitor visitor = new FilterVisitor(workingDataset, joinScope, expressionVisitor);
+        FilterVisitor visitor = new FilterVisitor(workingDataset, componentBindings, expressionVisitor);
         return visitor.visit(ctx);
     }
 

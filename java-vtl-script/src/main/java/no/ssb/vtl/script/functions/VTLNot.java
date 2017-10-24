@@ -40,6 +40,6 @@ public class VTLNot extends AbstractVTLFunction<VTLBoolean> {
     protected VTLBoolean safeInvoke(TypeSafeArguments arguments) {
         VTLBoolean booleanNull = VTLBoolean.of((Boolean) null);
         VTLBoolean operand = arguments.getNullable(OPERAND, booleanNull);
-        return operand == booleanNull ? booleanNull : VTLBoolean.of(!operand.get());
+        return booleanNull.equals(operand) ? booleanNull : VTLBoolean.of(!operand.get());
     }
 }
