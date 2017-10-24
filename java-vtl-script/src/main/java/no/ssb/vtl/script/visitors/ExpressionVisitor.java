@@ -47,6 +47,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import javax.script.Bindings;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -96,6 +97,19 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             }
         };
 
+    }
+
+    @Override
+    public VTLExpression2 visitPostfixExpr(VTLParser.PostfixExprContext ctx) {
+        VTLExpression2 operand = visit(ctx.expression());
+        switch (ctx.op.getType()) {
+            case VTLParser.ISNOTNULL:
+                return getIsNullExpression(object -> object.get() != null, operand);
+            case VTLParser.ISNULL:
+                return getIsNullExpression(object -> object.get() == null, operand);
+            default:
+                throw new ParseCancellationException("unknown operator " + ctx.op.getText());
+        }
     }
 
     @Override
@@ -187,6 +201,21 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }
+    }
+
+    private VTLExpression2 getIsNullExpression(Predicate<VTLObject> predicate, VTLExpression2 expression) {
+        return new VTLExpression2() {
+            @Override
+            public VTLObject resolve(Bindings bindings) {
+                VTLObject object = expression.resolve(bindings);
+                return VTLBoolean.of(predicate.test(object));
+            }
+
+            @Override
+            public Class getVTLType() {
+                return VTLBoolean.class;
+            }
+        };
     }
 
     private VTLExpression2 getBooleanExpression(BiPredicate<VTLObject, VTLObject> predicate, VTLExpression2 leftExpression, VTLExpression2 rightExpression) {
