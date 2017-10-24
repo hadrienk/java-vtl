@@ -21,6 +21,8 @@ package no.ssb.vtl.script.visitors;
  */
 
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.check.CheckSingleRuleOperation;
@@ -31,10 +33,11 @@ import static java.util.Optional.ofNullable;
 
 public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final RelationalVisitor datasetExpressionVisitor;
+    private final DatasetExpressionVisitor datasetExpressionVisitor;
+    private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();
 
-    public CheckVisitor(RelationalVisitor relationalVisitor) {
-        this.datasetExpressionVisitor = relationalVisitor;
+    public CheckVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
+        this.datasetExpressionVisitor = datasetExpressionVisitor;
     }
     
     @Override
@@ -46,15 +49,18 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
         CheckSingleRuleOperation.ComponentsToReturn componentsToReturn = getComponentsToReturn(checkParamContext.checkColumns());
         CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
 
-        String errorCode = getErrorCode(checkParamContext);
-        Long errorLevel = getErrorLevel(checkParamContext);
+        Optional<String> errorCode = getErrorCode(checkParamContext);
+        Optional<Long> errorLevel = getErrorLevel(checkParamContext);
 
-        return new CheckSingleRuleOperation.Builder(dataset)
-                .rowsToReturn(rowsToReturn)
-                .componentsToReturn(componentsToReturn)
-                .errorCode(errorCode)
-                .errorLevel(errorLevel)
-                .build();
+        CheckSingleRuleOperation.Builder builder = new CheckSingleRuleOperation.Builder(dataset);
+        builder.rowsToReturn(rowsToReturn);
+        builder.componentsToReturn(componentsToReturn);
+        if (errorCode.isPresent())
+            builder.errorCode(errorCode.get());
+        if (errorLevel.isPresent())
+            builder.errorLevel(errorLevel.get());
+
+        return builder.build();
     }
 
     @Override
@@ -63,18 +69,22 @@ public class CheckVisitor extends VTLBaseVisitor<Dataset> {
     }
 
 
-    private Long getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
-        if (checkParamContext.errorLevel() != null) {
-            return Long.valueOf(checkParamContext.errorLevel().getText());
-        }
-        return null;
+    private Optional<Long> getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
+        VTLParser.ErrorLevelContext errorLevel = checkParamContext.errorLevel();
+        if (errorLevel == null)
+            return Optional.empty();
+
+        VTLInteger integer = literalVisitor.visitIntegerLiteral(errorLevel.integerLiteral());
+        return Optional.of(integer.get());
     }
 
-    private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
-        if (checkParamContext.errorCode() != null) {
-            return VisitorUtil.stripQuotes(checkParamContext.errorCode().STRING_CONSTANT());
-        }
-        return null;
+    private Optional<String> getErrorCode(VTLParser.CheckParamContext checkParamContext) {
+        VTLParser.ErrorCodeContext errorCode = checkParamContext.errorCode();
+        if (errorCode == null)
+            return Optional.empty();
+
+        VTLString string = literalVisitor.visitStringLiteral(errorCode.stringLiteral());
+        return Optional.of(string.get());
     }
 
     private CheckSingleRuleOperation.ComponentsToReturn getComponentsToReturn(VTLParser.CheckColumnsContext checkColumnsContext) {

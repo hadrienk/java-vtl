@@ -20,49 +20,37 @@ package no.ssb.vtl.script.visitors.join;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.DropOperation;
-import no.ssb.vtl.script.operations.join.WorkingDataset;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.operations.FoldOperation;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Visit the drop clauses.
- */
-public class JoinDropClauseVisitor extends VTLDatasetExpressionVisitor<DropOperation> {
+public class FoldVisitor extends VTLDatasetExpressionVisitor<FoldOperation> {
 
     private final Dataset dataset;
     private final ComponentVisitor componentVisitor;
 
-    @Deprecated
-    public JoinDropClauseVisitor(WorkingDataset dataset) {
-        this.dataset = checkNotNull(dataset, "dataset was null");
-        this.componentVisitor = null;
-    }
-
-    @Deprecated
-    public JoinDropClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
-        this.dataset = checkNotNull(dataset);
-        this.componentVisitor = null;
-    }
-
-    public JoinDropClauseVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
+    public FoldVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
         this.componentVisitor = checkNotNull(componentVisitor);
     }
 
     @Override
-    public DropOperation visitJoinDropExpression(VTLParser.JoinDropExpressionContext ctx) {
-        Set<Component> components = ctx.variableExpression().stream()
+    public FoldOperation visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
+        String dimension = ctx.dimension.getText();
+        String measure = ctx.measure.getText();
+
+        Set<Component> elements = ctx.variableExpression().stream()
                 .map(componentVisitor::visit)
-                .collect(Collectors.toSet());
-        return new DropOperation(dataset, components);
+                .collect(ImmutableSet.toImmutableSet());
+
+        return new FoldOperation(dataset, dimension, measure, elements);
     }
 }

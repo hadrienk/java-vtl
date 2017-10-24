@@ -75,7 +75,6 @@ integerLiteral  : INTEGER_LITERAL ;
 floatLiteral    : FLOAT_LITERAL ;
 stringLiteral   : STRING_LITERAL ;
 
-/* TODO: deprecate, use expression instead */
 datasetExpression : <assoc=right>datasetExpression clauseExpression     #withClause
                   | hierarchyExpression                                 #withHierarchy
                   | relationalExpression                                #withRelational
@@ -93,15 +92,15 @@ function : getFunction               #withGet
          | aggregationFunction       #withAggregation
          ;
 
-getFunction : 'get' LPAR STRING_LITERAL RPAR;
-putFunction : 'put' LPAR STRING_LITERAL RPAR;
+getFunction : 'get' LPAR stringLiteral RPAR;
+putFunction : 'put' LPAR stringLiteral RPAR;
 
 aggregationFunction
-       : 'sum' '(' variableExpression ')' aggregationParms       #aggregateSum
-       | 'avg' '(' variableExpression ')' aggregationParms       #aggregateAvg
+       : 'sum' '(' variableExpression ')' aggregationParams       #aggregateSum
+       | 'avg' '(' variableExpression ')' aggregationParams       #aggregateAvg
        ;
 
-aggregationParms: aggregationClause=(GROUP_BY|ALONG) variableExpression (',' variableExpression)*;
+aggregationParams: aggregationClause=(GROUP_BY|ALONG) variableExpression (',' variableExpression)*;
 
 ALONG : 'along' ;
 GROUP_BY : 'group by' ;
@@ -112,8 +111,8 @@ checkParam : variableExpression (',' checkRows)? (',' checkColumns)? (',' 'error
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
-errorCode : STRING_LITERAL ;
-errorLevel : INTEGER_LITERAL ;
+errorCode : stringLiteral ;
+errorLevel : integerLiteral ;
 
 variableExpression : membershipExpression | variable ;
 
@@ -238,7 +237,7 @@ joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expr
 joinFoldExpression      : 'fold' variableExpression (',' variableExpression)* 'to' dimension=variable ',' measure=variable ;
 
 // TODO: variableName instead of STRING?
-joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' STRING_LITERAL (',' STRING_LITERAL)* ;
+joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' stringLiteral (',' stringLiteral)* ;
 
 // Drop clause
 joinDropExpression : 'drop' variableExpression (',' variableExpression)* ;

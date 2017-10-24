@@ -20,39 +20,33 @@ package no.ssb.vtl.script.visitors.join;
  * =========================LICENSE_END==================================
  */
 
-
-import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.UnfoldOperation;
+import no.ssb.vtl.script.operations.FilterOperation;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
+import no.ssb.vtl.script.visitors.ExpressionVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
-import no.ssb.vtl.script.visitors.VisitorUtil;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinUnfoldClauseVisitor extends VTLDatasetExpressionVisitor<UnfoldOperation> {
-
+public class FilterVisitor extends VTLDatasetExpressionVisitor<FilterOperation> {
+    
     private final Dataset dataset;
-    private final ComponentVisitor componentVisitor;
 
-    public JoinUnfoldClauseVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
+    private final ExpressionVisitor expressionVisitor;
+    private final ComponentBindings componentBindings;
+
+
+    public FilterVisitor(Dataset dataset, ComponentBindings componentBindings, ExpressionVisitor expressionVisitor) {
         this.dataset = checkNotNull(dataset);
-        this.componentVisitor = componentVisitor;
+        this.componentBindings = checkNotNull(componentBindings);
+        this.expressionVisitor = checkNotNull(expressionVisitor);
     }
 
     @Override
-    public UnfoldOperation visitJoinUnfoldExpression(VTLParser.JoinUnfoldExpressionContext ctx) {
-        Component dimension = componentVisitor.visit(ctx.dimension);
-        Component measure = componentVisitor.visit(ctx.measure);
-
-        Set<String> elements = Sets.newLinkedHashSet();
-        for (TerminalNode element : ctx.STRING_CONSTANT()) {
-            elements.add(VisitorUtil.stripQuotes(element));
-        }
-        return new UnfoldOperation(dataset, dimension, measure, elements);
+    public FilterOperation visitJoinFilterExpression(VTLParser.JoinFilterExpressionContext ctx) {
+        VTLExpression predicate = expressionVisitor.visit(ctx.expression());
+        return new FilterOperation(dataset, predicate, componentBindings);
     }
 }

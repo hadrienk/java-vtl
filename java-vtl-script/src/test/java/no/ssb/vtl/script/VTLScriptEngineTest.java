@@ -133,7 +133,7 @@ public class VTLScriptEngineTest {
 
         when(connector.canHandle(anyString())).thenReturn(true);
         when(connector.putDataset(anyString(), any())).thenReturn(dataset);
-        engine.eval("ds1 := put(todo)");
+        engine.eval("ds1 := put(\"todo\")");
 
         assertThat(bindings).contains(entry("ds1", dataset));
 

@@ -1,6 +1,6 @@
 package no.ssb.vtl.script.visitors;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
@@ -9,9 +9,7 @@ package no.ssb.vtl.script.visitors;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,29 +18,29 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
-import org.antlr.v4.runtime.tree.TerminalNode;
+import org.assertj.core.api.JUnitSoftAssertions;
+import org.junit.Rule;
+import org.junit.Test;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+public class LiteralVisitorTest {
 
-public final class VisitorUtil {
+    @Rule
+    public JUnitSoftAssertions softly = new JUnitSoftAssertions();
 
-    private static final String QUOTE_CHAR = "(?<!\")\"(?!\")";
-    private static final String ESCAPED_QUOTE_CHAR = "\"\"";
+    @Test
+    public void testStripQuotes() throws Exception {
 
-    private VisitorUtil() {
-    }
+        //VTL 1.1 Part 1, line 2907
+        softly.assertThat(LiteralVisitor.stripQuotes("")).isEqualTo("");
 
-    public static String stripQuotes(String string) {
-        checkNotNull(string);
-        return string.replaceAll(QUOTE_CHAR, "").replaceAll(ESCAPED_QUOTE_CHAR, "\"");
-    }
+        softly.assertThat(LiteralVisitor.stripQuotes("test")).isEqualTo("test");
 
-    public static String stripQuotes(TerminalNode stringConstant) {
+        softly.assertThat(LiteralVisitor.stripQuotes("\"test\"")).isEqualTo("test");
 
-        if (stringConstant != null && stringConstant.getText() != null) {
-            return stripQuotes(stringConstant.getText());
-        }
-        return null;
+        softly.assertThat(LiteralVisitor.stripQuotes("\"'test'\"")).isEqualTo("'test'");
+
+        //escaped quote
+        softly.assertThat(LiteralVisitor.stripQuotes("\"a\"\"b\"")).isEqualTo("a\"b");
     }
 
 }

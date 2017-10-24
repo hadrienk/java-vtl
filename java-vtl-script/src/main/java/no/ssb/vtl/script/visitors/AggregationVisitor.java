@@ -28,33 +28,44 @@ import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.AggregationOperation;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationOperation> {
+
+    private final DatasetExpressionVisitor datasetExpressionVisitor;
     
-    
-    private final ReferenceVisitor referenceVisitor;
-    
-    public AggregationVisitor(ReferenceVisitor referenceVisitor) {
-        this.referenceVisitor = referenceVisitor;
+    public AggregationVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
+        this.datasetExpressionVisitor = checkNotNull(datasetExpressionVisitor);
+    }
+
+    @VisibleForTesting
+    AggregationVisitor() {
+        this.datasetExpressionVisitor = null;
     }
     
     @Override
     public AggregationOperation visitAggregateSum(VTLParser.AggregateSumContext ctx) {
         Dataset dataset;
-        if (ctx.datasetRef() != null) {
-            dataset = (Dataset) referenceVisitor.visit(ctx.datasetRef());
-            return getSumOperation(dataset, getGroupByComponents(ctx, dataset));
-        } else if (ctx.componentRef() != null) {
-            dataset = (Dataset) referenceVisitor.visit(ctx.componentRef().datasetRef());
-            Component aggregationComponent = getComponentFromDataset(dataset, ctx.componentRef().variable());
+        VTLParser.VariableExpressionContext variable = ctx.variableExpression();
+
+        // Bypass membership.
+        if (variable.membershipExpression() != null) {
+            VTLParser.MembershipExpressionContext membership = variable.membershipExpression();
+            dataset = datasetExpressionVisitor.visit(membership.left);
+            ComponentVisitor componentVisitor = new ComponentVisitor(new ComponentBindings(dataset));
+            Component aggregationComponent = componentVisitor.visit(membership.right);
             return getSumOperation(dataset, getGroupByComponents(ctx, dataset), Collections.singletonList(aggregationComponent));
-        } throw new ParseCancellationException("Required parameters not found");
+        } else {
+            dataset = datasetExpressionVisitor.visit(variable);
+            return getSumOperation(dataset, getGroupByComponents(ctx, dataset));
+        }
     }
     
     private Component getComponentFromDataset(Dataset dataset, VTLParser.VariableContext componentRef) {
@@ -64,11 +75,11 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     }
     
     private List<Component> getGroupByComponents(VTLParser.AggregateSumContext ctx, Dataset dataset) {
-        List<Component> idComponents = ctx.aggregationParms().componentRef().stream()
+        List<Component> idComponents = ctx.aggregationParams().variableExpression().stream()
                 .map(componentRef -> getComponentFromDataset(dataset, componentRef.variable()))
                 .collect(Collectors.toList());
         
-        Token clause = ctx.aggregationParms().aggregationClause;
+        Token clause = ctx.aggregationParams().aggregationClause;
         switch (clause.getType()){
             case VTLParser.GROUP_BY:
                 return idComponents;

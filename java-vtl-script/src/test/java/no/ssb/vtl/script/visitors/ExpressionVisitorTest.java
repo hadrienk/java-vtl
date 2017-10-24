@@ -25,15 +25,15 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
@@ -57,7 +57,7 @@ public class ExpressionVisitorTest {
     private ExpressionVisitor expressionVisitor;
 
     private static VTLParser parse(String expression) {
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
+        VTLLexer lexer = new VTLLexer(CharStreams.fromString(expression));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
         return parser;
@@ -72,14 +72,14 @@ public class ExpressionVisitorTest {
     @Test
     public void testFunctions() throws Exception {
         VTLParser parse = parse("abs(round(-15.12,1))");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.resolve(null).get()).isEqualTo(15.1);
     }
 
     @Test
     public void testConcat() throws Exception {
         VTLParser parse = parse("\"string\" || \"string\"");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLString.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo("stringstring");
     }
@@ -87,7 +87,7 @@ public class ExpressionVisitorTest {
     @Test
     public void testDivision() throws Exception {
         VTLParser parse = parse("-5 / 0.05");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLFloat.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-100.0);
     }
@@ -95,7 +95,7 @@ public class ExpressionVisitorTest {
     @Test
     public void testMultiplication() throws Exception {
         VTLParser parse = parse("-1.5 * -10");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLFloat.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(15.0);
 
@@ -110,7 +110,7 @@ public class ExpressionVisitorTest {
     @Test
     public void testAddition() throws Exception {
         VTLParser parse = parse("-10 + 15");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(5L);
     }
@@ -118,7 +118,7 @@ public class ExpressionVisitorTest {
     @Test
     public void testSubtraction() throws Exception {
         VTLParser parse = parse("-10 - 15");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-25L);
     }
@@ -126,7 +126,7 @@ public class ExpressionVisitorTest {
     @Test
     public void testPrecedence() throws Exception {
         VTLParser parse = parse("(-10 - 15) * 2");
-        VTLExpression2 result = expressionVisitor.visit(parse.expression());
+        VTLExpression result = expressionVisitor.visit(parse.expression());
         softly.assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
         softly.assertThat(result.resolve(null).get()).isEqualTo(-50L);
 
@@ -183,7 +183,7 @@ public class ExpressionVisitorTest {
             String expr = format(exprTpl, op);
 
             VTLParser parse = parse(expr);
-            VTLExpression2 result = expressionVisitor.visit(parse.expression());
+            VTLExpression result = expressionVisitor.visit(parse.expression());
             softly.assertThat(result.resolve(null))
                     .as("result of the expression [%s]", expr)
                     .isEqualTo(test.getValue());
@@ -225,7 +225,7 @@ public class ExpressionVisitorTest {
 
         for (Map.Entry<String, Boolean> test : tests.build().entrySet()) {
             VTLParser parse = parse(test.getKey());
-            VTLExpression2 result = expressionVisitor.visit(parse.expression());
+            VTLExpression result = expressionVisitor.visit(parse.expression());
             softly.assertThat(result.resolve(null).get())
                     .as("result of the expression [%s]", test.getKey())
                     .isEqualTo(test.getValue());
@@ -238,7 +238,7 @@ public class ExpressionVisitorTest {
         bindings.put("variable", expected);
         bindings.put("sum", expected);
 
-        VTLExpression2<?> result;
+        VTLExpression<?> result;
         VTLParser parse;
 
         parse = parse("variable");

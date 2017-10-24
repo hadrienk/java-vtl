@@ -25,7 +25,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import org.assertj.core.api.JUnitSoftAssertions;
@@ -38,7 +38,7 @@ import javax.script.Bindings;
 import java.util.List;
 
 public class JoinAssignmentTest {
-    private VTLExpression2 expression;
+    private VTLExpression expression;
     private Dataset dataset;
 
     @Rule
@@ -46,7 +46,7 @@ public class JoinAssignmentTest {
 
     @Before
     public void setUp() throws Exception {
-        expression = new VTLExpression2() {
+        expression = new VTLExpression() {
             @Override
             public VTLObject resolve(Bindings bindings) {
                 return VTLObject.of("changed");

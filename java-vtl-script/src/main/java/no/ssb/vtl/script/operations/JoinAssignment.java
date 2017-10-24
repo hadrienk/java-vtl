@@ -27,7 +27,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLObject;
@@ -45,13 +45,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
-    private final VTLExpression2 expression;
+    private final VTLExpression expression;
     private final Component.Role role;
     private final Boolean implicit;
     private final String identifier;
     private final ComponentBindings componentBindings;
 
-    public JoinAssignment(Dataset dataset, VTLExpression2 expression, String identifier, Component.Role role,
+    public JoinAssignment(Dataset dataset, VTLExpression expression, String identifier, Component.Role role,
                           Boolean implicit) {
         super(checkNotNull(dataset));
         this.expression = checkNotNull(expression);
@@ -61,7 +61,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         this.componentBindings = null;
     }
 
-    public JoinAssignment(Dataset dataset, VTLExpression2 expression, String identifier, Component.Role role,
+    public JoinAssignment(Dataset dataset, VTLExpression expression, String identifier, Component.Role role,
                           Boolean implicit, ComponentBindings componentBindings) {
         super(checkNotNull(dataset));
         this.expression = checkNotNull(expression);
@@ -71,7 +71,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         this.componentBindings = checkNotNull(componentBindings);
     }
 
-    Class<?> convertToComponentType(Class<? extends VTLObject> vtlType) {
+    private Class<?> convertToComponentType(Class<? extends VTLObject> vtlType) {
         if (vtlType == VTLString.class)
             return String.class;
         if (vtlType == VTLInteger.class)

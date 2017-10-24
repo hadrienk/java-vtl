@@ -22,7 +22,7 @@ package no.ssb.vtl.script.visitors;
 
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
@@ -45,7 +45,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
 
     private final ConnectorVisitor connectorVisitor;
     private final ClauseVisitor clausesVisitor;
-    private final RelationalVisitor relationalVisitor;
+    private final DatasetExpressionVisitor datasetExpressionVisitor;
     private final CheckVisitor checkVisitor;
     private final HierarchyVisitor hierarchyVisitor;
     private final AggregationVisitor aggregationVisitor;
@@ -58,12 +58,10 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
 
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
-        relationalVisitor = new RelationalVisitor(expressionVisitor);
-        checkVisitor = new CheckVisitor(relationalVisitor);
-
-        ReferenceVisitor referenceVisitor = new ReferenceVisitor(this.bindings);
-        hierarchyVisitor = new HierarchyVisitor(referenceVisitor);
-        aggregationVisitor = new AggregationVisitor(referenceVisitor);
+        datasetExpressionVisitor = new DatasetExpressionVisitor(expressionVisitor);
+        checkVisitor = new CheckVisitor(datasetExpressionVisitor);
+        hierarchyVisitor = new HierarchyVisitor(datasetExpressionVisitor);
+        aggregationVisitor = new AggregationVisitor(datasetExpressionVisitor);
     }
 
 
@@ -75,7 +73,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
         if (ctx.datasetExpression() != null) {
             value = visit(ctx.datasetExpression());
         } else {
-            VTLExpression2 expression = expressionVisitor.visit(ctx.expression());
+            VTLExpression expression = expressionVisitor.visit(ctx.expression());
             value = expression.resolve(bindings);
         }
         bindings.put(name, value);
@@ -84,7 +82,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
 
     @Override
     public Object visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        return relationalVisitor.visit(ctx);
+        return datasetExpressionVisitor.visit(ctx);
     }
 
     @Override

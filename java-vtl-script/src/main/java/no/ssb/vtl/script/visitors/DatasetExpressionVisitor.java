@@ -22,12 +22,12 @@ package no.ssb.vtl.script.visitors;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.operations.UnionOperation;
-import no.ssb.vtl.script.visitors.join.JoinExpressionVisitor;
+import no.ssb.vtl.script.visitors.join.JoinBodyVisitor;
 
 import java.util.List;
 
@@ -36,19 +36,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A visitor that handles the relational operators.
  */
-// TODO: rename to DatasetExpressionVisitor.
-public class RelationalVisitor extends VTLBaseVisitor<Dataset> {
+public class DatasetExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     private final ExpressionVisitor expressionVisitor;
 
-    public RelationalVisitor(ExpressionVisitor expressionVisitor) {
+    public DatasetExpressionVisitor(ExpressionVisitor expressionVisitor) {
         this.expressionVisitor = checkNotNull(expressionVisitor);
         //this.joinVisitor = new JoinExpressionVisitor(context);
     }
 
     @Override
     public Dataset visitVariable(VTLParser.VariableContext ctx) {
-        VTLExpression2 expression2 = expressionVisitor.visit(ctx);
+        VTLExpression expression2 = expressionVisitor.visit(ctx);
         VTLDataset resolved = (VTLDataset) expression2.resolve(expressionVisitor.getBindings());
         return resolved.get();
     }
@@ -64,8 +63,7 @@ public class RelationalVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
-        JoinExpressionVisitor joinExpressionVisitor = new JoinExpressionVisitor(this);
-        return joinExpressionVisitor.visit(ctx);
+        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(this);
+        return joinBodyVisitor.visit(ctx);
     }
-
 }

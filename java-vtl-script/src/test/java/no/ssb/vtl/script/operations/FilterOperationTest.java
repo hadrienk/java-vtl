@@ -24,7 +24,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLBoolean;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import org.junit.Before;
@@ -39,7 +39,7 @@ public class FilterOperationTest {
     private Dataset dataset;
     private ComponentBindings componentBindings;
 
-    private static VTLExpression2 NULL = new VTLExpression2() {
+    private static VTLExpression NULL = new VTLExpression() {
         @Override
         public VTLObject resolve(Bindings bindings) {
             return VTLBoolean.of((Boolean) null);
@@ -51,7 +51,7 @@ public class FilterOperationTest {
         }
     };
 
-    private static VTLExpression2 FALSE = new VTLExpression2() {
+    private static VTLExpression FALSE = new VTLExpression() {
         @Override
         public VTLObject resolve(Bindings bindings) {
             return VTLBoolean.of(false);
@@ -63,7 +63,7 @@ public class FilterOperationTest {
         }
     };
 
-    private static VTLExpression2 TRUE = new VTLExpression2() {
+    private static VTLExpression TRUE = new VTLExpression() {
         @Override
         public VTLObject resolve(Bindings bindings) {
             return VTLBoolean.of(true);

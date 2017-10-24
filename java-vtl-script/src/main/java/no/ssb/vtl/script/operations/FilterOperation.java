@@ -25,8 +25,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
-import no.ssb.vtl.model.VTLExpression2;
-import no.ssb.vtl.model.VTLPredicate;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 
@@ -38,18 +37,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class FilterOperation extends AbstractUnaryDatasetOperation {
 
-    private final VTLExpression2 predicate;
+    private final VTLExpression predicate;
     private final ComponentBindings componentBindings;
 
-    @Deprecated
-    public FilterOperation(Dataset dataset, VTLPredicate vtlPredicate) {
-        super(checkNotNull(dataset, "the dataset was null"));
-        checkNotNull(vtlPredicate, "the predicate was null");
-        this.predicate = null;
-        this.componentBindings = null;
-    }
-
-    public FilterOperation(Dataset dataset, VTLExpression2 predicate, ComponentBindings componentBindings) {
+    public FilterOperation(Dataset dataset, VTLExpression predicate, ComponentBindings componentBindings) {
         super(checkNotNull(dataset, "the dataset was null"));
         this.predicate = checkNotNull(predicate);
         this.componentBindings = checkNotNull(componentBindings);
@@ -58,16 +49,6 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     protected DataStructure computeDataStructure() {
         return getChild().getDataStructure();
     }
-
-
-//    @Override
-//    public String toString() {
-//        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-//        Map<Boolean, List<DataPoint>> predicateResultMap = getChild().getData().collect(Collectors.partitioningBy(predicate));
-//        helper.addValue(predicateResultMap);
-//        helper.add("structure", getDataStructure());
-//        return helper.omitNullValues().toString();
-//    }
 
     @Override
     public Stream<DataPoint> getData() {

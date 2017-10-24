@@ -25,6 +25,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -32,17 +33,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A visitor that instantiate rename operators.
  */
-public class JoinRenameClauseVisitor extends VTLDatasetExpressionVisitor<RenameOperation> {
+public class RenameVisitor extends VTLDatasetExpressionVisitor<RenameOperation> {
 
     private final Dataset dataset;
     private final ComponentVisitor componentVisitor;
 
     @Deprecated
-    public JoinRenameClauseVisitor(Dataset dataset) {
+    public RenameVisitor(Dataset dataset) {
         this.dataset = checkNotNull(dataset); this.componentVisitor = null;
     }
 
-    public JoinRenameClauseVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
+    public RenameVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
         this.componentVisitor = checkNotNull(componentVisitor);
     }

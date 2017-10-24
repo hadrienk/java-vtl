@@ -47,7 +47,6 @@ import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
-import no.ssb.vtl.script.visitors.join.ComponentVisitor;
 
 import java.util.List;
 import java.util.function.Function;
@@ -79,7 +78,7 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
 
             ImmutableMap.Builder<Component, String> names = ImmutableMap.builder();
             ImmutableMap.Builder<Component, Component.Role> roles = ImmutableMap.builder();
-            
+
             ComponentRoleVisitor roleVisitor = ComponentRoleVisitor.getInstance();
 
             for (VTLParser.RenameParamContext parameter : parameters) {

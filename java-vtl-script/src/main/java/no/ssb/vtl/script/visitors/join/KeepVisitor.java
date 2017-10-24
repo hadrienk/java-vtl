@@ -20,36 +20,36 @@ package no.ssb.vtl.script.visitors.join;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.FoldOperation;
+import no.ssb.vtl.script.operations.KeepOperation;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinFoldClauseVisitor extends VTLDatasetExpressionVisitor<FoldOperation> {
+/**
+ * Visit the keep clauses.
+ */
+public class KeepVisitor extends VTLDatasetExpressionVisitor<KeepOperation> {
 
     private final Dataset dataset;
     private final ComponentVisitor componentVisitor;
 
-    public JoinFoldClauseVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
+    public KeepVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
         this.componentVisitor = checkNotNull(componentVisitor);
     }
 
     @Override
-    public FoldOperation visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
-        String dimension = ctx.dimension.getText();
-        String measure = ctx.measure.getText();
-
-        Set<Component> elements = ctx.variableExpression().stream()
+    public KeepOperation visitJoinKeepExpression(VTLParser.JoinKeepExpressionContext ctx) {
+        Set<Component> components = ctx.variableExpression().stream()
                 .map(componentVisitor::visit)
-                .collect(ImmutableSet.toImmutableSet());
-
-        return new FoldOperation(dataset, dimension, measure, elements);
+                .collect(Collectors.toSet());
+        return new KeepOperation(dataset, components);
     }
 }

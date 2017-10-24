@@ -22,7 +22,7 @@ package no.ssb.vtl.script.visitors;
 
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
@@ -56,7 +56,7 @@ import static java.lang.String.format;
  *
  */
 // TODO: extend abstract variable visitor.
-public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
+public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();
     private final NativeFunctionsVisitor nativeFunctionsVisitor = new NativeFunctionsVisitor(this);
@@ -72,12 +72,12 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitLiteral(VTLParser.LiteralContext ctx) {
+    public VTLExpression visitLiteral(VTLParser.LiteralContext ctx) {
         VTLObject literal = literalVisitor.visit(ctx);
 
         // Literal are always resolved.
         // TODO: Literal extends Expression2?
-        return new VTLExpression2() {
+        return new VTLExpression() {
 
             @Override
             public String toString() {
@@ -100,8 +100,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitPostfixExpr(VTLParser.PostfixExprContext ctx) {
-        VTLExpression2 operand = visit(ctx.expression());
+    public VTLExpression visitPostfixExpr(VTLParser.PostfixExprContext ctx) {
+        VTLExpression operand = visit(ctx.expression());
         switch (ctx.op.getType()) {
             case VTLParser.ISNOTNULL:
                 return getIsNullExpression(object -> object.get() != null, operand);
@@ -113,13 +113,13 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitPrecedenceExpr(VTLParser.PrecedenceExprContext ctx) {
+    public VTLExpression visitPrecedenceExpr(VTLParser.PrecedenceExprContext ctx) {
         return visit(ctx.expression());
     }
 
     @Override
-    public VTLExpression2 visitUnaryExpr(VTLParser.UnaryExprContext ctx) {
-        VTLExpression2 operand = visit(ctx.expression());
+    public VTLExpression visitUnaryExpr(VTLParser.UnaryExprContext ctx) {
+        VTLExpression operand = visit(ctx.expression());
         switch (ctx.op.getType()) {
             case VTLParser.NOT:
                 return new FunctionExpression<>(VTLNot.getInstance(), operand);
@@ -129,9 +129,9 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitArithmeticExpr(VTLParser.ArithmeticExprContext ctx) {
-        VTLExpression2 leftExpression = visit(ctx.left);
-        VTLExpression2 rightExpression = visit(ctx.right);
+    public VTLExpression visitArithmeticExpr(VTLParser.ArithmeticExprContext ctx) {
+        VTLExpression leftExpression = visit(ctx.left);
+        VTLExpression rightExpression = visit(ctx.right);
 
         // Arithmetic expression types are function of the type of the operands.
         switch (ctx.op.getType()) {
@@ -171,9 +171,9 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
-        VTLExpression2 leftExpression = visit(ctx.left);
-        VTLExpression2 rightExpression = visit(ctx.right);
+    public VTLExpression visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
+        VTLExpression leftExpression = visit(ctx.left);
+        VTLExpression rightExpression = visit(ctx.right);
         switch (ctx.op.getType()) {
 
             case VTLParser.CONCAT:
@@ -203,8 +203,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         }
     }
 
-    private VTLExpression2 getIsNullExpression(Predicate<VTLObject> predicate, VTLExpression2 expression) {
-        return new VTLExpression2() {
+    private VTLExpression getIsNullExpression(Predicate<VTLObject> predicate, VTLExpression expression) {
+        return new VTLExpression() {
             @Override
             public VTLObject resolve(Bindings bindings) {
                 VTLObject object = expression.resolve(bindings);
@@ -218,8 +218,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
         };
     }
 
-    private VTLExpression2 getBooleanExpression(BiPredicate<VTLObject, VTLObject> predicate, VTLExpression2 leftExpression, VTLExpression2 rightExpression) {
-        return new VTLExpression2() {
+    private VTLExpression getBooleanExpression(BiPredicate<VTLObject, VTLObject> predicate, VTLExpression leftExpression, VTLExpression rightExpression) {
+        return new VTLExpression() {
             @Override
             public VTLObject resolve(Bindings bindings) {
                 VTLObject left = leftExpression.resolve(bindings);
@@ -236,19 +236,19 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitFunctionCall(VTLParser.FunctionCallContext ctx) {
+    public VTLExpression visitFunctionCall(VTLParser.FunctionCallContext ctx) {
         return nativeFunctionsVisitor.visit(ctx);
     }
 
     @Override
-    public VTLExpression2 visitMembershipExpression(VTLParser.MembershipExpressionContext ctx) {
+    public VTLExpression visitMembershipExpression(VTLParser.MembershipExpressionContext ctx) {
         String leftIdentifier = checkVariableExist(scope, ctx.left);
         Object object = scope.get(leftIdentifier);
         if (object instanceof Bindings) {
             Bindings bindings = (Bindings) object;
             String rightIdentifier = checkVariableExist(bindings, ctx.right);
             VTLTyped typed = (VTLTyped) bindings.get(rightIdentifier);
-            return new VTLExpression2() {
+            return new VTLExpression() {
 
                 @Override
                 public VTLObject resolve(Bindings bindings) {
@@ -281,7 +281,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
     }
 
     @Override
-    public VTLExpression2 visitVariable(VTLParser.VariableContext ctx) {
+    public VTLExpression visitVariable(VTLParser.VariableContext ctx) {
         String identifier = checkVariableExist(scope, ctx);
         Object object = scope.get(identifier);
         if (object instanceof VTLTyped) {
@@ -289,7 +289,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
             // Save the type and identifier.
             // TODO: VariableReference extends VTLExpression2 ?
             VTLTyped typed = (VTLTyped) object;
-            return new VTLExpression2() {
+            return new VTLExpression() {
 
                 @Override
                 public Class<?> getVTLType() {
@@ -304,7 +304,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression2> {
 
         }
         if (object instanceof Dataset) {
-            return new VTLExpression2() {
+            return new VTLExpression() {
                 @Override
                 public VTLObject resolve(Bindings bindings) {
                     return VTLDataset.of((Dataset) bindings.get(identifier));

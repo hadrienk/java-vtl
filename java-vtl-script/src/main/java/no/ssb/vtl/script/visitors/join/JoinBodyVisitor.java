@@ -22,18 +22,17 @@ package no.ssb.vtl.script.visitors.join;
 
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.JoinAssignment;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.visitors.ComponentRoleVisitor;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.ExpressionVisitor;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
-import no.ssb.vtl.script.visitors.RelationalVisitor;
+import no.ssb.vtl.script.visitors.DatasetExpressionVisitor;
 
-import javax.script.ScriptContext;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -41,14 +40,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Optional.ofNullable;
 
 // TODO: Rename to JoinBodyVisitor.
-public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
+public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
 
-    private RelationalVisitor relationalVisitor;
+    private DatasetExpressionVisitor datasetExpressionVisitor;
 
     private final JoinDefinitionVisitor joinDefVisitor;
-
-    @Deprecated
-    private ReferenceVisitor referenceVisitor;
 
     private ExpressionVisitor expressionVisitor;
     private Dataset workingDataset;
@@ -56,14 +52,9 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
     private static final ComponentRoleVisitor ROLE_VISITOR = ComponentRoleVisitor.getInstance();
     private ComponentVisitor componentVisitor;
 
-    @Deprecated
-    public JoinExpressionVisitor(ScriptContext context) {
-        joinDefVisitor = new JoinDefinitionVisitor(context);
-    }
-
-    public JoinExpressionVisitor(RelationalVisitor relationalVisitor) {
-        this.relationalVisitor = checkNotNull(relationalVisitor);
-        joinDefVisitor = new JoinDefinitionVisitor(relationalVisitor); // TODO
+    public JoinBodyVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
+        this.datasetExpressionVisitor = checkNotNull(datasetExpressionVisitor);
+        joinDefVisitor = new JoinDefinitionVisitor(datasetExpressionVisitor); // TODO
     }
 
     @Override
@@ -78,30 +69,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         expressionVisitor = new ExpressionVisitor(joinScope);
         componentVisitor = new ComponentVisitor(joinScope);
 
-        Dataset finalDataset = visit(ctx.joinBody());
-
-//        // TODO: Put somewhere else.
-//        IdentityHashMap<Component, String> identityMap = Maps.newIdentityHashMap();
-//        Deque<Map.Entry<String, ?>> stack = Queues.newArrayDeque();
-//        stack.addAll(joinScope.entrySet());
-//        int lastSize = -1;
-//        while (!stack.isEmpty()) {
-//            Map.Entry<String, ?> entry = stack.pop();
-//            Object value = entry.getValue();
-//            if (value instanceof Dataset) {
-//                if (lastSize == identityMap.size()) {
-//                    Dataset dataset = (Dataset) value;
-//                    stack.addAll(dataset.getDataStructure().entrySet());
-//                } else {
-//                    lastSize = identityMap.size();
-//                    stack.addLast(entry);
-//                }
-//            } else if (value instanceof Component) {
-//                identityMap.put((Component) entry.getValue(), entry.getKey());
-//            }
-//        }
-
-        return finalDataset;
+        return visit(ctx.joinBody());
     }
     
     @Override
@@ -120,7 +88,7 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
         Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(joinAssignment.role));
         Boolean implicit = joinAssignment.implicit != null;
 
-        VTLExpression2 expression = expressionVisitor.visit(joinAssignment.expression());
+        VTLExpression expression = expressionVisitor.visit(joinAssignment.expression());
 
         // Calculate name
         String componentName = joinAssignment.variable().getText();
@@ -140,37 +108,37 @@ public class JoinExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
     @Override
     public Dataset visitJoinFoldClause(VTLParser.JoinFoldClauseContext ctx) {
-        JoinFoldClauseVisitor visitor = new JoinFoldClauseVisitor(workingDataset, componentVisitor);
+        FoldVisitor visitor = new FoldVisitor(workingDataset, componentVisitor);
         return visitor.visit(ctx);
     }
 
     @Override
     public Dataset visitJoinUnfoldClause(VTLParser.JoinUnfoldClauseContext ctx) {
-        JoinUnfoldClauseVisitor visitor = new JoinUnfoldClauseVisitor(workingDataset, componentVisitor);
+        UnfoldVisitor visitor = new UnfoldVisitor(workingDataset, componentVisitor);
         return visitor.visit(ctx);
     }
 
     @Override
     public Dataset visitJoinKeepClause(VTLParser.JoinKeepClauseContext ctx) {
-        JoinKeepClauseVisitor visitor = new JoinKeepClauseVisitor(workingDataset, componentVisitor);
+        KeepVisitor visitor = new KeepVisitor(workingDataset, componentVisitor);
         return visitor.visit(ctx);
     }
 
     @Override
     public Dataset visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
-        JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset, componentVisitor);
+        DropVisitor visitor = new DropVisitor(workingDataset, componentVisitor);
         return visitor.visit(ctx);
     }
 
     @Override
     public Dataset visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
-        JoinFilterClauseVisitor visitor = new JoinFilterClauseVisitor(workingDataset, joinScope, expressionVisitor);
+        FilterVisitor visitor = new FilterVisitor(workingDataset, joinScope, expressionVisitor);
         return visitor.visit(ctx);
     }
 
     @Override
     public Dataset visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
-        JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset, componentVisitor);
+        RenameVisitor visitor = new RenameVisitor(workingDataset, componentVisitor);
         return visitor.visit(ctx);
     }
 
