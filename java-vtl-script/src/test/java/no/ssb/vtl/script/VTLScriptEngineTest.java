@@ -708,38 +708,12 @@ public class VTLScriptEngineTest {
 
     @Test(expected = ScriptException.class)
     public void testDateFromStringAsClauseUnsupportedFormat() throws Exception {
-
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-
-        bindings.put("ds1", ds1);
-        engine.eval("ds2 := [ds1] {" +
-                "   m11 := date_from_string(m1, \"YYYYSN\") " +
-                "}"
-        );
-
+        engine.eval("test := date_from_string(\"string\", \"YYYYSN\")");
     }
 
     @Test(expected = ScriptException.class)
     public void testDateFromStringAsClauseInputNotStringType() throws Exception {
-
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                "id1", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-
-        bindings.put("ds1", ds1);
-        engine.eval("ds2 := [ds1] {" +
-                "   m11 := date_from_string(m1, \"YYYY\") " +
-                "}"
-        );
-
+        engine.eval("test := date_from_string(123, \"YYYY\")");
     }
 
     @Test
