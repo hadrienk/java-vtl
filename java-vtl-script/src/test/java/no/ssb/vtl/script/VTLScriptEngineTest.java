@@ -417,13 +417,11 @@ public class VTLScriptEngineTest {
     @Test
     public void testRename() throws Exception {
 
-        when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of(
-                        "id1", Role.IDENTIFIER, String.class,
-                        "me1", Role.MEASURE, String.class,
-                        "at1", Role.ATTRIBUTE, String.class
-                )
-        );
+        dataset = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("me1", Role.MEASURE, String.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
+                .build();
 
         bindings.put("ds1", dataset);
         engine.eval("ds2 := ds1[rename id1 as id3]"

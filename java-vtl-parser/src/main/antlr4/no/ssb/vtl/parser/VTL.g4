@@ -80,7 +80,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression     #withCla
                   | hierarchyExpression                                 #withHierarchy
                   | relationalExpression                                #withRelational
                   | function                                            #withFunction
-                  | exprAtom                                            #withAtom
+                  | variable                                            #withAtom
                   ;
 
 hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
@@ -109,9 +109,6 @@ GROUP_BY : 'group by' ;
 
 // TODO: Remove
 datasetId : STRING_CONSTANT ;
-
-// TODO: Remove
-exprAtom : datasetRef;
 
 checkFunction : 'check' '(' checkParam ')';
 
@@ -146,7 +143,7 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=variable ( ROLE role=componentRole )? ;
+renameParam : from=variable 'as' to=variable ( ROLE role=componentRole )? ;
 
 filter      : 'filter' expression ;
 

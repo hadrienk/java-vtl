@@ -23,8 +23,10 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression2;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.VTLDataset;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -100,6 +102,12 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
         Dataset dataset = (Dataset) visit(ctx.datasetExpression());
         Function<Dataset, Dataset> clause = clausesVisitor.visit(ctx.clauseExpression());
         return clause.apply(dataset);
+    }
+
+    @Override
+    public Object visitVariable(VTLParser.VariableContext ctx) {
+        VTLObject resolved = expressionVisitor.visit(ctx).resolve(bindings);
+        return ((VTLDataset) resolved).get();
     }
 
     @Override
