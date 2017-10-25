@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Abstract VTLFunction that takes care of arguments validation.
  * TODO: Equals
  */
-public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
+public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFunction<T> {
 
     // TODO: Move to a central class.
     private static final String INVALID_ARGUMENT_COUNT = "expected %s argument(s) but got %s";
@@ -115,7 +115,7 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
     }
 
     @Override
-    public Class<T> getType() {
+    public Class<T> getVTLType() {
         return type;
     }
 
@@ -124,22 +124,22 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
         return toStringHelper(this)
                 .add("id", this.id)
                 .add("signature", signature)
-                .addValue(getType())
+                .addValue(getVTLType())
                 .toString();
     }
 
     @Override
-    public VTLObject invoke(List<VTLObject> arguments) {
+    public T invoke(List<VTLObject> arguments) {
         return invoke(findNames(arguments));
     }
 
     @Override
-    public VTLObject invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments) {
+    public T invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments) {
         return invoke(mergeArguments(findNames(arguments), namedArguments));
     }
 
     @Override
-    public VTLObject invoke(Map<String, VTLObject> namedArguments) {
+    public T invoke(Map<String, VTLObject> namedArguments) {
         validateArguments(namedArguments);
         Map<String, VTLObject> arguments = addOptionalValues(namedArguments);
         return safeInvoke(createTypeSafeArguments(arguments));
@@ -195,13 +195,13 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
 
     }
 
-    protected abstract VTLObject<T> safeInvoke(TypeSafeArguments arguments);
+    protected abstract T safeInvoke(TypeSafeArguments arguments);
 
-    protected static class Argument<T> implements VTLTyped<T> {
+    protected static class Argument<A extends VTLObject> implements VTLTyped<A> {
         private final String name;
-        private final Class<T> type;
+        private final Class<A> type;
 
-        protected Argument(String name, Class<T> type) {
+        protected Argument(String name, Class<A> type) {
             this.name = checkNotNull(name);
             this.type = checkNotNull(type);
         }
@@ -211,7 +211,7 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
         }
 
         @Override
-        public Class<T> getType() {
+        public Class<A> getVTLType() {
             return type;
         }
 
@@ -224,16 +224,16 @@ public abstract class AbstractVTLFunction<T> implements VTLFunction<T> {
         }
     }
 
-    protected static class OptionalArgument<T> extends Argument<T> {
+    protected static class OptionalArgument<A extends VTLObject> extends Argument<A> {
 
-        private final T defaultValue;
+        private final A defaultValue;
 
-        protected OptionalArgument(String name, Class<T> type, T defaultValue) {
+        protected OptionalArgument(String name, Class<A> type, A defaultValue) {
             super(name, type);
             this.defaultValue = checkNotNull(defaultValue);
         }
 
-        public VTLObject<T> getDefaultValue() {
+        public VTLObject<A> getDefaultValue() {
             return VTLObject.of(defaultValue);
         }
     }

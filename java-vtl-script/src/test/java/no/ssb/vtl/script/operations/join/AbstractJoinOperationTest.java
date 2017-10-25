@@ -32,9 +32,12 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import org.junit.Test;
 
+import javax.script.Bindings;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +62,26 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
+
+    @Test
+    // TODO: Move to ComponentBindingsTest
+    public void testJoinBindingsOneDataset() throws Exception {
+
+        StaticDataset t1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, Long.class)
+                .addComponent("uni1", Role.IDENTIFIER, Double.class)
+                .addComponent("m1", Role.MEASURE, Instant.class)
+                .addComponent("a1", Role.MEASURE, Boolean.class)
+                .build();
+
+        Bindings result = AbstractJoinOperation.createJoinScope(ImmutableMap.of(
+                "t1", t1
+        ));
+
+        assertThat(result).containsOnlyKeys("id1", "id2", "uni1", "m1", "a1", "t1");
+
+    }
 
     @Test
     public void testGetDataOnlyOnce() {

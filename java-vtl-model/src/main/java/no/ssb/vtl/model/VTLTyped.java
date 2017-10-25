@@ -20,16 +20,11 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public interface VTLTyped<T> {
+/**
+ * Interface that allows vtl type introspection.
+ */
+public interface VTLTyped<T extends VTLObject> {
 
-    /**
-     * Deprecated: The name is confusing. getJavaClass() should be used instead.
-     */
-    @Deprecated
-    Class<? extends T> getType();
-
-    default Class<? extends T> getJavaClass() {
-        return getType();
-    }
+    Class<T> getVTLType();
 
 }

@@ -21,6 +21,8 @@ package no.ssb.vtl.script.visitors;
  */
 
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.check.CheckSingleRuleOperation;
@@ -31,56 +33,58 @@ import static java.util.Optional.ofNullable;
 
 public class CheckVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final RelationalVisitor relationalVisitor;
-    private final ReferenceVisitor referenceVisitor;
+    private final DatasetExpressionVisitor datasetExpressionVisitor;
+    private final LiteralVisitor literalVisitor = LiteralVisitor.getInstance();
 
-    public CheckVisitor(RelationalVisitor relationalVisitor, ReferenceVisitor referenceVisitor) {
-        this.relationalVisitor = relationalVisitor;
-        this.referenceVisitor = referenceVisitor;
+    public CheckVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
+        this.datasetExpressionVisitor = datasetExpressionVisitor;
     }
     
     @Override
     public Dataset visitCheckFunction(VTLParser.CheckFunctionContext ctx) {
         VTLParser.CheckParamContext checkParamContext = ctx.checkParam();
-        Dataset dataset = visit(checkParamContext.datasetExpression());
+
+        Dataset dataset = datasetExpressionVisitor.visit(checkParamContext.variableExpression());
 
         CheckSingleRuleOperation.ComponentsToReturn componentsToReturn = getComponentsToReturn(checkParamContext.checkColumns());
         CheckSingleRuleOperation.RowsToReturn rowsToReturn = getRowsToReturn(checkParamContext.checkRows());
 
-        String errorCode = getErrorCode(checkParamContext);
-        Long errorLevel = getErrorLevel(checkParamContext);
+        Optional<String> errorCode = getErrorCode(checkParamContext);
+        Optional<Long> errorLevel = getErrorLevel(checkParamContext);
 
-        return new CheckSingleRuleOperation.Builder(dataset)
-                .rowsToReturn(rowsToReturn)
-                .componentsToReturn(componentsToReturn)
-                .errorCode(errorCode)
-                .errorLevel(errorLevel)
-                .build();
-    }
+        CheckSingleRuleOperation.Builder builder = new CheckSingleRuleOperation.Builder(dataset);
+        builder.rowsToReturn(rowsToReturn);
+        builder.componentsToReturn(componentsToReturn);
+        if (errorCode.isPresent())
+            builder.errorCode(errorCode.get());
+        if (errorLevel.isPresent())
+            builder.errorLevel(errorLevel.get());
 
-    @Override
-    public Dataset visitVariable(VTLParser.VariableContext ctx) {
-        return (Dataset) referenceVisitor.visit(ctx);
+        return builder.build();
     }
 
     @Override
     public Dataset visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        return relationalVisitor.visit(ctx);
+        return datasetExpressionVisitor.visit(ctx);
     }
 
 
-    private Long getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
-        if (checkParamContext.errorLevel() != null) {
-            return Long.valueOf(checkParamContext.errorLevel().getText());
-        }
-        return null;
+    private Optional<Long> getErrorLevel(VTLParser.CheckParamContext checkParamContext) {
+        VTLParser.ErrorLevelContext errorLevel = checkParamContext.errorLevel();
+        if (errorLevel == null)
+            return Optional.empty();
+
+        VTLInteger integer = literalVisitor.visitIntegerLiteral(errorLevel.integerLiteral());
+        return Optional.of(integer.get());
     }
 
-    private String getErrorCode(VTLParser.CheckParamContext checkParamContext) {
-        if (checkParamContext.errorCode() != null) {
-            return VisitorUtil.stripQuotes(checkParamContext.errorCode().STRING_CONSTANT());
-        }
-        return null;
+    private Optional<String> getErrorCode(VTLParser.CheckParamContext checkParamContext) {
+        VTLParser.ErrorCodeContext errorCode = checkParamContext.errorCode();
+        if (errorCode == null)
+            return Optional.empty();
+
+        VTLString string = literalVisitor.visitStringLiteral(errorCode.stringLiteral());
+        return Optional.of(string.get());
     }
 
     private CheckSingleRuleOperation.ComponentsToReturn getComponentsToReturn(VTLParser.CheckColumnsContext checkColumnsContext) {

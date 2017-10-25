@@ -167,7 +167,7 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
         helper.addValue(elements);
         helper.add("identifier", dimension);
         helper.add("measure", measure);
-        helper.add("structure", getDataStructure());
+        //helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
     }
 }

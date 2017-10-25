@@ -186,7 +186,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
 
             // Run loop.
             AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
-            Dataset last = null;
+            Object last = null;
             for (VTLParser.StatementContext statementContext : start.statement()) {
                 last = assignmentVisitor.visit(statementContext);
             }

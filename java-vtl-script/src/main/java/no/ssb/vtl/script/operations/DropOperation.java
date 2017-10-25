@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 import static com.google.common.base.Preconditions.*;
 
 /**
- * TODO: Implement "operator" and  "function" interfaces.
+ * TODO: Extend Keep operation and invert
  */
 public class DropOperation extends AbstractUnaryDatasetOperation {
 

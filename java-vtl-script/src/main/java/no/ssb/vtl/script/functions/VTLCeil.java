@@ -20,27 +20,34 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLCeil extends AbstractVTLFunction<Number>{
+public class VTLCeil extends AbstractVTLFunction<VTLInteger>{
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLCeil instance;
 
-    @VisibleForTesting
-    public VTLCeil() {
-        super("ceil", Number.class, DS);
+    private VTLCeil() {
+        super("ceil", VTLInteger.class, DS);
+    }
+
+    public static VTLCeil getInstance() {
+        if (instance == null) {
+            instance = new VTLCeil();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLInteger safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Long) null);
         }
 
-        return VTLNumber.of(new Double(Math.ceil(ds.get().doubleValue())).intValue());
+        return VTLNumber.of((long) Math.ceil(ds.get().doubleValue()));
     }
 }

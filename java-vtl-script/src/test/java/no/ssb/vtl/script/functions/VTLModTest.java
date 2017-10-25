@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class VTLModTest extends AbstractVTLNumberBinaryFunctionTest {
     @Before
     public void setUp() throws Exception {
-        vtlBinaryFunction = new VTLMod();
+        vtlBinaryFunction = VTLMod.getInstance();
     }
 
     @Override
@@ -98,7 +98,7 @@ public class VTLModTest extends AbstractVTLNumberBinaryFunctionTest {
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(-5),
-                        VTLNumber.of((Number)null)
+                        VTLNumber.of((Double) null)
                 )
         ))
                 .as("exception when passing zero where zero is not allowed")

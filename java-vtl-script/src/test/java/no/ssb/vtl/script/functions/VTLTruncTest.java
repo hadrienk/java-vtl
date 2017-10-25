@@ -36,7 +36,7 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlBinaryFunction = new VTLTrunc();
+        vtlBinaryFunction = VTLTrunc.getInstance();
     }
 
     @Test
@@ -103,7 +103,7 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(4),
-                        VTLNumber.of((Number) null)
+                        VTLNumber.of((Double) null)
                         )
         ))
                 .as("exception when passing null where not null is expected")

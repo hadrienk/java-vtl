@@ -35,7 +35,7 @@ public class VTLExpTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlUnaryFunction = new VTLExp();
+        vtlUnaryFunction = VTLExp.getInstance();
     }
 
     @Test

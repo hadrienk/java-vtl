@@ -25,34 +25,34 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A visitor that instantiate rename operators.
  */
-public class JoinRenameClauseVisitor extends VTLDatasetExpressionVisitor<RenameOperation> {
+public class RenameVisitor extends VTLDatasetExpressionVisitor<RenameOperation> {
 
     private final Dataset dataset;
-    private final ReferenceVisitor referenceVisitor;
+    private final ComponentVisitor componentVisitor;
 
     @Deprecated
-    public JoinRenameClauseVisitor(Dataset dataset) {
-        this.dataset = checkNotNull(dataset); this.referenceVisitor = null;
+    public RenameVisitor(Dataset dataset) {
+        this.dataset = checkNotNull(dataset); this.componentVisitor = null;
     }
 
-    public JoinRenameClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
+    public RenameVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
-        this.referenceVisitor = checkNotNull(referenceVisitor);
+        this.componentVisitor = checkNotNull(componentVisitor);
     }
 
     @Override
     public RenameOperation visitJoinRenameExpression(VTLParser.JoinRenameExpressionContext ctx) {
         ImmutableMap.Builder<Component, String> newNames = ImmutableMap.builder();
         for (VTLParser.JoinRenameParameterContext renameParam : ctx.joinRenameParameter()) {
-            Component component = (Component) referenceVisitor.visit(renameParam.componentRef());
+            Component component = componentVisitor.visit(renameParam.from);
             String to = removeQuoteIfNeeded(renameParam.to.getText());
             newNames.put(component, to);
         }

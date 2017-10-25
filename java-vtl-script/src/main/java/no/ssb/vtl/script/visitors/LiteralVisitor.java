@@ -20,47 +20,60 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLDate;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
 import java.time.Instant;
 
-public class LiteralVisitor extends VTLBaseVisitor<VTLObject> {
+public final class LiteralVisitor extends VTLBaseVisitor<VTLObject> {
 
     private static final LiteralVisitor instance = new LiteralVisitor();
-
-    public static LiteralVisitor getInstance() {
-        return instance;
-    }
+    private static final String QUOTE_CHAR = "(?<!\")\"(?!\")";
+    private static final String ESCAPED_QUOTE_CHAR = "\"\"";
 
     private LiteralVisitor() {
         // private
     }
 
-    @Override
-    public VTLObject visitStringLiteral(VTLParser.StringLiteralContext ctx) {
-        return VTLObject.of(VisitorUtil.stripQuotes(ctx.getText()));
+    public static LiteralVisitor getInstance() {
+        return instance;
+    }
+
+    @VisibleForTesting
+    static String stripQuotes(String string) {
+        return string.replaceAll(QUOTE_CHAR, "").replaceAll(ESCAPED_QUOTE_CHAR, "\"");
     }
 
     @Override
-    public VTLObject visitBooleanLiteral(VTLParser.BooleanLiteralContext ctx) {
-        return VTLObject.of(Boolean.valueOf(ctx.getText()));
+    public VTLString visitStringLiteral(VTLParser.StringLiteralContext ctx) {
+        return VTLString.of(stripQuotes(ctx.getText()));
     }
 
     @Override
-    public VTLObject visitIntegerLiteral(VTLParser.IntegerLiteralContext ctx) {
-        return VTLObject.of(Long.valueOf(ctx.getText()));
+    public VTLBoolean visitBooleanLiteral(VTLParser.BooleanLiteralContext ctx) {
+        return VTLBoolean.of(Boolean.valueOf(ctx.getText()));
     }
 
     @Override
-    public VTLObject visitDateLiteral(VTLParser.DateLiteralContext ctx) {
-        return VTLObject.of(Instant.parse(ctx.getText()));
+    public VTLInteger visitIntegerLiteral(VTLParser.IntegerLiteralContext ctx) {
+        return VTLInteger.of(Long.valueOf(ctx.getText()));
     }
 
     @Override
-    public VTLObject visitFloatLiteral(VTLParser.FloatLiteralContext ctx) {
-        return VTLObject.of(Double.valueOf(ctx.getText()));
+    public VTLDate visitDateLiteral(VTLParser.DateLiteralContext ctx) {
+        return VTLDate.of(Instant.parse(ctx.getText()));
+    }
+
+    @Override
+    public VTLFloat visitFloatLiteral(VTLParser.FloatLiteralContext ctx) {
+        return VTLFloat.of(Double.valueOf(ctx.getText()));
     }
 
     @Override

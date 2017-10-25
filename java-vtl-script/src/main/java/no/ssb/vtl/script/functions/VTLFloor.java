@@ -20,27 +20,34 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<Number>{
+public class VTLFloor extends AbstractVTLFunction<VTLInteger>{
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLFloor instance;
 
-    @VisibleForTesting
-    public VTLFloor() {
-        super("floor", Number.class, DS);
+    private VTLFloor() {
+        super("floor", VTLInteger.class, DS);
+    }
+
+    public static VTLFloor getInstance() {
+        if (instance == null) {
+            instance = new VTLFloor();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLInteger safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Long) null);
         }
 
-        return VTLNumber.of(new Double(Math.floor(ds.get().doubleValue())).intValue());
+        return VTLNumber.of((long) Math.floor(ds.get().doubleValue()));
     }
 }

@@ -20,25 +20,31 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 
 /**
  * The concatenation operator (and function) in VTL.
  */
-public class VTLConcatenation extends AbstractVTLFunction<String> {
+public class VTLConcatenation extends AbstractVTLFunction<VTLString> {
 
     private static final Argument<VTLString> LEFT = new Argument<>("left", VTLString.class);
     private static final Argument<VTLString> RIGHT = new Argument<>("right", VTLString.class);
+    private static VTLConcatenation instance;
 
-    @VisibleForTesting
-    VTLConcatenation() {
-        super("||", String.class, LEFT, RIGHT);
+    private VTLConcatenation() {
+        super("||", VTLString.class, LEFT, RIGHT);
+    }
+
+    public static VTLConcatenation getInstance() {
+        if (instance == null) {
+            instance = new VTLConcatenation();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLString safeInvoke(TypeSafeArguments arguments) {
 
         VTLString left = arguments.get(LEFT);
         VTLString right = arguments.get(RIGHT);

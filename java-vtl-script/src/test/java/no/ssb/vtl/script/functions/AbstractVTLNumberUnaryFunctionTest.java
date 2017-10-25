@@ -31,14 +31,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class AbstractVTLNumberUnaryFunctionTest
         implements VTLNumberFunctionTest {
 
-    AbstractVTLFunction<Number> vtlUnaryFunction;
+    AbstractVTLFunction<? extends VTLNumber> vtlUnaryFunction;
 
     @Test
     @Override
     public void testInvokeWithNullValue() throws Exception {
         VTLObject<?> result = vtlUnaryFunction.invoke(
                 Lists.newArrayList(
-                        VTLNumber.of((Number) null)
+                        VTLNumber.of((Float) null)
                 )
         );
 

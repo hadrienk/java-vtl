@@ -22,43 +22,48 @@ package no.ssb.vtl.script.visitors;
 
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.operations.UnionOperation;
-import no.ssb.vtl.script.visitors.join.JoinExpressionVisitor;
+import no.ssb.vtl.script.visitors.join.JoinBodyVisitor;
 
-import javax.script.ScriptContext;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A visitor that handles the relational operators.
  */
-public class RelationalVisitor extends VTLBaseVisitor<Dataset> {
+public class DatasetExpressionVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final AssignmentVisitor assignmentVisitor;
-    private final JoinExpressionVisitor joinVisitor;
+    private final ExpressionVisitor expressionVisitor;
 
-    public RelationalVisitor(AssignmentVisitor assignmentVisitor, ScriptContext context) {
-        this.assignmentVisitor = checkNotNull(assignmentVisitor);
-        this.joinVisitor = new JoinExpressionVisitor(context);
+    public DatasetExpressionVisitor(ExpressionVisitor expressionVisitor) {
+        this.expressionVisitor = checkNotNull(expressionVisitor);
+        //this.joinVisitor = new JoinExpressionVisitor(context);
     }
 
+    @Override
+    public Dataset visitVariable(VTLParser.VariableContext ctx) {
+        VTLExpression expression2 = expressionVisitor.visit(ctx);
+        VTLDataset resolved = (VTLDataset) expression2.resolve(expressionVisitor.getBindings());
+        return resolved.get();
+    }
 
     @Override
     public Dataset visitUnionExpression(VTLParser.UnionExpressionContext ctx) {
         List<Dataset> datasets = Lists.newArrayList();
         for (VTLParser.DatasetExpressionContext datasetExpressionContext : ctx.datasetExpression()) {
-            Dataset dataset = assignmentVisitor.visit(datasetExpressionContext);
-            datasets.add(dataset);
+            datasets.add(visit(datasetExpressionContext));
         }
         return new UnionOperation(datasets);
     }
 
     @Override
     public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
-        return joinVisitor.visit(ctx);
+        JoinBodyVisitor joinBodyVisitor = new JoinBodyVisitor(this);
+        return joinBodyVisitor.visit(ctx);
     }
-
 }

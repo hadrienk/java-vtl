@@ -20,15 +20,18 @@ package no.ssb.vtl.script.visitors.functions;
  * =========================LICENSE_END==================================
  */
 
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.visitors.LiteralVisitor;
-import org.antlr.v4.runtime.ANTLRInputStream;
+import no.ssb.vtl.script.visitors.ExpressionVisitor;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.script.SimpleBindings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,11 +41,11 @@ public class NativeFunctionsVisitorTest {
 
     @Before
     public void setUp() throws Exception {
-        visitor = new NativeFunctionsVisitor(LiteralVisitor.getInstance());
+        visitor = new NativeFunctionsVisitor(new ExpressionVisitor(new SimpleBindings()));
     }
 
     private static VTLParser parse(String expression) {
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
+        VTLLexer lexer = new VTLLexer(CharStreams.fromString(expression));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
         parser.setErrorHandler(new BailErrorStrategy());
         return parser;
@@ -51,28 +54,86 @@ public class NativeFunctionsVisitorTest {
     @Test
     public void testAbs() throws Exception {
         VTLParser parse = parse("abs(-1)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(1);
+        VTLExpression result = visitor.visit(parse.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(1L);
     }
 
     @Test
     public void testRound() throws Exception {
         VTLParser parse = parse("round(1.75,1)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(1.8);
+        VTLExpression result = visitor.visit(parse.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(1.8);
     }
 
     @Test
     public void testCeil() throws Exception {
         VTLParser parse = parse("ceil(1.5)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(2);
+        VTLExpression result = visitor.visit(parse.expression());
+        assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
+        assertThat(result.resolve(null).get()).isEqualTo(2L);
     }
 
     @Test
     public void testFloor() throws Exception {
         VTLParser parse = parse("floor(1.5)");
-        VTLObject result = visitor.visit(parse.expression());
-        assertThat(result.get()).isEqualTo(1);
+        VTLExpression result = visitor.visit(parse.expression());
+        assertThat(result.getVTLType()).isEqualTo(VTLInteger.class);
+        assertThat(result.resolve(null).get()).isEqualTo(1L);
+    }
+
+    @Test
+    public void testExp() throws Exception {
+        VTLParser parser = parse("exp(5)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(148.4131591025766);
+    }
+
+    @Test
+    public void testLn() throws Exception {
+        VTLParser parser = parse("ln(148)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(4.997212273764115);
+    }
+
+    @Test
+    public void testLog() throws Exception {
+        VTLParser parser = parse("log(1024, 2)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(10d);
+    }
+
+    @Test
+    public void testMod() throws Exception {
+        VTLParser parser = parse("mod(10, 3)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(1d);
+    }
+
+    @Test
+    public void testNroot() throws Exception {
+        VTLParser parser = parse("nroot(25, 2)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(5d);
+    }
+
+    @Test
+    public void testPower() throws Exception {
+        VTLParser parser = parse("power(5, 2)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(25d);
+    }
+
+    @Test
+    public void testSqrt() throws Exception {
+        VTLParser parser = parse("sqrt(9)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(3d);
+    }
+
+    @Test
+    public void testTrunc() throws Exception {
+        VTLParser parser = parse("trunc(1.566, 1)");
+        VTLExpression<?> result = visitor.visit(parser.expression());
+        assertThat(result.resolve(null).get()).isEqualTo(1.5);
     }
 }

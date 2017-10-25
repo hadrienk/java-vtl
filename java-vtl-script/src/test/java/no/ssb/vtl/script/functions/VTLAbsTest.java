@@ -33,7 +33,7 @@ public class VTLAbsTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlUnaryFunction = new VTLAbs();
+        vtlUnaryFunction = VTLAbs.getInstance();
     }
 
     @Test

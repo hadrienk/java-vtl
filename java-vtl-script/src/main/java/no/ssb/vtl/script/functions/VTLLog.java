@@ -20,30 +20,35 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
-import no.ssb.vtl.model.VTLObject;
 
 import static java.lang.String.format;
 
-public class VTLLog extends AbstractVTLFunction<Number> {
+public class VTLLog extends AbstractVTLFunction<VTLNumber> {
 
+    private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> BASE = new Argument<>("base", VTLNumber.class);
-    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+    private static VTLLog instance;
 
-    @VisibleForTesting
-    VTLLog() {
-        super("log", Number.class, DS, BASE);
+    private VTLLog() {
+        super("log", VTLNumber.class, DS, BASE);
+    }
+
+    public static VTLLog getInstance() {
+        if (instance == null) {
+            instance = new VTLLog();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
         VTLNumber base = arguments.get(BASE);
 
         if (ds.get() == null) {
-            return VTLNumber.of((Number)null);
+            return VTLNumber.of((Double) null);
         }
 
         //The number must be greater than zero

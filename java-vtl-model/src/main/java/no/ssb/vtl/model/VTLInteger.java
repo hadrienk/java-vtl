@@ -1,6 +1,6 @@
-package no.ssb.vtl.script.visitors;
+package no.ssb.vtl.model;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
@@ -9,9 +9,7 @@ package no.ssb.vtl.script.visitors;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,29 +18,26 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
-import org.antlr.v4.runtime.tree.TerminalNode;
+public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VTLInteger> {
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public final class VisitorUtil {
-
-    private static final String QUOTE_CHAR = "(?<!\")\"(?!\")";
-    private static final String ESCAPED_QUOTE_CHAR = "\"\"";
-
-    private VisitorUtil() {
+    private VTLInteger() {
     }
 
-    public static String stripQuotes(String string) {
-        checkNotNull(string);
-        return string.replaceAll(QUOTE_CHAR, "").replaceAll(ESCAPED_QUOTE_CHAR, "\"");
+    @Override
+    public Class<VTLInteger> getVTLType() {
+        return VTLInteger.class;
     }
 
-    public static String stripQuotes(TerminalNode stringConstant) {
-
-        if (stringConstant != null && stringConstant.getText() != null) {
-            return stripQuotes(stringConstant.getText());
-        }
-        return null;
+    public static VTLInteger of(Integer value) {
+        return VTLInteger.of(value.longValue());
     }
 
+    public static VTLInteger of(Long value) {
+        return new VTLInteger() {
+            @Override
+            public Long get() {
+                return value;
+            }
+        };
+    }
 }

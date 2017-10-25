@@ -20,32 +20,45 @@
 grammar VTL;
 start : statement+ EOF;
 
-statement : assignment | expression ;
+statement : assignment ;
+
+assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
+
+
+functionCall       : nvlFunction // TODO: Create one rule per function?
+                   | nativeCall
+                   | functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
 
 nativeCall         : functionName=NATIVE_FUNCTIONS LPAR functionParameters? RPAR ;
-functionCall       : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
 
 functionParameters : namedExpression ( COMMA namedExpression)*
                    | expression ( COMMA expression )*
                    | expression ( COMMA expression )* COMMA namedExpression ( COMMA namedExpression)* ;
 
-
 namedExpression     : name=REG_IDENTIFIER COLON expression ;
 
 // Expressions
-expression : LPAR expression RPAR
-           | nativeCall
-           | functionCall
-           // | unaryOperators
-           | <assoc=right> expression operatorConcat expression
-           | datasetExpression
-           | expression clauseExpression
-           | variable
-           | literal ;
+expression : LPAR expression RPAR                                               # precedenceExpr
+           | functionCall                                                       # functionExpr
 
+           | op=(NOT | PLUS | MINUS) right=expression                           # unaryExpr
+           | left=expression op=(ISNULL|ISNOTNULL)                              # postfixExpr
+           | <assoc=right> left=expression op=CONCAT right=expression           # binaryExpr
+           | left=expression op=(MUL | DIV) right=expression                    # arithmeticExpr
+           | left=expression op=(PLUS | MINUS) right=expression                 # arithmeticExpr
+           | left=expression op=(LE | LT | GE | GT | EQ | NE) right=expression  # binaryExpr
+           | left=expression op=AND right=expression                            # binaryExpr
+           | left=expression op=(OR|XOR) right=expression                       # binaryExpr
+
+           | membershipExpression                                               # membershipExpr
+           | variable                                                           # variableExpr
+           | literal                                                            # literalExpr
+           ;
+
+membershipExpression : left=variable op=MEMBERSHIP right=variable ;
+
+// TODO: Rename to variableName.
 variable : ( ESCAPED_IDENTIFIER | REG_IDENTIFIER ) ;
-
-operatorConcat : op=CONCAT ;
 
 // Literal.
 literal : nullLiteral
@@ -55,64 +68,53 @@ literal : nullLiteral
          | floatLiteral
          | stringLiteral ;
 
-nullLiteral     : NULL_CONSTANT ;
-booleanLiteral  : BOOLEAN_CONSTANT ;
-dateLiteral     : 'TODO:date' ;
-integerLiteral  : INTEGER_CONSTANT ;
-floatLiteral    : FLOAT_CONSTANT ;
-stringLiteral   : STRING_CONSTANT ;
+nullLiteral     : NULL ;
+booleanLiteral  : BOOLEAN_LITERAL ;
+dateLiteral     : DATE_LITERAL ;
+integerLiteral  : INTEGER_LITERAL ;
+floatLiteral    : FLOAT_LITERAL ;
+stringLiteral   : STRING_LITERAL ;
 
-assignment : variable ASSIGNMENT expression ;
-
-/* TODO: deprecate, use expression instead */
 datasetExpression : <assoc=right>datasetExpression clauseExpression     #withClause
                   | hierarchyExpression                                 #withHierarchy
                   | relationalExpression                                #withRelational
                   | function                                            #withFunction
-                  | exprAtom                                            #withAtom
+                  | variable                                            #withAtom
                   ;
 
-hierarchyExpression : 'hierarchy' '(' datasetRef ',' componentRef ',' hierarchyReference ',' BOOLEAN_CONSTANT ( ',' ('sum' | 'prod') )? ')' ;
-hierarchyReference : datasetRef ;
+hierarchyExpression : 'hierarchy' '(' variable ',' variableExpression ',' hierarchyReference ',' BOOLEAN_LITERAL ( ',' ('sum' | 'prod') )? ')' ;
+hierarchyReference : variableExpression ;
 
+// TODO: Move to expression.
 function : getFunction               #withGet
          | putFunction               #withPut
          | checkFunction             #withCheck
          | aggregationFunction       #withAggregation
          ;
 
-getFunction : 'get' '(' datasetId ')';
-putFunction : 'put(todo)';
+getFunction : 'get' LPAR stringLiteral RPAR;
+putFunction : 'put' LPAR stringLiteral RPAR;
 
 aggregationFunction
-       : 'sum' '(' (datasetRef('.' variable)?) ')' aggregationParms  #aggregateSum
-       | 'avg' '(' (datasetRef('.' variable)?) ')' aggregationParms  #aggregateAvg
+       : 'sum' '(' variableExpression ')' aggregationParams       #aggregateSum
+       | 'avg' '(' variableExpression ')' aggregationParams       #aggregateAvg
        ;
 
-aggregationParms: aggregationClause=(GROUP_BY|ALONG) componentRef (',' componentRef)*;
+aggregationParams: aggregationClause=(GROUP_BY|ALONG) variableExpression (',' variableExpression)*;
 
 ALONG : 'along' ;
 GROUP_BY : 'group by' ;
 
-datasetId : STRING_CONSTANT ;
-
-/* Atom */
-exprAtom : datasetRef;
-
 checkFunction : 'check' '(' checkParam ')';
 
-checkParam : datasetExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
+checkParam : variableExpression (',' checkRows)? (',' checkColumns)? (',' 'errorcode' '(' errorCode ')' )? (',' 'errorlevel' '=' '(' errorLevel ')' )?;
 
 checkRows : ( 'not_valid' | 'valid' | 'all' ) ;
 checkColumns : ( 'measures' | 'condition' ) ;
-errorCode : STRING_CONSTANT ;
-errorLevel : INTEGER_CONSTANT ;
+errorCode : stringLiteral ;
+errorLevel : integerLiteral ;
 
-datasetRef: variable ;
-
-componentRef : ( datasetRef '.')? variable ;
-
-constant : INTEGER_CONSTANT | FLOAT_CONSTANT | BOOLEAN_CONSTANT | STRING_CONSTANT | NULL_CONSTANT;
+variableExpression : membershipExpression | variable ;
 
 clauseExpression      : '[' clause ']' ;
 
@@ -129,11 +131,11 @@ clause       : 'rename' renameParam (',' renameParam)*     #renameClause
 //          component as string role = MEASURE,
 //          component as string role = ATTRIBUTE
 // ]
-renameParam : from=componentRef 'as' to=variable ( ROLE role=componentRole )? ;
+renameParam : from=variable 'as' to=variable ( ROLE role=componentRole )? ;
 
-filter      : 'filter' booleanExpression ;
+filter      : 'filter' expression ;
 
-keep        : 'keep' booleanExpression ( ',' booleanExpression )* ;
+keep        : 'keep' variable ( ',' variable )* ;
 
 calc        : 'calc' ;
 
@@ -141,26 +143,11 @@ attrcalc    : 'attrcalc' ;
 
 aggregate   : 'aggregate' ;
 
-booleanExpression                                                                                       //Evaluation order of the operators
-    : '(' booleanExpression ')'                                                 # BooleanPrecedence     // I
-    | FUNC_ISNULL '(' booleanParam ')'                                          # BooleanIsNullFunction // II  All functional operators
-    | booleanParam op=(ISNULL|ISNOTNULL)                                        # BooleanPostfix        // ??
-    | left=booleanParam op=( LE | LT | GE | GT ) right=booleanParam             # BooleanEquality       // VII
-    | op=NOT booleanExpression                                                  # BooleanNot            // IV
-    | left=booleanParam op=( EQ | NE ) right=booleanParam                       # BooleanEquality       // IX
-    | booleanExpression op=AND booleanExpression                                # BooleanAlgebra        // X
-    | booleanExpression op=(OR|XOR) booleanExpression                           # BooleanAlgebra        // XI
-    | BOOLEAN_CONSTANT                                                          # BooleanConstant
-    ;
-
-booleanParam
-    : componentRef
-    | constant
-    ;
-
 ASSIGNMENT : ':=' ;
 
 /* Operators */
+
+MEMBERSHIP : '.' ;
 
 CONCAT : '||' ;
 EQ : '='  ;
@@ -179,7 +166,9 @@ ISNOTNULL : 'is not null' ;
 
 /* Core functions */
 
-NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS ) ;
+nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
+
+NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS | FUNC_ISNULL) ;
 
 FUNC_ISNULL : 'isnull' ;
 
@@ -207,7 +196,7 @@ FUNC_LISTSUM: 'listsum' ;
 // String
 fragment STRING_FUNCTIONS : ( FUNC_LENGTH | FUNC_TRIM  | FUNC_LTRIM  | FUNC_RTRIM |
                      FUNC_UPPER  | FUNC_LOWER | FUNC_SUBSTR | FUNC_INSTR
-                     // | FUNC_D_F_S
+                   | FUNC_D_F_S
                    | FUNC_REPLACE
                    ) ;
 
@@ -219,10 +208,8 @@ FUNC_UPPER   : 'upper' ;
 FUNC_LOWER   : 'lower' ;
 FUNC_SUBSTR  : 'substr' ;
 FUNC_INSTR   : 'instr' ;
-// TODO: Fix conflict FUNC_D_F_S   : 'date_from_string' ;
+FUNC_D_F_S   : 'date_from_string' ;
 FUNC_REPLACE : 'replace' ;
-
-//WS : [ \r\t\u000C] -> skip ;
 
 relationalExpression : unionExpression | joinExpression ;
 
@@ -230,11 +217,11 @@ unionExpression : 'union' '(' datasetExpression (',' datasetExpression )* ')' ;
 
 joinExpression : '[' joinDefinition ']' '{' joinBody '}';
 
-joinDefinition : type=( INNER | OUTER | CROSS )? datasetRef (',' datasetRef )* ( 'on' componentRef (',' componentRef )* )? ;
+joinDefinition : type=( INNER | OUTER | CROSS )? variable (',' variable )* ( 'on' variableExpression (',' variableExpression )* )? ;
 
 joinBody : joinClause (',' joinClause)* ;
 
-joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalcExpression # joinCalcClause
+joinClause : joinAssignment                     # joinCalcClause
            | joinDropExpression                 # joinDropClause
            | joinKeepExpression                 # joinKeepClause
            | joinRenameExpression               # joinRenameClause
@@ -242,52 +229,28 @@ joinClause : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT joinCalc
            | joinFoldExpression                 # joinFoldClause
            | joinUnfoldExpression               # joinUnfoldClause
            ;
+
+joinAssignment : implicit=IMPLICIT? role=componentRole? variable ASSIGNMENT expression ;
+
 // TODO: The spec writes examples with parentheses, but it seems unecessary to me.
 // TODO: The spec is unclear regarding types of the elements, we support only strings ATM.
-joinFoldExpression      : 'fold' componentRef (',' componentRef)* 'to' dimension=variable ',' measure=variable ;
-joinUnfoldExpression    : 'unfold' dimension=componentRef ',' measure=componentRef 'to' STRING_CONSTANT (',' STRING_CONSTANT)* ;
+joinFoldExpression      : 'fold' variableExpression (',' variableExpression)* 'to' dimension=variable ',' measure=variable ;
 
-conditionalExpression
-    : nvlExpression
-    ;
-
-nvlExpression : 'nvl' '(' componentRef ',' nvlRepValue=constant ')';
-
-dateFunction
-    : dateFromStringFunction
-    ;
-
-dateFromStringFunction : 'date_from_string' '(' componentRef ',' format=STRING_CONSTANT ')';
-
-
-// Left recursive
-joinCalcExpression : leftOperand=joinCalcExpression  sign=( '*' | '/' ) rightOperand=joinCalcExpression #joinCalcProduct
-                   | leftOperand=joinCalcExpression  sign=( '+' | '-' ) rightOperand=joinCalcExpression #joinCalcSummation
-                   | '(' joinCalcExpression ')'                                                         #joinCalcPrecedence
-                   | conditionalExpression                                                              #joinCalcCondition
-                   | dateFunction                                                                       #joinCalcDate
-                   | componentRef                                                                       #joinCalcReference
-                   | constant                                                                           #joinCalcAtom
-                   | booleanExpression                                                                  #joinCalcBoolean
-                   ;
-
+// TODO: variableName instead of STRING?
+joinUnfoldExpression    : 'unfold' dimension=variableExpression ',' measure=variableExpression 'to' stringLiteral (',' stringLiteral)* ;
 
 // Drop clause
-joinDropExpression : 'drop' componentRef (',' componentRef)* ;
+joinDropExpression : 'drop' variableExpression (',' variableExpression)* ;
 
 // Keep clause
-joinKeepExpression : 'keep' componentRef (',' componentRef)* ;
-
-// TODO: Use in keep, drop and calc.
-// TODO: Make this the membership operator.
-// TODO: Revise this when the final version of the specification precisely define if the rename needs ' or not.
+joinKeepExpression : 'keep' variableExpression (',' variableExpression)* ;
 
 // Rename clause
 joinRenameExpression : 'rename' joinRenameParameter (',' joinRenameParameter)* ;
-joinRenameParameter  : from=componentRef 'to' to=variable ;
+joinRenameParameter  : from=variableExpression 'to' to=variable ;
 
 // Filter clause
-joinFilterExpression : 'filter' booleanExpression ;
+joinFilterExpression : 'filter' expression ;
 
 componentRole : role=(IDENTIFIER | MEASURE | ATTRIBUTE);
 
@@ -297,22 +260,26 @@ CROSS : 'cross' ;
 
 ROLE : 'role' ;
 
-// TODO: Rename to INTEGER_LITTERAL
-INTEGER_CONSTANT  : (PLUS|MINUS)?DIGIT+;
-// TODO: Rename to BOOLEAN_LITTERAL
-BOOLEAN_CONSTANT  : 'true' | 'false' ;
+// "2000-01-01T00:00:00.000Z"
+DATE_LITERAL : FULL_DATE 'T' FULL_TIME ('Z' | OFFSET ) ;
+fragment FULL_DATE : DIGIT4 '-' DIGIT2 '-' DIGIT2 ;
+fragment FULL_TIME : DIGIT2 ':' DIGIT2 ':' DIGIT2 ( '.' DIGIT+ )? ;
+fragment OFFSET : ('+' | '-' ) DIGIT+ ':' DIGIT+ ;
+fragment DIGIT4 : DIGIT2 DIGIT2 ;
+fragment DIGIT2 : DIGIT DIGIT ;
 
-// TODO: Rename to STRING_LITTERAL
-STRING_CONSTANT   :'"' (ESCAPED_QUOTE|~'"')* '"';
+INTEGER_LITERAL  : (PLUS|MINUS)?DIGIT+;
+
+BOOLEAN_LITERAL  : 'true' | 'false' ;
+
+STRING_LITERAL   :'"' (ESCAPED_QUOTE|~'"')* '"';
 fragment ESCAPED_QUOTE : '""';
 
-// TODO: Rename to FLOAT_LITTERAL
-FLOAT_CONSTANT    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
-                  | (PLUS|MINUS)?(DIGIT)+ FLOATEXP
-                  ;
+FLOAT_LITERAL    : (PLUS|MINUS)?(DIGIT)+ '.' (DIGIT)* FLOATEXP?
+         | (PLUS|MINUS)?(DIGIT)+ FLOATEXP
+         ;
 
-// TODO: Rename to NULL
-NULL_CONSTANT     : 'null';
+NULL     : 'null';
 
 IMPLICIT : 'implicit' ;
 
@@ -327,6 +294,8 @@ ESCAPED_IDENTIFIER:  QUOTE (~['\r\n] | '\'\'')+ QUOTE;
 
 fragment QUOTE : '\'';
 
+MUL : '*' ;
+DIV : '/' ;
 PLUS : '+';
 MINUS : '-';
 

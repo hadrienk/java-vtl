@@ -20,29 +20,35 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 import static java.lang.String.format;
 
-public class VTLLn extends AbstractVTLFunction<Number> {
+public class VTLLn extends AbstractVTLFunction<VTLFloat> {
 
+    private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
-    public static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
+    private static VTLLn instance;
 
+    private VTLLn() {
+        super("ln", VTLFloat.class, DS);
+    }
 
-    @VisibleForTesting
-    VTLLn() {
-        super("ln", Number.class, DS);
+    public static VTLLn getInstance() {
+        if (instance == null) {
+            instance = new VTLLn();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         if(ds.get().intValue() <= 0) {

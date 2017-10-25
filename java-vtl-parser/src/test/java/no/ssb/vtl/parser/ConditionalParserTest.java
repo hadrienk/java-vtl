@@ -27,12 +27,12 @@ public class ConditionalParserTest extends GrammarTest {
 
     @Test
     public void testNvlWithNumber() throws Exception {
-        parse("nvl(m1 , 0)", "conditionalExpression");
+        parse("nvl(m1 , 0)", "expression");
     }
 
     @Test
     public void testNvlComponentRefWithString() throws Exception {
-        parse("nvl(ds1.m2, \"constant\")", "conditionalExpression");
+        parse("nvl(ds1.m2, \"constant\")", "expression");
     }
 
 }

@@ -92,10 +92,10 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     
             for (Component aggregationComponent : aggregationComponents) {
     
-                List<VTLNumber> aggregationValues = dataPoints.stream()
+                List<VTLNumber> aggregationValues = (List) dataPoints.stream()
                         .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
                         .filter(vtlObject -> !VTLObject.NULL.equals(vtlObject))
-                        .map(vtlObject -> VTLNumber.of((Number) vtlObject.get()))
+                        .map(vtlObject -> VTLObject.of(vtlObject.get()))
                         .collect(Collectors.toList());
     
                 resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));

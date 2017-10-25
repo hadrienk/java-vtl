@@ -20,44 +20,37 @@ package no.ssb.vtl.script.visitors.join;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.KeepOperation;
-import no.ssb.vtl.script.operations.join.WorkingDataset;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.operations.FoldOperation;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Visit the keep clauses.
- */
-public class JoinKeepClauseVisitor  extends VTLDatasetExpressionVisitor<KeepOperation> {
+public class FoldVisitor extends VTLDatasetExpressionVisitor<FoldOperation> {
 
     private final Dataset dataset;
-    private final ReferenceVisitor referenceVisitor;
+    private final ComponentVisitor componentVisitor;
 
-    @Deprecated
-    public JoinKeepClauseVisitor(WorkingDataset dataset) {
+    public FoldVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
-        referenceVisitor = null;
-    }
-
-    public JoinKeepClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
-        this.dataset = checkNotNull(dataset);
-        this.referenceVisitor = checkNotNull(referenceVisitor);
+        this.componentVisitor = checkNotNull(componentVisitor);
     }
 
     @Override
-    public KeepOperation visitJoinKeepExpression(VTLParser.JoinKeepExpressionContext ctx) {
-        Set<Component> components = ctx.componentRef().stream()
-                .map(referenceVisitor::visit)
-                .map(o -> (Component) o) //TODO: Safe? Yup!
-                .collect(Collectors.toSet());
-        return new KeepOperation(dataset, components);
+    public FoldOperation visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
+        String dimension = ctx.dimension.getText();
+        String measure = ctx.measure.getText();
+
+        Set<Component> elements = ctx.variableExpression().stream()
+                .map(componentVisitor::visit)
+                .collect(ImmutableSet.toImmutableSet());
+
+        return new FoldOperation(dataset, dimension, measure, elements);
     }
 }

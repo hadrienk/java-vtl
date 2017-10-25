@@ -23,26 +23,33 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLSqrt extends AbstractVTLFunction<Number> {
+public class VTLSqrt extends AbstractVTLFunction<VTLFloat> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLSqrt instance;
 
-    @VisibleForTesting
-    VTLSqrt() {
-        super("sqrt", Number.class, DS);
+    private VTLSqrt() {
+        super("sqrt", VTLFloat.class, DS);
+    }
+
+    public static VTLSqrt getInstance() {
+        if (instance == null) {
+            instance = new VTLSqrt();
+        }
+        return instance;
     }
 
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number) null);
+            return VTLObject.of((Double) null);
         }
 
         return VTLNumber.of(Math.sqrt(ds.get().doubleValue()));

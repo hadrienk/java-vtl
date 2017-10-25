@@ -36,7 +36,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
 
     @Before
     public void setUp() throws Exception {
-        vtlBinaryFunction = new VTLNroot();
+        vtlBinaryFunction = VTLNroot.getInstance();
     }
 
     @Test
@@ -136,7 +136,7 @@ public class VTLNrootTest extends AbstractVTLNumberBinaryFunctionTest{
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(99),
-                        VTLNumber.of((Number) null)
+                        VTLNumber.of((Double) null)
                 )
         ))
                 .as("exception when passing null where null is not allowed")

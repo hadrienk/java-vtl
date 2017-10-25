@@ -49,23 +49,27 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
      * }
      * </pre></code>
      */
-    @Deprecated
     public static VTLObject of(Object o) {
         if (o == null)
             return VTLObject.NULL;
-
-        if (o instanceof VTLObject) {
-            // TODO: Fail here, this only makes the contract of the method confusing. Will be solved with sub types.
+        if (o instanceof VTLObject)
             return (VTLObject) o;
-        }
+        if (o instanceof String)
+            return VTLObject.of((String) o);
+        if (o instanceof Double)
+            return VTLObject.of((Double) o);
+        if (o instanceof Float)
+            return VTLObject.of((Float) o);
+        if (o instanceof Long)
+            return VTLObject.of((Long) o);
+        if (o instanceof Integer)
+            return VTLObject.of((Integer)o);
+        if (o instanceof Instant)
+            return VTLObject.of((Instant) o);
+        if (o instanceof Boolean)
+            return VTLObject.of((Boolean) o);
 
-        return new VTLObject<Object>(){
-
-            @Override
-            public Object get() {
-                return o;
-            }
-        };
+        throw new IllegalArgumentException("could not create a VTLObject from " + o + " (" + o.getClass() + ")");
     }
 
     /**
@@ -92,16 +96,31 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
     /**
      * Create a new VTLNumber instance.
      */
-    public static VTLNumber of(Long num) {
-        return VTLNumber.of((Number) num);
+    public static VTLInteger of(Long num) {
+        return VTLInteger.of(num);
     }
 
     /**
      * Create a new VTLNumber instance.
      */
-    public static VTLNumber of(Double num) {
-        return VTLNumber.of((Number) num);
+    public static VTLInteger of(Integer num) {
+        return VTLInteger.of(num);
     }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLFloat of(Float num) {
+        return VTLFloat.of(num);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLFloat of(Double num) {
+        return VTLFloat.of(num);
+    }
+
 
     @Deprecated
     public static final VTLObject NULL = new VTLObject() {
@@ -115,10 +134,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
             return "[NULL]";
         }
     };
-
-    public static VTLNumber of(Number number) {
-        return VTLNumber.of(number);
-    }
 
     /**
      * Returns the value of the data point.

@@ -21,30 +21,32 @@ package no.ssb.vtl.script.visitors.join;
  */
 
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLPredicate;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.FilterOperation;
-import no.ssb.vtl.script.visitors.BooleanExpressionVisitor;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
+import no.ssb.vtl.script.visitors.ExpressionVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinFilterClauseVisitor extends VTLDatasetExpressionVisitor<FilterOperation> {
+public class FilterVisitor extends VTLDatasetExpressionVisitor<FilterOperation> {
     
     private final Dataset dataset;
-    private final ReferenceVisitor referenceVisitor;
-    
-    public JoinFilterClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
-        this.dataset = checkNotNull(dataset, "dataset was null");
-        this.referenceVisitor = referenceVisitor;
+
+    private final ExpressionVisitor expressionVisitor;
+    private final ComponentBindings componentBindings;
+
+
+    public FilterVisitor(Dataset dataset, ComponentBindings componentBindings, ExpressionVisitor expressionVisitor) {
+        this.dataset = checkNotNull(dataset);
+        this.componentBindings = checkNotNull(componentBindings);
+        this.expressionVisitor = checkNotNull(expressionVisitor);
     }
 
     @Override
-    public FilterOperation visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
-        BooleanExpressionVisitor booleanExpressionVisitor = new BooleanExpressionVisitor(referenceVisitor,
-                dataset.getDataStructure());
-        VTLPredicate predicate = booleanExpressionVisitor.visit(ctx.joinFilterExpression().booleanExpression());
-        return new FilterOperation(dataset, predicate);
+    public FilterOperation visitJoinFilterExpression(VTLParser.JoinFilterExpressionContext ctx) {
+        VTLExpression predicate = expressionVisitor.visit(ctx.expression());
+        return new FilterOperation(dataset, predicate, componentBindings);
     }
 }

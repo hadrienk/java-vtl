@@ -46,6 +46,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
 
 import java.util.List;
 import java.util.function.Function;
@@ -69,18 +70,19 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
     @Override
     public Function<Dataset, Dataset> visitRenameClause(VTLParser.RenameClauseContext ctx) {
         return dataset -> {
-            ReferenceVisitor visitor = new ReferenceVisitor(dataset.getDataStructure());
+
+            ComponentBindings bindings = new ComponentBindings(dataset);
+            ComponentVisitor componentVisitor = new ComponentVisitor(bindings);
 
             List<VTLParser.RenameParamContext> parameters = ctx.renameParam();
 
             ImmutableMap.Builder<Component, String> names = ImmutableMap.builder();
             ImmutableMap.Builder<Component, Component.Role> roles = ImmutableMap.builder();
 
-            // TODO: Maybe use a singleton?
-            ComponentRoleVisitor roleVisitor = new ComponentRoleVisitor();
+            ComponentRoleVisitor roleVisitor = ComponentRoleVisitor.getInstance();
 
             for (VTLParser.RenameParamContext parameter : parameters) {
-                Component from = (Component) visitor.visit(parameter.from);
+                Component from = componentVisitor.visit(parameter.from);
                 String to = parameter.to.getText();
                 names.put(from, to);
 

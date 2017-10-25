@@ -26,6 +26,7 @@ import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,6 +127,10 @@ public class StaticDataset implements Dataset {
 
         public StructureRolesBuilder withName(String... names) {
             return new StructureRolesBuilder(Arrays.asList(names));
+        }
+
+        public StaticDataset build() {
+            return new StaticDataset(builder.build(), Collections.emptyList());
         }
 
     }

@@ -36,13 +36,13 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testInvokeWithWrongType() throws Exception {
-        AbstractVTLFunction<String> function = new AbstractVTLFunction<String>(
+        AbstractVTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testInvokeWithWrongType",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.Argument<>("first", VTLString.class)
         ) {
             @Override
-            protected VTLObject safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -60,13 +60,13 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testInvokeOptionalWithWrongType() throws Exception {
-        AbstractVTLFunction<String> function = new AbstractVTLFunction<String>(
+        AbstractVTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testInvokeWithWrongType",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.OptionalArgument<>("first", VTLString.class, VTLObject.of("optional"))
         ) {
             @Override
-            protected VTLObject safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -84,15 +84,15 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testInvokeWithWrongTypes() throws Exception {
-        AbstractVTLFunction<String> function = new AbstractVTLFunction<String>(
+        AbstractVTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testInvokeWithWrongType",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.Argument<>("first", VTLString.class),
                 new AbstractVTLFunction.Argument<>("second", VTLString.class),
                 new AbstractVTLFunction.Argument<>("third", VTLString.class)
         ) {
             @Override
-            protected VTLObject safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -109,15 +109,15 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testInvokeOptionalWithWrongTypes() throws Exception {
-        AbstractVTLFunction<String> function = new AbstractVTLFunction<String>(
+        AbstractVTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testInvokeWithWrongType",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.OptionalArgument<>("first", VTLString.class, VTLObject.of("optional")),
                 new AbstractVTLFunction.OptionalArgument<>("second", VTLString.class, VTLObject.of("optional")),
                 new AbstractVTLFunction.OptionalArgument<>("third", VTLString.class, VTLObject.of("optional"))
         ) {
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -135,15 +135,15 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testMissingArgument() throws Exception {
-        VTLFunction<String> function = new AbstractVTLFunction<String>(
+        VTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testMissingArgument",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.Argument<>("first", VTLString.class),
                 new AbstractVTLFunction.Argument<>("second", VTLString.class),
                 new AbstractVTLFunction.Argument<>("third", VTLString.class)
         ) {
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -172,15 +172,15 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testUnknownNamedArgument() throws Exception {
-        VTLFunction<String> function = new AbstractVTLFunction<String>(
+        VTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testUnknownNamedArgument",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.Argument<>("first", VTLString.class),
                 new AbstractVTLFunction.Argument<>("second", VTLString.class),
                 new AbstractVTLFunction.Argument<>("third", VTLString.class)
         ) {
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 throw new RuntimeException("should not execute");
             }
         };
@@ -199,41 +199,41 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testNoArguments() throws Exception {
-        VTLFunction<String> function = new AbstractVTLFunction<String>(
+        VTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testUnknownNamedArgument",
-                String.class
+                VTLString.class
         ) {
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 return VTLObject.of("returnedValue");
             }
         };
 
-        VTLObject<String> result = function.invoke(Collections.emptyList());
+        VTLString result = function.invoke(Collections.emptyList());
         assertThat(result).isEqualTo(VTLObject.of("returnedValue"));
 
     }
 
     @Test
     public void testOptionalArgument() throws Exception {
-        VTLFunction<String> function = new AbstractVTLFunction<String>(
+        VTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testUnknownNamedArgument",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.Argument<>("first", VTLString.class),
                 new AbstractVTLFunction.Argument<>("second", VTLString.class),
                 new AbstractVTLFunction.OptionalArgument<>("third", VTLString.class, VTLObject.of("defaultThird"))
         ) {
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 return VTLObject.of("returnedValue");
             }
         };
 
-        VTLObject<String> resultUnamedInvocation = function.invoke(
+        VTLString resultUnamedInvocation = function.invoke(
             Arrays.asList(VTLObject.of("passedFirst"),VTLObject.of("passedSecond"))
         );
 
-        VTLObject<String> resultNamedInvocation = function.invoke(
+        VTLString resultNamedInvocation = function.invoke(
                 ImmutableMap.of(
                         "first", VTLObject.of("passedFirst"),
                         "second", VTLObject.of("passedSecond")
@@ -255,31 +255,31 @@ public class AbstractVTLFunctionTest {
 
     @Test
     public void testType() throws Exception {
-        VTLFunction<String> function = new AbstractVTLFunction<String>(
+        VTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "testUnknownNamedArgument",
-                String.class
+                VTLString.class
         ) {
 
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 return null;
             }
         };
 
-        assertThat(function.getJavaClass()).isSameAs(String.class);
+        assertThat(function.getVTLType()).isSameAs(VTLString.class);
     }
 
     @Test
     public void testToString() throws Exception {
-        VTLFunction<String> function = new AbstractVTLFunction<String>(
+        VTLFunction<VTLString> function = new AbstractVTLFunction<VTLString>(
                 "functionName",
-                String.class,
+                VTLString.class,
                 new AbstractVTLFunction.Argument<>("first", VTLString.class),
                 new AbstractVTLFunction.Argument<>("second", VTLString.class),
                 new AbstractVTLFunction.OptionalArgument<>("third", VTLString.class, VTLObject.of("defaultThird"))
         ) {
             @Override
-            protected VTLObject<String> safeInvoke(TypeSafeArguments arguments) {
+            protected VTLString safeInvoke(TypeSafeArguments arguments) {
                 return VTLObject.of("returnedValue");
             }
         };

@@ -20,26 +20,33 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
-public class VTLExp extends AbstractVTLFunction<Number> {
+public class VTLExp extends AbstractVTLFunction<VTLFloat> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
+    private static VTLExp instance;
 
-    @VisibleForTesting
-    VTLExp() {
-        super("exp", Number.class, DS);
+    private VTLExp() {
+        super("exp", VTLFloat.class, DS);
+    }
+
+    public static VTLExp getInstance() {
+        if (instance == null) {
+            instance = new VTLExp();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         return VTLNumber.of(Math.exp(ds.get().doubleValue()));

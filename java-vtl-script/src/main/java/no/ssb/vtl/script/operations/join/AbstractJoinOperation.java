@@ -40,7 +40,6 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.Closer;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import javax.script.Bindings;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -76,8 +75,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private final ImmutableMap<String, Dataset> datasets;
     private final ImmutableSet<Component> commonIdentifiers;
 
-    private final Bindings joinScope;
-
+    private final ComponentBindings joinScope;
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(Lists.newArrayList(checkNotNull(namedDatasets).values()));
@@ -90,7 +88,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         checkNotNull(identifiers);
 
-        this.joinScope = new JoinScopeBindings(this.datasets);
+        this.joinScope = createJoinScope(namedDatasets);
 
         this.componentMapping = createComponentMapping(this.datasets.values());
 
@@ -128,6 +126,14 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         );
     }
 
+    /**
+     * Creates a Bindings that contains the unique components of this join operation and the
+     * datasets.
+     */
+    @VisibleForTesting
+    static ComponentBindings createJoinScope(Map<String, Dataset> namedDatasets) {
+        return new ComponentBindings(namedDatasets);
+    }
 
     /**
      * Create a table that maps the components of the resulting dataset to the component of the underlying
@@ -173,6 +179,10 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         }
 
         return table.build();
+    }
+
+    private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
+        return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
     }
 
     protected abstract BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
@@ -306,12 +316,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         }));
     }
 
-    private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
-        return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
-    }
-
-
-    private ImmutableSet<Component> getCommonIdentifiers() {
+    protected ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
     }
 
@@ -366,6 +371,23 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return Optional.of(compatibleOrder.build());
     }
 
+    /**
+     * Checks if component name is unique among other datasets
+     */
+    @VisibleForTesting
+    boolean componentNameIsUnique(String datasetName, String componentName) {
+        for (String otherDatasetName : datasets.keySet()) {
+            if (!datasetName.equals(otherDatasetName)) {
+                DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
+                if (!Sets.intersection(structure.keySet(), Sets.newHashSet(componentName)).isEmpty()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     @Override
     protected DataStructure computeDataStructure() {
         // Optimization.
@@ -394,24 +416,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return newDataStructure.build();
     }
 
-    /**
-     * Checks if component name is unique among other datasets  
-     */
-    @VisibleForTesting
-    boolean componentNameIsUnique(String datasetName, String componentName) {
-        for (String otherDatasetName : datasets.keySet()) {
-            if (!datasetName.equals(otherDatasetName)) {
-                DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
-                if (!Sets.intersection(structure.keySet(), Sets.newHashSet(componentName)).isEmpty()) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public Bindings getJoinScope() {
+    public ComponentBindings getJoinScope() {
         return joinScope;
     }
 

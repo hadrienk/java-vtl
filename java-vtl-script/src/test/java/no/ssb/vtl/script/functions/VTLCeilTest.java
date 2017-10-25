@@ -33,7 +33,7 @@ public class VTLCeilTest extends AbstractVTLNumberUnaryFunctionTest {
 
     @Before
     public void setUp() {
-        vtlUnaryFunction = new VTLCeil();
+        vtlUnaryFunction = VTLCeil.getInstance();
     }
 
     @Test

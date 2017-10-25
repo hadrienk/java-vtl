@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -28,24 +27,31 @@ import java.math.BigDecimal;
 
 import static java.lang.String.format;
 
-public class VTLTrunc extends AbstractVTLFunction<Number> {
+public class VTLTrunc extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
+    private static VTLTrunc instance;
 
-    @VisibleForTesting
-    VTLTrunc() {
-        super("trunc", Number.class, DS, DECIMALS);
+    private VTLTrunc() {
+        super("trunc", VTLNumber.class, DS, DECIMALS);
+    }
+
+    public static VTLTrunc getInstance() {
+        if (instance == null) {
+            instance = new VTLTrunc();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
         VTLNumber decimals = arguments.get(DECIMALS);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
         if (decimals.get() == null || decimals.get().intValue() < 0) {
             throw new IllegalArgumentException(

@@ -20,7 +20,6 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
@@ -28,25 +27,32 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import static java.lang.String.format;
 
-public class VTLAbs extends AbstractVTLFunction<Number> {
+public class VTLAbs extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final String ILLEGAL_NUMBER_TYPE = "illegal number type [%s]";
+    private static VTLAbs instance;
 
-    @VisibleForTesting
-    public VTLAbs() {
-        super("abs", Number.class, DS);
+    private VTLAbs() {
+        super("abs", VTLNumber.class, DS);
+    }
+
+    public static VTLAbs getInstance() {
+        if (instance == null) {
+            instance = new VTLAbs();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
 
         VTLNumber ds = arguments.get(DS);
 
         Number value = ds.get();
 
         if (value == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         if (value instanceof Long) {

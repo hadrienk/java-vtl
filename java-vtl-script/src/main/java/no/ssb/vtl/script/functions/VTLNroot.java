@@ -23,33 +23,40 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.annotations.VisibleForTesting;
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
 import static java.lang.String.format;
 
-public class VTLNroot extends AbstractVTLFunction<Number> {
+public class VTLNroot extends AbstractVTLFunction<VTLFloat> {
+
+    private static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
+    private static final String ARGUMENT_WRONG_TYPE = "%s must be an integer, was %s";
+    private static final String ARGUMENT_GREATER_THAN_ZERO_EVEN_INDEX = "%s must be greater than zero when %s is even, was %s";
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static final Argument<VTLNumber> INDEX = new Argument<>("index", VTLNumber.class);
+    private static VTLNroot instance;
 
-    public static final String ARGUMENT_NULL_OR_ZERO = "%s cannot be null or zero, was %s";
-    public static final String ARGUMENT_WRONG_TYPE = "%s must be an integer, was %s";
-    public static final String ARGUMENT_GREATER_THAN_ZERO_EVEN_INDEX = "%s must be greater than zero when %s is even, was %s";
+    private VTLNroot() {
+        super("nroot", VTLFloat.class, DS, INDEX);
+    }
 
-    @VisibleForTesting
-    VTLNroot() {
-        super("nroot", Number.class, DS, INDEX);
+    public static VTLNroot getInstance() {
+        if (instance == null) {
+            instance = new VTLNroot();
+        }
+        return instance;
     }
 
     @Override
-    protected VTLObject<Number> safeInvoke(TypeSafeArguments arguments) {
+    protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.get(DS);
         VTLNumber index = arguments.get(INDEX);
 
         if (ds.get() == null) {
-            return VTLObject.of((Number)null);
+            return VTLObject.of((Double) null);
         }
 
         //index cannot be 0 or zero

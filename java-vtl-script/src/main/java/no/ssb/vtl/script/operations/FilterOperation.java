@@ -20,49 +20,47 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLPredicate;
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
+import no.ssb.vtl.script.operations.join.DataPointBindings;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class FilterOperation extends AbstractUnaryDatasetOperation {
 
-    private final Predicate<DataPoint> predicate;
+    private final VTLExpression predicate;
+    private final ComponentBindings componentBindings;
 
-    public FilterOperation(Dataset dataset, VTLPredicate vtlPredicate) {
+    public FilterOperation(Dataset dataset, VTLExpression predicate, ComponentBindings componentBindings) {
         super(checkNotNull(dataset, "the dataset was null"));
-        checkNotNull(vtlPredicate, "the predicate was null");
-        this.predicate = vtlPredicate.toPredicate(false);
+        this.predicate = checkNotNull(predicate);
+        this.componentBindings = checkNotNull(componentBindings);
     }
     
     protected DataStructure computeDataStructure() {
         return getChild().getDataStructure();
     }
 
-
-    @Override
-    public String toString() {
-        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        Map<Boolean, List<DataPoint>> predicateResultMap = getChild().getData().collect(Collectors.partitioningBy(predicate));
-        helper.addValue(predicateResultMap);
-        helper.add("structure", getDataStructure());
-        return helper.omitNullValues().toString();
-    }
-
     @Override
     public Stream<DataPoint> getData() {
-        return getChild().getData().filter(predicate);
+        DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
+        return getChild().getData()
+                .map(dataPointBindings::setDataPoint)
+                .filter(bindings -> {
+                    VTLBoolean resolved = (VTLBoolean) predicate.resolve(dataPointBindings);
+                    Boolean predicate = resolved.get();
+                    return predicate == null ? false : predicate;
+                })
+                .map(DataPointBindings::getDataPoint);
     }
 
     @Override

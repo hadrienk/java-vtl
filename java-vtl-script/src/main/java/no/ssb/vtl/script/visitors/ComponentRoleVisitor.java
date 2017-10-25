@@ -24,7 +24,19 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 
-public class ComponentRoleVisitor extends VTLBaseVisitor<Component.Role> {
+public final class ComponentRoleVisitor extends VTLBaseVisitor<Component.Role> {
+
+    private static ComponentRoleVisitor instance;
+
+    public static ComponentRoleVisitor getInstance() {
+        if (instance == null)
+            instance = new ComponentRoleVisitor();
+        return instance;
+    }
+
+    private ComponentRoleVisitor() {
+        // singleton.
+    }
 
     @Override
     public Component.Role visitComponentRole(VTLParser.ComponentRoleContext ctx) {

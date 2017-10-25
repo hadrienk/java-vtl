@@ -35,11 +35,13 @@ variable := +0.0001
 variable := true
 variable := false
 
-/*
-// TODO: Arithmetic
+// Date
+variable := 2000-01-01T00:00:00.000Z
+variable := 2000-01-01T00:00:00.000+00:15
+
+// Arithmetic
 variable := 1 + 1 - 2
 variable := 10 * -10 / +10
-//*/
 
 /* String operators and function */
 
@@ -89,7 +91,11 @@ variable := dataset[rename component1 as newName1,
 
 variable := dataset[filter true or false and ( true or false )]
 
-
+// Membership
+variable := dataset.component
+variable := dataset.'component'
+variable := 'dataset'.component
+variable := 'dataset'.'component'
 
 /* Joins */
 
@@ -138,9 +144,29 @@ variable := [left, right] {
 
     keep component1,
     keep component1, component2, component3,
+    keep ds.component1,
+    keep ds.component1, ds.component2, ds.component3,
 
     drop component1,
     drop component1, component2, component3,
+    drop ds.component1,
+    drop ds.component1, ds.component2, ds.component3,
+
+    variable := func1(null,"string","string" || "string",
+        1, -1, 0,
+        1.0, -0.5,
+        (true or false) and true,
+        (1 - 2) + 3 / 4,
+        func2(
+            component
+        ),
+        func3(
+            'component',
+            '1variable',
+            '1dataset'.'1component'
+        ),
+        dataset.component
+    ),
 
     variable := "STRING1",
     identifier variable := "STRING1",
@@ -149,6 +175,10 @@ variable := [left, right] {
 
     implicit variable := component,
     implicit variable := dataset.component,
+
+    implicit variable := 'dataset'.component,
+    implicit variable := dataset.component,
+    implicit variable := 'dataset'.'component',
 
     implicit identifier variable := dataset.component,
     implicit measure variable := dataset.component,

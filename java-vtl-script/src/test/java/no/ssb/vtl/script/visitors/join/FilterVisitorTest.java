@@ -42,7 +42,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class JoinFilterClauseVisitorTest {
+public class FilterVisitorTest {
     
     private Dataset dataset = mock(Dataset.class);
     private Connector connector = mock(Connector.class);

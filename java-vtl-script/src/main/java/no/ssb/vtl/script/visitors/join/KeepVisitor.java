@@ -20,40 +20,36 @@ package no.ssb.vtl.script.visitors.join;
  * =========================LICENSE_END==================================
  */
 
-
-import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.UnfoldOperation;
-import no.ssb.vtl.script.visitors.ReferenceVisitor;
+import no.ssb.vtl.script.operations.KeepOperation;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
-import no.ssb.vtl.script.visitors.VisitorUtil;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinUnfoldClauseVisitor extends VTLDatasetExpressionVisitor<UnfoldOperation> {
+/**
+ * Visit the keep clauses.
+ */
+public class KeepVisitor extends VTLDatasetExpressionVisitor<KeepOperation> {
 
     private final Dataset dataset;
-    private final ReferenceVisitor referenceVisitor;
+    private final ComponentVisitor componentVisitor;
 
-    public JoinUnfoldClauseVisitor(Dataset dataset, ReferenceVisitor referenceVisitor) {
+    public KeepVisitor(Dataset dataset, ComponentVisitor componentVisitor) {
         this.dataset = checkNotNull(dataset);
-        this.referenceVisitor = referenceVisitor;
+        this.componentVisitor = checkNotNull(componentVisitor);
     }
 
     @Override
-    public UnfoldOperation visitJoinUnfoldExpression(VTLParser.JoinUnfoldExpressionContext ctx) {
-        Component dimension = (Component) referenceVisitor.visit(ctx.dimension);
-        Component measure = (Component) referenceVisitor.visit(ctx.measure);
-
-        Set<String> elements = Sets.newLinkedHashSet();
-        for (TerminalNode element : ctx.STRING_CONSTANT()) {
-            elements.add(VisitorUtil.stripQuotes(element));
-        }
-        return new UnfoldOperation(dataset, dimension, measure, elements);
+    public KeepOperation visitJoinKeepExpression(VTLParser.JoinKeepExpressionContext ctx) {
+        Set<Component> components = ctx.variableExpression().stream()
+                .map(componentVisitor::visit)
+                .collect(Collectors.toSet());
+        return new KeepOperation(dataset, components);
     }
 }
