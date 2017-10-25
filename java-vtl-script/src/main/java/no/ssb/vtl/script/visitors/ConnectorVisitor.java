@@ -48,7 +48,6 @@ public class ConnectorVisitor extends VTLBaseVisitor<Dataset> {
     @Override
     public Dataset visitGetFunction(VTLParser.GetFunctionContext ctx) {
         String identifier = literalVisitor.visitStringLiteral(ctx.stringLiteral()).get();
-        identifier = identifier.substring(1, identifier.length() - 1);
         try {
             for (Connector connector : connectors) {
                 if (!connector.canHandle(identifier)) {
