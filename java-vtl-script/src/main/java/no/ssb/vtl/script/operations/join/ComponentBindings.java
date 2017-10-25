@@ -114,6 +114,23 @@ public class ComponentBindings extends SimpleBindings {
         }
     }
 
+    private ComponentBindings() {
+        // used by copyOf.
+    }
+
+    public static ComponentBindings copyOf(ComponentBindings componentBindings) {
+        ComponentBindings binding = new ComponentBindings();
+        for (Entry<String, Object> entry : componentBindings.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof ComponentBindings) {
+                binding.put(entry.getKey(), copyOf((ComponentBindings) value));
+            } else {
+                binding.put(entry.getKey(), value);
+            }
+        }
+        return binding;
+    }
+
     public static class ComponentReference implements VTLTyped {
         private final Component component;
         private final Class<? extends VTLObject> type;

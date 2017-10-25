@@ -68,7 +68,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         this.role = checkNotNull(role);
         this.implicit = checkNotNull(implicit);
         this.identifier = checkNotNull(identifier);
-        this.componentBindings = checkNotNull(componentBindings);
+        this.componentBindings = ComponentBindings.copyOf(checkNotNull(componentBindings));
     }
 
     private Class<?> convertToComponentType(Class<? extends VTLObject> vtlType) {
@@ -89,17 +89,14 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
     @Override
     protected DataStructure computeDataStructure() {
-        DataStructure.Builder builder = DataStructure.builder();
-        DataStructure dataStructure = getChild().getDataStructure();
-        for (Map.Entry<String, Component> entry : dataStructure.entrySet()) {
-            if (entry.getKey().equals(identifier))
-                continue;
-            builder.put(entry.getKey(), entry.getValue());
-        }
-
         Class<?> type = convertToComponentType(expression.getVTLType());
 
+        DataStructure.Builder builder = DataStructure.builder();
+        DataStructure dataStructure = getChild().getDataStructure();
+
+        // Replace in place or add at the end.
         if (dataStructure.containsKey(identifier)) {
+
             Component existingComponent = dataStructure.get(identifier);
 
             // Overriding identifier is not permitted.
@@ -115,26 +112,42 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
                         identifier, existingComponent.getRole()
                 );
             }
+
+            for (Map.Entry<String, Component> entry : dataStructure.entrySet()) {
+                if (entry.getKey().equals(identifier)) {
+                    builder.put(identifier, role, type);
+                } else {
+                    builder.put(entry.getKey(), entry.getValue());
+                }
+            }
+        } else {
+            builder.putAll(dataStructure);
+            builder.put(identifier, role, type);
         }
-        // TODO: Bug, Component needs the Java type.
-        return builder.put(identifier, role, type).build();
+        return builder.build();
     }
 
     @Override
     public Stream<DataPoint> getData() {
-        DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
+        DataStructure childDataStructure = getChild().getDataStructure();
+
+        DataStructure dataStructure = getDataStructure();
+        Component component = dataStructure.get(identifier);
+
+        DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, childDataStructure);
+
         Stream<DataPoint> data = getChild().getData();
+        return data.map(datapoint -> {
 
-        // TODO: Allow putting new values in the DataPointBindings. To do that, the asMap() should accept larger structures.
-        if (!getChild().getDataStructure().containsKey(identifier))
-            data = data.peek(dataPoint -> dataPoint.add(VTLObject.NULL));
+            if (!childDataStructure.containsKey(identifier))
+                datapoint.add(VTLObject.NULL);
 
-        return data.map(dataPointBindings::setDataPoint)
-                .peek(bindings -> {
-                    VTLObject resolved = expression.resolve(dataPointBindings);
-                    bindings.put(identifier, resolved);
-                })
-                .map(DataPointBindings::getDataPoint);
+            dataPointBindings.setDataPoint(datapoint);
+            VTLObject resolved = expression.resolve(dataPointBindings);
+
+            dataStructure.asMap(datapoint).put(component, resolved);
+            return datapoint;
+        });
     }
 
     @Override
