@@ -137,16 +137,15 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, childDataStructure);
 
         Stream<DataPoint> data = getChild().getData();
-        return data.map(datapoint -> {
+        return data.peek(datapoint -> {
 
-            if (!childDataStructure.containsKey(identifier))
+            if (childDataStructure.size() < dataStructure.size())
                 datapoint.add(VTLObject.NULL);
 
             dataPointBindings.setDataPoint(datapoint);
             VTLObject resolved = expression.resolve(dataPointBindings);
 
             dataStructure.asMap(datapoint).put(component, resolved);
-            return datapoint;
         });
     }
 
