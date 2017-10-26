@@ -73,9 +73,15 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
         DataStructure oldStructure = getChild().getDataStructure();
         HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
         HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
+
+        // Optimization.
         LinkedList<Component> componentsToRemove = Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
+        if (componentsToRemove.isEmpty())
+            return getChild().getData();
+
         return getChild().getData().map(
                 dataPoints -> {
+                    // Removes the item in descending order to avoid changing the indexes.
                     Iterator<Component> descendingIterator = componentsToRemove.descendingIterator();
                     while (descendingIterator.hasNext()) {
                         Component component = descendingIterator.next();
