@@ -93,7 +93,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                 }
             }
 
-            return result;
+            return DataPoint.create(result);
         };
     }
 

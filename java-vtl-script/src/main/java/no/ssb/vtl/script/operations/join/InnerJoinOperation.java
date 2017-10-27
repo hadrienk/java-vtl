@@ -102,7 +102,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 leftMap.put(to, rightMap.get(from));
             }
 
-            return left;
+            return DataPoint.create(left);
         };
     }
 

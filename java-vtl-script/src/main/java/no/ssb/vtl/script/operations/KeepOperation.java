@@ -34,9 +34,12 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
 
+/**
+ * Keep operation
+ */
 public class KeepOperation extends AbstractUnaryDatasetOperation {
 
-    private final Set<Component> components;
+    protected final Set<Component> components;
 
     public KeepOperation(Dataset dataset, Set<Component> names) {
         super(checkNotNull(dataset, "the dataset was null"));
@@ -70,12 +73,16 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        DataStructure oldStructure = getChild().getDataStructure();
-        HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
-        HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
-        LinkedList<Component> componentsToRemove = Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
+        final LinkedList<Component> componentsToRemove = getComponentsToRemove();
+
+        // Optimization.
+        if (componentsToRemove.isEmpty())
+            return getChild().getData();
+
+        final DataStructure oldStructure = getChild().getDataStructure();
         return getChild().getData().map(
                 dataPoints -> {
+                    // Removes the item in descending order to avoid changing the indexes.
                     Iterator<Component> descendingIterator = componentsToRemove.descendingIterator();
                     while (descendingIterator.hasNext()) {
                         Component component = descendingIterator.next();
@@ -85,6 +92,13 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
                     return dataPoints;
                 }
         );
+    }
+
+    protected LinkedList<Component> getComponentsToRemove() {
+        HashSet<Component> oldComponents = Sets.newLinkedHashSet(getChild().getDataStructure().values());
+        HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
+
+        return Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
     }
 
     @Override
