@@ -41,6 +41,7 @@ import no.ssb.vtl.script.functions.VTLNvl;
 import no.ssb.vtl.script.functions.VTLPower;
 import no.ssb.vtl.script.functions.VTLRound;
 import no.ssb.vtl.script.functions.VTLSqrt;
+import no.ssb.vtl.script.functions.VTLSubstr;
 import no.ssb.vtl.script.functions.VTLTrunc;
 
 import java.util.List;
@@ -69,6 +70,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
                 .put("sqrt", VTLSqrt.getInstance())
                 .put("trunc", VTLTrunc.getInstance())
                 .put("date_from_string", VTLDateFromString.getInstance())
+                .put("substr", VTLSubstr.getInstance())
                 .build();
     }
 
