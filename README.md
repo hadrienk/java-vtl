@@ -195,7 +195,7 @@ String|length|![todo][todo]
 String|concatenation|![todo][todo]
 String|trim|![todo][todo]
 String|upper/lower case|![todo][todo]
-String|substring|![todo][todo]
+String|substr|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 String|indexof|![todo][todo]
 String|date_from_string|![usable](http://progressed.io/bar/25)|Dataset as input not implemented. Only YYYY date format accepted.
 
