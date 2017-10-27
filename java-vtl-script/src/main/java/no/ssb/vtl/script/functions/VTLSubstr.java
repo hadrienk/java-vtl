@@ -26,9 +26,6 @@ import static java.lang.String.*;
 public class VTLSubstr extends AbstractVTLFunction<VTLString> {
 
     private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
-    private static final String START_POSITION_LESS_THEN_INPUT_STRING_LENGTH =
-            "%s must be minor than the whole length of the input string, was %s";
-
     private static final Argument<VTLString> DS = new Argument<>("ds", VTLString.class);
     private static final Argument<VTLInteger> START_POSITION = new Argument<>("startPosition", VTLInteger.class);
     private static final Argument<VTLInteger> LENGTH = new Argument<>("length", VTLInteger.class);
@@ -78,9 +75,8 @@ public class VTLSubstr extends AbstractVTLFunction<VTLString> {
 
         int substringLength = value.get().length() - 1 - startPosition.get().intValue();
         if (substringLength < 0) {
-            throw new IllegalArgumentException(
-                    format(START_POSITION_LESS_THEN_INPUT_STRING_LENGTH, START_POSITION, startPosition)
-            );
+            //deviation from the VTL specification 1.1
+            return VTLString.of("");
         }
 
         if (ignoreLengthArgument(startPosition.get(), length.get(), value.get())) {

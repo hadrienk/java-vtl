@@ -42,13 +42,13 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLString.of(""));
 
-        assertThatThrownBy(() -> vtlSubstr.invoke(
+        //deviation from the VTL specification 1.1: return empty string
+        //if start position greater than the whole length of the input string
+        result = vtlSubstr.invoke(
                 createArguments("Hello", 5, 2)
-        ))
-                .as("exception when passing 5 as start position")
-                .hasMessage("Argument{name=startPosition, type=VTLInteger} must be minor" +
-                        " than the whole length of the input string, was 5")
-                .isExactlyInstanceOf(IllegalArgumentException.class);
+        );
+        assertThat(result).isNotNull();
+        assertThat(result).isEqualTo(VTLString.of(""));
 
         //length argument will be ignored
         result = vtlSubstr.invoke(
