@@ -91,7 +91,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
         VTLExpression finalNullable = changeExpressionType(nullable, replacement);
 
         checkArgument(
-                nullable.getVTLType().equals(replacement.getVTLType()),
+                finalNullable.getVTLType().equals(replacement.getVTLType()),
                 "%s and %s must be of the same type",
                 nullableCtx.getText(),
                 replacementCtx.getText()
