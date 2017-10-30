@@ -1,56 +1,154 @@
-# VTL Reference
+# Syntax
 
-## Lexical structure
+## Variables
 
-### Identifier
+VTL support two type of variable names, regular names and escaped names.
+Regular variable names in must start with a letter followed by letters, numbers
+and the underscore (`_`) characters. Escaped variable names must be enclosed by single
+quotes (`'`) and can contain any characters except new lines. Single quotes can be escaped
+by doubling them.
 
-### Comments
+<div vtl-example>
+    <vtl-code>
+variableName := value
+aVariableName1 := value
+'1Variable' := value
+'variable''with''quotes' := value
+    </vtl-code>
+</div>
 
-### White space
+## Comments
 
-### Literals
+Line comments are prefixed with two slashes ('//'). Block comments are
+surrounded by `/*` and `*/` and can contain new lines.
 
-Numbers, String, Dates, Periods etc.
+<div vtl-example>
+    <vtl-code>
+// Single line comment
+/*
+ * A block
+ * comment
+ */
+    </vtl-code>
+</div>
 
 ## Data types
 
-### any
+### Integers
 
-### Scalars
+<div vtl-example>
+    <vtl-code>
+variable := 1
+variable := -1
+variable := 0
+    </vtl-code>
+</div>
 
-#### scalar
+### Floats
 
-#### integers
+<div vtl-example>
+    <vtl-code>
+variable := -0.1e-10
+variable := -0.1e10
+variable := -0.1e+10
+variable := 0.1e-10
+variable := 0.1e10
+variable := 0.1e+10
+variable := +0.1e-10
+variable := +0.1e10
+variable := +0.1e+10
+variable := 0.01
+variable := -0.001
+variable := +0.0001
+    </vtl-code>
+</div>
 
-integer
-integer [a:]
-integer [:b]
-integer [a:b]
-integer {x1, ..., xn}
+### Strings
 
-#### float
+<div vtl-example>
+    <vtl-code>
+variable := "STRING"
+variable := "STR""ING"
+    </vtl-code>
+</div>
 
-#### null
+### Booleans
 
-#### number
+<div vtl-example>
+     <vtl-code>
+variable := true
+variable := false
+     </vtl-code>
+ </div>
 
-#### boolean
 
-#### date
+### Dates and time
 
-#### strings
+<div vtl-example>
+     <vtl-code>
+variable := 2000-01-01T00:00:00.000Z
+variable := 2000-01-01T00:00:00.000+00:15
+     </vtl-code>
+ </div>
 
-string [a]
-string [a:b]
-string {s1, ..., sn}
+# Expression and operators
 
-### Collections
+## Precedence
 
-#### list
+One can adjust the precedence of expressions in VTL using the parenthesis (`(` and `)`)
 
-#### set
+<div vtl-example>
+     <vtl-code>
+variable := ( expression )
+     </vtl-code>
+ </div>
 
-#### collection
+## Arithmetic operators
+
+The multiplication, division, addition and subtraction operators can be
+used with Float and Integer types.
+
+<div vtl-example>
+     <vtl-code>
+variable := 1 + 2 / 3 * 4
+     </vtl-code>
+ </div>
+
+## Mathematical functions
+
+<div vtl-example>
+    <vtl-code>
+math := [data] {
+    posInteger := data.value,
+    negInteger := data.value * -1,
+    posFloat := data.value / 10,
+    negFloat := negInteger / 10,
+    absFn   := abs(negFloat),
+    logFn   := log(posInteger, posInteger),
+    ceilFn  := ceil(posFloat * 5),
+    floorFn := floor(posFloat * 5),
+    expFn   := exp(posFloat),
+    lnFn    := ln(posInteger),
+    logFn   := log(posInteger, posInteger),
+    powerFn := power(posInteger, posInteger),
+    nrootFn := nroot(posInteger, posInteger),
+    roundFn := round(posFloat, 2)
+}
+</vtl-code>
+    <vtl-dataset name="data">
+value[I,Long]
+1L
+3L
+4L
+5L
+6L
+7L
+8L
+9L
+10L
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
 
 ### Datasets
 
@@ -58,7 +156,7 @@ string {s1, ..., sn}
 
 ### Product
 
-### Function
+
 
 ### ()
 
