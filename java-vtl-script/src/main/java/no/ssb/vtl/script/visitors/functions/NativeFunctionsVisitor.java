@@ -20,11 +20,13 @@ package no.ssb.vtl.script.visitors.functions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.functions.FunctionExpression;
@@ -43,6 +45,7 @@ import no.ssb.vtl.script.functions.VTLRound;
 import no.ssb.vtl.script.functions.VTLSqrt;
 import no.ssb.vtl.script.functions.VTLTrunc;
 
+import javax.script.Bindings;
 import java.util.List;
 import java.util.Map;
 
@@ -85,6 +88,8 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
         VTLExpression nullable = expressionVisitor.visit(nullableCtx);
         VTLExpression replacement = expressionVisitor.visit(replacementCtx);
 
+        VTLExpression finalNullable = changeExpressionType(nullable, replacement);
+
         checkArgument(
                 nullable.getVTLType().equals(replacement.getVTLType()),
                 "%s and %s must be of the same type",
@@ -92,12 +97,32 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
                 replacementCtx.getText()
         );
 
-        return new FunctionExpression<VTLObject>(new VTLNvl(), nullable, replacement) {
+        return new FunctionExpression<VTLObject>(new VTLNvl(), finalNullable, replacement) {
             @Override
             public Class getVTLType() {
-                return nullable.getVTLType();
+                return finalNullable.getVTLType();
             }
         };
+    }
+
+    @VisibleForTesting
+    static VTLExpression changeExpressionType(VTLExpression expression, VTLTyped replacement) {
+        // null literal have a "flexible type"; it takes the type that was expected.
+        if (expression.getVTLType().equals(VTLObject.class)) {
+            return new VTLExpression() {
+                @Override
+                public VTLObject resolve(Bindings bindings) {
+                    return expression.resolve(bindings);
+                }
+
+                @Override
+                public Class getVTLType() {
+                    return replacement.getVTLType();
+                }
+            };
+        } else {
+            return expression;
+        }
     }
 
     @Override
