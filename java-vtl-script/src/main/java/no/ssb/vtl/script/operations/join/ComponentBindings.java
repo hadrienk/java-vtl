@@ -29,6 +29,7 @@ import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.model.VTLTyped;
@@ -56,6 +57,7 @@ public class ComponentBindings extends SimpleBindings {
                 .put(Double.class, VTLFloat.class)
                 .put(Instant.class, VTLDate.class)
                 .put(Boolean.class, VTLBoolean.class)
+                .put(Number.class, VTLNumber.class)
                 .build();
     }
 

@@ -20,6 +20,7 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.annotations.VisibleForTesting;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -30,6 +31,7 @@ import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
@@ -71,7 +73,8 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         this.componentBindings = ComponentBindings.copyOf(checkNotNull(componentBindings));
     }
 
-    private Class<?> convertToComponentType(Class<? extends VTLObject> vtlType) {
+    @VisibleForTesting
+    static Class<?> convertToComponentType(Class<? extends VTLObject> vtlType) {
         if (vtlType == VTLString.class)
             return String.class;
         if (vtlType == VTLInteger.class)
@@ -80,6 +83,8 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             return Double.class;
         if (vtlType == VTLInteger.class)
             return Long.class;
+        if (vtlType == VTLNumber.class)
+            return Number.class;
         if (vtlType == VTLDate.class)
             return Instant.class;
         if (vtlType == VTLBoolean.class)
