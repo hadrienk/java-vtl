@@ -20,12 +20,18 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import org.assertj.core.api.JUnitSoftAssertions;
@@ -35,7 +41,11 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import javax.script.Bindings;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class JoinAssignmentTest {
     private VTLExpression expression;
@@ -72,6 +82,24 @@ public class JoinAssignmentTest {
         dataset = StaticDataset.create(structure)
                 .addPoints(dataPoint)
                 .build();
+    }
+
+    @Test
+    public void testTypeConversion() throws Exception {
+        ImmutableMap<Class<? extends VTLObject>, Class<?>> types = ImmutableMap.<Class<? extends VTLObject>, Class<?>>builder()
+                .put(VTLNumber.class, Number.class)
+                .put(VTLInteger.class, Long.class)
+                .put(VTLFloat.class, Double.class)
+                .put(VTLString.class, String.class)
+                .put(VTLBoolean.class, Boolean.class)
+                .put(VTLDate.class, Instant.class)
+                .build();
+
+        for (Map.Entry<Class<? extends VTLObject>, Class<?>> entry : types.entrySet()) {
+            Class<? extends VTLObject> vtlType = entry.getKey();
+            Class<?> expectedType = entry.getValue();
+            assertThat(JoinAssignment.convertToComponentType(vtlType)).isEqualTo(expectedType);
+        }
     }
 
     // Replacing identifier is not allowed.
