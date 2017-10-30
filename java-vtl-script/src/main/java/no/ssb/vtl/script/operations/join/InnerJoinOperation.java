@@ -1,4 +1,24 @@
 package no.ssb.vtl.script.operations.join;
+
+/*-
+ * ========================LICENSE_START=================================
+ * Java VTL
+ * %%
+ * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
+ */
 /*-
  * #%L
  * java-vtl-script
@@ -19,23 +39,18 @@ package no.ssb.vtl.script.operations.join;
  * #L%
  */
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
-import no.ssb.vtl.script.support.JoinSpliterator;
+import no.ssb.vtl.model.VTLObject;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Represent an inner join on datasets.
@@ -43,131 +58,71 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class InnerJoinOperation extends AbstractJoinOperation {
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets);
+        super(namedDatasets, Collections.emptySet());
+    }
+
+    public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
+        super(namedDatasets, identifiers);
+        // We need the identifiers in the case of inner join.
+        ComponentBindings joinScope = this.getJoinScope();
+        for (Component component : getCommonIdentifiers()) {
+            joinScope.put(
+                    getDataStructure().getName(component),
+                    component
+            );
+        }
     }
 
     @Override
-    WorkingDataset workDataset() {
+    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
+            final Dataset leftDataset, final Dataset rightDataset
+    ) {
 
-        return new WorkingDataset() {
-            @Override
-            public DataStructure getDataStructure() {
-                Map<String, Component> newComponents = Maps.newHashMap();
-                Map<String, Dataset> datasets = getDatasets();
+        final DataStructure rightStructure = rightDataset.getDataStructure();
+        final DataStructure structure = getDataStructure();
 
-                for (String datasetName : datasets.keySet()) {
-                    DataStructure structure = datasets.get(datasetName).getDataStructure();
-                    for (String componentName : structure.keySet()) {
-                        newComponents.put(componentName, structure.get(componentName));
-                    }
-                }
+        // Create final collection to improve performances.
+        final Table<Component, Dataset, Component> componentMap = getComponentMapping();
 
-                return DataStructure.copyOf((o, aClass) -> o, newComponents);
+        return (left, right) -> {
+
+            if (left == null || right == null)
+                return null;
+
+            /*
+             * Put the measures and attributes of the right data point
+             * in the left data point.
+             */
+
+            Map<Component, VTLObject> leftMap = structure.asMap(left);
+            Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
+            for (Map.Entry<Component, Component> mapping : componentMap.column(rightDataset).entrySet()) {
+                Component from = mapping.getKey();
+                Component to = mapping.getValue();
+                leftMap.put(to, rightMap.get(from));
             }
 
-            @Override
-            public Stream<Tuple> get() {
-                Collection<Dataset> datasets = getDatasets().values();
-                checkArgument(!datasets.isEmpty(), "no dataset for the join %s", this);
-
-                // Optimization.
-                if (datasets.size() == 1) {
-                    return datasets.iterator().next().get();
-                }
-
-                // Simple algorithm for now.
-                final Set<String> dimensions = getIds();
-
-                // Get the key comparator.
-                Comparator<List<DataPoint>> keyComparator = getKeyComparator(dimensions);
-
-                // How to merge the tuples.
-                BiFunction<JoinTuple, Dataset.Tuple, JoinTuple> merger = getMerger();
-
-                DataStructure joinedDataStructure = getDataStructure();
-                Iterator<Dataset> iterator = datasets.iterator();
-                Stream<JoinTuple> result = iterator.next().get().map(components -> {
-                    components.replaceAll(dataPoint -> {
-                        // Get the new component.
-                        Component newComponent = joinedDataStructure.get(joinedDataStructure.getName(dataPoint.getComponent()));
-                        return new DataPoint(newComponent) {
-                            @Override
-                            public Object get() {
-                                return dataPoint.get();
-                            }
-                        };
-                    });
-                    JoinTuple joinTuple = new JoinTuple(components.ids());
-                    joinTuple.addAll(components.values());
-                    return joinTuple;
-                });
-
-                while (iterator.hasNext()) {
-                    Function<Tuple, List<DataPoint>> keyExtractor = tuple -> {
-                        // Filter by common ids.
-                        List<DataPoint> ids = tuple.stream().filter(dataPoint ->
-                                getCommonIdentifierNames().contains(dataPoint.getName())
-                        ).collect(Collectors.toList());
-                        return ids;
-                    };
-                    Function<JoinTuple, List<DataPoint>> joinKeyExtractor = tuple -> {
-                        // Filter by common ids.
-                        List<DataPoint> ids =  tuple.stream().filter(dataPoint ->
-                                getCommonIdentifierNames().contains(dataPoint.getName())
-                        ).collect(Collectors.toList());
-                        return ids;
-                    };
-                    result = StreamSupport.stream(
-                            new JoinSpliterator<>(
-                                    keyComparator,
-                                    result.spliterator(),
-                                    iterator.next().get().spliterator(),
-                                    joinKeyExtractor,
-                                    keyExtractor,
-                                    merger
-                            ), false
-                    );
-                }
-                return result.map(tuple -> (Tuple) tuple);
-            }
+            return DataPoint.create(left);
         };
     }
 
-    private BiFunction<JoinTuple, Tuple, JoinTuple> getMerger() {
-        return new BiFunction<JoinTuple, Tuple, JoinTuple>() {
-
-            @Override
-            public JoinTuple apply(JoinTuple joinTuple, Tuple components) {
-                joinTuple.addAll(components.values());
-                return joinTuple;
-            }
-        };
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
     }
 
-    private Comparator<List<DataPoint>> getKeyComparator(final Set<String> dimensions) {
-        return new Comparator<List<DataPoint>>() {
-            @Override
-            public int compare(List<DataPoint> l, List<DataPoint> r) {
-                // TODO: Tuple should expose method to handle this.
-                // TODO: Evaluate migrating to DataPoint.
-                // TODO: When using on, the left over identifiers should be transformed to measures.
-                Map<String, Comparable> lIds = l.stream()
-                        .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                t -> (Comparable) t.get()
-                        ));
-                Map<String, Object> rIds = r.stream()
-                        .collect(Collectors.toMap(
-                                DataPoint::getName,
-                                Supplier::get
-                        ));
-                for (String key : dimensions) {
-                    int res = lIds.get(key).compareTo(rIds.get(key));
-                    if (res != 0)
-                        return res;
-                }
-                return 0;
-            }
-        };
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
     }
 }

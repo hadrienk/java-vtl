@@ -1,166 +1,141 @@
 package no.ssb.vtl.script.visitors.join;
 
+/*-
+ * ========================LICENSE_START=================================
+ * Java VTL
+ * %%
+ * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
+ */
+
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.DropOperator;
-import no.ssb.vtl.script.operations.KeepOperator;
-import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.JoinAssignment;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
-import no.ssb.vtl.script.operations.join.JoinClause;
-import no.ssb.vtl.script.operations.join.WorkingDataset;
-import org.antlr.v4.runtime.RuleContext;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
+import no.ssb.vtl.script.visitors.ComponentRoleVisitor;
+import no.ssb.vtl.script.visitors.ComponentVisitor;
+import no.ssb.vtl.script.visitors.DatasetExpressionVisitor;
+import no.ssb.vtl.script.visitors.ExpressionVisitor;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.MoreObjects.firstNonNull;
+import static java.util.Optional.ofNullable;
 
-/**
- * Sets up the join clauses in the given {@link AbstractJoinOperation}.
- * <p>
- * The last join clause is returned.
- */
-public class JoinBodyVisitor extends VTLBaseVisitor<JoinClause> {
+public class JoinBodyVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final AbstractJoinOperation joinOperation;
+    private final JoinDefinitionVisitor joinDefVisitor;
 
-    public JoinBodyVisitor(AbstractJoinOperation joinOperation) {
-        this.joinOperation = checkNotNull(joinOperation);
+    private ExpressionVisitor expressionVisitor;
+    private Dataset workingDataset;
+    private ComponentBindings componentBindings;
+    private static final ComponentRoleVisitor ROLE_VISITOR = ComponentRoleVisitor.getInstance();
+    private ComponentVisitor componentVisitor;
+
+    public JoinBodyVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
+        joinDefVisitor = new JoinDefinitionVisitor(datasetExpressionVisitor);
     }
 
     @Override
-    public JoinClause visitJoinKeepClause(VTLParser.JoinKeepClauseContext ctx) {
+    public Dataset visitJoinExpression(VTLParser.JoinExpressionContext ctx) {
+        // Get the abstract join operation (inner, outer, cross).
 
-        List<JoinClause> clauses = this.joinOperation.getClauses();
+        AbstractJoinOperation joinOperation = joinDefVisitor.visit(ctx.joinDefinition());
 
-        JoinClause keepClause = new JoinClause() {
+        // Holds the component references.
+        componentBindings = joinOperation.getJoinScope();
+        workingDataset = joinOperation;
+        expressionVisitor = new ExpressionVisitor(componentBindings);
+        componentVisitor = new ComponentVisitor(componentBindings);
 
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                JoinKeepClauseVisitor visitor = new JoinKeepClauseVisitor(workingDataset);
-                KeepOperator keep = visitor.visit(ctx);
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return keep.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return keep.get();
-                    }
-                };
-            }
-        };
-
-        clauses.add(keepClause);
-
-        return keepClause;
-
+        return visit(ctx.joinBody());
+    }
+    
+    @Override
+    protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
+        Dataset currentDataset = firstNonNull(nextResult, aggregate);
+        // Update the component scope.
+        // We might need to make bindings immutable and link the scope with each other.
+        componentBindings.putAll(new ComponentBindings(currentDataset));
+        return workingDataset = currentDataset;
     }
 
     @Override
-    public JoinClause visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
-        List<JoinClause> clauses = this.joinOperation.getClauses();
+    public Dataset visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
+        // The expression visitor operates on a scope that contains the component reference.
+        VTLParser.JoinAssignmentContext joinAssignment = ctx.joinAssignment();
 
-        JoinClause renameClause = new JoinClause() {
+        Optional<Component.Role> componentRole = ofNullable(ROLE_VISITOR.visitComponentRole(joinAssignment.role));
+        Boolean implicit = joinAssignment.implicit != null;
 
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                JoinRenameClauseVisitor visitor = new JoinRenameClauseVisitor(workingDataset);
-                RenameOperation renameOperator = visitor.visit(ctx);
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return renameOperator.getDataStructure();
-                    }
+        VTLExpression expression = expressionVisitor.visit(joinAssignment.expression());
 
-                    @Override
-                    public Stream<Tuple> get() {
-                        return renameOperator.get();
-                    }
-                };
-            }
-        };
+        // Calculate name
+        String componentName = joinAssignment.variable().getText();
 
-        clauses.add(renameClause);
 
-        return renameClause;
+        JoinAssignment result = new JoinAssignment(
+                workingDataset,
+                expression,
+                componentName,
+                componentRole.orElse(Component.Role.MEASURE),
+                implicit,
+                componentBindings
+        );
+        componentBindings.putAll(new ComponentBindings(result));
+        return result;
     }
 
     @Override
-    public JoinClause visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
-
-        List<JoinClause> clauses = this.joinOperation.getClauses();
-
-        JoinClause dropClause = new JoinClause() {
-
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                JoinDropClauseVisitor visitor = new JoinDropClauseVisitor(workingDataset);
-                DropOperator drop = visitor.visit(ctx);
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        return drop.getDataStructure();
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return drop.get();
-                    }
-                };
-            }
-        };
-
-        clauses.add(dropClause);
-
-        return dropClause;
+    public Dataset visitJoinFoldClause(VTLParser.JoinFoldClauseContext ctx) {
+        FoldVisitor visitor = new FoldVisitor(workingDataset, componentVisitor);
+        return visitor.visit(ctx);
     }
 
     @Override
-    public JoinClause visitJoinCalcClause(VTLParser.JoinCalcClauseContext ctx) {
-        String variableName = ctx.varID().getText();
-
-        // TODO: Spec does not specify what is the default role.
-        String variableRole = Optional.ofNullable(ctx.role()).map(RuleContext::getText).orElse("MEASURE");
-
-        List<JoinClause> clauses = this.joinOperation.getClauses();
-
-        //DataStructure dataStructure = joinOperation.getDataStructure();
-
-        JoinCalcClauseVisitor joinCalcClauseVisitor = new JoinCalcClauseVisitor();
-        Function<Dataset.Tuple, Object> clauseFunction = joinCalcClauseVisitor.visit(ctx);
-        JoinClause calcClause = new JoinClause() {
-
-            @Override
-            public WorkingDataset apply(WorkingDataset workingDataset) {
-                return new WorkingDataset() {
-                    @Override
-                    public DataStructure getDataStructure() {
-                        DataStructure structure = workingDataset.getDataStructure();
-                        structure.addComponent(variableName, Component.Role.MEASURE, Number.class);
-                        return structure;
-                    }
-
-                    @Override
-                    public Stream<Tuple> get() {
-                        return workingDataset.get()
-                                .map(tuple -> {
-                                    tuple.add(getDataStructure().wrap(variableName, clauseFunction.apply(tuple)));
-                                    return tuple;
-                                });
-                    }
-                };
-            }
-        };
-
-        clauses.add(calcClause);
-        return calcClause;
+    public Dataset visitJoinUnfoldClause(VTLParser.JoinUnfoldClauseContext ctx) {
+        UnfoldVisitor visitor = new UnfoldVisitor(workingDataset, componentVisitor);
+        return visitor.visit(ctx);
     }
+
+    @Override
+    public Dataset visitJoinKeepClause(VTLParser.JoinKeepClauseContext ctx) {
+        KeepVisitor visitor = new KeepVisitor(workingDataset, componentVisitor);
+        return visitor.visit(ctx);
+    }
+
+    @Override
+    public Dataset visitJoinDropClause(VTLParser.JoinDropClauseContext ctx) {
+        DropVisitor visitor = new DropVisitor(workingDataset, componentVisitor);
+        return visitor.visit(ctx);
+    }
+
+    @Override
+    public Dataset visitJoinFilterClause(VTLParser.JoinFilterClauseContext ctx) {
+        FilterVisitor visitor = new FilterVisitor(workingDataset, componentBindings, expressionVisitor);
+        return visitor.visit(ctx);
+    }
+
+    @Override
+    public Dataset visitJoinRenameClause(VTLParser.JoinRenameClauseContext ctx) {
+        RenameVisitor visitor = new RenameVisitor(workingDataset, componentVisitor);
+        return visitor.visit(ctx);
+    }
+
 }
