@@ -22,6 +22,9 @@ package no.ssb.vtl.script.visitors.functions;
 
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLString;
+import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.visitors.ExpressionVisitor;
@@ -31,6 +34,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.script.Bindings;
 import javax.script.SimpleBindings;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,5 +139,32 @@ public class NativeFunctionsVisitorTest {
         VTLParser parser = parse("trunc(1.566, 1)");
         VTLExpression<?> result = visitor.visit(parser.expression());
         assertThat(result.resolve(null).get()).isEqualTo(1.5);
+    }
+
+    @Test
+    public void testNvlWithNull() throws Exception {
+
+        VTLExpression expression = new VTLExpression<VTLObject>() {
+
+            @Override
+            public Class getVTLType() {
+                return VTLObject.class;
+            }
+
+            @Override
+            public VTLObject resolve(Bindings bindings) {
+                return VTLObject.NULL;
+            }
+        };
+        VTLTyped<VTLString> replacement = new VTLTyped<VTLString>() {
+            @Override
+            public Class<VTLString> getVTLType() {
+                return VTLString.class;
+            }
+        };
+
+        VTLExpression result = NativeFunctionsVisitor.coerceNullLiteralType(expression, replacement);
+
+        assertThat(result.getVTLType()).isEqualTo(VTLString.class);
     }
 }
