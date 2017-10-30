@@ -88,7 +88,8 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
         VTLExpression nullable = expressionVisitor.visit(nullableCtx);
         VTLExpression replacement = expressionVisitor.visit(replacementCtx);
 
-        VTLExpression finalNullable = changeExpressionType(nullable, replacement);
+        // If it is a null literal (type unknown) make it the type of replacement.
+        VTLExpression finalNullable = coerceNullLiteralType(nullable, replacement);
 
         checkArgument(
                 finalNullable.getVTLType().equals(replacement.getVTLType()),
@@ -106,8 +107,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     @VisibleForTesting
-    static VTLExpression changeExpressionType(VTLExpression expression, VTLTyped replacement) {
-        // null literal have a "flexible type"; it takes the type that was expected.
+    static VTLExpression coerceNullLiteralType(VTLExpression expression, VTLTyped replacement) {
         if (expression.getVTLType().equals(VTLObject.class)) {
             return new VTLExpression() {
                 @Override
