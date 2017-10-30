@@ -161,8 +161,8 @@ Clauses|calc|![todo][todo]
 Clauses|attrcalc|![todo][todo]
 Clauses|aggregate|![todo][todo]
 Conditional|if-then-else|![todo][todo]
-Conditional|nvl|![usable](http://progressed.io/bar/50)|Dataset as input not implemented.
-Validation|Comparisons (>,<,>=,<=,=,<>)|![usable](http://progressed.io/bar/30)|Only inside join expression (no lifting).
+Conditional|nvl|![done][done]
+Validation|Comparisons (>,<,>=,<=,=,<>)|![done][done]
 Validation|in,not in, between|![todo][todo]
 Validation|isnull|![done][done]|Implemented syntax are `isnull(value)`, `value is null` and `value is not null`|
 Validation|exist_in, not_exist_in|![todo][todo]
@@ -174,25 +174,25 @@ Statistical|min, max|![todo][todo]
 Statistical|hierarchy|![usable](http://progressed.io/bar/80)|The inline definition is not supported. A dataset that has a correct structure can be used instead.
 Statistical|aggregate|![todo][todo]
 Relational|union|![done][done]
-Relational|intersect|![todo][todo]
+Relational|intersect||![todo][todo]
 Relational|symdiff|![todo][todo]
-Relational|setdiff|![todo][todo]
+Relational|setdiff|![done][done]
 Relational|merge|![todo][todo]
 Boolean|and|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Boolean|or|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Boolean|xor|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Boolean|not|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|unary plus and minus|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|addition, substraction|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|multiplication, division|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
+Mathematical|unary plus and minus|![done][done]
+Mathematical|addition, substraction|![done][done]
+Mathematical|multiplication, division|![done][done]
 Mathematical|round, ceil, floor|![done][done]
 Mathematical|abs|![done][done]
-Mathematical|trunc|![todo][todo]
-Mathematical|power, exp, nroot|![todo][todo]
-Mathematical|ln, log|![todo][todo]
-Mathematical|mod|![todo][todo]
+Mathematical|trunc|![done][done]
+Mathematical|power, exp, nroot|![done][done]
+Mathematical|ln, log|![done][done]
+Mathematical|mod|![done][done]
 String|length|![todo][todo]
-String|concatenation|![todo][todo]
+String|concatenation|![done][done]
 String|trim|![todo][todo]
 String|upper/lower case|![todo][todo]
 String|substring|![todo][todo]
