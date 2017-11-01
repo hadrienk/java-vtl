@@ -114,6 +114,45 @@ variable := 1 + 2 / 3 * 4
      </vtl-code>
  </div>
 
+## Concatenation operator
+
+The concatenation operator `||` concatenate two strings.
+
+<div vtl-example>
+    <vtl-code>
+contac := [data] {
+    result := left || " " || right
+}
+</vtl-code>
+    <vtl-dataset name="data">
+left[I,String],right[I,String]
+Hello,World
+null,World
+Hello,null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+## String functions
+
+<div vtl-example>
+    <vtl-code>
+strings := [data] {
+	withTrailingSpc := "   " || value || "   ",
+    rightTrim := "[" || rtrim(withTrailingSpc) || "]",
+    leftTrim := "[" || ltrim(withTrailingSpc) || "]",
+    'trim' := "[" || trim(withTrailingSpc) || "]",
+    noTrim := "[" || withTrailingSpc || "]"
+}
+</vtl-code>
+    <vtl-dataset name="data">
+id[I,Long],value[M,String]
+1L,Hello World!
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+
 ## Mathematical functions
 
 <div vtl-example>
