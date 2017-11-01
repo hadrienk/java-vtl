@@ -22,6 +22,7 @@ package no.ssb.vtl.tools.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
@@ -30,6 +31,7 @@ import no.ssb.vtl.connectors.spring.RestTemplateConnector;
 import no.ssb.vtl.connectors.spring.converters.DataHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DataStructureHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DatasetHttpMessageConverter;
+import no.ssb.vtl.connectors.utils.CachedConnector;
 import no.ssb.vtl.connectors.utils.RegexConnector;
 import no.ssb.vtl.connectors.utils.TimeoutConnector;
 import no.ssb.vtl.script.VTLScriptEngine;
@@ -90,7 +92,12 @@ public class Application {
                     "${host}/api/v3/data/${id}${param}"
             );
 
-            return TimeoutConnector.create(hackConnector, 10, TimeUnit.SECONDS);
+            TimeoutConnector timeoutConnector = TimeoutConnector.create(hackConnector, 100, TimeUnit.SECONDS);
+
+            CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
+                    .expireAfterAccess(10, TimeUnit.MINUTES)
+                    .maximumSize(100);
+            return CachedConnector.create(timeoutConnector, cacheBuilder);
         });
     }
 
