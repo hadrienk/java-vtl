@@ -73,6 +73,10 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
             var data = $http.delete("/dataset/" + dataset);
             data.then(function () {
                 delete $scope.datasets[dataset];
+                var index = $scope.variables.indexOf(dataset)
+                if (index !== -1) {
+                    $scope.variables.splice(index, 1);
+                }
             });
         };
 
