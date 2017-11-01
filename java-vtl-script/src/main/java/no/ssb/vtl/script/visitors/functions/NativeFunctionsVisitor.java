@@ -136,7 +136,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     @Override
-    public VTLExpression visitNativeCall(VTLParser.NativeCallContext ctx) {
+    public VTLExpression visitNativeFunctionCall(VTLParser.NativeFunctionCallContext ctx) {
         if (functions.containsKey(ctx.functionName.getText())) {
             VTLFunction<VTLObject> functionInstance = functions.get(ctx.functionName.getText());
 
