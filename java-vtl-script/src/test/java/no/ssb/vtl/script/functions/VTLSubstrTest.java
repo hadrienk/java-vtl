@@ -58,7 +58,10 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
                 createArguments("", 0, 4)
         );
         assertThat(result).isNotNull();
+        //null in string operations is considered an empty string ("")
+        assertThat(result).isEqualTo(VTLString.of((String)null));
         assertThat(result).isEqualTo(VTLString.of(""));
+        assertThat(result.get()).isNull();
 
         //deviation from the VTL specification 1.1: return empty string
         //if start position greater than the whole length of the input string
@@ -132,7 +135,7 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
                 createArguments(null, 0, 4)
         );
 
-        assertThat(result).isEqualTo(VTLNumber.of((Number)null));
+        assertThat(result).isEqualTo(VTLString.of((String) null));
 
         result = vtlSubstr.invoke(
                 Lists.newArrayList(

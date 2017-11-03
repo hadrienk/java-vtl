@@ -49,12 +49,8 @@ public class VTLSubstr extends AbstractVTLFunction<VTLString> {
         VTLInteger startPosition = arguments.getNullable(START_POSITION, INTEGER_NULL);
         VTLInteger length = arguments.getNullable(LENGTH, INTEGER_NULL);
 
-        if (value.get() == null) {
+        if (value.get() == null || value.get().isEmpty()) {
             return VTLString.of((String) null);
-        }
-
-        if (value.get().isEmpty()) {
-            return VTLString.of("");
         }
 
         if (startPosition.get() == null) {

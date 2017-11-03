@@ -38,7 +38,7 @@ public abstract class VTLString extends VTLObject<String> implements VTLTyped<VT
              */
             @Override
             public String get() {
-                return string;
+                return "".equals(string) ? null : string;
             }
         };
     }
