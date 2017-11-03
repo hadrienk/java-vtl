@@ -65,7 +65,7 @@ public class VTLSubstrTest implements VTLFunctionTest {
         //deviation from the VTL specification 1.1: return empty string
         //if start position equal or greater than the whole length of the input string
         result = vtlSubstr.invoke(
-                createArguments("Hello", 5, 2)
+                createArguments("Hello", 6, 2)
         );
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLString.of(""));
