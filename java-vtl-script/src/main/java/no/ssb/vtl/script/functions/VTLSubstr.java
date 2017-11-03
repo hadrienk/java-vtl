@@ -65,8 +65,7 @@ public class VTLSubstr extends AbstractVTLFunction<VTLString> {
             );
         }
 
-        int substringLength = value.get().length() - 1 - startPosition.get().intValue();
-        if (substringLength < 0) {
+        if (startPosition.get().intValue() > value.get().length()) {
             //deviation from the VTL specification 1.1
             return VTLString.of("");
         }
