@@ -70,9 +70,9 @@ public class VTLSubstr extends AbstractVTLFunction<VTLString> {
             return VTLString.of("");
         }
 
-        return VTLString.of(value.get().substring(
-                startPosition.get().intValue(),
-                calculateEndPosition(startPosition.get().intValue(), length.get(), value.get().length())));
+        int endPosition = calculateEndPosition(startPosition.get().intValue(), length.get(), value.get().length());
+
+        return VTLString.of(value.get().substring(startPosition.get().intValue(), endPosition));
     }
 
     private int calculateEndPosition(int startPosition, Long length, int valueLength) {
