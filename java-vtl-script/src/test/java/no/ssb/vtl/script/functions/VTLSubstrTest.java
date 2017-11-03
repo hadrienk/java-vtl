@@ -147,15 +147,16 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
 
         assertThat(result).isEqualTo(VTLString.of("Hello, world!"));
 
-        result = vtlSubstr.invoke(
+        assertThatThrownBy(() -> vtlSubstr.invoke(
                 Lists.newArrayList(
                         VTLString.of("Hello, world!"),
                         VTLNumber.of((Long) null),
                         VTLNumber.of(2)
                 )
-        );
-
-        assertThat(result).isEqualTo(VTLString.of("Hello, world!"));
+        ))
+                .as("exception when passing -1 as start position")
+                .hasMessage("Argument{name=startPosition, type=VTLInteger} must be greater than zero, was [NULL]")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
     private List<VTLObject> createArguments(String ds, Integer startPosition, Integer length) {

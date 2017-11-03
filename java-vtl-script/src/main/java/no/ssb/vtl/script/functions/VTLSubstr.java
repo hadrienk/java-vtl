@@ -53,11 +53,7 @@ public class VTLSubstr extends AbstractVTLFunction<VTLString> {
             return VTLString.of((String) null);
         }
 
-        if (startPosition.get() == null) {
-            return VTLString.of(value.get());
-        }
-
-        if (startPosition.get().intValue() < 0) {
+        if (startPosition.get() == null || startPosition.get().intValue() < 0) {
             throw new IllegalArgumentException(
                     format(ARGUMENT_GREATER_THAT_ZERO, START_POSITION, startPosition)
             );
