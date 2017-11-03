@@ -22,14 +22,18 @@ package no.ssb.vtl.tools.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import no.ssb.vtl.connectors.Connector;
+import no.ssb.vtl.connectors.SsbApiConnector;
+import no.ssb.vtl.connectors.SsbKlassApiConnector;
 import no.ssb.vtl.connectors.spring.RestTemplateConnector;
 import no.ssb.vtl.connectors.spring.converters.DataHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DataStructureHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DatasetHttpMessageConverter;
+import no.ssb.vtl.connectors.utils.CachedConnector;
 import no.ssb.vtl.connectors.utils.RegexConnector;
 import no.ssb.vtl.connectors.utils.TimeoutConnector;
 import no.ssb.vtl.script.VTLScriptEngine;
@@ -75,23 +79,28 @@ public class Application {
 
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
+
         List<Connector> connectors = Lists.newArrayList();
         ServiceLoader<Connector> loader = ServiceLoader.load(Connector.class);
         for (Connector connector : loader) {
             connectors.add(connector);
         }
 
+        connectors.add(new SsbApiConnector(new ObjectMapper()));
+        connectors.add(new SsbKlassApiConnector(new ObjectMapper(), SsbKlassApiConnector.PeriodType.YEAR));
         connectors.add(getKompisConnector(mapper));
 
-        return Lists.transform(connectors, c -> {
-            // TODO: Remove when old API is deprecated.
-            Connector hackConnector = RegexConnector.create(c,
-                    Pattern.compile("(?<host>(?:http|https)://.*?)/api/data/(?<id>.*)/latest(?<param>[?|#].*)"),
-                    "${host}/api/v3/data/${id}${param}"
-            );
+        // Setup timeout.
+        connectors = Lists.transform(connectors, c -> TimeoutConnector.create(c, 100, TimeUnit.SECONDS));
 
-            return TimeoutConnector.create(hackConnector, 10, TimeUnit.SECONDS);
-        });
+        CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
+                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .maximumSize(100);
+
+
+        connectors = Lists.transform(connectors, c -> CachedConnector.create(c, cacheBuilder));
+
+        return connectors;
     }
 
     Connector getKompisConnector(ObjectMapper mapper) {
@@ -114,6 +123,7 @@ public class Application {
 
         //ObjectMapper mapper = new ObjectMapper();
         // mapper.registerModule(new JavaTimeModule());
+
         template.getMessageConverters().add(
                 0, new DataHttpConverter(mapper)
         );
@@ -128,7 +138,12 @@ public class Application {
                 template,
                 executorService
         );
-        return restTemplateConnector;
+
+        // TODO: Remove when old API is deprecated.
+        return RegexConnector.create(restTemplateConnector,
+                Pattern.compile("(?<host>(?:http|https)://.*?)/api/data/(?<id>.*)/latest(?<param>[?|#].*)"),
+                "${host}/api/v3/data/${id}${param}"
+        );
     }
 
     @Bean

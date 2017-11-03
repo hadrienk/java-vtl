@@ -20,7 +20,9 @@
 angular.module('vtl', ['ui.codemirror', 'angular.filter'])
     .controller('ExecutionController', ['$scope', '$http', '$q', function ($scope, $http, $q) {
         "use strict";
-        $scope.expression = "a := get(\"1104\")";
+        $scope.expression = "ssbDataset := get(\"http://data.ssb.no/api/v0/dataset/1102\")\n" +
+            "klassDataset := get(\"http://data.ssb.no/api/klass/v1/classifications/20/codes?from=2013-01-01\")\n" +
+            "storKompisDataset := get(\"http://localhost:7090/api/v3/data/J-jeJJ7cQmCmai6l5bKcIw\")";
 
         $scope.editorOptions = {
             lineWrapping: true,
@@ -71,6 +73,10 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
             var data = $http.delete("/dataset/" + dataset);
             data.then(function () {
                 delete $scope.datasets[dataset];
+                var index = $scope.variables.indexOf(dataset)
+                if (index !== -1) {
+                    $scope.variables.splice(index, 1);
+                }
             });
         };
 

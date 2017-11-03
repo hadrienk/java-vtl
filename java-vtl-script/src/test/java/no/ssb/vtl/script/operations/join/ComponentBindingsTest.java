@@ -28,6 +28,7 @@ import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.model.VTLTyped;
 import org.junit.Test;
@@ -48,6 +49,7 @@ public class ComponentBindingsTest {
                 .addComponent("c3", Component.Role.IDENTIFIER, Double.class)
                 .addComponent("c4", Component.Role.IDENTIFIER, Instant.class)
                 .addComponent("c5", Component.Role.IDENTIFIER, Boolean.class)
+                .addComponent("c6", Component.Role.IDENTIFIER, Number.class)
                 .build();
 
         ComponentBindings bindings = new ComponentBindings(dataset);
@@ -57,11 +59,11 @@ public class ComponentBindingsTest {
         assertThat(((VTLTyped<?>) bindings.get("c3")).getVTLType()).isEqualTo(VTLFloat.class);
         assertThat(((VTLTyped<?>) bindings.get("c4")).getVTLType()).isEqualTo(VTLDate.class);
         assertThat(((VTLTyped<?>) bindings.get("c5")).getVTLType()).isEqualTo(VTLBoolean.class);
+        assertThat(((VTLTyped<?>) bindings.get("c6")).getVTLType()).isEqualTo(VTLNumber.class);
 
     }
 
     @Test
-    // TODO: Move to ComponentBindingsTest
     public void testJoinBindings() throws Exception {
 
         StaticDataset t1 = StaticDataset.create()

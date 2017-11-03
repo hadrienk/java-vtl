@@ -26,7 +26,6 @@ import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.VTLDataset;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -74,7 +73,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
             value = visit(ctx.datasetExpression());
         } else {
             VTLExpression expression = expressionVisitor.visit(ctx.expression());
-            value = expression.resolve(bindings);
+            value = expression.resolve(bindings).get();
         }
         bindings.put(name, value);
         return value;
@@ -105,7 +104,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
     @Override
     public Object visitVariable(VTLParser.VariableContext ctx) {
         VTLObject resolved = expressionVisitor.visit(ctx).resolve(bindings);
-        return ((VTLDataset) resolved).get();
+        return resolved.get();
     }
 
     @Override

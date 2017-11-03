@@ -42,7 +42,11 @@ public class HierarchyVisitor extends VTLBaseVisitor<Dataset> {
 
         // Safe.
         Dataset dataset = datasetExpressionVisitor.visit(ctx.variable());
+
+        // Create local binding
         ComponentBindings componentBindings = new ComponentBindings(dataset);
+        componentBindings.put(ctx.variable().getText(), new ComponentBindings(dataset));
+
         ComponentVisitor componentVisitor = new ComponentVisitor(componentBindings);
         Component component = componentVisitor.visit(ctx.variableExpression());
 

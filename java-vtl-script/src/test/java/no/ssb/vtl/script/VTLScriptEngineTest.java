@@ -69,8 +69,8 @@ public class VTLScriptEngineTest {
 
         assertThat(bindings).containsKey("ds2");
         Object ds2 = bindings.get("ds2");
-        assertThat(ds2).isInstanceOf(VTLDataset.class);
-        assertThat(((VTLDataset) ds2).get()).isSameAs(dataset);
+        assertThat(ds2).isInstanceOf(Dataset.class);
+        assertThat(ds2).isSameAs(dataset);
 
     }
 
