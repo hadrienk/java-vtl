@@ -4,7 +4,7 @@ package no.ssb.vtl.script.functions;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Arild Johan Takvam-Borge
+ * Copyright (C) 2016 - 2017 Pawel Buczek
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-public interface VTLNumberFunctionTest extends VTLFunctionTest {
+public interface VTLFunctionTest {
 
-    void testInvokeWithPositiveNumber() throws Exception;
+    void testInvokeWithTooManyArguments() throws Exception;
 
-    void testInvokeWithNegativeNumber() throws Exception;
+    void testInvokeWithEmptyArgumentsList() throws Exception;
 
-    void testInvokeWithString() throws Exception;
+    void testInvokeWithNullValue() throws Exception;
 }

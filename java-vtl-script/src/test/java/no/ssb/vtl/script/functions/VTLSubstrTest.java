@@ -30,7 +30,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 
-public class VTLSubstrTest implements VTLNumberFunctionTest {
+public class VTLSubstrTest implements VTLFunctionTest {
 
     private VTLSubstr vtlSubstr;
 
@@ -40,8 +40,7 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
     }
 
     @Test
-    @Override
-    public void testInvokeWithPositiveNumber() throws Exception {
+    public void testInvokeWithPositiveArgs() throws Exception {
         VTLObject<?> result = vtlSubstr.invoke(
                 createArguments("Hello, world!", 2, 5)
         );
@@ -79,9 +78,8 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
         assertThat(result).isEqualTo(VTLString.of("lo"));
     }
 
-
-    @Override
-    public void testInvokeWithNegativeNumber() throws Exception {
+    @Test
+    public void testInvokeWithNegativeArgs() throws Exception {
         assertThatThrownBy(() -> vtlSubstr.invoke(
                 createArguments("Hello, world!", -1, 4)
         ))
@@ -95,10 +93,6 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
                 .as("exception when passing -1 as length")
                 .hasMessage("Argument{name=length, type=VTLInteger} must be greater than zero, was -1")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Override
-    public void testInvokeWithString() throws Exception {
     }
 
     @Test
