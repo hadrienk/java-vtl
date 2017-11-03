@@ -65,25 +65,22 @@ public class VTLSubstr extends AbstractVTLFunction<VTLString> {
             );
         }
 
-        if (startPosition.get().intValue() > value.get().length()) {
+        if (startPosition.get().intValue() >= value.get().length()) {
             //deviation from the VTL specification 1.1
             return VTLString.of("");
         }
 
-        if (ignoreLengthArgument(startPosition.get(), length.get(), value.get())) {
-            return VTLString.of(value.get().substring(startPosition.get().intValue()));
-        } else {
-            Long endIndex = startPosition.get() + length.get();
-            return VTLString.of(value.get().substring(startPosition.get().intValue(), endIndex.intValue()));
-        }
+        return VTLString.of(value.get().substring(
+                startPosition.get().intValue(),
+                calculateEndPosition(startPosition.get().intValue(), length.get(), value.get().length())));
     }
 
-    private boolean ignoreLengthArgument(Long startPosition, Long length, String value) {
+    private int calculateEndPosition(int startPosition, Long length, int valueLength) {
         if (length == null) {
-            return true;
+            return valueLength;
         }
 
-        Long endIndex = startPosition + length - 1;
-        return endIndex > value.length() - 1;
+        int endPosition = startPosition + length.intValue();
+        return Math.min(endPosition, valueLength);
     }
 }
