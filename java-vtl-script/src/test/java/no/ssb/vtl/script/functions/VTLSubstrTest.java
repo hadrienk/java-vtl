@@ -64,7 +64,7 @@ public class VTLSubstrTest implements VTLNumberFunctionTest {
         assertThat(result.get()).isNull();
 
         //deviation from the VTL specification 1.1: return empty string
-        //if start position greater than the whole length of the input string
+        //if start position equal or greater than the whole length of the input string
         result = vtlSubstr.invoke(
                 createArguments("Hello", 5, 2)
         );
