@@ -20,11 +20,17 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-public interface VTLNumberFunctionTest extends VTLFunctionTest {
+public interface VTLNumberFunctionTest {
 
     void testInvokeWithPositiveNumber() throws Exception;
 
     void testInvokeWithNegativeNumber() throws Exception;
 
     void testInvokeWithString() throws Exception;
+
+    void testInvokeWithTooManyArguments() throws Exception;
+
+    void testInvokeWithEmptyArgumentsList() throws Exception;
+
+    void testInvokeWithNullValue() throws Exception;
 }

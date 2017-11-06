@@ -30,9 +30,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 
-public class VTLSubstrTest implements VTLFunctionTest {
+public class VTLSubstrTest {
 
     private VTLSubstr vtlSubstr;
+    private VTLObject<?> result;
 
     @Before
     public void setUp() throws Exception {
@@ -40,8 +41,8 @@ public class VTLSubstrTest implements VTLFunctionTest {
     }
 
     @Test
-    public void testInvokeWithPositiveArgs() throws Exception {
-        VTLObject<?> result = vtlSubstr.invoke(
+    public void testNonNegativeArgs() throws Exception {
+        result = vtlSubstr.invoke(
                 createArguments("Hello, world!", 2, 5)
         );
         assertThat(result).isNotNull();
@@ -52,25 +53,35 @@ public class VTLSubstrTest implements VTLFunctionTest {
         );
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLString.of("Hell"));
+    }
 
+    @Test
+    public void testEmptyInputString() throws Exception {
         result = vtlSubstr.invoke(
                 createArguments("", 0, 4)
         );
         assertThat(result).isNotNull();
         //null in string operations is considered an empty string ("")
-        assertThat(result).isEqualTo(VTLString.of((String)null));
+        assertThat(result).isEqualTo(VTLString.of((String) null));
         assertThat(result).isEqualTo(VTLString.of(""));
         assertThat(result.get()).isNull();
+    }
 
-        //deviation from the VTL specification 1.1: return empty string
-        //if start position equal or greater than the whole length of the input string
+    /**
+     *  Deviation from the VTL specification 1.1: return empty string
+     *  if start position equal or greater than the whole length of the input string.
+     */
+    @Test
+    public void testStartPositionGreaterThanInputStringLength() throws Exception {
         result = vtlSubstr.invoke(
                 createArguments("Hello", 6, 2)
         );
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(VTLString.of(""));
+    }
 
-        //length argument will be ignored
+    @Test
+    public void testIgnoreLengthArgument() throws Exception {
         result = vtlSubstr.invoke(
                 createArguments("Hello", 3, 3)
         );
@@ -79,14 +90,17 @@ public class VTLSubstrTest implements VTLFunctionTest {
     }
 
     @Test
-    public void testInvokeWithNegativeArgs() throws Exception {
+    public void testStartPositionArgNegative() throws Exception {
         assertThatThrownBy(() -> vtlSubstr.invoke(
                 createArguments("Hello, world!", -1, 4)
         ))
                 .as("exception when passing -1 as start position")
                 .hasMessage("Argument{name=startPosition, type=VTLInteger} must be greater than zero, was -1")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
+    }
 
+    @Test
+    public void testLengthArgNegative() throws Exception {
         assertThatThrownBy(() -> vtlSubstr.invoke(
                 createArguments("Hello, world!", 1, -1)
         ))
@@ -96,7 +110,6 @@ public class VTLSubstrTest implements VTLFunctionTest {
     }
 
     @Test
-    @Override
     public void testInvokeWithTooManyArguments() throws Exception {
         assertThatThrownBy(() -> vtlSubstr.invoke(
                 Lists.newArrayList(
@@ -112,7 +125,6 @@ public class VTLSubstrTest implements VTLFunctionTest {
     }
 
     @Test
-    @Override
     public void testInvokeWithEmptyArgumentsList() throws Exception {
         assertThatThrownBy(() -> vtlSubstr.invoke(
                 Lists.emptyList()
@@ -123,24 +135,16 @@ public class VTLSubstrTest implements VTLFunctionTest {
     }
 
     @Test
-    @Override
-    public void testInvokeWithNullValue() throws Exception {
+    public void testInputStringIsNull() throws Exception {
         VTLObject<?> result = vtlSubstr.invoke(
                 createArguments(null, 0, 4)
         );
 
         assertThat(result).isEqualTo(VTLString.of((String) null));
+    }
 
-        result = vtlSubstr.invoke(
-                Lists.newArrayList(
-                        VTLString.of("Hello, world!"),
-                        VTLNumber.of(0),
-                        VTLNumber.of((Long)null)
-                )
-        );
-
-        assertThat(result).isEqualTo(VTLString.of("Hello, world!"));
-
+    @Test
+    public void testStartPositionArgIsNull() throws Exception {
         assertThatThrownBy(() -> vtlSubstr.invoke(
                 Lists.newArrayList(
                         VTLString.of("Hello, world!"),
@@ -148,9 +152,21 @@ public class VTLSubstrTest implements VTLFunctionTest {
                         VTLNumber.of(2)
                 )
         ))
-                .as("exception when passing -1 as start position")
+                .as("exception when passing null as start position")
                 .hasMessage("Argument{name=startPosition, type=VTLInteger} must be greater than zero, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void testLengthArgIsNull() throws Exception {
+        result = vtlSubstr.invoke(
+                Lists.newArrayList(
+                        VTLString.of("Hello, world!"),
+                        VTLNumber.of(0),
+                        VTLNumber.of((Long) null)
+                )
+        );
+        assertThat(result).isEqualTo(VTLString.of("Hello, world!"));
     }
 
     private List<VTLObject> createArguments(String ds, Integer startPosition, Integer length) {
