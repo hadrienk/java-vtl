@@ -569,6 +569,31 @@ Ukraine,Eastern Europe,+
 
 ## String operators
 
+### substr
+<pre>
+    String substr(Integer startPosition, Integer length)
+</pre>
+
+The `substr` operator takes as input `startPosition` which is the index of the character
+in the string from which the substring is performed and `length` which is the number of
+the characters in the string to be taken starting from `startPosition`. 
+The operator returns a _String_ value.
+
+<div vtl-example>
+    <vtl-code>
+result := [data] {
+    sub := substr(M1, 5, 6)
+}
+    </vtl-code>
+    <vtl-dataset name="data">
+ID[I,String],M1[M,String]
+1 , hello world
+2 , hello
+3 , null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
 ### date_from_string
 The operator date_from_string converts a string into a date.
 <div vtl-example>
