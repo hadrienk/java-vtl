@@ -34,6 +34,7 @@ import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
 import no.ssb.vtl.script.functions.VTLDateFromString;
 import no.ssb.vtl.script.functions.VTLExp;
+import no.ssb.vtl.script.functions.VTLFloatFromString;
 import no.ssb.vtl.script.functions.VTLFloor;
 import no.ssb.vtl.script.functions.VTLIntegerFromString;
 import no.ssb.vtl.script.functions.VTLLn;
@@ -75,6 +76,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
                 .put("trunc", VTLTrunc.getInstance())
                 .put("date_from_string", VTLDateFromString.getInstance())
                 .put("integer_from_string", VTLIntegerFromString.getInstance())
+                .put("float_from_string", VTLFloatFromString.getInstance())
                 .put("substr", VTLSubstr.getInstance())
                 .build();
     }

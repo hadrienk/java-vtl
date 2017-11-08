@@ -618,7 +618,43 @@ ID[I,String],M1[M,String]
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
+### float_from_string
+    Note 
+        This operator is not part of the VTL 1.1 specification.
+    
+<pre>
+    Float float_from_string(String value)
+</pre>
+
+The `float_from_string` operator takes as input a _String_ value and returns an _Float_ value. The input
+value format is described in detail in section 3.10.2 of the Java Language Specification.  
+<div vtl-example>
+    <vtl-code>
+join := [data] {
+    floatFromString := float_from_string(M1)
+}
+    </vtl-code>
+    <vtl-dataset name="data">
+ID[I,String],M1[M,String]
+1  , -0.1e-10
+2  , -0.1e10
+3  , -0.1e+10
+4  , 0.1e-10
+5  , 0.1e10
+6  , 0.1e+10
+7  , +0.1e-10
+8  , +0.1e10
+9  , +0.1e+10
+10 , 0.01
+11 , -0.001
+12 , +0.0001
+13 , null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
 ### date_from_string
+
 The operator date_from_string converts a string into a date.
 <div vtl-example>
     <vtl-code>

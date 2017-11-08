@@ -198,6 +198,7 @@ fragment STRING_FUNCTIONS : ( FUNC_LENGTH | FUNC_TRIM  | FUNC_LTRIM  | FUNC_RTRI
                      FUNC_UPPER  | FUNC_LOWER | FUNC_SUBSTR | FUNC_INSTR
                    | FUNC_D_F_S
                    | FUNC_I_F_S
+                   | FUNC_F_F_S
                    | FUNC_REPLACE
                    ) ;
 
@@ -211,6 +212,7 @@ FUNC_SUBSTR  : 'substr' ;
 FUNC_INSTR   : 'instr' ;
 FUNC_D_F_S   : 'date_from_string' ;
 FUNC_I_F_S   : 'integer_from_string' ;
+FUNC_F_F_S   : 'float_from_string' ;
 FUNC_REPLACE : 'replace' ;
 
 relationalExpression : unionExpression | joinExpression ;
