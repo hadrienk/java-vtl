@@ -18,32 +18,34 @@ package no.ssb.vtl.script.functions.string;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.base.CharMatcher;
 import no.ssb.vtl.model.VTLString;
-import no.ssb.vtl.script.functions.AbstractVTLFunction;
-import no.ssb.vtl.script.functions.TypeSafeArguments;
+import org.junit.Test;
 
-public final class VTLTrim extends AbstractVTLFunction<VTLString> {
+import java.util.Arrays;
 
-    private static final Argument<VTLString> VALUE = new Argument<>("value", VTLString.class);
-    private static VTLTrim instance;
+import static org.assertj.core.api.Assertions.assertThat;
 
-    public static VTLTrim getInstance() {
-        if (instance == null) {
-            instance = new VTLTrim();
-        }
-        return instance;
+public class VTLTrimTest {
+
+    @Test
+    public void testNull() throws Exception {
+        VTLTrim instance = VTLTrim.getInstance();
+
+        VTLString result = instance.invoke(Arrays.asList(
+                VTLString.of((String) null)
+        ));
+        assertThat(result.get()).isNull();
     }
 
-    private VTLTrim() {
-        super("trim", VTLString.class, VALUE);
+    @Test
+    public void testEmptyIsNull() throws Exception {
+        VTLTrim instance = VTLTrim.getInstance();
+        VTLString result = instance.invoke(Arrays.asList(
+                VTLString.of("")
+        ));
+        assertThat(result.get()).isNull();
     }
 
-    @Override
-    protected VTLString safeInvoke(TypeSafeArguments arguments) {
-        VTLString string = arguments.get(VALUE);
-        if (string.get() == null)
-            return string;
-        return VTLString.of(CharMatcher.whitespace().trimFrom(string.get()));
-    }
+
+
 }

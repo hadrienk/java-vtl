@@ -41,7 +41,9 @@ public final class VTLLower extends AbstractVTLFunction<VTLString> {
 
     @Override
     protected VTLString safeInvoke(TypeSafeArguments arguments) {
-        VTLString string = arguments.getNullable(VALUE, VTLString.of(""));
+        VTLString string = arguments.get(VALUE);
+        if (string.get() == null)
+            return string;
         return VTLString.of(string.get().toLowerCase());
     }
 }
