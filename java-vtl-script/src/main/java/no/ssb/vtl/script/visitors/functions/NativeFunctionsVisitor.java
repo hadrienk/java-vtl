@@ -45,6 +45,7 @@ import no.ssb.vtl.script.functions.VTLNvl;
 import no.ssb.vtl.script.functions.VTLPower;
 import no.ssb.vtl.script.functions.VTLRound;
 import no.ssb.vtl.script.functions.VTLSqrt;
+import no.ssb.vtl.script.functions.VTLStringFromNumber;
 import no.ssb.vtl.script.functions.VTLSubstr;
 import no.ssb.vtl.script.functions.VTLTrunc;
 
@@ -77,6 +78,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
                 .put("date_from_string", VTLDateFromString.getInstance())
                 .put("integer_from_string", VTLIntegerFromString.getInstance())
                 .put("float_from_string", VTLFloatFromString.getInstance())
+                .put("string_from_number", VTLStringFromNumber.getInstance())
                 .put("substr", VTLSubstr.getInstance())
                 .build();
     }

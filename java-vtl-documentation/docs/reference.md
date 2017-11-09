@@ -235,6 +235,30 @@ to the decimals.
     Float nroot(Float value, Float n)
 </pre>
 
+### string_from_number
+    Note 
+        This operator is not part of the VTL 1.1 specification.
+    
+<pre>
+    String string_from_number(Number value)
+</pre>
+
+The `string_from_number` operator takes as input a _Number_ value and returns an _String_ value.
+<div vtl-example>
+    <vtl-code>
+join := [data] {
+    stringFromInteger := string_from_number(M1),
+    stringFromFloat := string_from_number(M2)
+}
+    </vtl-code>
+    <vtl-dataset name="data">
+ID[I,String],M1[M,Long],M2[M,Double]
+1 , 10, 10.01
+2 , 0, -0.001
+3 , null, null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
 
 ### Datasets
 

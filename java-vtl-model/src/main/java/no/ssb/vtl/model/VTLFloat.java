@@ -38,6 +38,11 @@ public abstract class VTLFloat extends VTLNumber<Double>  implements VTLTyped<VT
             public Double get() {
                 return value;
             }
+
+            @Override
+            public String toString() {
+                return value == null ? "[NULL]" : Double.toString(value);
+            }
         };
     }
 
