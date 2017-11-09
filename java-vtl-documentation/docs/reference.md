@@ -162,6 +162,35 @@ id[I,Long],value[M,String]
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
+### Trim, ltrim and rtrim functions
+
+The `trim`, `ltrim` and `rtrim` take a _String_ as input and return a
+_String_.
+
+The `ltrim` and `rtrim` functions remove leading (to the left and
+trailing (to the right) white characters from the given _String_,
+respectively.
+
+The `trim` functions remove both the leading and trailing white
+characters.
+
+<pre>
+    String   trim(String value)
+    String  rtrim(String value)
+    String  ltrim(String value)
+</pre>
+
+### Upper and lower function
+
+<pre>
+    String  upper(String value)
+    String  lower(String value)
+</pre>
+
+The `upper` function transforms all of the characters of the given
+_String_ to upper case. The `lower` functions transforms all the
+characters of the given _String_ to lower case.
+
 ## Mathematical functions
 
 In addition to the arithmetic operators, basic mathematical operations
