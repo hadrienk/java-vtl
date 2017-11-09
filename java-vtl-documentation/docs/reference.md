@@ -651,7 +651,8 @@ ID[I,String],M1[M,String]
 </pre>
 
 The `float_from_string` operator takes as input a _String_ value and returns an _Float_ value. The input
-value format is described in detail in section 3.10.2 of the Java Language Specification.  
+value format is described in detail in section 3.10.2 of the Java Language Specification.
+Additionally a comma (`,`) is allowed as a decimal point.
 <div vtl-example>
     <vtl-code>
 join := [data] {

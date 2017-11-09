@@ -43,7 +43,12 @@ public class VTLFloatFromString extends AbstractVTLFunction<VTLFloat> {
 
         if (value.get() == null)
             return VTLFloat.of((Double) null);
-        else
+        else {
+            if (value.get().contains(",")) {
+                String replaced = value.get().replace(",", ".");
+                return VTLFloat.of(Double.valueOf(replaced));
+            }
             return VTLFloat.of(Double.valueOf(value.get()));
+        }
     }
 }

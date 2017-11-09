@@ -52,6 +52,17 @@ public class VTLFloatFromStringTest {
     }
 
     @Test
+    public void testInvokeWithComma() throws Exception {
+        result = vtlFloatFromString.invoke(
+                Lists.newArrayList(
+                        VTLString.of("1,23")
+                )
+        );
+        assertThat(result).isNotNull();
+        assertThat(result).isEqualTo(VTLFloat.of(1.23d));
+    }
+
+    @Test
     public void testInvalidFormatOfInputString() throws Exception {
         assertThatThrownBy(() -> vtlFloatFromString.invoke(
                 Lists.newArrayList(
