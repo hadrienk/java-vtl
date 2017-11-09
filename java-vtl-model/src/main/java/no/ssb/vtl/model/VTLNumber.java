@@ -30,8 +30,6 @@ public abstract class VTLNumber<T extends Number> extends VTLObject<T> {
 
     @Override
     public abstract T get();
-
-    public abstract String toString();
     
     public VTLNumber add(VTLNumber addend) {
         return add(addend.get());

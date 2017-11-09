@@ -18,6 +18,8 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLString;
 
@@ -44,7 +46,13 @@ public class VTLStringFromNumber extends AbstractVTLFunction<VTLString> {
         if (value.get() == null)
             return VTLString.of((String) null);
         else {
-            return VTLString.of(value.toString());
+            if (value instanceof VTLInteger) {
+                return VTLString.of(Long.toString(value.get().longValue()));
+            } else if (value instanceof VTLFloat) {
+                return VTLString.of(Double.toString(value.get().doubleValue()));
+            } else {
+                throw new UnsupportedOperationException("Type " + value.getClass() + " not supported");
+            }
         }
     }
 }

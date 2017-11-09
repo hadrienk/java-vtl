@@ -38,11 +38,6 @@ public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VT
             public Long get() {
                 return value;
             }
-
-            @Override
-            public String toString() {
-                return value == null ? "[NULL]" : Long.toString(value);
-            }
         };
     }
 }
