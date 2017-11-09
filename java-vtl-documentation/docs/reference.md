@@ -232,13 +232,13 @@ value[I,Long]
 
 ### Abs function
 
-The `abs` function takes an _Integer_ or a
-_Float_ value and returns its absolute value.
-
 <pre>
     Float   abs(Float value)
     Integer abs(Integer value)
 </pre>
+
+The `abs` function takes an _Integer_ or a
+_Float_ value and returns its absolute value.
 
 ### Ceil and Floor functions
 
