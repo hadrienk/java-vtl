@@ -235,33 +235,6 @@ to the decimals.
     Float nroot(Float value, Float n)
 </pre>
 
-### string_from_number
-    Note 
-        This operator is not part of the VTL 1.1 specification.
-    
-<pre>
-    String string_from_number(Number value)
-</pre>
-
-The `string_from_number` operator takes as input a _Number_ value and returns an _String_ value.
-The exact result of this operator is described in the documentation of `java.lang.Double.toString()`
-and `java.lang.Long.toString()` methods available at [Oracle Java Help Center](https://docs.oracle.com/en/java).
-<div vtl-example>
-    <vtl-code>
-join := [data] {
-    stringFromInteger := string_from_number(M1),
-    stringFromFloat := string_from_number(M2)
-}
-    </vtl-code>
-    <vtl-dataset name="data">
-ID[I,String],M1[M,Long],M2[M,Double]
-1 , 10, 10.01
-2 , 0, -0.001
-3 , null, null
-    </vtl-dataset>
-    <vtl-data datasets="datasets" errors="errors"></vtl-data>
-</div>
-
 ### Datasets
 
 ### Record
@@ -620,6 +593,27 @@ ID[I,String],M1[M,String]
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
+### date_from_string
+
+The operator date_from_string converts a string into a date.
+<div vtl-example>
+    <vtl-code>
+join := [left] {
+    b := date_from_string(M1, "YYYY")
+}
+    </vtl-code>
+    <vtl-dataset name="left">
+ID[I,String],M1[M,String]
+1 , 2016
+2 , 2017
+3 , null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+
+## Operators outside the specification
+
 ### integer_from_string
     Note 
         This operator is not part of the VTL 1.1 specification.
@@ -680,20 +674,29 @@ ID[I,String],M1[M,String]
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
-### date_from_string
+### string_from_number
+    Note 
+        This operator is not part of the VTL 1.1 specification.
+    
+<pre>
+    String string_from_number(Number value)
+</pre>
 
-The operator date_from_string converts a string into a date.
+The `string_from_number` operator takes as input a _Number_ value and returns an _String_ value.
+The exact result of this operator is described in the documentation of `java.lang.Double.toString()`
+and `java.lang.Long.toString()` methods available at [Oracle Java Help Center](https://docs.oracle.com/en/java).
 <div vtl-example>
     <vtl-code>
-join := [left] {
-    b := date_from_string(M1, "YYYY")
+join := [data] {
+    stringFromInteger := string_from_number(M1),
+    stringFromFloat := string_from_number(M2)
 }
     </vtl-code>
-    <vtl-dataset name="left">
-ID[I,String],M1[M,String]
-1 , 2016
-2 , 2017
-3 , null
+    <vtl-dataset name="data">
+ID[I,String],M1[M,Long],M2[M,Double]
+1 , 10, 10.01
+2 , 0, -0.001
+3 , null, null
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
