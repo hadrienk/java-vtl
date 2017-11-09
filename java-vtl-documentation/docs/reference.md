@@ -244,6 +244,8 @@ to the decimals.
 </pre>
 
 The `string_from_number` operator takes as input a _Number_ value and returns an _String_ value.
+The exact result of this operator is described in the documentation of `java.lang.Double.toString()`
+and `java.lang.Long.toString()` methods available at [Oracle Java Help Center](https://docs.oracle.com/en/java).
 <div vtl-example>
     <vtl-code>
 join := [data] {
