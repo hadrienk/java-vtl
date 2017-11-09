@@ -197,11 +197,11 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
 
     protected abstract T safeInvoke(TypeSafeArguments arguments);
 
-    protected static class Argument<A extends VTLObject> implements VTLTyped<A> {
+    public static class Argument<A extends VTLObject> implements VTLTyped<A> {
         private final String name;
         private final Class<A> type;
 
-        protected Argument(String name, Class<A> type) {
+        public Argument(String name, Class<A> type) {
             this.name = checkNotNull(name);
             this.type = checkNotNull(type);
         }

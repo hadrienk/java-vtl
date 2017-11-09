@@ -236,8 +236,18 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     @Override
-    public VTLExpression visitFunctionCall(VTLParser.FunctionCallContext ctx) {
+    public VTLExpression visitNvlFunction(VTLParser.NvlFunctionContext ctx) {
         return nativeFunctionsVisitor.visit(ctx);
+    }
+
+    @Override
+    public VTLExpression visitNativeFunctionCall(VTLParser.NativeFunctionCallContext ctx) {
+        return nativeFunctionsVisitor.visit(ctx);
+    }
+
+    @Override
+    public VTLExpression visitUserFunctionCall(VTLParser.UserFunctionCallContext ctx) {
+        throw new IllegalArgumentException("undefined function " +  ctx.functionName.getText());
     }
 
     @Override

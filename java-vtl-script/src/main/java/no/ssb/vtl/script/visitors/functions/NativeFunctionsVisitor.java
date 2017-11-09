@@ -45,6 +45,11 @@ import no.ssb.vtl.script.functions.VTLRound;
 import no.ssb.vtl.script.functions.VTLSqrt;
 import no.ssb.vtl.script.functions.VTLSubstr;
 import no.ssb.vtl.script.functions.VTLTrunc;
+import no.ssb.vtl.script.functions.string.VTLLeftTrim;
+import no.ssb.vtl.script.functions.string.VTLLower;
+import no.ssb.vtl.script.functions.string.VTLRightTrim;
+import no.ssb.vtl.script.functions.string.VTLTrim;
+import no.ssb.vtl.script.functions.string.VTLUpper;
 
 import javax.script.Bindings;
 import java.util.List;
@@ -72,6 +77,11 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
                 .put("power", VTLPower.getInstance())
                 .put("sqrt", VTLSqrt.getInstance())
                 .put("trunc", VTLTrunc.getInstance())
+                .put("ltrim", VTLLeftTrim.getInstance())
+                .put("rtrim", VTLRightTrim.getInstance())
+                .put("trim", VTLTrim.getInstance())
+                .put("upper", VTLUpper.getInstance())
+                .put("lower", VTLLower.getInstance())
                 .put("date_from_string", VTLDateFromString.getInstance())
                 .put("substr", VTLSubstr.getInstance())
                 .build();
@@ -128,7 +138,7 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     @Override
-    public VTLExpression visitNativeCall(VTLParser.NativeCallContext ctx) {
+    public VTLExpression visitNativeFunctionCall(VTLParser.NativeFunctionCallContext ctx) {
         if (functions.containsKey(ctx.functionName.getText())) {
             VTLFunction<VTLObject> functionInstance = functions.get(ctx.functionName.getText());
 

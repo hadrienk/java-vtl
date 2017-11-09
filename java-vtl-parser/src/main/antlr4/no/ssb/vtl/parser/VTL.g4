@@ -26,10 +26,11 @@ assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
 
 functionCall       : nvlFunction // TODO: Create one rule per function?
-                   | nativeCall
-                   | functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
+                   | nativeFunctionCall
+                   | userFunctionCall ;
 
-nativeCall         : functionName=NATIVE_FUNCTIONS LPAR functionParameters? RPAR ;
+userFunctionCall   : functionName=REG_IDENTIFIER LPAR functionParameters? RPAR ;
+nativeFunctionCall : functionName=NATIVE_FUNCTIONS LPAR functionParameters? RPAR ;
 
 functionParameters : namedExpression ( COMMA namedExpression)*
                    | expression ( COMMA expression )*
