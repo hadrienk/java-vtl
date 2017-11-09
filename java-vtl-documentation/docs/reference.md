@@ -114,6 +114,16 @@ variable := 1 + 2 / 3 * 4
      </vtl-code>
  </div>
 
+If Floats and Integers are mixed in the same arithmetic expression the
+resulting number will be Float
+
+<div vtl-example>
+     <vtl-code>
+floatVariable := 1 + 2.0
+floatVariable := 1 * 1.0
+     </vtl-code>
+</div>
+
 ## Concatenation operator
 
 The concatenation operator `||` concatenate two strings.
@@ -152,8 +162,10 @@ id[I,Long],value[M,String]
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
-
 ## Mathematical functions
+
+In addition to the arithmetic operators, basic mathematical operations
+are available as functions.
 
 <div vtl-example>
     <vtl-code>
@@ -188,6 +200,79 @@ value[I,Long]
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
+
+### Abs function
+
+The `abs` function takes an _Integer_ or a
+_Float_ value and returns its absolute value.
+
+<pre>
+    Float   abs(Float value)
+    Integer abs(Integer value)
+</pre>
+
+### Ceil and Floor functions
+
+<pre>
+    Integer floor(Float value)
+    Integer ceil(Float value)
+</pre>
+
+The `ceil` and `floor` functions take as input a _Float_ value and
+return an _Integer_ value.
+
+`ceil` will return the smallest _Integer_ value that is greater than the
+given value.
+
+`floor` will return the largest _Integer_ value that is smaller than the
+given value.
+
+### Trunc and Round functions
+
+<pre>
+    Float trunc(Float value, Integer decimals)
+    Float floor(Float value, Integer decimals)
+</pre>
+
+
+The `trunc` and 'round' functions take as input a _Float_ value and an
+_Integer_ that represent a number of decimals. Both `trunc` and `round`
+return a _Float_.
+
+`trunc` will wil truncate to the decimals whereas `round` will round up
+to the decimals.
+
+### Ln function (Napierian logarithm)
+
+<pre>
+    Float ln(Float value)
+</pre>
+
+### Exp function
+
+<pre>
+    Float exp(Integer value)
+    Float exp(Float value)
+</pre>
+
+### Power function
+
+<pre>
+    Float power(Float value, Float exponent)
+</pre>
+
+### Sqrt function
+
+<pre>
+    Float sqrt(Float value)
+</pre>
+
+### Nroot function
+
+<pre>
+    Float nroot(Float value, Float n)
+</pre>
+
 
 ### Datasets
 
@@ -521,6 +606,31 @@ Ukraine,Eastern Europe,+
 </div>
 
 ## String operators
+
+### substr
+<pre>
+    String substr(Integer startPosition, Integer length)
+</pre>
+
+The `substr` operator takes as input `startPosition` which is the index of the character
+in the string from which the substring is performed and `length` which is the number of
+the characters in the string to be taken starting from `startPosition`. 
+The operator returns a _String_ value.
+
+<div vtl-example>
+    <vtl-code>
+result := [data] {
+    sub := substr(M1, 5, 6)
+}
+    </vtl-code>
+    <vtl-dataset name="data">
+ID[I,String],M1[M,String]
+1 , hello world
+2 , hello
+3 , null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
 
 ### date_from_string
 The operator date_from_string converts a string into a date.
