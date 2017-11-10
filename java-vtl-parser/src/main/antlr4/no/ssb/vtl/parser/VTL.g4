@@ -26,6 +26,7 @@ assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
 
 functionCall       : nvlFunction // TODO: Create one rule per function?
+                   | ifThenElseFunction
                    | nativeFunctionCall
                    | userFunctionCall ;
 
@@ -168,6 +169,8 @@ ISNOTNULL : 'is not null' ;
 /* Core functions */
 
 nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
+
+ifThenElseFunction: 'if' binaryExpr 'then' literal ('elseif' binaryExpr 'then' literal)* ('else' literal)? ;
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS | FUNC_ISNULL) ;
 
