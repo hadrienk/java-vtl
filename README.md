@@ -198,6 +198,9 @@ String|upper/lower case|![todo][todo]
 String|substr|![usable](http://progressed.io/bar/80)|No lifting.
 String|indexof|![todo][todo]
 String|date_from_string|![usable](http://progressed.io/bar/25)|Dataset as input not implemented. Only YYYY date format accepted.
+Outside specification|integer_from_string|![done][done]
+Outside specification|float_from_string|![done][done]
+Outside specification|string_from_number|![done][done]
 
 [![Analytics](https://ga-beacon.appspot.com/UA-85245041-2/readme)](https://github.com/igrigorik/ga-beacon)
 
