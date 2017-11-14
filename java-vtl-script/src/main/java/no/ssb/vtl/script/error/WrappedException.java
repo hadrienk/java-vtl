@@ -30,6 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Created by hadrien on 13/12/2016.
  */
+@Deprecated
 public class WrappedException extends RecognitionException implements PositionableError {
 
     private final Exception cause;
@@ -51,12 +52,10 @@ public class WrappedException extends RecognitionException implements Positionab
         return cause;
     }
 
-    @Override
     public void setLine(int line) {
         this.line = line;
     }
 
-    @Override
     public void setColumn(int column) {
         this.column = column;
     }
@@ -69,5 +68,25 @@ public class WrappedException extends RecognitionException implements Positionab
     @Override
     public int getColumnNumber() {
         return this.column;
+    }
+
+    @Override
+    public int getStartLine() {
+        return 0;
+    }
+
+    @Override
+    public int getStopLine() {
+        return 0;
+    }
+
+    @Override
+    public int getStartColumn() {
+        return 0;
+    }
+
+    @Override
+    public int getStopColumn() {
+        return 0;
     }
 }
