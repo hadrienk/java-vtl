@@ -43,6 +43,25 @@ variable := 2000-01-01T00:00:00.000+00:15
 variable := 1 + 1 - 2
 variable := 10 * -10 / +10
 
+// Conditionals
+variable := nvl(variable, variable)
+variable := nvl(dataset.component, dataset.component)
+variable := nvl(variable, 1 + 1)
+variable := nvl(dataset.component, 1 + 1)
+
+variable := if true then substr(variable, 0, 5) else substr(variable, 0, 10)
+variable := if variable < 2 then substr(variable, 0, 5) else substr(variable, 0, 10)
+variable := if dataset.component < 2 then substr(dataset.component, 0, 5) else substr(dataset.component, 0, 10)
+
+variable := if variable = "string"  then 1 + 1
+        elseif anotherVariable = 10 then 1 - 1
+          else null
+
+dataset := [dataset] {
+  variable := if true then "true" else "false"
+}
+
+
 /* String operators and function */
 
 variable := length("four")          // expect 4

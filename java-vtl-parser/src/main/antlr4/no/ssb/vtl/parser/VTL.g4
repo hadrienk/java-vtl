@@ -26,7 +26,6 @@ assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
 
 functionCall       : nvlFunction // TODO: Create one rule per function?
-                   | ifThenElseFunction
                    | nativeFunctionCall
                    | userFunctionCall ;
 
@@ -52,6 +51,7 @@ expression : LPAR expression RPAR                                               
            | left=expression op=AND right=expression                            # binaryExpr
            | left=expression op=(OR|XOR) right=expression                       # binaryExpr
 
+           | ifThenElseExpression                                               # ifExpr
            | membershipExpression                                               # membershipExpr
            | variable                                                           # variableExpr
            | literal                                                            # literalExpr
@@ -170,7 +170,12 @@ ISNOTNULL : 'is not null' ;
 
 nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
 
-ifThenElseFunction: 'if' binaryExpr 'then' literal ('elseif' binaryExpr 'then' literal)* ('else' literal)? ;
+ifThenElseExpression: 'if' ifBody ('elseif' ifBody)* ('else' ifBodyExpression) ;
+
+ifBody : ifBodyExpression 'then' ifBodyExpression ;
+
+ifBodyExpression : ifThenElseExpression {notifyErrorListeners("cannot embed if");}
+                 | expression ;
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS | FUNC_ISNULL) ;
 
