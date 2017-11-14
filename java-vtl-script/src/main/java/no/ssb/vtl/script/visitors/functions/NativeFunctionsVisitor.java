@@ -29,6 +29,7 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.functions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
@@ -50,13 +51,15 @@ import no.ssb.vtl.script.functions.string.VTLLower;
 import no.ssb.vtl.script.functions.string.VTLRightTrim;
 import no.ssb.vtl.script.functions.string.VTLTrim;
 import no.ssb.vtl.script.functions.string.VTLUpper;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.RuleNode;
 
 import javax.script.Bindings;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
 
@@ -93,31 +96,6 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
         this.expressionVisitor = checkNotNull(expressionVisitor);
     }
 
-    @Override
-    public VTLExpression visitNvlFunction(VTLParser.NvlFunctionContext ctx) {
-        VTLParser.ExpressionContext nullableCtx = ctx.expression(0);
-        VTLParser.ExpressionContext replacementCtx = ctx.expression(1);
-        VTLExpression nullable = expressionVisitor.visit(nullableCtx);
-        VTLExpression replacement = expressionVisitor.visit(replacementCtx);
-
-        // If it is a null literal (type unknown) make it the type of replacement.
-        VTLExpression finalNullable = coerceNullLiteralType(nullable, replacement);
-
-        checkArgument(
-                finalNullable.getVTLType().equals(replacement.getVTLType()),
-                "%s and %s must be of the same type",
-                nullableCtx.getText(),
-                replacementCtx.getText()
-        );
-
-        return new FunctionExpression<VTLObject>(new VTLNvl(), finalNullable, replacement) {
-            @Override
-            public Class getVTLType() {
-                return finalNullable.getVTLType();
-            }
-        };
-    }
-
     @VisibleForTesting
     static VTLExpression coerceNullLiteralType(VTLExpression expression, VTLTyped replacement) {
         if (expression.getVTLType().equals(VTLObject.class)) {
@@ -135,6 +113,49 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
         } else {
             return expression;
         }
+    }
+
+    @Override
+    public VTLExpression visitChildren(RuleNode node) {
+        try {
+            return super.visitChildren(node);
+        } catch (Exception ex) {
+            RuleContext context = node.getRuleContext();
+            System.out.println(context.getText());
+            throw ex;
+        }
+    }
+
+    @Override
+    public VTLExpression visitNvlFunction(VTLParser.NvlFunctionContext ctx) {
+        VTLParser.ExpressionContext nullableCtx = ctx.expression(0);
+        VTLParser.ExpressionContext replacementCtx = ctx.expression(1);
+        VTLExpression nullable = expressionVisitor.visit(nullableCtx);
+        VTLExpression replacement = expressionVisitor.visit(replacementCtx);
+
+        // If it is a null literal (type unknown) make it the type of replacement.
+        VTLExpression finalNullable = coerceNullLiteralType(nullable, replacement);
+
+        if (!finalNullable.getVTLType().equals(replacement.getVTLType())) {
+            throw new ContextualRuntimeException(
+                    format("%s and %s must be of the same type",
+                            nullableCtx.getText(), replacementCtx.getText()
+                    ), ctx
+            );
+        }
+//            checkArgument(
+//                    finalNullable.getVTLType().equals(replacement.getVTLType()),
+//                    "%s and %s must be of the same type",
+//                    nullableCtx.getText(),
+//                    replacementCtx.getText()
+//            );
+
+        return new FunctionExpression<VTLObject>(new VTLNvl(), finalNullable, replacement) {
+            @Override
+            public Class getVTLType() {
+                return finalNullable.getVTLType();
+            }
+        };
     }
 
     @Override

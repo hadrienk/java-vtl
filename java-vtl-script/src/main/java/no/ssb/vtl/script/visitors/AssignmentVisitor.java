@@ -26,6 +26,7 @@ import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -73,7 +74,11 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
             value = visit(ctx.datasetExpression());
         } else {
             VTLExpression expression = expressionVisitor.visit(ctx.expression());
-            value = expression.resolve(bindings).get();
+            try {
+                value = expression.resolve(bindings).get();
+            } catch (Exception e) {
+                throw new ContextualRuntimeException(e.getMessage(), ctx);
+            }
         }
         bindings.put(name, value);
         return value;
