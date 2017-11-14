@@ -33,6 +33,7 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.functions.FunctionExpression;
+import no.ssb.vtl.script.functions.IfFunctionExpression;
 import no.ssb.vtl.script.functions.VTLAddition;
 import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;
@@ -49,8 +50,8 @@ import javax.script.Bindings;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.lang.String.format;
+import static com.google.common.base.Preconditions.*;
+import static java.lang.String.*;
 
 /**
  * TODO: extend abstract variable visitor.
@@ -329,6 +330,19 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
         throw new VTLRuntimeException(
                 format("unknown object [%s]", object), "VTL-101", ctx
         );
+    }
+
+    @Override
+    public VTLExpression visitIfThenElseExpression(VTLParser.IfThenElseExpressionContext ctx) {
+        IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(visit(ctx.ifBodyExpression()));
+
+        ctx.ifBody().forEach(ifBody -> {
+            VTLExpression condition = visit(ifBody.ifBodyExpression(0));
+            VTLExpression value = visit(ifBody.ifBodyExpression(1));
+            builder.addCondition(condition, value);
+        });
+
+        return builder.build();
     }
 
     private static String unEscape(String identifier) {

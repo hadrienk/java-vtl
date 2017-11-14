@@ -491,8 +491,9 @@ The `if-then-else` operator returns the constant of the first evaluated true con
 <div vtl-example>
     <vtl-code>
 result := [data] {
-    ifThenElseString := if M1 < 2 then "<2" elseif M1 < 3 then "<3" elseif M1 < 4 then "<4" else ">=4"
-    ifThenElseInteger := if M1 < 2 then 0 else 1
+    ifThenElseString := if M1 < 2 then "<2" elseif M1 < 3 then "<3" elseif M1 < 4 then "<4" else ">=4",
+    ifThenElseInteger := if M1 < 2 then 0 else 1,
+    ifThenElseFunctions := if M1 is not null then M1 * 2 else nvl(M1, 0) 
 }
     </vtl-code>
     <vtl-dataset name="data">
@@ -501,8 +502,7 @@ ID[I,String],M1[M,Long]
 2 , 2
 3 , 3
 4 , 4
-5 , 5
-6 , null
+5 , null
     </vtl-dataset>
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>

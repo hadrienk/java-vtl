@@ -274,6 +274,14 @@ public class ExpressionVisitorTest {
     }
 
     @Test
+    public void testIfThenElse() throws Exception {
+        VTLParser parse = parse("if false then \"false\" elseif true then \"true\" else \"else\"");
+        VTLExpression result = expressionVisitor.visit(parse.expression());
+        softly.assertThat(result.getVTLType()).isEqualTo(VTLString.class);
+        softly.assertThat(result.resolve(new SimpleBindings()).get()).isEqualTo("true");
+    }
+
+    @Test
     public void testEmbeddingIfFails() throws Exception {
         assertThatThrownBy(() -> {
             VTLParser parse = parse("if true then if true then 1 else 2 else 3");

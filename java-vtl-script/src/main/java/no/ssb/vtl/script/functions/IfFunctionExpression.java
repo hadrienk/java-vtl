@@ -69,7 +69,7 @@ public class IfFunctionExpression implements VTLExpression {
             this.returnType = defaultExpression.getVTLType();
         }
 
-        Builder addCondition(VTLExpression cond, VTLExpression value) {
+        public Builder addCondition(VTLExpression cond, VTLExpression value) {
             if (!cond.getVTLType().equals(VTLBoolean.class)) {
                 throw new IllegalArgumentException("Condition must return a " + VTLBoolean.class.getName()
                         + ", but was " + cond.getVTLType().getName());
