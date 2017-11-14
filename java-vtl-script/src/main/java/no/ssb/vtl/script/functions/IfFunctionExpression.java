@@ -35,11 +35,13 @@ public class IfFunctionExpression implements VTLExpression {
 
     private final ImmutableMap<VTLExpression, VTLExpression> conditionToExpression;
     private final VTLExpression defaultExpression;
+    private final Class vtlType;
 
     private IfFunctionExpression(ImmutableMap<VTLExpression, VTLExpression> conditionToExpression,
                                 VTLExpression defaultExpression) {
         this.conditionToExpression = conditionToExpression;
         this.defaultExpression = defaultExpression;
+        vtlType = defaultExpression.getVTLType();
     }
 
     @Override
@@ -56,7 +58,7 @@ public class IfFunctionExpression implements VTLExpression {
 
     @Override
     public Class getVTLType() {
-        return defaultExpression.getVTLType();
+        return vtlType;
     }
 
     public static class Builder {
