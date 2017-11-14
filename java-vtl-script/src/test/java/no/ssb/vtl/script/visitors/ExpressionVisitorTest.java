@@ -32,9 +32,11 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,8 +47,9 @@ import javax.script.SimpleBindings;
 import java.time.Instant;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.lang.String.format;
+import static com.google.common.base.Preconditions.*;
+import static java.lang.String.*;
+import static org.assertj.core.api.Assertions.*;
 
 public class ExpressionVisitorTest {
 
@@ -59,7 +62,17 @@ public class ExpressionVisitorTest {
     private static VTLParser parse(String expression) {
         VTLLexer lexer = new VTLLexer(CharStreams.fromString(expression));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-        parser.setErrorHandler(new BailErrorStrategy());
+
+        //remove ConsoleErrorListener to avoid repeated error messages
+        parser.removeErrorListeners();
+        //report "error alternatives" as RuntimeExceptions
+        parser.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+                throw new RuntimeException("Syntax error at line " + line + ":" + charPositionInLine + " " + msg, e);
+            }
+        });
+
         return parser;
     }
 
@@ -258,5 +271,16 @@ public class ExpressionVisitorTest {
         softly.assertThat(result.getVTLType())
                 .as("type of variable ['sum']")
                 .isEqualTo(expected.getVTLType());
+    }
+
+    @Test
+    public void testEmbeddingIfFails() throws Exception {
+        assertThatThrownBy(() -> {
+            VTLParser parse = parse("if true then if true then 1 else 2 else 3");
+            expressionVisitor.visit(parse.expression());
+        })
+                .as("exception when embedding if in an if")
+                .hasMessageContaining("cannot embed if")
+                .isExactlyInstanceOf(RuntimeException.class);
     }
 }
