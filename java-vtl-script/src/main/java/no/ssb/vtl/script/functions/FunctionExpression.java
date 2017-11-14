@@ -32,6 +32,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Helper class that transforms a VTLFunction to a VTLExpression.
+ *
+ * It takes care of resolving all the function parameters in
+ * its {@link #resolve(Bindings)} method.
+ */
 public class FunctionExpression<T extends VTLObject> implements VTLExpression {
 
     private final VTLFunction<T> wrappedFunction;
