@@ -60,9 +60,9 @@ public class IfFunctionExpression implements VTLExpression {
     }
 
     public static class Builder {
-        VTLExpression defaultExpression;
-        Class returnType;
-        ImmutableMap.Builder<VTLExpression, VTLExpression> builder = ImmutableMap.builder();
+        private final VTLExpression defaultExpression;
+        private final Class returnType;
+        private final ImmutableMap.Builder<VTLExpression, VTLExpression> builder = ImmutableMap.builder();
 
         public Builder(VTLExpression defaultExpression) {
             this.defaultExpression = defaultExpression;
