@@ -50,6 +50,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
      * </pre></code>
      */
     public static VTLObject of(Object o) {
+        if (o == null)
+            return VTLObject.NULL;
         if (o instanceof VTLObject)
             return (VTLObject) o;
         if (o instanceof String)
