@@ -141,7 +141,6 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
 
         // If it is a null literal (type unknown) make it the type of replacement.
         VTLExpression finalNullable = coerceNullLiteralType(nullable, replacement);
-
         if (!finalNullable.getVTLType().equals(replacement.getVTLType())) {
             throw new ContextualRuntimeException(
                     format("%s and %s must be of the same type",
