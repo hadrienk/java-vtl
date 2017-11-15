@@ -22,7 +22,6 @@ package no.ssb.vtl.tools.rest.representations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import no.ssb.vtl.tools.rest.controllers.ValidatorController;
-import org.antlr.v4.runtime.RecognitionException;
 
 /**
  * Json representation of syntax errors.
@@ -38,7 +37,7 @@ public class SyntaxErrorRepresentation {
     private final String message;
     private final ThrowableRepresentation exception;
 
-    public SyntaxErrorRepresentation(Integer startLine, Integer stopLine, Integer startColumn, Integer stopColumn, String message, RecognitionException exception) {
+    public SyntaxErrorRepresentation(Integer startLine, Integer stopLine, Integer startColumn, Integer stopColumn, String message, Exception exception) {
         this.startLine = startLine;
         this.stopLine = stopLine;
         this.startColumn = startColumn;

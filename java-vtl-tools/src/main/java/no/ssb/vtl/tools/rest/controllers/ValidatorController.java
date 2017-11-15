@@ -23,16 +23,18 @@ package no.ssb.vtl.tools.rest.controllers;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.VTLCompileException;
+import no.ssb.vtl.script.error.VTLScriptException;
 import no.ssb.vtl.tools.rest.representations.SyntaxErrorRepresentation;
 import no.ssb.vtl.tools.rest.representations.ThrowableRepresentation;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
-import org.antlr.v4.runtime.DiagnosticErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.tool.GrammarParserInterpreter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,9 +44,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A validator service that returns syntax errors for expressions.
@@ -55,6 +61,13 @@ import java.util.List;
 )
 @RestController
 public class ValidatorController {
+
+    private final ScriptEngine engine;
+
+    @Autowired
+    public ValidatorController(ScriptEngine engine) {
+        this.engine = checkNotNull(engine);
+    }
 
     @ExceptionHandler
     @ResponseStatus()
@@ -76,10 +89,31 @@ public class ValidatorController {
     @Cacheable(cacheNames = "expressions", key = "@hasher.apply(#expression)")
     public List<SyntaxErrorRepresentation> validate(
             @RequestBody(required = false) String expression
-    ) throws IOException {
+    ) throws IOException, ScriptException {
 
         if (expression == null)
             return Collections.emptyList();
+
+        if ("".equals(expression))
+            return Collections.emptyList();
+
+        List<SyntaxErrorRepresentation> syntaxErrors = Lists.newArrayList();
+        try {
+            engine.eval(expression);
+        } catch (VTLCompileException vce) {
+            for (VTLScriptException exception : vce.getErrors()) {
+                SyntaxErrorRepresentation representation = new SyntaxErrorRepresentation(
+                        exception.getStartLine(),
+                        exception.getStopLine(),
+                        exception.getStartColumn(),
+                        exception.getStopColumn(),
+                        exception.getMessage(),
+                        null
+                );
+                syntaxErrors.add(representation);
+            }
+            return syntaxErrors;
+        }
 
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
         VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
@@ -92,7 +126,7 @@ public class ValidatorController {
         ErrorListener errorListener = new ErrorListener();
         lexer.addErrorListener(errorListener);
         parser.addErrorListener(errorListener);
-    
+
         parser.start();
 
         return errorListener.getSyntaxErrors();

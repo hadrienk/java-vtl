@@ -117,13 +117,6 @@ public class Application {
 
         RestTemplate template = new RestTemplate(schrf);
 
-//        template.getInterceptors().add(
-//                new AuthorizationTokenInterceptor()
-//        );
-
-        //ObjectMapper mapper = new ObjectMapper();
-        // mapper.registerModule(new JavaTimeModule());
-
         template.getMessageConverters().add(
                 0, new DataHttpConverter(mapper)
         );
