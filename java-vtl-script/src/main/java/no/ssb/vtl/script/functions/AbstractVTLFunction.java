@@ -115,6 +115,15 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
     }
 
     @Override
+    public Map<String, VTLTyped<?>> getSignature() {
+        ImmutableMap.Builder<String, VTLTyped<?>> builder = ImmutableMap.builder();
+        for (Map.Entry<String, Argument> entry : signature.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue());
+        }
+        return builder.build();
+    }
+
+    @Override
     public Class<T> getVTLType() {
         return type;
     }

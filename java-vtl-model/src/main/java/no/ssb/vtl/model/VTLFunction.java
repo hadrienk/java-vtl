@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public interface VTLFunction<T extends VTLObject> extends VTLTyped<T> {
 
+    Map<String, VTLTyped<?>> getSignature();
+
     T invoke(List<VTLObject> arguments);
 
     T invoke(Map<String, VTLObject> namedArguments);
