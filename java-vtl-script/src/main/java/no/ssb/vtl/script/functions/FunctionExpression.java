@@ -20,17 +20,24 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLTyped;
 
 import javax.script.Bindings;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Helper class that transforms a VTLFunction to a VTLExpression.
@@ -40,6 +47,11 @@ import java.util.Map;
  */
 public class FunctionExpression<T extends VTLObject> implements VTLExpression {
 
+    private static final String INVALID_TYPE = "invalid argument type for %s, expected %s but got %s";
+    private static final String TOO_MANY_ARGUMENTS = "too many arguments, expected %s but got %s";
+    private static final String UNKNOWN_ARGUMENTS = "unknown argument; %s";
+    private static final String DUPLICATE_ARGUMENTS = "duplicated argument; %s";
+
     private final VTLFunction<T> wrappedFunction;
     private final List<VTLExpression> arguments;
     private final Map<String, VTLExpression> namedArguments;
@@ -48,6 +60,7 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
         this.wrappedFunction = wrappedFunction;
         this.arguments = arguments;
         this.namedArguments = namedArguments;
+        checkTypes(wrappedFunction, mergeArguments(wrappedFunction.getSignature(), arguments, namedArguments));
     }
 
     public FunctionExpression(VTLFunction<T> wrappedFunction, List<VTLExpression> arguments) {
@@ -62,12 +75,51 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
         this(wrappedFunction, Arrays.asList(arguments));
     }
 
+    // TODO: Move to VTLFunction or AbstractVTLFunction.
+    private void checkTypes(VTLFunction<?> function, Map<String, VTLExpression> arguments) {
+        Map<String, VTLTyped<?>> signature = function.getSignature();
+        for (String argumentName : arguments.keySet()) {
+            Class<?> expectedType = signature.get(argumentName).getVTLType();
+            Class<?> argumentType  = arguments.get(argumentName).getVTLType();
+
+            // Null values are always the correct type.
+            if (argumentType.equals(VTLObject.class))
+                continue;
+
+            checkArgument(expectedType.isAssignableFrom(argumentType), INVALID_TYPE, argumentName, expectedType, argumentType);
+        }
+    }
+
+    // TODO: Move to VTLFunction or AbstractVTLFunction.
+    private Map<String, VTLExpression> mergeArguments(Map<String, VTLTyped<?>> signature, List<VTLExpression> arguments, Map<String, VTLExpression> namedArguments) {
+        checkArgument(arguments.size() + namedArguments.size() <= signature.size(), TOO_MANY_ARGUMENTS);
+
+
+        ImmutableMap.Builder<String, VTLExpression> builder = ImmutableMap.builder();
+
+        // First match the list with the signature names.
+        Iterator<String> namesIterator = signature.keySet().iterator();
+        for (VTLExpression argument : arguments) {
+            builder.put(namesIterator.next(), argument);
+        }
+
+        // Check for duplicates
+        Set<String> duplicates = Sets.intersection(builder.build().keySet(), namedArguments.entrySet());
+        checkArgument(duplicates.isEmpty(), DUPLICATE_ARGUMENTS, String.join(", ", duplicates));
+
+        // Check for unknown arguments.
+        Set<String> unknown = Sets.difference(builder.build().keySet(), signature.keySet());
+        checkArgument(unknown.isEmpty(), UNKNOWN_ARGUMENTS, String.join(", ", unknown));
+
+        return builder.putAll(namedArguments).build();
+    }
+
     @Override
     public VTLObject resolve(Bindings bindings) {
         // Resolve the parameters.
         List<VTLObject> resolvedParameters = Lists.newArrayList();
-        for (VTLExpression expression2 : arguments) {
-            resolvedParameters.add(expression2.resolve(bindings));
+        for (VTLExpression expression : arguments) {
+            resolvedParameters.add(expression.resolve(bindings));
         }
         Map<String, VTLObject> resolvedNamedParameters = Maps.newLinkedHashMap();
         for (Map.Entry<String, VTLExpression> entry : namedArguments.entrySet()) {
