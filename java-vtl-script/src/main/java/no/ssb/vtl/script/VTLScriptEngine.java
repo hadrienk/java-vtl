@@ -29,14 +29,12 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.error.VTLCompileException;
 import no.ssb.vtl.script.error.VTLScriptException;
+import no.ssb.vtl.script.support.SyntaxErrorListener;
 import no.ssb.vtl.script.visitors.AssignmentVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.Token;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -125,30 +123,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         lexer.removeErrorListeners();
         parser.removeErrorListeners();
 
-        BaseErrorListener errorListener = new BaseErrorListener() {
-            @Override
-            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int startLine, int startColumn, String msg, RecognitionException e) {
-                VTLScriptException vtlScriptException;
-                // Use the context from the RecognitionException if available.
-                if (e != null) {
-                    vtlScriptException = new VTLScriptException(msg, (ParserRuleContext) e.getCtx());
-                } else {
-                    int stopColumn = startColumn;
-                    if (offendingSymbol instanceof Token) {
-                        Token symbol = (Token) offendingSymbol;
-                        int start = symbol.getStartIndex();
-                        int stop = symbol.getStopIndex();
-                        if (start >= 0 && stop >= 0) {
-                            stopColumn = startColumn + (stop - start) + 1;
-                        }
-                        vtlScriptException = new VTLScriptException(msg, startLine, startColumn, startLine, stopColumn);
-                    } else {
-                        vtlScriptException = new VTLScriptException(msg, startLine, startColumn);
-                    }
-                }
-                errorConsumer.accept(vtlScriptException);
-            }
-        };
+        BaseErrorListener errorListener = new SyntaxErrorListener(errorConsumer);
 
         lexer.addErrorListener(errorListener);
         parser.addErrorListener(errorListener);
