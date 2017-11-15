@@ -136,7 +136,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         try {
             ArrayList<VTLScriptException> errors = Lists.newArrayList();
             VTLParser.StartContext start = compile(reader, errors::add);
-            Object returnValue = run(start, errors::add);
+            Object returnValue = run(start, errors::add, context);
             if (!errors.isEmpty()) {
                 throw new VTLCompileException(errors);
             } else {
@@ -150,7 +150,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
     /**
      * Run loop
      */
-    private Object run(VTLParser.StartContext start, Consumer<VTLScriptException> errorConsumer) throws VTLScriptException {
+    private Object run(VTLParser.StartContext start, Consumer<VTLScriptException> errorConsumer, ScriptContext context) throws VTLScriptException {
         AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
         Object last = null;
         for (VTLParser.StatementContext statementContext : start.statement()) {
