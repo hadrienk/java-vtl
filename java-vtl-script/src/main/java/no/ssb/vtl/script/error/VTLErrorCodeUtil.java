@@ -26,6 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Utility class for error codes.
  */
+@Deprecated
 public class VTLErrorCodeUtil {
 
     public static String checkVTLCode(String vtlCode, String prefix) {
