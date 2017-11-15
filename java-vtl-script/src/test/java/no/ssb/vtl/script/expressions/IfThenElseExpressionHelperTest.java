@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.functions;
+package no.ssb.vtl.script.expressions;
 
 /*-
  * ========================LICENSE_START=================================
@@ -31,7 +31,7 @@ import javax.script.SimpleBindings;
 
 import static org.assertj.core.api.Assertions.*;
 
-public class IfFunctionExpressionTest {
+public class IfThenElseExpressionHelperTest {
 
     private static VTLExpression CONDITION_TRUE = new VTLExpression() {
         @Override
@@ -110,8 +110,8 @@ public class IfFunctionExpressionTest {
     @SuppressWarnings("Duplicates")
     @Test
     public void testResolveFirstCondition() throws Exception {
-        IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(VALUE_ELSE);
-        IfFunctionExpression function = builder
+        IfThenElseExpressionHelper.Builder builder = new IfThenElseExpressionHelper.Builder(VALUE_ELSE);
+        IfThenElseExpressionHelper function = builder
                 .addCondition(CONDITION_TRUE, VALUE_OK)
                 .addCondition(CONDITION_WITH_EXCEPTION, VALUE_OK)
                 .build();
@@ -125,8 +125,8 @@ public class IfFunctionExpressionTest {
     @SuppressWarnings("Duplicates")
     @Test
     public void testResolveSecondCondition() throws Exception {
-        IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(VALUE_ELSE);
-        IfFunctionExpression function = builder
+        IfThenElseExpressionHelper.Builder builder = new IfThenElseExpressionHelper.Builder(VALUE_ELSE);
+        IfThenElseExpressionHelper function = builder
                 .addCondition(CONDITION_FALSE, VALUE_WITH_EXCEPTION)
                 .addCondition(CONDITION_TRUE, VALUE_OK)
                 .build();
@@ -139,8 +139,8 @@ public class IfFunctionExpressionTest {
 
     @Test
     public void testResolveElse() throws Exception {
-        IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(VALUE_ELSE);
-        IfFunctionExpression function = builder
+        IfThenElseExpressionHelper.Builder builder = new IfThenElseExpressionHelper.Builder(VALUE_ELSE);
+        IfThenElseExpressionHelper function = builder
                 .addCondition(CONDITION_FALSE, VALUE_WITH_EXCEPTION)
                 .addCondition(new VTLExpression() {
                     @Override
@@ -164,7 +164,7 @@ public class IfFunctionExpressionTest {
     @Test
     public void testFailOnInconsistentConditionType() throws Exception {
         assertThatThrownBy(() -> {
-                    IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(VALUE_ELSE);
+                    IfThenElseExpressionHelper.Builder builder = new IfThenElseExpressionHelper.Builder(VALUE_ELSE);
                     builder.addCondition(new VTLExpression() {
                         @Override
                         public VTLObject resolve(Bindings bindings) {
@@ -186,7 +186,7 @@ public class IfFunctionExpressionTest {
     @Test
     public void testFailOnInconsistentReturnType() throws Exception {
         assertThatThrownBy(() -> {
-                    IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(VALUE_ELSE);
+                    IfThenElseExpressionHelper.Builder builder = new IfThenElseExpressionHelper.Builder(VALUE_ELSE);
                     builder.addCondition(CONDITION_TRUE, new VTLExpression() {
                         @Override
                         public VTLObject resolve(Bindings bindings) {

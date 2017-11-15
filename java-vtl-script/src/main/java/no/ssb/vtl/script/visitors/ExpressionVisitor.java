@@ -33,7 +33,7 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.functions.FunctionExpression;
-import no.ssb.vtl.script.functions.IfFunctionExpression;
+import no.ssb.vtl.script.expressions.IfThenElseExpressionHelper;
 import no.ssb.vtl.script.functions.VTLAddition;
 import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;
@@ -334,7 +334,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitIfThenElseExpression(VTLParser.IfThenElseExpressionContext ctx) {
-        IfFunctionExpression.Builder builder = new IfFunctionExpression.Builder(visit(ctx.ifBodyExpression()));
+        IfThenElseExpressionHelper.Builder builder = new IfThenElseExpressionHelper.Builder(visit(ctx.ifBodyExpression()));
 
         ctx.ifBody().forEach(ifBody -> {
             VTLExpression condition = visit(ifBody.ifBodyExpression(0));

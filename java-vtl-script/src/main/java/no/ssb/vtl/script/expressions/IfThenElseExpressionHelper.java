@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.functions;
+package no.ssb.vtl.script.expressions;
 
 /*-
  * ========================LICENSE_START=================================
@@ -31,14 +31,14 @@ import javax.script.Bindings;
 /**
  * Helper class that resolves only needed VTLExpressions.
  */
-public class IfFunctionExpression implements VTLExpression {
+public class IfThenElseExpressionHelper implements VTLExpression {
 
     private final ImmutableMap<VTLExpression, VTLExpression> conditionToExpression;
     private final VTLExpression defaultExpression;
     private final Class vtlType;
 
-    private IfFunctionExpression(ImmutableMap<VTLExpression, VTLExpression> conditionToExpression,
-                                VTLExpression defaultExpression) {
+    private IfThenElseExpressionHelper(ImmutableMap<VTLExpression, VTLExpression> conditionToExpression,
+                                       VTLExpression defaultExpression) {
         this.conditionToExpression = conditionToExpression;
         this.defaultExpression = defaultExpression;
         vtlType = defaultExpression.getVTLType();
@@ -86,8 +86,8 @@ public class IfFunctionExpression implements VTLExpression {
             return this;
         }
 
-        public IfFunctionExpression build() {
-            return new IfFunctionExpression(builder.build(), defaultExpression);
+        public IfThenElseExpressionHelper build() {
+            return new IfThenElseExpressionHelper(builder.build(), defaultExpression);
         }
     }
 
