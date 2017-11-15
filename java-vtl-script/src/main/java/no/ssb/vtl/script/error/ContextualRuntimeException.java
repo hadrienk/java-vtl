@@ -21,6 +21,7 @@ package no.ssb.vtl.script.error;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 /**
  * A {@link RuntimeException} that contains the context in which it happened.
@@ -51,6 +52,18 @@ public class ContextualRuntimeException extends RuntimeException {
     public ContextualRuntimeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, ParserRuleContext context) {
         super(message, cause, enableSuppression, writableStackTrace);
         this.context = checkNotNull(context);
+    }
+
+    public static void checkArgument(ParserRuleContext context, boolean expression) throws ContextualRuntimeException {
+        if (!expression) {
+            throw new ContextualRuntimeException(context);
+        }
+    }
+
+    public static void checkArgument(ParserRuleContext context, boolean expression, String template, Object... arguments) throws ContextualRuntimeException {
+        if (!expression) {
+            throw new ContextualRuntimeException(format(template, arguments), context);
+        }
     }
 
     public ParserRuleContext getContext() {
