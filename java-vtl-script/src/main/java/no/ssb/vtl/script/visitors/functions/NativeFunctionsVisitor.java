@@ -143,12 +143,6 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
                     ), ctx
             );
         }
-//            checkArgument(
-//                    finalNullable.getVTLType().equals(replacement.getVTLType()),
-//                    "%s and %s must be of the same type",
-//                    nullableCtx.getText(),
-//                    replacementCtx.getText()
-//            );
 
         return new FunctionExpression<VTLObject>(new VTLNvl(), finalNullable, replacement) {
             @Override
