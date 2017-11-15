@@ -115,7 +115,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         return eval(new StringReader(script), context);
     }
 
-    public VTLParser.StartContext compile(Reader reader, Consumer<VTLScriptException> errorConsumer) throws IOException {
+    public VTLParser.StartContext parse(Reader reader, Consumer<VTLScriptException> errorConsumer) throws IOException {
         // TODO: Change to CharStreams.fromString() when #1977 makes it to release.
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(reader));
         VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
@@ -135,7 +135,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
         try {
             ArrayList<VTLScriptException> errors = Lists.newArrayList();
-            VTLParser.StartContext start = compile(reader, errors::add);
+            VTLParser.StartContext start = parse(reader, errors::add);
             Object returnValue = run(start, errors::add, context);
             if (!errors.isEmpty()) {
                 throw new VTLCompileException(errors);
