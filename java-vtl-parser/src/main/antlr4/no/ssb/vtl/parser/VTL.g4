@@ -174,7 +174,7 @@ ifThenElseExpression: 'if' ifBody ('elseif' ifBody)* ('else' ifBodyExpression) ;
 
 ifBody : ifBodyExpression 'then' ifBodyExpression ;
 
-ifBodyExpression : ifThenElseExpression {notifyErrorListeners("cannot embed if");}
+ifBodyExpression : ifThenElseExpression {notifyErrorListeners("value cannot be another if-then-else expression");}
                  | expression ;
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS | FUNC_ISNULL) ;

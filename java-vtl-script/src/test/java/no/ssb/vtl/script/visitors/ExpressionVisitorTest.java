@@ -288,7 +288,7 @@ public class ExpressionVisitorTest {
             expressionVisitor.visit(parse.expression());
         })
                 .as("exception when embedding if in an if")
-                .hasMessageContaining("cannot embed if")
+                .hasMessageContaining("value cannot be another if-then-else expression")
                 .isExactlyInstanceOf(RuntimeException.class);
     }
 }
