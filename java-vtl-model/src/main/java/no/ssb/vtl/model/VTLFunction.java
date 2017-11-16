@@ -65,7 +65,7 @@ public interface VTLFunction<T extends VTLObject> extends VTLTyped<T> {
         }
 
         public static class Builder {
-            ImmutableMap.Builder<String, Argument<?>> builder = ImmutableMap.builder();
+            private ImmutableMap.Builder<String, Argument<?>> builder = ImmutableMap.builder();
 
             public Builder addArgument(String name, Class<? extends VTLObject> type, boolean required) {
                 builder.put(name, new Argument<>(type, required));
