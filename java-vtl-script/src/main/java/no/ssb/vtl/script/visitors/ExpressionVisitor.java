@@ -34,7 +34,7 @@ import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.expressions.IfThenElseExpression;
-import no.ssb.vtl.script.expression.FunctionExpression;
+import no.ssb.vtl.script.expressions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAddition;
 import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;

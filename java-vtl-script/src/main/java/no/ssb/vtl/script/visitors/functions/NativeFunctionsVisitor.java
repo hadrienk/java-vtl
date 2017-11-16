@@ -30,7 +30,7 @@ import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
-import no.ssb.vtl.script.expression.FunctionExpression;
+import no.ssb.vtl.script.expressions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
 import no.ssb.vtl.script.functions.VTLDateFromString;
