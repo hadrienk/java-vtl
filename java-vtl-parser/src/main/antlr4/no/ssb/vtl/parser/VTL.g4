@@ -51,6 +51,7 @@ expression : LPAR expression RPAR                                               
            | left=expression op=AND right=expression                            # binaryExpr
            | left=expression op=(OR|XOR) right=expression                       # binaryExpr
 
+           | ifThenElseExpression                                               # ifExpr
            | membershipExpression                                               # membershipExpr
            | variable                                                           # variableExpr
            | literal                                                            # literalExpr
@@ -168,6 +169,13 @@ ISNOTNULL : 'is not null' ;
 /* Core functions */
 
 nvlFunction : 'nvl' LPAR expression COMMA expression RPAR ;
+
+ifThenElseExpression: 'if' ifBody ('elseif' ifBody)* ('else' ifBodyExpression) ;
+
+ifBody : ifBodyExpression 'then' ifBodyExpression ;
+
+ifBodyExpression : ifThenElseExpression {notifyErrorListeners("value cannot be another if-then-else expression");}
+                 | expression ;
 
 NATIVE_FUNCTIONS : (NUMERIC_FUNCTIONS | STRING_FUNCTIONS | FUNC_ISNULL) ;
 

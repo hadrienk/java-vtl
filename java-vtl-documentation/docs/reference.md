@@ -473,6 +473,41 @@ id1[I,String],id2[I,String],value[M,String],attribute[A,String]
     <vtl-data datasets="datasets" errors="errors"></vtl-data>
 </div>
 
+### if-then-else
+
+<pre>
+    if ds_cond_1 then ds_1 { elseif ds_cond_2 then ds_2 }* else ds_3
+</pre>
+
+The `if-then-else` operator returns the constant of the first evaluated true condition. 
+
+`ds_cond_1` is the first _Boolean_ condition, `ds_cond_2` is an optional _Boolean_ condition. 
+
+`ds_1` is a constant returned if `ds_cond_1` evaluated true. `ds_2` is a constant returned if `ds_cond_2` evaluated true.
+`ds_3` is a constant returned if `ds_cond_2` not evaluated true.
+
+`ds_1`, `ds_2` and `ds_3` must have the same type.
+
+<div vtl-example>
+    <vtl-code>
+result := [data] {
+    ifThenElseString := if M1 < 2 then "<2" elseif M1 < 3 then "<3" elseif M1 < 4 then "<4" else ">=4",
+    ifThenElseInteger := if M1 < 2 then 0 else 1,
+    ifThenElseFunctions := if M1 is not null then M1 * 2 else nvl(M1, 0) 
+}
+    </vtl-code>
+    <vtl-dataset name="data">
+ID[I,String],M1[M,Long]
+1 , 1
+2 , 2
+3 , 3
+4 , 4
+5 , null
+    </vtl-dataset>
+    <vtl-data datasets="datasets" errors="errors"></vtl-data>
+</div>
+
+
 ## Boolean operators
 
 ### Null operators
