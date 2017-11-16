@@ -1,6 +1,6 @@
-package no.ssb.vtl.script.functions;
+package no.ssb.vtl.script.expression;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
