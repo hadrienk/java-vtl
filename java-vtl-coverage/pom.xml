@@ -34,8 +34,8 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <property>
-                    <name>env.TRAVIS_PULL_REQUEST_SLUG</name>
-                    <value>statisticsnorway/java-vtl</value>
+                    <name>env.TRAVIS</name>
+                    <value>true</value>
                 </property>
             </activation>
             <build>
@@ -67,10 +67,10 @@
                         <version>1.0.3</version>
                         <configuration>
                             <commit>${env.TRAVIS_COMMIT}</commit>
+                            <projectToken>${env.CODACY_PROJECT_TOKEN</projectToken>
+                            <apiToken>${env.CODACY_API_TOKEN}</apiToken>
                             <coverageReportFile>target/site/jacoco-aggregate/jacoco.xml</coverageReportFile>
                             <failOnMissingReportFile>false</failOnMissingReportFile>
-                            <!--<projectToken>${env.CODACY_PROJECT_TOKEN</projectToken>-->
-                            <!--<apiToken>${env.CODACY_API_TOKEN}</apiToken>-->
                         </configuration>
                         <executions>
                             <execution>
