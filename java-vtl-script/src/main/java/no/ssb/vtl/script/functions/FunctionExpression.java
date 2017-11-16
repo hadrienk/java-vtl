@@ -51,6 +51,7 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
     private static final String TOO_MANY_ARGUMENTS = "too many arguments, expected %s but got %s";
     private static final String UNKNOWN_ARGUMENTS = "unknown argument; %s";
     private static final String DUPLICATE_ARGUMENTS = "duplicated argument; %s";
+    private static final String MISSING_ARGUMENTS = "missing arguments";
 
     private final VTLFunction<T> wrappedFunction;
     private final List<VTLExpression> arguments;
@@ -93,7 +94,7 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
     // TODO: Move to VTLFunction or AbstractVTLFunction.
     private Map<String, VTLExpression> mergeArguments(Map<String, VTLTyped<?>> signature, List<VTLExpression> arguments, Map<String, VTLExpression> namedArguments) {
         checkArgument(arguments.size() + namedArguments.size() <= signature.size(), TOO_MANY_ARGUMENTS);
-
+        checkArgument(arguments.size() + namedArguments.size() > 0 && signature.size() > 0, MISSING_ARGUMENTS);
 
         ImmutableMap.Builder<String, VTLExpression> builder = ImmutableMap.builder();
 
