@@ -95,7 +95,7 @@ angular.module('vtl', ['ui.codemirror', 'angular.filter'])
 
         function normalizeStructure(structure) {
             const normalized = [];
-            for (let name in structure) {
+            for (var name in structure) {
 
                 if (!structure.hasOwnProperty(name))
                     continue;

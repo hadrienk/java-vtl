@@ -28,7 +28,7 @@ CodeMirror.defineSimpleMode("vtl", {
         {regex: /\/\*/, token: "comment", next: "comment", indent: true},
         {regex: /"[^"]*"/, token: "string" },
 
-        {regex: /get|put|and|or/, token: "keyword"},
+        {regex: /get|put|and|or|xor/, token: "keyword"},
 
         // Incomplete, escaped quotes ('') are not matched
         {regex: /(:?[a-zAz][a-zA-Z0-9_-]+|'[^'\n\r]+')/, token:"variable-2"},
@@ -74,6 +74,6 @@ CodeMirror.defineSimpleMode("vtl", {
     // specific to simple modes.
     meta: {
         dontIndentStates: ["comment"],
-        //lineComment: "//"
+        lineComment: "//"
     }
 });

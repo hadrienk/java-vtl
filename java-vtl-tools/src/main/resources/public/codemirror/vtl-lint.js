@@ -31,7 +31,7 @@
         var found = [];
 
         // {message, severity, from, to}
-        fetch('/validate', {
+        fetch('/check', {
             method: "POST",
             body: text
         }).then(function (response) {

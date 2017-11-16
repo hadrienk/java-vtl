@@ -23,6 +23,7 @@ package no.ssb.vtl.tools.rest.controllers;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.script.error.VTLCompileException;
 import no.ssb.vtl.script.error.VTLScriptException;
 import no.ssb.vtl.tools.rest.representations.SyntaxErrorRepresentation;
@@ -44,11 +45,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -62,10 +63,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @RestController
 public class ValidatorController {
 
-    private final ScriptEngine engine;
+    private final VTLScriptEngine engine;
 
     @Autowired
-    public ValidatorController(ScriptEngine engine) {
+    public ValidatorController(VTLScriptEngine engine) {
         this.engine = checkNotNull(engine);
     }
 
@@ -86,34 +87,10 @@ public class ValidatorController {
                     MediaType.TEXT_PLAIN_VALUE
             }
     )
-    @Cacheable(cacheNames = "expressions", key = "@hasher.apply(#expression)")
+    @Cacheable(cacheNames = "validations", key = "@hasher.apply(#expression)")
     public List<SyntaxErrorRepresentation> validate(
             @RequestBody(required = false) String expression
     ) throws IOException, ScriptException {
-
-        if (expression == null)
-            return Collections.emptyList();
-
-        if ("".equals(expression))
-            return Collections.emptyList();
-
-        List<SyntaxErrorRepresentation> syntaxErrors = Lists.newArrayList();
-        try {
-            engine.eval(expression);
-        } catch (VTLCompileException vce) {
-            for (VTLScriptException exception : vce.getErrors()) {
-                SyntaxErrorRepresentation representation = new SyntaxErrorRepresentation(
-                        exception.getStartLine(),
-                        exception.getStopLine(),
-                        exception.getStartColumn(),
-                        exception.getStopColumn(),
-                        exception.getMessage(),
-                        null
-                );
-                syntaxErrors.add(representation);
-            }
-            return syntaxErrors;
-        }
 
         VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
         VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
@@ -131,6 +108,45 @@ public class ValidatorController {
 
         return errorListener.getSyntaxErrors();
 
+    }
+
+    private SyntaxErrorRepresentation convertToSyntaxError(VTLScriptException exception) {
+        return new SyntaxErrorRepresentation(
+                            exception.getStartLine(),
+                            exception.getStopLine(),
+                            exception.getStartColumn(),
+                            exception.getStopColumn(),
+                            exception.getMessage(),
+                            null
+                    );
+    }
+
+    /**
+     * Check a VTL Expression
+     */
+    @RequestMapping(
+            path = "/check",
+            method = RequestMethod.POST,
+            consumes = {
+                    MediaType.ALL_VALUE,
+                    MediaType.TEXT_PLAIN_VALUE
+            }
+    )
+    @Cacheable(cacheNames = "checks", key = "@hasher.apply(#expression)")
+    public List<SyntaxErrorRepresentation> check(
+            @RequestBody(required = false) String expression
+    ) throws IOException, ScriptException {
+        if (expression != null && !"".equals(expression)) {
+            try {
+                engine.eval(expression);
+            } catch (VTLCompileException vce) {
+                return vce.getErrors()
+                        .stream()
+                        .map(this::convertToSyntaxError)
+                        .collect(Collectors.toList());
+            }
+        }
+        return Collections.emptyList();
     }
 
     /**
