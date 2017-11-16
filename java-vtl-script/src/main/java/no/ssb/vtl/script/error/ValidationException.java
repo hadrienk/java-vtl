@@ -26,6 +26,7 @@ import javax.script.ScriptException;
  * The validation exception is thrown when a validation fails in the
  * VTL script.
  */
+@Deprecated
 public class ValidationException extends ScriptException {
     public ValidationException(String s) {
         super(s);

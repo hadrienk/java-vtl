@@ -1,6 +1,6 @@
 package no.ssb.vtl.script.error;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
@@ -9,9 +9,7 @@ package no.ssb.vtl.script.error;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,20 +18,32 @@ package no.ssb.vtl.script.error;
  * =========================LICENSE_END==================================
  */
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.collect.Lists;
+
+import javax.script.ScriptException;
+import java.util.List;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Utility class for error codes.
- */
-@Deprecated
-public class VTLErrorCodeUtil {
+public class VTLCompileException extends ScriptException {
 
-    public static String checkVTLCode(String vtlCode, String prefix) {
-        checkNotNull(vtlCode, "vtl error code was null");
-        checkArgument(
-                vtlCode.startsWith(prefix),
-                "vtl error code was expected to start with [%s], got [%s]", prefix, vtlCode);
-        return vtlCode;
+    public List<VTLScriptException> getErrors() {
+        return errors;
+    }
+
+    private List<VTLScriptException> errors = Lists.newArrayList();
+
+    public VTLCompileException(List<VTLScriptException> errors) {
+        super("compilation errors");
+        this.errors = checkNotNull(errors);
+    }
+
+    @Override
+    public String getMessage() {
+        StringBuilder message = new StringBuilder(super.getMessage());
+        for (VTLScriptException exception : getErrors()) {
+            message.append("\n\t - ").append(exception.getMessage());
+        }
+        return message.toString();
     }
 }

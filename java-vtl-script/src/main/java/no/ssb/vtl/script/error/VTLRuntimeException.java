@@ -29,6 +29,7 @@ import static no.ssb.vtl.script.error.VTLErrorCodeUtil.checkVTLCode;
 /**
  * Thrown when the VTL execution failed at runtime.
  */
+@Deprecated
 public class VTLRuntimeException extends RuntimeException implements VTLThrowable {
 
     private static final long serialVersionUID = 7253953869019949964L;

@@ -23,13 +23,15 @@ package no.ssb.vtl.script.error;
 /**
  * Mark the exception as positionable.
  */
+@Deprecated
 public interface PositionableError {
-
-    void setLine(int line);
-
-    void setColumn(int column);
 
     int getLineNumber();
 
     int getColumnNumber();
+
+    int getStartLine();
+    int getStopLine();
+    int getStartColumn();
+    int getStopColumn();
 }
