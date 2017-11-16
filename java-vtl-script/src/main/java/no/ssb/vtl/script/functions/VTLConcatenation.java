@@ -46,8 +46,8 @@ public class VTLConcatenation extends AbstractVTLFunction<VTLString> {
     @Override
     protected VTLString safeInvoke(TypeSafeArguments arguments) {
 
-        VTLString left = arguments.get(LEFT);
-        VTLString right = arguments.get(RIGHT);
+        VTLString left = arguments.getNullable(LEFT, VTLString.of(""));
+        VTLString right = arguments.getNullable(RIGHT, VTLString.of(""));
 
         // TODO: add isNull() in VTLObject.
         if (left.get() == null || right.get() == null) {
