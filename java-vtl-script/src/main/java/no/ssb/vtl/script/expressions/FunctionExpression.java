@@ -18,6 +18,7 @@ package no.ssb.vtl.script.expressions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -46,9 +47,9 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
 
     private static final String INVALID_TYPE = "invalid argument type for %s, expected %s but got %s";
     private static final String TOO_MANY_ARGUMENTS = "too many arguments, expected %s but got %s";
-    private static final String UNKNOWN_ARGUMENTS = "unknown argument %s";
-    private static final String DUPLICATE_ARGUMENTS = "duplicate argument %s";
-    private static final String MISSING_ARGUMENTS = "missing arguments %s";
+    private static final String UNKNOWN_ARGUMENTS = "unknown argument(s): %s";
+    private static final String DUPLICATE_ARGUMENTS = "duplicate argument(s): %s";
+    private static final String MISSING_ARGUMENTS = "missing argument(s): %s";
 
     private final VTLFunction<T> wrappedFunction;
     private final List<VTLExpression> arguments;
@@ -89,32 +90,35 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
     }
 
     // TODO: Move to VTLFunction or AbstractVTLFunction.
-    private Map<String, VTLExpression> mergeArguments(VTLFunction.Signature signature, List<VTLExpression> arguments, Map<String, VTLExpression> namedArguments) {
+    @VisibleForTesting
+    static Map<String, VTLExpression> mergeArguments(VTLFunction.Signature signature, List<VTLExpression> arguments, Map<String, VTLExpression> namedArguments) {
 
-        int argumentSize = arguments.size() + namedArguments.size();
-        checkArgument(argumentSize <= signature.size(), TOO_MANY_ARGUMENTS);
+        // Check unnamed arguments count.
+        checkArgument(arguments.size() <= signature.size(), TOO_MANY_ARGUMENTS, signature.size(), arguments.size());
 
         ImmutableMap.Builder<String, VTLExpression> builder = ImmutableMap.builder();
 
-        // First match the list with the signature names.
+        // Match the list with the signature names.
         Iterator<String> namesIterator = signature.keySet().iterator();
         for (VTLExpression argument : arguments) {
             builder.put(namesIterator.next(), argument);
         }
 
+
         // Check for duplicates
-        Set<String> duplicates = Sets.intersection(builder.build().keySet(), namedArguments.entrySet());
+        Set<String> duplicates = Sets.intersection(namedArguments.keySet(), builder.build().keySet());
         checkArgument(duplicates.isEmpty(), DUPLICATE_ARGUMENTS, String.join(", ", duplicates));
 
+        ImmutableMap<String, VTLExpression> computedArguments = builder.putAll(namedArguments).build();
+
         // Check for unknown arguments.
-        Set<String> unknown = Sets.difference(builder.build().keySet(), signature.keySet());
+        Set<String> unknown = Sets.difference(computedArguments.keySet(), signature.keySet());
         checkArgument(unknown.isEmpty(), UNKNOWN_ARGUMENTS, String.join(", ", unknown));
 
         // Check for missing arguments
-        ImmutableMap<String, VTLExpression> computedArguments = builder.putAll(namedArguments).build();
         Set<String> required = Maps.filterValues(signature, VTLFunction.Argument::isRequired).keySet();
         Set<String> missing = Sets.difference(required, computedArguments.keySet());
-        checkArgument(missing.isEmpty(), MISSING_ARGUMENTS, missing);
+        checkArgument(missing.isEmpty(), MISSING_ARGUMENTS, String.join(", ", missing));
 
         return computedArguments;
     }
