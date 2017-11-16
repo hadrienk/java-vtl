@@ -23,13 +23,12 @@ package no.ssb.vtl.script.functions;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.UnmodifiableIterator;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.VTLTyped;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,14 +44,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFunction<T> {
 
-    // TODO: Move to a central class.
     private static final String INVALID_ARGUMENT_COUNT = "expected %s argument(s) but got %s";
     private static final String UNKNOWN_ARGUMENTS = "unknown arguments %s";
     private static final String MISSING_ARGUMENTS = "missing arguments %s";
 
     private final String id;
-    private final ImmutableMap<String, Argument> signature;
     private final Class<T> type;
+    private final ImmutableMap<String, AbstractVTLFunction.Argument<?>> signature;
 
     protected AbstractVTLFunction(String id, Class<T> returnType, Argument... arguments) {
         this(id, returnType, Arrays.asList(arguments));
@@ -67,11 +65,10 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         this.type = checkNotNull(returnType);
         checkArgument(!id.isEmpty());
 
-        ImmutableMap.Builder<String, Argument> signature = ImmutableMap.builder();
-        for (Argument argument : arguments)
-            signature.put(argument.name, argument);
-
-        this.signature = signature.build();
+        ImmutableMap.Builder<String, Argument<?>> signatureBuilder = ImmutableMap.builder();
+        for (Argument<?> argument : arguments)
+            signatureBuilder.put(argument.getName(), argument);
+        this.signature = signatureBuilder.build();
     }
 
     /**
@@ -106,7 +103,7 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         );
 
         ImmutableMap.Builder<String, VTLObject> namedArguments = ImmutableMap.builder();
-        UnmodifiableIterator<String> names = signature.keySet().iterator();
+        Iterator<String> names = signature.keySet().iterator();
         for (VTLObject argument : arguments) {
             String name = names.next();
             namedArguments.put(name, argument);
@@ -114,13 +111,59 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         return namedArguments.build();
     }
 
-    @Override
-    public Map<String, VTLTyped<?>> getSignature() {
-        ImmutableMap.Builder<String, VTLTyped<?>> builder = ImmutableMap.builder();
-        for (Map.Entry<String, Argument> entry : signature.entrySet()) {
-            builder.put(entry.getKey(), entry.getValue());
+    private TypeSafeArguments createTypeSafeArguments(Map<String, VTLObject> namedArguments) {
+        Map<String, VTLObject> arguments = addOptionalValues(namedArguments);
+        validateArguments(arguments);
+        return new TypeSafeArguments(arguments, signature);
+    }
+
+    private Map<String, VTLObject> addOptionalValues(Map<String, VTLObject> arguments) {
+        ImmutableMap.Builder<String, VTLObject> builder = ImmutableMap.builder();
+        for (String name : signature.keySet()) {
+            VTLObject value;
+            if (arguments.containsKey(name)) {
+                value = arguments.get(name);
+            } else {
+                Argument argument = signature.get(name);
+                if (argument instanceof AbstractVTLFunction.OptionalArgument) {
+                    value = ((OptionalArgument) argument).getDefaultValue();
+                } else {
+                    // TODO: refactor to avoid this since it is not testable.
+                    throw new IllegalArgumentException("Required argument not present");
+                }
+            }
+            builder.put(name, value);
         }
         return builder.build();
+    }
+
+    /**
+     * Checks if the named arguments are of the correct types.
+     */
+    private void validateArguments(Map<String, VTLObject> arguments) {
+        if (arguments.isEmpty())
+            return; // No need to check if empty.
+
+        // Named arguments that are not in the signature.
+        Sets.SetView<String> unknown = Sets.difference(arguments.keySet(), signature.keySet());
+        checkArgument(unknown.isEmpty(), UNKNOWN_ARGUMENTS, unknown);
+
+        // Filter the optional arguments.
+        Set<String> requiredArgumentNames = signature.values().stream()
+                .filter(obj -> !OptionalArgument.class.isInstance(obj))
+                .map(Argument::getName)
+                .collect(Collectors.toSet());
+
+        // Non-optional named arguments missing.
+        Sets.SetView<String> missing = Sets.difference(requiredArgumentNames, arguments.keySet());
+        checkArgument(missing.isEmpty(), MISSING_ARGUMENTS, missing);
+
+    }
+
+    @Override
+    public Signature getSignature() {
+        // Not optimal, but restricts the refactoring ATM.
+        return Signature.builder().addArguments(signature).build();
     }
 
     @Override
@@ -154,65 +197,19 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         return safeInvoke(createTypeSafeArguments(arguments));
     }
 
-    private TypeSafeArguments createTypeSafeArguments(Map<String, VTLObject> namedArguments) {
-        Map<String, VTLObject> arguments = addOptionalValues(namedArguments);
-        validateArguments(arguments);
-        return new TypeSafeArguments(arguments, signature);
-    }
-
-    private Map<String, VTLObject> addOptionalValues(Map<String, VTLObject> arguments) {
-        ImmutableMap.Builder<String, VTLObject> builder = ImmutableMap.builder();
-        for (String name : signature.keySet()) {
-            VTLObject value;
-            if (arguments.containsKey(name)) {
-                value = arguments.get(name);
-            } else {
-                Argument argument = signature.get(name);
-                if (argument instanceof AbstractVTLFunction.OptionalArgument) {
-                    value = ((OptionalArgument) argument).getDefaultValue();
-                } else {
-                    // TODO: refactor to avoid this since it is not testable.
-                    throw new IllegalArgumentException("Required argument not present");
-                }
-            }
-            builder.put(name, value);
-        }
-        return builder.build();
-    }
-
-    /**
-     * Checks if the named arguments are of the correct types.
-     * TODO: exception type.
-     */
-    private void validateArguments(Map<String, VTLObject> arguments) {
-        if (arguments.isEmpty())
-            return; // No need to check if empty.
-
-        // Named arguments that are not in the signature.
-        Sets.SetView<String> unknown = Sets.difference(arguments.keySet(), signature.keySet());
-        checkArgument(unknown.isEmpty(), UNKNOWN_ARGUMENTS, unknown);
-
-        // Filter the optional arguments.
-        Set<String> requiredArgumentNames = signature.values().stream()
-                .filter(obj -> !OptionalArgument.class.isInstance(obj))
-                .map(Argument::getName)
-                .collect(Collectors.toSet());
-
-        // Non-optional named arguments missing.
-        Sets.SetView<String> missing = Sets.difference(requiredArgumentNames, arguments.keySet());
-        checkArgument(missing.isEmpty(), MISSING_ARGUMENTS, missing);
-
-    }
-
     protected abstract T safeInvoke(TypeSafeArguments arguments);
 
-    public static class Argument<A extends VTLObject> implements VTLTyped<A> {
+    // TODO: Rename
+    public static class Argument<A extends VTLObject> extends VTLFunction.Argument<A> {
         private final String name;
-        private final Class<A> type;
 
         public Argument(String name, Class<A> type) {
+            this(name, type, true);
+        }
+
+        protected Argument(String name, Class<A> type, boolean required) {
+            super(type, required);
             this.name = checkNotNull(name);
-            this.type = checkNotNull(type);
         }
 
         public String getName() {
@@ -220,15 +217,10 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         }
 
         @Override
-        public Class<A> getVTLType() {
-            return type;
-        }
-
-        @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
                     .add("name", name)
-                    .add("type", type.getSimpleName())
+                    .add("type", getVTLType().getSimpleName())
                     .toString();
         }
     }
@@ -238,12 +230,12 @@ public abstract class AbstractVTLFunction<T extends VTLObject> implements VTLFun
         private final A defaultValue;
 
         protected OptionalArgument(String name, Class<A> type, A defaultValue) {
-            super(name, type);
+            super(name, type, false);
             this.defaultValue = checkNotNull(defaultValue);
         }
 
         public VTLObject<A> getDefaultValue() {
-            return VTLObject.of(defaultValue);
+            return defaultValue;
         }
     }
 }

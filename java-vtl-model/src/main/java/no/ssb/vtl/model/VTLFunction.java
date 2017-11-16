@@ -20,15 +20,21 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Ints;
+
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Represents a VTL Function.
  */
 public interface VTLFunction<T extends VTLObject> extends VTLTyped<T> {
 
-    Map<String, VTLTyped<?>> getSignature();
+    Signature getSignature();
 
     T invoke(List<VTLObject> arguments);
 
@@ -36,4 +42,102 @@ public interface VTLFunction<T extends VTLObject> extends VTLTyped<T> {
 
     T invoke(List<VTLObject> arguments, Map<String, VTLObject> namedArguments);
 
+    abstract class Signature extends ForwardingMap<String, Argument<?>> {
+
+        private final int optionalSize;
+        private final int requiredSize;
+
+        // @formatter:off
+        private Signature(int optionalSize, int requiredSize) {
+            this.optionalSize = optionalSize;this.requiredSize = requiredSize;}
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public int getOptionalSize() {
+            return optionalSize;
+        }
+        // @formatter:on
+
+        public int getRequiredSize() {
+            return requiredSize;
+        }
+
+        public static class Builder {
+            ImmutableMap.Builder<String, Argument<?>> builder = ImmutableMap.builder();
+
+            public Builder addArgument(String name, Class<? extends VTLObject> type, boolean required) {
+                builder.put(name, new Argument<>(type, required));
+                return this;
+            }
+
+            public Builder addArgument(String name, Class<? extends VTLObject> type) {
+                builder.put(name, new Argument<>(type));
+                return this;
+            }
+
+            public Builder addArgument(String name, Argument<?> argument) {
+                builder.put(name, argument);
+                return this;
+            }
+
+            public Builder addArgument(Entry<? extends String, ? extends Argument<?>> entry) {
+                builder.put(entry);
+                return this;
+            }
+
+            public Builder addArguments(Map<? extends String, ? extends Argument<?>> map) {
+                builder.putAll(map);
+                return this;
+            }
+
+            public Builder addArguments(Iterable<Entry<? extends String, ? extends Argument<?>>> entries) {
+                builder.putAll(entries);
+                return this;
+            }
+
+            public Signature build() {
+                ImmutableMap<String, Argument<?>> immutableMap = builder.build();
+
+                long requiredSize = immutableMap.values().stream().filter(Argument::isRequired).count();
+                long optionalSize = immutableMap.values().stream().filter(Argument::isOptional).count();
+
+                return new Signature(Ints.checkedCast(optionalSize), Ints.checkedCast(requiredSize)) {
+                    @Override
+                    protected Map<String, Argument<?>> delegate() {
+                        return immutableMap;
+                    }
+                };
+            }
+        }
+    }
+
+    class Argument<A extends VTLObject> implements VTLTyped<A> {
+
+        private final Class<A> type;
+        private final boolean required;
+
+        public Argument(Class<A> type) {
+            this(type, true);
+        }
+
+        public Argument(Class<A> type, boolean required) {
+            this.type = checkNotNull(type);
+            this.required = required;
+        }
+
+        public boolean isRequired() {
+            return required;
+        }
+
+        public boolean isOptional() {
+            return !isRequired();
+        }
+
+        @Override
+        public Class<A> getVTLType() {
+            return type;
+        }
+    }
 }

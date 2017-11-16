@@ -27,7 +27,6 @@ import com.google.common.collect.Sets;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFunction;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.VTLTyped;
 
 import javax.script.Bindings;
 import java.util.Arrays;
@@ -49,9 +48,9 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
 
     private static final String INVALID_TYPE = "invalid argument type for %s, expected %s but got %s";
     private static final String TOO_MANY_ARGUMENTS = "too many arguments, expected %s but got %s";
-    private static final String UNKNOWN_ARGUMENTS = "unknown argument; %s";
-    private static final String DUPLICATE_ARGUMENTS = "duplicated argument; %s";
-    private static final String MISSING_ARGUMENTS = "missing arguments";
+    private static final String UNKNOWN_ARGUMENTS = "unknown argument %s";
+    private static final String DUPLICATE_ARGUMENTS = "duplicate argument %s";
+    private static final String MISSING_ARGUMENTS = "missing arguments %s";
 
     private final VTLFunction<T> wrappedFunction;
     private final List<VTLExpression> arguments;
@@ -78,7 +77,7 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
 
     // TODO: Move to VTLFunction or AbstractVTLFunction.
     private void checkTypes(VTLFunction<?> function, Map<String, VTLExpression> arguments) {
-        Map<String, VTLTyped<?>> signature = function.getSignature();
+        VTLFunction.Signature signature = function.getSignature();
         for (String argumentName : arguments.keySet()) {
             Class<?> expectedType = signature.get(argumentName).getVTLType();
             Class<?> argumentType  = arguments.get(argumentName).getVTLType();
@@ -92,9 +91,10 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
     }
 
     // TODO: Move to VTLFunction or AbstractVTLFunction.
-    private Map<String, VTLExpression> mergeArguments(Map<String, VTLTyped<?>> signature, List<VTLExpression> arguments, Map<String, VTLExpression> namedArguments) {
-        checkArgument(arguments.size() + namedArguments.size() <= signature.size(), TOO_MANY_ARGUMENTS);
-        checkArgument(arguments.size() + namedArguments.size() > 0 && signature.size() > 0, MISSING_ARGUMENTS);
+    private Map<String, VTLExpression> mergeArguments(VTLFunction.Signature signature, List<VTLExpression> arguments, Map<String, VTLExpression> namedArguments) {
+
+        int argumentSize = arguments.size() + namedArguments.size();
+        checkArgument(argumentSize <= signature.size(), TOO_MANY_ARGUMENTS);
 
         ImmutableMap.Builder<String, VTLExpression> builder = ImmutableMap.builder();
 
@@ -112,7 +112,13 @@ public class FunctionExpression<T extends VTLObject> implements VTLExpression {
         Set<String> unknown = Sets.difference(builder.build().keySet(), signature.keySet());
         checkArgument(unknown.isEmpty(), UNKNOWN_ARGUMENTS, String.join(", ", unknown));
 
-        return builder.putAll(namedArguments).build();
+        // Check for missing arguments
+        ImmutableMap<String, VTLExpression> computedArguments = builder.putAll(namedArguments).build();
+        Set<String> required = Maps.filterValues(signature, VTLFunction.Argument::isRequired).keySet();
+        Set<String> missing = Sets.difference(required, computedArguments.keySet());
+        checkArgument(missing.isEmpty(), MISSING_ARGUMENTS, missing);
+
+        return computedArguments;
     }
 
     @Override
