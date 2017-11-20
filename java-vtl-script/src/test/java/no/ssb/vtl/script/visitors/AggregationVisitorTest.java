@@ -28,13 +28,23 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.parser.VTLLexer;
+import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.operations.AggregationOperation;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
+import javax.script.SimpleBindings;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,13 +54,26 @@ import static org.assertj.core.api.Assertions.fail;
 
 public class AggregationVisitorTest {
 
-    private AggregationVisitor visitor = new AggregationVisitor();
+    private AggregationVisitor visitor;
     private Dataset datasetSingleMeasure;
     private Dataset datasetMultiMeasure;
     private DataStructure dataStructureSingleMeasure;
 
+    @Rule
+    public JUnitSoftAssertions softly = new JUnitSoftAssertions();
+
     @Before
     public void setUp() throws Exception {
+
+        SimpleBindings bindings = new SimpleBindings();
+        visitor = new AggregationVisitor(
+                new DatasetExpressionVisitor(
+                        new ExpressionVisitor(
+                                bindings
+                        )
+                )
+        );
+
         dataStructureSingleMeasure = DataStructure.of(
                 "time", Component.Role.IDENTIFIER, String.class,
                 "geo", Component.Role.IDENTIFIER, String.class,
@@ -86,7 +109,112 @@ public class AggregationVisitorTest {
                 .addPoints("2012", "DK", 92L, 9L)
                 .build();
 
+        bindings.put("dsMulti", datasetMultiMeasure);
+        bindings.put("dsSingle", datasetSingleMeasure);
 
+    }
+
+    @Test
+    public void variableDifferentDataset() throws Exception {
+
+        List<String> expressions = Arrays.asList(
+                "sum(dsSingle) group by dsMulti.time",
+                "sum(dsSingle) along dsMulti.time"
+        );
+        for (String expression : expressions) {
+
+            softly.assertThatThrownBy(() -> visitor.visit(parse(expression)))
+                    .isInstanceOf(ContextualRuntimeException.class)
+                    .hasMessage("variable dsMulti.time does not belong to dataset dsSingle");
+        }
+    }
+
+    @Test
+    public void variableNotFound() throws Exception {
+
+        List<String> expressions = Arrays.asList(
+                "sum(notFound) group by time",
+                "sum(dsSingle) group by notFound",
+                "sum(dsSingle) group by dsSingle.notFound",
+                "sum(dsSingle.notFound) group by time",
+                "sum(notFound) along geo",
+                "sum(dsSingle) along notFound",
+                "sum(dsSingle) along dsSingle.notFound",
+                "sum(dsSingle.notFound) along time"
+        );
+        for (String expression : expressions) {
+
+            softly.assertThatThrownBy(() -> visitor.visit(parse(expression)))
+                    .isInstanceOf(ContextualRuntimeException.class)
+                    .hasMessage("undefined variable notFound");
+        }
+    }
+
+    private VTLParser.AggregationFunctionContext parse(String expression) {
+        VTLLexer lexer = new VTLLexer(CharStreams.fromString(expression));
+        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
+        return parser.aggregationFunction();
+    }
+
+    @Test
+    public void testAggregateOnMeasure() throws Exception {
+
+        List<String> expressions = Arrays.asList(
+                "sum(dsMulti) group by m2",
+                "sum(dsMulti) group by dsMulti.m2",
+                "sum(dsMulti.m1) group by m2",
+                "sum(dsMulti.m1) group by dsMulti.m2",
+                "sum(dsMulti) along m2",
+                "sum(dsMulti) along dsMulti.m2",
+                "sum(dsMulti.m1) along m2",
+                "sum(dsMulti.m1) along dsMulti.m2"
+        );
+        for (String expression : expressions) {
+
+            softly.assertThatThrownBy(() -> visitor.visit(parse(expression)))
+                    .isInstanceOf(ContextualRuntimeException.class)
+                    .hasMessage("variable m2 was not an identifier");
+
+        }
+    }
+
+    @Test
+    public void testMembership() throws Exception {
+
+        List<String> expressions = Arrays.asList(
+                "sum(dsSingle) group by time",
+                "sum(dsSingle) group by dsSingle.time",
+                "sum(dsSingle.m1) group by time",
+                "sum(dsSingle.m1) group by dsSingle.time",
+                "sum(dsSingle) along geo",
+                "sum(dsSingle) along dsSingle.geo",
+                "sum(dsSingle.m1) along geo",
+                "sum(dsSingle.m1) along dsSingle.geo"
+        );
+        for (String expression : expressions) {
+
+            AggregationOperation result = visitor.visit(parse(expression));
+
+            DataStructure dataStructure = result.getDataStructure();
+            Map<String, Component.Role> roles = result.getDataStructure().getRoles();
+            softly.assertThat(roles).contains(
+                    entry("time", Component.Role.IDENTIFIER),
+                    entry("m1", Component.Role.MEASURE)
+            );
+
+            softly.assertThat(result.getDataStructure().getTypes()).contains(
+                    entry("time", String.class),
+                    entry("m1", Long.class)
+            );
+
+
+            softly.assertThat(result.getData()).contains(
+                    dataStructure.wrap(ImmutableMap.of("time", "2010", "m1", 20L+40L+60L)),
+                    dataStructure.wrap(ImmutableMap.of("time", "2011", "m1", 11L+31L+51L)),
+                    dataStructure.wrap(ImmutableMap.of("time", "2012", "m1", 72L+82L+92L))
+            );
+
+        }
     }
 
     @Test
