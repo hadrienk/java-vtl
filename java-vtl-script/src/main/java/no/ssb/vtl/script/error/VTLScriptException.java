@@ -70,8 +70,10 @@ public class VTLScriptException extends ScriptException implements PositionableE
         checkNotNull(ctx);
         startLine = ctx.getStart().getLine();
         startColumn = ctx.getStart().getCharPositionInLine();
-        stopLine = ctx.getStop().getLine();
-        stopColumn = ctx.getStop().getCharPositionInLine();
+        if (ctx.getStop() != null) {
+            stopLine = ctx.getStop().getLine();
+            stopColumn = ctx.getStop().getCharPositionInLine();
+        }
     }
 
     @Override
