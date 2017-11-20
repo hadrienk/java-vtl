@@ -33,10 +33,10 @@
             <id>travis</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>env.TRAVIS</name>
-                    <value>true</value>
-                </property>
+                <!--<property>-->
+                <!--    <name>env.TRAVIS</name>-->
+                <!--    <value>true</value>-->
+                <!--</property>-->
             </activation>
             <build>
                 <plugins>
