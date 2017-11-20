@@ -54,14 +54,79 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     private static final String NOT_AN_IDENTIFIER_ERROR = "variable %s was not an identifier";
 
     private final DatasetExpressionVisitor datasetExpressionVisitor;
-    
+
     public AggregationVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
         this.datasetExpressionVisitor = checkNotNull(datasetExpressionVisitor);
     }
 
+    private static Set<Component> computeMeasureComponentList(VariableExpressionContext datasetContext, Dataset dataset, ComponentVisitor componentVisitor) {
+        return Optional.ofNullable(datasetContext.membershipExpression())
+                .map(membershipExpressionContext -> membershipExpressionContext.right)
+                .map(variableContext -> Collections.singleton(componentVisitor.visit(variableContext)))
+                .orElse(dataset.getDataStructure().values().stream().filter(Component::isMeasure).collect(Collectors.toSet()));
+    }
+
+    private static Set<Component> computeAggregationComponents(Set<Component> aggregationComponents, Set<Component> availableIdentifiers, Token clause) {
+        switch (clause.getType()) {
+            case GROUP_BY:
+                return aggregationComponents;
+            case ALONG:
+                return availableIdentifiers.stream()
+                        .filter(component -> !aggregationComponents.contains(component))
+                        .collect(Collectors.toSet());
+            default:
+                throw new IllegalArgumentException("unrecognized token: " + clause.getText());
+        }
+    }
+
+    private static VariableContext extractComponentContext(VariableExpressionContext variableExpressionContext) {
+        return ofNullable(variableExpressionContext.membershipExpression())
+                .map(membershipContext -> membershipContext.right)
+                .orElse(variableExpressionContext.variable());
+    }
+
+    private static VariableContext extractDatasetContext(VariableExpressionContext variableExpressionContext) {
+        return ofNullable(variableExpressionContext.membershipExpression())
+                .map(membershipContext -> membershipContext.left)
+                .orElse(variableExpressionContext.variable());
+    }
+
     @VisibleForTesting
-    AggregationVisitor() {
-        this.datasetExpressionVisitor = null;
+    static AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy) {
+        List<Component> component = dataset.getDataStructure().values().stream()
+                .filter(Component::isMeasure)
+                .collect(Collectors.toList());
+        return getSumOperation(dataset, groupBy, component);
+    }
+
+    @VisibleForTesting
+    static AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, List<Component> aggregationComponents) {
+        return new AggregationOperation(dataset, groupBy, aggregationComponents,
+                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLObject.of((Double) null)));
+    }
+
+    private static void checkComponentType(VariableExpressionContext parameterVariableContext, VariableContext variableContext, Component identifier) {
+        if (!identifier.isIdentifier()) {
+            throw new ContextualRuntimeException(
+                    format(NOT_AN_IDENTIFIER_ERROR, variableContext.getText()),
+                    parameterVariableContext
+            );
+        }
+    }
+
+    private static void checkDatasetContexts(VariableContext datasetContext, VariableExpressionContext parameterVariableContext) {
+        Optional<VariableContext> datasetVariableCtx = ofNullable(parameterVariableContext.membershipExpression())
+                .map(membershipContext -> membershipContext.left);
+
+        if (datasetVariableCtx.isPresent()) {
+            // Check that the variable expression uses the same dataset.
+            if (!datasetVariableCtx.get().getText().equals(datasetContext.getText())) {
+                throw new ContextualRuntimeException(
+                        format(NOT_SAME_DATASET_ERROR, parameterVariableContext.getText(), datasetContext.getText()),
+                        parameterVariableContext
+                );
+            }
+        }
     }
 
     @Override
@@ -85,28 +150,13 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
         AggregationParamsContext paramContexts = ctx.aggregationParams();
         for (VariableExpressionContext parameterVariableContext : paramContexts.variableExpression()) {
 
-            Optional<VariableContext> datasetVariableCtx = ofNullable(parameterVariableContext.membershipExpression())
-                    .map(membershipContext -> membershipContext.left);
-
-            if (datasetVariableCtx.isPresent()) {
-                // Check that the variable expression uses the same dataset.
-                if (!datasetVariableCtx.get().getText().equals(datasetContext.getText())) {
-                    throw new ContextualRuntimeException(
-                            format(NOT_SAME_DATASET_ERROR, parameterVariableContext.getText(), datasetContext.getText()),
-                            parameterVariableContext
-                    );
-                }
-            }
+            // Check that the dataset names are the same.
+            checkDatasetContexts(datasetContext, parameterVariableContext);
 
             VariableContext variableContext = extractComponentContext(parameterVariableContext);
             Component identifier = componentVisitor.visit(variableContext);
 
-            if (!identifier.isIdentifier()) {
-                throw new ContextualRuntimeException(
-                        format(NOT_AN_IDENTIFIER_ERROR, variableContext.getText()),
-                        parameterVariableContext
-                );
-            }
+            checkComponentType(parameterVariableContext, variableContext, identifier);
 
             aggregationComponents.add(identifier);
         }
@@ -119,50 +169,4 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
         return getSumOperation(dataset, Lists.newArrayList(components), Lists.newArrayList(measureComponents));
     }
 
-    private Set<Component> computeMeasureComponentList(VariableExpressionContext datasetContext, Dataset dataset, ComponentVisitor componentVisitor) {
-        return Optional.ofNullable(datasetContext.membershipExpression())
-                .map(membershipExpressionContext -> membershipExpressionContext.right)
-                .map(variableContext -> Collections.singleton(componentVisitor.visit(variableContext)))
-                .orElse(dataset.getDataStructure().values().stream().filter(Component::isMeasure).collect(Collectors.toSet()));
-    }
-
-    private Set<Component> computeAggregationComponents(Set<Component> aggregationComponents, Set<Component> availableIdentifiers, Token clause) {
-        switch (clause.getType()){
-            case GROUP_BY:
-                return aggregationComponents;
-            case ALONG:
-                return availableIdentifiers.stream()
-                        .filter(component -> !aggregationComponents.contains(component))
-                        .collect(Collectors.toSet());
-            default:
-                throw new IllegalArgumentException("unrecognized token: " + clause.getText());
-        }
-    }
-
-    private VariableContext extractComponentContext(VariableExpressionContext variableExpressionContext) {
-        return ofNullable(variableExpressionContext.membershipExpression())
-                .map(membershipContext -> membershipContext.right)
-                .orElse(variableExpressionContext.variable());
-    }
-
-    private VariableContext extractDatasetContext(VariableExpressionContext variableExpressionContext) {
-        return ofNullable(variableExpressionContext.membershipExpression())
-                .map(membershipContext -> membershipContext.left)
-                .orElse(variableExpressionContext.variable());
-    }
-
-    @VisibleForTesting
-    AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy) {
-        List<Component> component = dataset.getDataStructure().values().stream()
-                .filter(Component::isMeasure)
-                .collect(Collectors.toList());
-        return getSumOperation(dataset, groupBy, component);
-    }
-
-    @VisibleForTesting
-    AggregationOperation getSumOperation(Dataset dataset, List<Component> groupBy, List<Component> aggregationComponents) {
-        return new AggregationOperation(dataset, groupBy, aggregationComponents,
-                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber::add).orElse(VTLObject.of((Double) null)));
-    }
-    
 }

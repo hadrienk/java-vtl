@@ -223,7 +223,7 @@ public class AggregationVisitorTest {
     public void testSumSingleMeasureDataSet() throws Exception {
 
         List<Component> components = Lists.newArrayList(datasetSingleMeasure.getDataStructure().getOrDefault("time", null));
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetSingleMeasure,components);
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(datasetSingleMeasure,components);
         sumOperation.getData().forEach(System.out::println);
 
         DataStructure dataStructure = sumOperation.getDataStructure();
@@ -252,7 +252,7 @@ public class AggregationVisitorTest {
     // TODO: Move this to its own test when avg is implemented
     public void testSumMultiMeasureDataSetAll() throws Exception {
         List<Component> groupBy = Lists.newArrayList(datasetMultiMeasure.getDataStructure().getOrDefault("time", null));
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy);
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(datasetMultiMeasure,groupBy);
 
         DataStructure dataStructure = sumOperation.getDataStructure();
 
@@ -283,7 +283,7 @@ public class AggregationVisitorTest {
         Component m1 = dataStructure.getOrDefault("m1", null);
         List<Component> groupBy = Lists.newArrayList(dataStructure.getOrDefault("time", null));
 
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy, Collections.singletonList(m1));
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(datasetMultiMeasure,groupBy, Collections.singletonList(m1));
 
         DataStructure resultingDataStructure = sumOperation.getDataStructure();
 
@@ -312,7 +312,7 @@ public class AggregationVisitorTest {
         DataStructure dataStructure = datasetSingleMeasure.getDataStructure();
         List<Component> components = Lists.newArrayList(dataStructure.get("time"), dataStructure.get("geo"));
         System.out.println("Group By " + components);
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetSingleMeasure,components);
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(datasetSingleMeasure,components);
         sumOperation.getData().forEach(System.out::println);
 
         DataStructure resultingDataStructure = sumOperation.getDataStructure();
@@ -375,7 +375,7 @@ public class AggregationVisitorTest {
                 .filter(component -> !alongComponents.contains(component))
                 .collect(Collectors.toList());
         System.out.println(groupBy);
-        AggregationOperation sumOperation = visitor.getSumOperation(datasetToBeSummed,groupBy);
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(datasetToBeSummed,groupBy);
 
         assertThat(sumOperation.getData()).containsOnly(dataPoint("EIER", "F130KFEIER", "130", "2015", "SBDR", 8418L+1092L+5367L+4370L+318L+610L+3888L+24L));
 
@@ -397,7 +397,7 @@ public class AggregationVisitorTest {
                 .addPoints("2012", "DK", 92L)
                 .build();
 
-        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(dataset,
                 Collections.singletonList(dataStructureSingleMeasure.get("time")));
         assertThat(sumOperation.getData()).contains(dataPoint("2012", 41L + 92L));
 
@@ -417,7 +417,7 @@ public class AggregationVisitorTest {
                 .addPoints("2", "shouldFail")
                 .build();
 
-        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(dataset,
                 Collections.singletonList(dataStructureSingleMeasure.get("time")));
         sumOperation.getDataStructure();
         fail("Expected an exception but none was thrown");
@@ -441,7 +441,7 @@ public class AggregationVisitorTest {
                 .addPoints("2012", "DK", 92L)
                 .build();
 
-        AggregationOperation sumOperation = visitor.getSumOperation(dataset,
+        AggregationOperation sumOperation = AggregationVisitor.getSumOperation(dataset,
                 Collections.singletonList(dataStructureSingleMeasure.get("time")));
         assertThat(sumOperation.getData()).contains(dataPoint("2012", 41L + 92L));
         assertThat(sumOperation.getData()).contains(dataPoint("2010", null));
