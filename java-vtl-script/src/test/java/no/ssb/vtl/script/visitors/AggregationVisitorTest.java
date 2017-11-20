@@ -97,6 +97,7 @@ public class AggregationVisitorTest {
                 "geo", Component.Role.IDENTIFIER, String.class,
                 "m1", Component.Role.MEASURE, Long.class,
                 "m2", Component.Role.MEASURE, Long.class);
+
         datasetMultiMeasure = StaticDataset.create(dataStructureMultiMeasure)
                 .addPoints("2010", "NO", 20L, 2L)
                 .addPoints("2010", "SE", 40L, 4L)
@@ -218,6 +219,7 @@ public class AggregationVisitorTest {
     }
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumSingleMeasureDataSet() throws Exception {
 
         List<Component> components = Lists.newArrayList(datasetSingleMeasure.getDataStructure().getOrDefault("time", null));
@@ -247,6 +249,7 @@ public class AggregationVisitorTest {
 
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumMultiMeasureDataSetAll() throws Exception {
         List<Component> groupBy = Lists.newArrayList(datasetMultiMeasure.getDataStructure().getOrDefault("time", null));
         AggregationOperation sumOperation = visitor.getSumOperation(datasetMultiMeasure,groupBy);
@@ -273,6 +276,7 @@ public class AggregationVisitorTest {
     }
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumMultiMeasureDataSet() throws Exception {
 
         DataStructure dataStructure = datasetMultiMeasure.getDataStructure();
@@ -303,6 +307,7 @@ public class AggregationVisitorTest {
 
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumGroupedByMultipleIdentifiers() throws Exception {
         DataStructure dataStructure = datasetSingleMeasure.getDataStructure();
         List<Component> components = Lists.newArrayList(dataStructure.get("time"), dataStructure.get("geo"));
@@ -337,6 +342,7 @@ public class AggregationVisitorTest {
 
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumAlongMultipleIdentifiers() throws Exception {
         Dataset datasetToBeSummed = StaticDataset.create()
                 .addComponent("eieform", Component.Role.IDENTIFIER, String.class)
@@ -376,6 +382,7 @@ public class AggregationVisitorTest {
     }
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumWithNullValues() throws Exception {
         Dataset dataset = StaticDataset.create(dataStructureSingleMeasure)
                 .addPoints("2010", "NO", 20L)
@@ -397,6 +404,8 @@ public class AggregationVisitorTest {
     }
 
     @Test(expected = ParseCancellationException.class)
+    // TODO: Move this to its own test when avg is implemented
+    // TODO: Use assertThrownBy with ContextualRuntimeException.
     public void testAggregationWithoutNumber() throws Exception {
         DataStructure dataStructure = DataStructure.builder()
 
@@ -416,6 +425,7 @@ public class AggregationVisitorTest {
 
 
     @Test
+    // TODO: Move this to its own test when avg is implemented
     public void testSumWithEmptyAggregationGroup() throws Exception {
         //dataset with several null values. In fact ALL 2010 values are null
         Dataset dataset = StaticDataset.create(dataStructureSingleMeasure)
