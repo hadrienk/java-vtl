@@ -60,7 +60,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     }
 
     private static Set<Component> computeMeasureComponentList(VariableExpressionContext datasetContext, Dataset dataset, ComponentVisitor componentVisitor) {
-        return Optional.ofNullable(datasetContext.membershipExpression())
+        return ofNullable(datasetContext.membershipExpression())
                 .map(membershipExpressionContext -> membershipExpressionContext.right)
                 .map(variableContext -> Collections.singleton(componentVisitor.visit(variableContext)))
                 .orElse(dataset.getDataStructure().values().stream().filter(Component::isMeasure).collect(Collectors.toSet()));
@@ -114,18 +114,21 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
         }
     }
 
+    /**
+     * Checks that the dataset in the variable expression uses the same dataset.
+     */
     private static void checkDatasetContexts(VariableContext datasetContext, VariableExpressionContext parameterVariableContext) {
         Optional<VariableContext> datasetVariableCtx = ofNullable(parameterVariableContext.membershipExpression())
                 .map(membershipContext -> membershipContext.left);
 
-        if (datasetVariableCtx.isPresent()) {
-            // Check that the variable expression uses the same dataset.
-            if (!datasetVariableCtx.get().getText().equals(datasetContext.getText())) {
-                throw new ContextualRuntimeException(
-                        format(NOT_SAME_DATASET_ERROR, parameterVariableContext.getText(), datasetContext.getText()),
-                        parameterVariableContext
-                );
-            }
+        if (!datasetVariableCtx.isPresent())
+            return;
+
+        if (!datasetVariableCtx.get().getText().equals(datasetContext.getText())) {
+            throw new ContextualRuntimeException(
+                    format(NOT_SAME_DATASET_ERROR, parameterVariableContext.getText(), datasetContext.getText()),
+                    parameterVariableContext
+            );
         }
     }
 
