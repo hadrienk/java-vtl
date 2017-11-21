@@ -91,26 +91,29 @@ public class ValidatorController {
     public List<SyntaxErrorRepresentation> validate(
             @RequestBody(required = false) String expression
     ) throws IOException, ScriptException {
+        if (expression != null && !"".equals(expression)) {
 
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
-        VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
+            // OSB: ANTLRInputStream is deprecated but still contains a bug
+            VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
+            VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
 
-        lexer.removeErrorListeners();
-        parser.removeErrorListeners();
+            lexer.removeErrorListeners();
+            parser.removeErrorListeners();
 
-        parser.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
+            parser.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
 
-        ErrorListener errorListener = new ErrorListener();
-        lexer.addErrorListener(errorListener);
-        parser.addErrorListener(errorListener);
+            ErrorListener errorListener = new ErrorListener();
+            lexer.addErrorListener(errorListener);
+            parser.addErrorListener(errorListener);
 
-        parser.start();
+            parser.start();
 
-        return errorListener.getSyntaxErrors();
-
+            return errorListener.getSyntaxErrors();
+        }
+        return Collections.emptyList();
     }
 
-    private SyntaxErrorRepresentation convertToSyntaxError(VTLScriptException exception) {
+    private static SyntaxErrorRepresentation convertToSyntaxError(VTLScriptException exception) {
         return new SyntaxErrorRepresentation(
                             exception.getStartLine(),
                             exception.getStopLine(),
@@ -142,7 +145,7 @@ public class ValidatorController {
             } catch (VTLCompileException vce) {
                 return vce.getErrors()
                         .stream()
-                        .map(this::convertToSyntaxError)
+                        .map(ValidatorController::convertToSyntaxError)
                         .collect(Collectors.toList());
             }
         }
