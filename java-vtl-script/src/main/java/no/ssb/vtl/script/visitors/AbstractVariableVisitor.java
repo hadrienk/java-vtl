@@ -22,7 +22,7 @@ package no.ssb.vtl.script.visitors;
 
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
 
 import javax.script.Bindings;
 
@@ -47,10 +47,7 @@ public abstract class AbstractVariableVisitor<T> extends VTLBaseVisitor<T> {
         if (bindings.containsKey(identifier))
             return identifier;
 
-        throw new VTLRuntimeException(
-                format("undefined variable [%s] (scope [%s])", identifier, bindings),
-                "VTL-101", ctx
-        );
+        throw new ContextualRuntimeException(format("undefined variable %s", ctx.getText()), ctx);
     }
 
     private static String unEscape(String identifier) {

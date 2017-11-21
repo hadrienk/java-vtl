@@ -63,6 +63,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
                 if (Number.class.isAssignableFrom(entry.getValue().getType())) {
                     newDataStructure.put(entry);
                 } else {
+                    // TODO: This should be handled in the visitor (before execution)
                     throw new ParseCancellationException(
                             new TypeException(String.format("Cannot aggregate component %s of type %s. It must be numeric", entry.getKey(), entry.getValue().getType()), "VTL-02xx"));
                 }
