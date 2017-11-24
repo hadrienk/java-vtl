@@ -20,6 +20,7 @@ package no.ssb.vtl.script.expressions.arithmetic;
 
 import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 
 
@@ -27,6 +28,11 @@ public class DivisionExpression extends AbstractArithmeticExpression {
 
     public DivisionExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
         super(leftOperand, rightOperand);
+    }
+
+    @Override
+    public Class getVTLType() {
+        return VTLFloat.class;
     }
 
     @Override
