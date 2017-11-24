@@ -21,43 +21,21 @@ package no.ssb.vtl.script.expressions;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
-import no.ssb.vtl.model.VTLObject;
-
-import javax.script.Bindings;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Expression with two operands that will not call resolve if one of the operand is null.
+ * Returns type Float if one of its operand is Float.
  */
-public abstract class AbstractArithmeticExpression implements VTLExpression {
-
-    private final VTLExpression leftOperand;
-    private final VTLExpression rightOperand;
+public abstract class AbstractArithmeticExpression extends AbstractBinaryExpression {
 
     protected AbstractArithmeticExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
-        this.leftOperand = checkNotNull(leftOperand);
-        this.rightOperand = checkNotNull(rightOperand);
+        super(leftOperand, rightOperand);
     }
 
     @Override
     public Class getVTLType() {
-        if (leftOperand.getVTLType() == VTLFloat.class || rightOperand.getVTLType() == VTLFloat.class)
+        if (getLeftOperand().getVTLType() == VTLFloat.class || getRightOperand().getVTLType() == VTLFloat.class)
             return VTLFloat.class;
         else
             return VTLInteger.class;
     }
-
-    @Override
-    public final VTLObject resolve(Bindings bindings) {
-        VTLObject leftOperand = this.leftOperand.resolve(bindings);
-        VTLObject rightOperand = this.rightOperand.resolve(bindings);
-
-        if (leftOperand.get() == null || rightOperand.get() == null)
-            return VTLObject.NULL;
-        else
-            return compute(leftOperand, rightOperand);
-    }
-
-    abstract VTLObject compute(VTLObject leftOperand, VTLObject rightOperand);
 }
