@@ -90,7 +90,7 @@
     <profiles>
 
         <profile>
-            <!-- interal distribution for ssb -->
+            <!-- internal distribution for ssb -->
             <id>ssb</id>
             <distributionManagement>
                 <repository>
@@ -144,7 +144,7 @@
         </profile>
 
         <profile>
-            <id>travis</id>
+            <id>coverage</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <property>
@@ -157,15 +157,24 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.7.9</version>
                         <executions>
                             <execution>
-                                <id>jacoco-initialize</id>
+                                <id>pre-unit-test</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
                             </execution>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
                         </executions>
                     </plugin>
+
                 </plugins>
             </build>
         </profile>
