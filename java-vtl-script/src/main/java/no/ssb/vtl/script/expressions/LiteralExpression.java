@@ -1,4 +1,4 @@
-package no.ssb.vtl.model;
+package no.ssb.vtl.script.expressions;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,26 +18,39 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VTLInteger> {
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLTyped;
 
-    private VTLInteger() {
+import javax.script.Bindings;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+/**
+ * Always resolved expression.
+ */
+public class LiteralExpression implements VTLExpression {
+
+    private final VTLObject literal;
+
+    public LiteralExpression(VTLObject literal) {
+        this.literal = checkNotNull(literal);
     }
 
     @Override
-    public Class<VTLInteger> getVTLType() {
-        return VTLInteger.class;
+    public String toString() {
+        return literal.toString();
     }
 
-    public static VTLInteger of(Integer value) {
-        return VTLInteger.of(value != null ? value.longValue() : null);
+    @Override
+    public Class<?> getVTLType() {
+        if (literal instanceof VTLTyped)
+            return ((VTLTyped) literal).getVTLType();
+        return VTLObject.class;
     }
 
-    public static VTLInteger of(Long value) {
-        return new VTLInteger() {
-            @Override
-            public Long get() {
-                return value;
-            }
-        };
+    @Override
+    public VTLObject resolve(Bindings dataPoint) {
+        return literal;
     }
 }
