@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.expressions;
+package no.ssb.vtl.script.expressions.logic;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,28 +18,34 @@ package no.ssb.vtl.script.expressions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
+
+import javax.script.Bindings;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Binary expression that avoid calling resolve if one of its operand is null.
- */
-public abstract class AbstractBinaryExpression implements VTLExpression {
+public class NotExpression implements VTLExpression<VTLBoolean> {
 
-    private final VTLExpression leftOperand;
-    private final VTLExpression rightOperand;
+    private final VTLExpression operand;
 
-    AbstractBinaryExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
-        this.leftOperand = checkNotNull(leftOperand);
-        this.rightOperand = checkNotNull(rightOperand);
+    public NotExpression(VTLExpression operand) {
+        this.operand = checkNotNull(operand);
     }
 
-    public VTLExpression getLeftOperand() {
-        return leftOperand;
+    @Override
+    public VTLBoolean resolve(Bindings bindings) {
+        VTLObject resolved = operand.resolve(bindings);
+        if(resolved.get() == null)
+            return VTLBoolean.of((Boolean) null);
+
+        VTLBoolean value = (VTLBoolean) resolved;
+        return VTLBoolean.of(!value.get());
     }
 
-    public VTLExpression getRightOperand() {
-        return rightOperand;
+    @Override
+    public Class<VTLBoolean> getVTLType() {
+        return VTLBoolean.class;
     }
 }

@@ -23,14 +23,14 @@ import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.script.expressions.AbstractBinaryExpression;
+import no.ssb.vtl.script.expressions.AbstractNullFirstExpression;
 
 /**
  * Returns type Float if one of its operand is Float.
  */
-public abstract class AbstractArithmeticExpression extends AbstractBinaryExpression {
+public abstract class AbstractArithmeticExpression extends AbstractNullFirstExpression {
 
-    protected AbstractArithmeticExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+    AbstractArithmeticExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
         super(leftOperand, rightOperand);
     }
 

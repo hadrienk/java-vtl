@@ -19,27 +19,26 @@ package no.ssb.vtl.script.expressions;
  */
 
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import javax.script.Bindings;
 
-/**
- * Binary expression that avoid calling resolve if one of its operand is null.
- */
-public abstract class AbstractBinaryExpression implements VTLExpression {
+public abstract class AbstractNullFirstExpression extends AbstractBinaryExpression {
 
-    private final VTLExpression leftOperand;
-    private final VTLExpression rightOperand;
-
-    AbstractBinaryExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
-        this.leftOperand = checkNotNull(leftOperand);
-        this.rightOperand = checkNotNull(rightOperand);
+    protected AbstractNullFirstExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
-    public VTLExpression getLeftOperand() {
-        return leftOperand;
+    @Override
+    public final VTLObject resolve(Bindings bindings) {
+        VTLObject leftOperand = getLeftOperand().resolve(bindings);
+        VTLObject rightOperand = getRightOperand().resolve(bindings);
+
+        if (leftOperand.get() == null || rightOperand.get() == null)
+            return VTLObject.NULL;
+        else
+            return compute(leftOperand, rightOperand);
     }
 
-    public VTLExpression getRightOperand() {
-        return rightOperand;
-    }
+    protected abstract VTLObject compute(VTLObject leftOperand, VTLObject rightOperand);
 }

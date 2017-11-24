@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.expressions;
+package no.ssb.vtl.script.expressions.logic;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,28 +18,24 @@ package no.ssb.vtl.script.expressions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+public class XorExpression extends AbstractLogicExpression {
 
-/**
- * Binary expression that avoid calling resolve if one of its operand is null.
- */
-public abstract class AbstractBinaryExpression implements VTLExpression {
-
-    private final VTLExpression leftOperand;
-    private final VTLExpression rightOperand;
-
-    AbstractBinaryExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
-        this.leftOperand = checkNotNull(leftOperand);
-        this.rightOperand = checkNotNull(rightOperand);
+    public XorExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
-    public VTLExpression getLeftOperand() {
-        return leftOperand;
-    }
+    @Override
+    protected VTLBoolean compute(VTLBoolean left, VTLBoolean right) {
+        if (isNull(left) || isNull(right))
+            return VTLBoolean.of((Boolean) null);
 
-    public VTLExpression getRightOperand() {
-        return rightOperand;
+        if (left.get() == right.get()) {
+            return VTLBoolean.of(Boolean.FALSE);
+        } else {
+            return VTLBoolean.of(Boolean.TRUE);
+        }
     }
 }

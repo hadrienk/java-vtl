@@ -38,11 +38,17 @@ import no.ssb.vtl.script.expressions.arithmetic.AdditionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.DivisionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.MultiplicationExpression;
 import no.ssb.vtl.script.expressions.arithmetic.SubtractionExpression;
-import no.ssb.vtl.script.functions.VTLAnd;
+import no.ssb.vtl.script.expressions.equality.EqualExpression;
+import no.ssb.vtl.script.expressions.equality.GraterThanExpression;
+import no.ssb.vtl.script.expressions.equality.GreaterOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.LesserOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
+import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
+import no.ssb.vtl.script.expressions.logic.AndExpression;
+import no.ssb.vtl.script.expressions.logic.OrExpression;
+import no.ssb.vtl.script.expressions.logic.XorExpression;
 import no.ssb.vtl.script.functions.VTLConcatenation;
 import no.ssb.vtl.script.functions.VTLNot;
-import no.ssb.vtl.script.functions.VTLOr;
-import no.ssb.vtl.script.functions.VTLXor;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
@@ -117,12 +123,12 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
         // Check that the operands are of type number.
         VTLExpression leftExpression = visit(ctx.left);
         if (isNull(leftExpression) || !VTLNumber.class.isAssignableFrom(leftExpression.getVTLType())) {
-            throw new ContextualRuntimeException(format("%s was not a number", ctx.left.getText()), ctx.left);
+            throw new ContextualRuntimeException(format("%s was not a numeric expression", ctx.left.getText()), ctx.left);
         }
 
         VTLExpression rightExpression = visit(ctx.right);
         if (isNull(rightExpression) || !VTLNumber.class.isAssignableFrom(rightExpression.getVTLType())) {
-            throw new ContextualRuntimeException(format("%s was not a number", ctx.right.getText()), ctx.right);
+            throw new ContextualRuntimeException(format("%s was not a numeric expression", ctx.right.getText()), ctx.right);
         }
 
         switch (ctx.op.getType()) {
@@ -149,26 +155,66 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
                 return new FunctionExpression<>(VTLConcatenation.getInstance(), leftExpression, rightExpression);
 
             case VTLParser.EQ:
-                return getBooleanExpression((left, right) -> left.compareTo(right) == 0, leftExpression, rightExpression);
             case VTLParser.NE:
-                return getBooleanExpression((left, right) -> left.compareTo(right) != 0, leftExpression, rightExpression);
             case VTLParser.LE:
-                return getBooleanExpression((l, r) ->  l.compareTo(r) <= 0, leftExpression, rightExpression);
             case VTLParser.LT:
-                return getBooleanExpression((l, r) -> l.compareTo(r) < 0, leftExpression, rightExpression);
             case VTLParser.GE:
-                return getBooleanExpression((l, r) -> l.compareTo(r) >= 0, leftExpression, rightExpression);
             case VTLParser.GT:
-                return getBooleanExpression((l, r) -> l.compareTo(r) > 0, leftExpression, rightExpression);
+                return getEqualityExpression(ctx);
 
             case VTLParser.AND:
-                return new FunctionExpression<>(VTLAnd.getInstance(), leftExpression, rightExpression);
             case VTLParser.OR:
-                return  new FunctionExpression<>(VTLOr.getInstance(), leftExpression, rightExpression);
             case VTLParser.XOR:
-                return new FunctionExpression<>(VTLXor.getInstance(), leftExpression, rightExpression);
+                return getBooleanExpression(ctx);
+
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
+        }
+    }
+
+    private VTLExpression getEqualityExpression(VTLParser.BinaryExprContext ctx) {
+        VTLExpression leftExpression = visit(ctx.left);
+        VTLExpression rightExpression = visit(ctx.right);
+        switch (ctx.op.getType()) {
+            case VTLParser.EQ:
+                return new EqualExpression(leftExpression, rightExpression);
+            case VTLParser.NE:
+                return new NotEqualExpression(leftExpression, rightExpression);
+            case VTLParser.LE:
+                return new LesserOrEqualExpression(leftExpression, rightExpression);
+            case VTLParser.LT:
+                return new LesserThanExpression(leftExpression, rightExpression);
+            case VTLParser.GE:
+                return new GreaterOrEqualExpression(leftExpression, rightExpression);
+            case VTLParser.GT:
+                return new GraterThanExpression(leftExpression, rightExpression);
+            default:
+                throw new ParseCancellationException("unknown equality operator " + ctx.op.getText());
+        }
+    }
+
+    private VTLExpression getBooleanExpression(VTLParser.BinaryExprContext ctx) {
+
+        // Check that the operands are of type boolean.
+        VTLExpression leftExpression = visit(ctx.left);
+        if (!isNull(leftExpression) && !VTLBoolean.class.isAssignableFrom(leftExpression.getVTLType())) {
+            throw new ContextualRuntimeException(format("%s was not a boolean expression", ctx.left.getText()), ctx.left);
+        }
+
+        VTLExpression rightExpression = visit(ctx.right);
+        if (!isNull(rightExpression) && !VTLBoolean.class.isAssignableFrom(rightExpression.getVTLType())) {
+            throw new ContextualRuntimeException(format("%s was not a boolean expression", ctx.right.getText()), ctx.right);
+        }
+
+        switch (ctx.op.getType()) {
+            case VTLParser.AND:
+                return new AndExpression(leftExpression, rightExpression);
+            case VTLParser.OR:
+                return new OrExpression(leftExpression, rightExpression);
+            case VTLParser.XOR:
+                return new XorExpression(leftExpression, rightExpression);
+            default:
+                throw new ParseCancellationException("unknown logic operator " + ctx.op.getText());
         }
     }
 

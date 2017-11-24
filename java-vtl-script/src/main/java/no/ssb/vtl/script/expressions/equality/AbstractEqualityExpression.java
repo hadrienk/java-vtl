@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.expressions;
+package no.ssb.vtl.script.expressions.equality;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,28 +18,26 @@ package no.ssb.vtl.script.expressions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.expressions.AbstractNullFirstExpression;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+public abstract class AbstractEqualityExpression extends AbstractNullFirstExpression {
 
-/**
- * Binary expression that avoid calling resolve if one of its operand is null.
- */
-public abstract class AbstractBinaryExpression implements VTLExpression {
-
-    private final VTLExpression leftOperand;
-    private final VTLExpression rightOperand;
-
-    AbstractBinaryExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
-        this.leftOperand = checkNotNull(leftOperand);
-        this.rightOperand = checkNotNull(rightOperand);
+    AbstractEqualityExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
-    public VTLExpression getLeftOperand() {
-        return leftOperand;
+    @Override
+    protected VTLBoolean compute(VTLObject leftOperand, VTLObject rightOperand) {
+        return VTLBoolean.of(compare(leftOperand, rightOperand));
     }
 
-    public VTLExpression getRightOperand() {
-        return rightOperand;
+    protected abstract boolean compare(VTLObject leftOperand, VTLObject rightOperand);
+
+    @Override
+    public Class getVTLType() {
+        return VTLBoolean.class;
     }
 }
