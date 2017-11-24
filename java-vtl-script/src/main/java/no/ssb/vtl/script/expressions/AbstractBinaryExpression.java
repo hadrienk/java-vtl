@@ -57,5 +57,5 @@ public abstract class AbstractBinaryExpression implements VTLExpression {
             return compute(leftOperand, rightOperand);
     }
 
-    abstract VTLObject compute(VTLObject leftOperand, VTLObject rightOperand);
+    protected abstract VTLObject compute(VTLObject leftOperand, VTLObject rightOperand);
 }

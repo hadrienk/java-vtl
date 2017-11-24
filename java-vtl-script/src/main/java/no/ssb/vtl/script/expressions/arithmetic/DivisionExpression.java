@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.expressions;
+package no.ssb.vtl.script.expressions.arithmetic;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,24 +18,27 @@ package no.ssb.vtl.script.expressions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLExpression;
-import no.ssb.vtl.model.VTLFloat;
-import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 
-/**
- * Returns type Float if one of its operand is Float.
- */
-public abstract class AbstractArithmeticExpression extends AbstractBinaryExpression {
 
-    protected AbstractArithmeticExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+public class DivisionExpression extends AbstractArithmeticExpression {
+
+    public DivisionExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
         super(leftOperand, rightOperand);
     }
 
     @Override
-    public Class getVTLType() {
-        if (getLeftOperand().getVTLType() == VTLFloat.class || getRightOperand().getVTLType() == VTLFloat.class)
-            return VTLFloat.class;
-        else
-            return VTLInteger.class;
+    protected VTLNumber compute(VTLNumber dividend, VTLNumber divisor) {
+        return dividend.divide(divisor);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .addValue(getLeftOperand())
+                .addValue(getRightOperand())
+                .toString();
     }
 }

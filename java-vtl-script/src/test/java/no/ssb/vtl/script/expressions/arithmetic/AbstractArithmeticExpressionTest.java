@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.expressions;
+package no.ssb.vtl.script.expressions.arithmetic;
 
 /*
  * ========================LICENSE_START=================================
@@ -22,6 +22,7 @@ import com.codepoetics.protonpack.StreamUtils;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
@@ -42,6 +43,20 @@ public class AbstractArithmeticExpressionTest {
     public JUnitSoftAssertions softly = new JUnitSoftAssertions();
     private VTLExpression floatExpr;
     private VTLExpression integerExpr;
+
+    private static VTLExpression createExpression(Class<? extends VTLObject> type, VTLObject value) {
+        return new VTLExpression() {
+            @Override
+            public VTLObject resolve(Bindings bindings) {
+                return value;
+            }
+
+            @Override
+            public Class getVTLType() {
+                return type;
+            }
+        };
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -100,8 +115,8 @@ public class AbstractArithmeticExpressionTest {
 
         List<VTLObject> expressionValues = Arrays.asList(
                 VTLInteger.of((Integer) null), VTLInteger.of((Integer) null),
-                VTLObject.of((Integer)null), VTLObject.of(0),
-                VTLObject.of(0), VTLObject.of((Integer)null)
+                VTLObject.of((Integer) null), VTLObject.of(0),
+                VTLObject.of(0), VTLObject.of((Integer) null)
         );
 
         StreamUtils.windowed(expressionTypes.stream(), 2, 2).forEach(types -> {
@@ -118,24 +133,10 @@ public class AbstractArithmeticExpressionTest {
         });
 
         softly.assertThatThrownBy(() -> new TestableExpression(
-                    createExpression(VTLInteger.class, VTLInteger.of(0)),
-                    createExpression(VTLInteger.class, VTLInteger.of(0))
+                        createExpression(VTLInteger.class, VTLInteger.of(0)),
+                        createExpression(VTLInteger.class, VTLInteger.of(0))
                 ).resolve(new SimpleBindings())
         ).hasMessage("should not have been called");
-    }
-
-    private static VTLExpression createExpression(Class<? extends VTLObject> type, VTLObject value) {
-        return new VTLExpression() {
-            @Override
-            public VTLObject resolve(Bindings bindings) {
-                return value;
-            }
-
-            @Override
-            public Class getVTLType() {
-                return type;
-            }
-        };
     }
 
     private class TestableExpression extends AbstractArithmeticExpression {
@@ -145,7 +146,7 @@ public class AbstractArithmeticExpressionTest {
         }
 
         @Override
-        VTLObject compute(VTLObject leftOperand, VTLObject rightOperand) {
+        protected VTLNumber compute(VTLNumber leftOperand, VTLNumber rightOperand) {
             throw new AssertionError("should not have been called");
         }
 

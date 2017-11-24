@@ -1,6 +1,6 @@
-package no.ssb.vtl.script.functions;
+package no.ssb.vtl.script.expressions.arithmetic;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
@@ -9,9 +9,7 @@ package no.ssb.vtl.script.functions;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,29 +18,26 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.MoreObjects;
+import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLNumber;
 
-@Deprecated
-public class VTLMultiplication extends AbstractVTLFunction<VTLNumber> {
+public class MuliplicationExpression extends AbstractArithmeticExpression {
 
-    private static final Argument<VTLNumber> LEFT = new Argument<>("left", VTLNumber.class);
-    private static final Argument<VTLNumber> RIGHT = new Argument<>("right", VTLNumber.class);
-    private static VTLMultiplication instance;
-
-    private VTLMultiplication() {
-        super("*", VTLNumber.class, LEFT, RIGHT);
-    }
-
-    public static VTLMultiplication getInstance() {
-        if (instance == null)
-            instance = new VTLMultiplication();
-        return instance;
+    public MuliplicationExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
-        VTLNumber left = arguments.get(LEFT);
-        VTLNumber right = arguments.get(RIGHT);
-        return left.multiply(right);
+    protected VTLNumber compute(VTLNumber multiplier, VTLNumber multiplicand) {
+        return multiplier.multiply(multiplicand);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .addValue(getLeftOperand())
+                .addValue(getRightOperand())
+                .toString();
     }
 }

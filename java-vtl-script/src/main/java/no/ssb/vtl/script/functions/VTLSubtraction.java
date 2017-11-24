@@ -22,6 +22,7 @@ package no.ssb.vtl.script.functions;
 
 import no.ssb.vtl.model.VTLNumber;
 
+@Deprecated
 public class VTLSubtraction extends AbstractVTLFunction<VTLNumber> {
 
     private static final Argument<VTLNumber> LEFT = new Argument<>("left", VTLNumber.class);

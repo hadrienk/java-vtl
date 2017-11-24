@@ -23,8 +23,6 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
-import no.ssb.vtl.model.VTLFloat;
-import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
@@ -33,16 +31,16 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.error.VTLRuntimeException;
-import no.ssb.vtl.script.expressions.IfThenElseExpression;
 import no.ssb.vtl.script.expressions.FunctionExpression;
-import no.ssb.vtl.script.functions.VTLAddition;
+import no.ssb.vtl.script.expressions.IfThenElseExpression;
+import no.ssb.vtl.script.expressions.arithmetic.AdditionExpression;
+import no.ssb.vtl.script.expressions.arithmetic.DivisionExpression;
+import no.ssb.vtl.script.expressions.arithmetic.MuliplicationExpression;
+import no.ssb.vtl.script.expressions.arithmetic.SubtractionExpression;
 import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;
-import no.ssb.vtl.script.functions.VTLDivision;
-import no.ssb.vtl.script.functions.VTLMultiplication;
 import no.ssb.vtl.script.functions.VTLNot;
 import no.ssb.vtl.script.functions.VTLOr;
-import no.ssb.vtl.script.functions.VTLSubtraction;
 import no.ssb.vtl.script.functions.VTLXor;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -51,8 +49,8 @@ import javax.script.Bindings;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.*;
-import static java.lang.String.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 /**
  * TODO: extend abstract variable visitor.
@@ -130,43 +128,33 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
         }
     }
 
+    private static boolean isNull(VTLTyped typed) {
+        return VTLObject.class.equals(typed.getVTLType());
+    }
+
     @Override
     public VTLExpression visitArithmeticExpr(VTLParser.ArithmeticExprContext ctx) {
-        VTLExpression leftExpression = visit(ctx.left);
-        VTLExpression rightExpression = visit(ctx.right);
 
-        // Arithmetic expression types are function of the type of the operands.
+        // Check that the operands are of type number.
+        VTLExpression leftExpression = visit(ctx.left);
+        if (isNull(leftExpression) || !VTLNumber.class.isAssignableFrom(leftExpression.getVTLType())) {
+            throw new ContextualRuntimeException(format("%s was not a number", ctx.left.getText()), ctx.left);
+        }
+
+        VTLExpression rightExpression = visit(ctx.right);
+        if (isNull(rightExpression) || !VTLNumber.class.isAssignableFrom(leftExpression.getVTLType())) {
+            throw new ContextualRuntimeException(format("%s was not a number", ctx.right.getText()), ctx.right);
+        }
+
         switch (ctx.op.getType()) {
             case VTLParser.MUL:
-                return new FunctionExpression<VTLNumber>(VTLMultiplication.getInstance(), leftExpression, rightExpression) {
-                    @Override
-                    public Class getVTLType() {
-                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
-                            return VTLFloat.class;
-                        return VTLInteger.class;
-                    }
-                };
+                return new MuliplicationExpression(leftExpression, rightExpression);
             case VTLParser.DIV:
-                return new FunctionExpression<>(VTLDivision.getInstance(), leftExpression, rightExpression);
+                return new DivisionExpression(leftExpression, rightExpression);
             case VTLParser.PLUS:
-                return new FunctionExpression<VTLNumber>(VTLAddition.getInstance(), leftExpression, rightExpression) {
-                    @Override
-                    public Class getVTLType() {
-                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
-                            return VTLFloat.class;
-                        return VTLInteger.class;
-                    }
-                };
+                return new AdditionExpression(leftExpression, rightExpression);
             case VTLParser.MINUS:
-                return new FunctionExpression<VTLNumber>(VTLSubtraction.getInstance(), leftExpression, rightExpression) {
-                    @Override
-                    public Class getVTLType() {
-                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
-                            return VTLFloat.class;
-                        return VTLInteger.class;
-                    }
-                };
-
+                return new SubtractionExpression(leftExpression, rightExpression);
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }

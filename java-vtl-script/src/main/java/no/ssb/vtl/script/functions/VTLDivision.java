@@ -23,6 +23,7 @@ package no.ssb.vtl.script.functions;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 
+@Deprecated
 public class VTLDivision extends AbstractVTLFunction<VTLFloat> {
 
     private static final Argument<VTLNumber> LEFT = new Argument<>("left", VTLNumber.class);
