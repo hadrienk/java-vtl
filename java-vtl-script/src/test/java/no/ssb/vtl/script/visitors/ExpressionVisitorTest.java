@@ -104,7 +104,7 @@ public class ExpressionVisitorTest {
         VTLParser parse1 = parse("-5 / 2");
         VTLExpression result1 = expressionVisitor.visit(parse1.expression());
         softly.assertThat(result1.getVTLType()).isEqualTo(VTLFloat.class);
-        softly.assertThat(result1.resolve(null).get()).isEqualTo(-100.0);
+        softly.assertThat(result1.resolve(null).get()).isEqualTo(-2.5);
 
         VTLParser parse2 = parse("-5 / 0.05");
         VTLExpression result2 = expressionVisitor.visit(parse2.expression());
