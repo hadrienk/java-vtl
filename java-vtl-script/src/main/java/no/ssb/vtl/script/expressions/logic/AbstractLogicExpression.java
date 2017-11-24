@@ -18,28 +18,38 @@ package no.ssb.vtl.script.expressions.logic;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.expressions.AbstractBinaryExpression;
 
 import javax.script.Bindings;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public abstract class AbstractLogicExpression implements VTLExpression {
-
-    private final VTLExpression rightOperand;
-    private final VTLExpression leftOperand;
+public abstract class AbstractLogicExpression extends AbstractBinaryExpression {
 
     AbstractLogicExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
-        this.leftOperand = checkNotNull(leftOperand);
-        this.rightOperand = checkNotNull(rightOperand);
+        super(leftOperand, rightOperand);
     }
 
-    protected static boolean isNull(VTLBoolean value) {
+    static boolean isNull(VTLBoolean value) {
         Boolean aBoolean = value.get();
         return aBoolean == null;
+    }
+
+    static VTLBoolean falseOrNull(VTLBoolean right) {
+        if (!isNull(right) && !right.get()) {
+            return right;
+        } else {
+            return VTLBoolean.of((Boolean) null);
+        }
+    }
+
+    static VTLBoolean trueOrNull(VTLBoolean right) {
+        if (!isNull(right) && right.get()) {
+            return right;
+        } else {
+            return VTLBoolean.of((Boolean) null);
+        }
     }
 
     @Override
@@ -50,8 +60,8 @@ public abstract class AbstractLogicExpression implements VTLExpression {
     @Override
     public final VTLObject resolve(Bindings bindings) {
 
-        VTLObject left = leftOperand.resolve(bindings);
-        VTLObject right = rightOperand.resolve(bindings);
+        VTLObject left = getLeftOperand().resolve(bindings);
+        VTLObject right = getRightOperand().resolve(bindings);
 
         return compute(
                 left.get() == null ? VTLBoolean.of((Boolean) null) : (VTLBoolean) left,
@@ -59,37 +69,5 @@ public abstract class AbstractLogicExpression implements VTLExpression {
         );
     }
 
-    protected VTLBoolean falseOrNull(VTLBoolean right) {
-        if (!isNull(right) && !right.get()) {
-            return right;
-        } else {
-            return VTLBoolean.of((Boolean) null);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .addValue(leftOperand)
-                .addValue(rightOperand)
-                .toString();
-    }
-
     protected abstract VTLBoolean compute(VTLBoolean leftOperand, VTLBoolean rightOperand);
-
-    public VTLExpression getRightOperand() {
-        return rightOperand;
-    }
-
-    public VTLExpression getLeftOperand() {
-        return leftOperand;
-    }
-
-    protected VTLBoolean trueOrNull(VTLBoolean right) {
-        if (!isNull(right) && right.get()) {
-            return right;
-        } else {
-            return VTLBoolean.of((Boolean) null);
-        }
-    }
 }

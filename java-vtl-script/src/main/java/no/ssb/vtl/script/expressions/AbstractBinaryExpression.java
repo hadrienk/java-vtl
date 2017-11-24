@@ -31,7 +31,7 @@ public abstract class AbstractBinaryExpression implements VTLExpression {
     private final VTLExpression leftOperand;
     private final VTLExpression rightOperand;
 
-    AbstractBinaryExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+    protected AbstractBinaryExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
         this.leftOperand = checkNotNull(leftOperand);
         this.rightOperand = checkNotNull(rightOperand);
     }
