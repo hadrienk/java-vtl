@@ -22,9 +22,9 @@ import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLNumber;
 
-public class MuliplicationExpression extends AbstractArithmeticExpression {
+public class MultiplicationExpression extends AbstractArithmeticExpression {
 
-    public MuliplicationExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+    public MultiplicationExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
         super(leftOperand, rightOperand);
     }
 

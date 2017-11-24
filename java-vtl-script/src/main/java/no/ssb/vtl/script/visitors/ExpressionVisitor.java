@@ -36,7 +36,7 @@ import no.ssb.vtl.script.expressions.IfThenElseExpression;
 import no.ssb.vtl.script.expressions.LiteralExpression;
 import no.ssb.vtl.script.expressions.arithmetic.AdditionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.DivisionExpression;
-import no.ssb.vtl.script.expressions.arithmetic.MuliplicationExpression;
+import no.ssb.vtl.script.expressions.arithmetic.MultiplicationExpression;
 import no.ssb.vtl.script.expressions.arithmetic.SubtractionExpression;
 import no.ssb.vtl.script.functions.VTLAnd;
 import no.ssb.vtl.script.functions.VTLConcatenation;
@@ -127,7 +127,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
         switch (ctx.op.getType()) {
             case VTLParser.MUL:
-                return new MuliplicationExpression(leftExpression, rightExpression);
+                return new MultiplicationExpression(leftExpression, rightExpression);
             case VTLParser.DIV:
                 return new DivisionExpression(leftExpression, rightExpression);
             case VTLParser.PLUS:
