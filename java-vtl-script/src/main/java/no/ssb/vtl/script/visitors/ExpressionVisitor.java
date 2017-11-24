@@ -121,7 +121,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
         }
 
         VTLExpression rightExpression = visit(ctx.right);
-        if (isNull(rightExpression) || !VTLNumber.class.isAssignableFrom(leftExpression.getVTLType())) {
+        if (isNull(rightExpression) || !VTLNumber.class.isAssignableFrom(rightExpression.getVTLType())) {
             throw new ContextualRuntimeException(format("%s was not a number", ctx.right.getText()), ctx.right);
         }
 
