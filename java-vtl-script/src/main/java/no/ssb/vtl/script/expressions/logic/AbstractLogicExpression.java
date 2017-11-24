@@ -18,6 +18,7 @@ package no.ssb.vtl.script.expressions.logic;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
@@ -56,6 +57,14 @@ public abstract class AbstractLogicExpression implements VTLExpression {
     protected static boolean isNull(VTLBoolean value) {
         Boolean aBoolean = value.get();
         return aBoolean == null;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(getClass())
+                .addValue(leftOperand)
+                .addValue(rightOperand)
+                .toString();
     }
 
     protected abstract VTLBoolean compute(VTLBoolean leftOperand, VTLBoolean rightOperand);

@@ -18,6 +18,7 @@ package no.ssb.vtl.script.expressions;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLExpression;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,5 +42,13 @@ public abstract class AbstractBinaryExpression implements VTLExpression {
 
     public VTLExpression getRightOperand() {
         return rightOperand;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(getClass())
+                .addValue(leftOperand)
+                .addValue(rightOperand)
+                .toString();
     }
 }

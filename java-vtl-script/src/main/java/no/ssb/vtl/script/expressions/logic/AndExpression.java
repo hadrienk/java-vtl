@@ -18,7 +18,6 @@ package no.ssb.vtl.script.expressions.logic;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.base.MoreObjects;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 
@@ -47,11 +46,4 @@ public class AndExpression extends AbstractLogicExpression {
         return VTLBoolean.of(left.get() && right.get());
     }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .addValue(getLeftOperand())
-                .addValue(getRightOperand())
-                .toString();
-    }
 }
