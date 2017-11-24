@@ -654,7 +654,7 @@ public class VTLScriptEngineTest {
                 .addComponent("id1", Role.IDENTIFIER, String.class)
                 .addComponent("m1", Role.MEASURE, Long.class)
 
-                .addPoints("1", VTLObject.NULL)
+                .addPoints("1", null)
                 .build();
 
         bindings.put("ds1", ds1);
@@ -939,8 +939,8 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at1", Role.MEASURE, String.class)
 
-                .addPoints( "1", 10L, 20, "attr1-1")
-                .addPoints( "2", 100L, 200, "attr1-2")
+                .addPoints( "1", 10L, 20D, "attr1-1")
+                .addPoints( "2", 100L, 200D, "attr1-2")
                 .build();
 
         Dataset ds2 = StaticDataset.create()
@@ -949,8 +949,8 @@ public class VTLScriptEngineTest {
                .addComponent("m2", Role.MEASURE, Double.class)
                .addComponent("at1", Role.MEASURE, String.class)
 
-                .addPoints("3", 30L, 40, "attr2-1")
-                .addPoints( "4", 300L, 400, "attr2-2")
+                .addPoints("3", 30L, 40D, "attr2-1")
+                .addPoints( "4", 300L, 400D, "attr2-2")
                 .build();
 
 
@@ -977,10 +977,10 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", 10L, 20L, "attr1-1",
-                        "2", 100L, 200L, "attr1-2",
-                        "3", 30L, 40L, "attr2-1",
-                        "4", 300L, 400L, "attr2-2"
+                        "1", 10L, 20D, "attr1-1",
+                        "2", 100L, 200D, "attr1-2",
+                        "3", 30L, 40D, "attr2-1",
+                        "4", 300L, 400D, "attr2-2"
                 );
     }
 }

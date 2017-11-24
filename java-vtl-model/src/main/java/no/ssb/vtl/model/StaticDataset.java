@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -181,7 +180,13 @@ public class StaticDataset implements Dataset {
         }
 
         public ValueBuilder addPoints(Object... values) {
-            List<VTLObject> converted = Arrays.stream(values).map(VTLObject::of).collect(Collectors.toList());
+            ArrayList<VTLObject> converted = Lists.newArrayListWithCapacity(values.length);
+            Iterator<Class<?>> types = structure.getTypes().values().iterator();
+            for (Object value : values) {
+                checkArgument(types.hasNext());
+                Class<?> type = types.next();
+                converted.add(VTLObject.of(type.cast(value)));
+            }
             return addPoints(converted.toArray(new VTLObject[]{}));
         }
 

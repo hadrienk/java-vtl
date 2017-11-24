@@ -109,7 +109,7 @@ public class CheckSingleRuleOperationTest {
                 .andRoles(IDENTIFIER,IDENTIFIER, MEASURE, MEASURE)
                 .andTypes(String.class, String.class, String.class, Boolean.class)
                 .addPoints("0101", "0101", "measure 0101", true)
-                .addPoints("9990", VTLObject.NULL /* not in the code list, so a null value */, "measure 9990", false)
+                .addPoints("9990", null /* not in the code list, so a null value */, "measure 9990", false)
                 .addPoints("0104", "0104", "measure 0104", true)
                 .build();
 
