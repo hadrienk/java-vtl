@@ -53,7 +53,6 @@ import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import javax.script.Bindings;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -109,7 +108,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
             case VTLParser.NOT:
                 return new NotExpression(operand);
             default:
-                throw new ParseCancellationException("unknown operator " + ctx.op.getText());
+                throw new ContextualRuntimeException("unknown operator " + ctx.op.getText(), ctx);
         }
     }
 
@@ -190,7 +189,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
                 result = new GraterThanExpression(leftExpression, rightExpression);
                 break;
             default:
-                throw new ParseCancellationException("unknown equality operator " + ctx.op.getText());
+                throw new ContextualRuntimeException("unknown equality operator " + ctx.op.getText(), ctx);
         }
         return result;
     }
@@ -213,7 +212,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
                 result = new XorExpression(leftExpression, rightExpression);
                 break;
             default:
-                throw new ParseCancellationException("unknown logic operator " + ctx.op.getText());
+                throw new ContextualRuntimeException("unknown logic operator " + ctx.op.getText(), ctx);
         }
         return result;
     }
@@ -245,23 +244,6 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
             public Class getVTLType() {
                 return VTLBoolean.class;
             }
-        };
-    }
-
-    private VTLExpression getBooleanExpression(BiPredicate<VTLObject, VTLObject> predicate, VTLExpression leftExpression, VTLExpression rightExpression) {
-        return new VTLExpression() {
-            @Override
-            public VTLObject resolve(Bindings bindings) {
-                VTLObject left = leftExpression.resolve(bindings);
-                VTLObject right = rightExpression.resolve(bindings);
-                return VTLBoolean.of(predicate.test(left, right));
-            }
-
-            @Override
-            public Class getVTLType() {
-                return VTLBoolean.class;
-            }
-
         };
     }
 
