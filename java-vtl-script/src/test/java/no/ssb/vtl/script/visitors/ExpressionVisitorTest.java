@@ -117,12 +117,12 @@ public class ExpressionVisitorTest {
         VTLParser parse1 = parse("\"not a number\" / 0.05");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse1.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
 
         VTLParser parse2 = parse("-5 / \"not a number\"");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse2.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
     }
 
     @Test
@@ -143,12 +143,12 @@ public class ExpressionVisitorTest {
         VTLParser parse1 = parse("\"not a number\" * 1");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse1.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
 
         VTLParser parse2 = parse("1 * \"not a number\"");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse2.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
     }
 
     @Test
@@ -164,12 +164,12 @@ public class ExpressionVisitorTest {
         VTLParser parse1 = parse("\"not a number\" + 1");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse1.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
 
         VTLParser parse2 = parse("1 + \"not a number\"");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse2.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
     }
 
     @Test
@@ -185,12 +185,12 @@ public class ExpressionVisitorTest {
         VTLParser parse1 = parse("\"not a number\" - 1");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse1.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
 
         VTLParser parse2 = parse("1 - \"not a number\"");
         softly.assertThatThrownBy(() -> expressionVisitor.visit(parse2.expression()))
                 .isInstanceOf(ContextualRuntimeException.class)
-                .hasMessage("\"not a number\" was not a numeric expression");
+                .hasMessage("invalid type VTLString, expected VTLNumber");
     }
 
     @Test

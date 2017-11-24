@@ -121,15 +121,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     public VTLExpression visitArithmeticExpr(VTLParser.ArithmeticExprContext ctx) {
 
         // Check that the operands are of type number.
-        VTLExpression leftExpression = visit(ctx.left);
-        if (isNull(leftExpression) || !VTLNumber.class.isAssignableFrom(leftExpression.getVTLType())) {
-            throw new ContextualRuntimeException(format("%s was not a numeric expression", ctx.left.getText()), ctx.left);
-        }
-
-        VTLExpression rightExpression = visit(ctx.right);
-        if (isNull(rightExpression) || !VTLNumber.class.isAssignableFrom(rightExpression.getVTLType())) {
-            throw new ContextualRuntimeException(format("%s was not a numeric expression", ctx.right.getText()), ctx.right);
-        }
+        VTLExpression leftExpression = visitTypedExpression(ctx.left, VTLNumber.class);
+        VTLExpression rightExpression = visitTypedExpression(ctx.right, VTLNumber.class);
 
         switch (ctx.op.getType()) {
             case VTLParser.MUL:
@@ -205,15 +198,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     private VTLExpression getBooleanExpression(VTLParser.BinaryExprContext ctx) {
 
         // Check that the operands are of type boolean.
-        VTLExpression leftExpression = visit(ctx.left);
-        if (!isNull(leftExpression) && !VTLBoolean.class.isAssignableFrom(leftExpression.getVTLType())) {
-            throw new ContextualRuntimeException(format("%s was not a boolean expression", ctx.left.getText()), ctx.left);
-        }
-
-        VTLExpression rightExpression = visit(ctx.right);
-        if (!isNull(rightExpression) && !VTLBoolean.class.isAssignableFrom(rightExpression.getVTLType())) {
-            throw new ContextualRuntimeException(format("%s was not a boolean expression", ctx.right.getText()), ctx.right);
-        }
+        VTLExpression leftExpression = visitTypedExpression(ctx.left, VTLBoolean.class);
+        VTLExpression rightExpression = visitTypedExpression(ctx.right, VTLBoolean.class);
 
         VTLExpression result;
         switch (ctx.op.getType()) {
@@ -230,6 +216,21 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
                 throw new ParseCancellationException("unknown logic operator " + ctx.op.getText());
         }
         return result;
+    }
+
+    private VTLExpression visitTypedExpression(VTLParser.ExpressionContext ctx, Class<? extends VTLObject> requiredType) {
+        VTLExpression expression = visit(ctx);
+        if (!isNull(expression) && !requiredType.isAssignableFrom(expression.getVTLType())) {
+            throw new ContextualRuntimeException(
+                    format(
+                            "invalid type %s, expected %s",
+                            expression.getVTLType().getSimpleName(),
+                            requiredType.getSimpleName()
+                    ),
+                    ctx
+            );
+        }
+        return expression;
     }
 
     private VTLExpression getIsNullExpression(Predicate<VTLObject> predicate, VTLExpression expression) {
