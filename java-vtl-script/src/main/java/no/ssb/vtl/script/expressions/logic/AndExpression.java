@@ -30,26 +30,21 @@ public class AndExpression extends AbstractLogicExpression {
 
     @Override
     protected VTLBoolean compute(VTLBoolean left, VTLBoolean right) {
-        if (!isNull(left)) {
-            if (!left.get()) {
-                return VTLBoolean.of(false);
+        if (isNull(left)) {
+            if (!isNull(right) && !right.get()) {
+                return right;
             } else {
-                if (!isNull(right)) {
-                    return VTLBoolean.of(left.get() && right.get());
-                } else {
-                    return VTLBoolean.of((Boolean) null);
-                }
+                return VTLBoolean.of((Boolean) null);
             }
-        } else {
-            if (!isNull(right)) {
-                if (!right.get()) {
-                    return VTLBoolean.of(false);
-                } else {
-                    return VTLBoolean.of((Boolean) null);
-                }
-            }
-            return VTLBoolean.of((Boolean) null);
         }
+        if (isNull(right)) {
+            if (!isNull(left) && !left.get()) {
+                return left;
+            } else {
+                return VTLBoolean.of((Boolean) null);
+            }
+        }
+        return VTLBoolean.of(left.get() && right.get());
     }
 
     @Override
