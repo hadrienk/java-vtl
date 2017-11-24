@@ -175,22 +175,31 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     private VTLExpression getEqualityExpression(VTLParser.BinaryExprContext ctx) {
         VTLExpression leftExpression = visit(ctx.left);
         VTLExpression rightExpression = visit(ctx.right);
+
+        VTLExpression result;
         switch (ctx.op.getType()) {
             case VTLParser.EQ:
-                return new EqualExpression(leftExpression, rightExpression);
+                result = new EqualExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.NE:
-                return new NotEqualExpression(leftExpression, rightExpression);
+                result = new NotEqualExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.LE:
-                return new LesserOrEqualExpression(leftExpression, rightExpression);
+                result = new LesserOrEqualExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.LT:
-                return new LesserThanExpression(leftExpression, rightExpression);
+                result = new LesserThanExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.GE:
-                return new GreaterOrEqualExpression(leftExpression, rightExpression);
+                result = new GreaterOrEqualExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.GT:
-                return new GraterThanExpression(leftExpression, rightExpression);
+                result = new GraterThanExpression(leftExpression, rightExpression);
+                break;
             default:
                 throw new ParseCancellationException("unknown equality operator " + ctx.op.getText());
         }
+        return result;
     }
 
     private VTLExpression getBooleanExpression(VTLParser.BinaryExprContext ctx) {
@@ -206,16 +215,21 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
             throw new ContextualRuntimeException(format("%s was not a boolean expression", ctx.right.getText()), ctx.right);
         }
 
+        VTLExpression result;
         switch (ctx.op.getType()) {
             case VTLParser.AND:
-                return new AndExpression(leftExpression, rightExpression);
+                result = new AndExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.OR:
-                return new OrExpression(leftExpression, rightExpression);
+                result = new OrExpression(leftExpression, rightExpression);
+                break;
             case VTLParser.XOR:
-                return new XorExpression(leftExpression, rightExpression);
+                result = new XorExpression(leftExpression, rightExpression);
+                break;
             default:
                 throw new ParseCancellationException("unknown logic operator " + ctx.op.getText());
         }
+        return result;
     }
 
     private VTLExpression getIsNullExpression(Predicate<VTLObject> predicate, VTLExpression expression) {
