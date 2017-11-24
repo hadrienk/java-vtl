@@ -22,6 +22,7 @@ package no.ssb.vtl.script.functions;
 
 import no.ssb.vtl.model.VTLBoolean;
 
+@Deprecated
 public class VTLNot extends AbstractVTLFunction<VTLBoolean> {
     private static final Argument<VTLBoolean> OPERAND = new Argument<>("operand", VTLBoolean.class);
     private static VTLNot instance;

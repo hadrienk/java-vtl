@@ -22,6 +22,7 @@ import no.ssb.vtl.model.VTLBoolean;
  * =========================LICENSE_END==================================
  */
 
+@Deprecated
 public class VTLAnd extends AbstractVTLFunction<VTLBoolean> {
 
     private static final Argument<VTLBoolean> LEFT = new Argument<>("left", VTLBoolean.class);

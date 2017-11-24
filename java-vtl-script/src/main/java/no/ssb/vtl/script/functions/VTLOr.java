@@ -22,6 +22,7 @@ package no.ssb.vtl.script.functions;
 
 import no.ssb.vtl.model.VTLBoolean;
 
+@Deprecated
 public class VTLOr extends AbstractVTLFunction<VTLBoolean> {
 
     private static final Argument<VTLBoolean> LEFT = new Argument<>("left", VTLBoolean.class);

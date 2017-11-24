@@ -25,6 +25,7 @@ import no.ssb.vtl.model.VTLBoolean;
 import java.util.Arrays;
 import java.util.Collections;
 
+@Deprecated
 public class VTLXor extends AbstractVTLFunction<VTLBoolean> {
     private static final Argument<VTLBoolean> LEFT = new Argument<>("left", VTLBoolean.class);
     private static final Argument<VTLBoolean> RIGHT = new Argument<>("right", VTLBoolean.class);
