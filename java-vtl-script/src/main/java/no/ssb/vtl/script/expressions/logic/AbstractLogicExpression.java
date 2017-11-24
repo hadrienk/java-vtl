@@ -37,6 +37,11 @@ public abstract class AbstractLogicExpression implements VTLExpression {
         this.rightOperand = checkNotNull(rightOperand);
     }
 
+    protected static boolean isNull(VTLBoolean value) {
+        Boolean aBoolean = value.get();
+        return aBoolean == null;
+    }
+
     @Override
     public Class getVTLType() {
         return VTLBoolean.class;
@@ -54,9 +59,12 @@ public abstract class AbstractLogicExpression implements VTLExpression {
         );
     }
 
-    protected static boolean isNull(VTLBoolean value) {
-        Boolean aBoolean = value.get();
-        return aBoolean == null;
+    protected VTLBoolean falseOrNull(VTLBoolean right) {
+        if (!isNull(right) && !right.get()) {
+            return right;
+        } else {
+            return VTLBoolean.of((Boolean) null);
+        }
     }
 
     @Override
@@ -75,5 +83,13 @@ public abstract class AbstractLogicExpression implements VTLExpression {
 
     public VTLExpression getLeftOperand() {
         return leftOperand;
+    }
+
+    protected VTLBoolean trueOrNull(VTLBoolean right) {
+        if (!isNull(right) && right.get()) {
+            return right;
+        } else {
+            return VTLBoolean.of((Boolean) null);
+        }
     }
 }

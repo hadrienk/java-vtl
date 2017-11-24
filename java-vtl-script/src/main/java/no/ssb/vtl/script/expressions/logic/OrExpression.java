@@ -29,20 +29,13 @@ public class OrExpression extends AbstractLogicExpression {
 
     @Override
     protected VTLBoolean compute(VTLBoolean left, VTLBoolean right) {
-        if (isNull(left)) {
-            if (!isNull(right) && right.get()) {
-                return right;
-            } else {
-                return VTLBoolean.of((Boolean) null);
-            }
-        }
-        if (isNull(right)) {
-            if (!isNull(left) && left.get()) {
-                return left;
-            } else {
-                return VTLBoolean.of((Boolean) null);
-            }
-        }
+        if (isNull(left))
+            return trueOrNull(right);
+
+        if (isNull(right))
+            return trueOrNull(left);
+
         return VTLBoolean.of(left.get() || right.get());
     }
+
 }
