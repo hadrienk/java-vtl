@@ -33,6 +33,7 @@ import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.expressions.FunctionExpression;
 import no.ssb.vtl.script.expressions.IfThenElseExpression;
+import no.ssb.vtl.script.expressions.LiteralExpression;
 import no.ssb.vtl.script.expressions.arithmetic.AdditionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.DivisionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.MuliplicationExpression;
@@ -74,29 +75,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     @Override
     public VTLExpression visitLiteral(VTLParser.LiteralContext ctx) {
         VTLObject literal = literalVisitor.visit(ctx);
-
-        // Literal are always resolved.
-        // TODO: Literal extends Expression2?
-        return new VTLExpression() {
-
-            @Override
-            public String toString() {
-                return literal.toString();
-            }
-
-            @Override
-            public Class<?> getVTLType() {
-                if (literal instanceof VTLTyped)
-                    return ((VTLTyped) literal).getVTLType();
-                return VTLObject.class;
-            }
-
-            @Override
-            public VTLObject resolve(Bindings dataPoint) {
-                return literal;
-            }
-        };
-
+        return new LiteralExpression(literal);
     }
 
     @Override
