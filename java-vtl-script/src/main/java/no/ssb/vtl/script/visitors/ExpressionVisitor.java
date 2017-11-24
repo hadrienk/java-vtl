@@ -45,10 +45,10 @@ import no.ssb.vtl.script.expressions.equality.LesserOrEqualExpression;
 import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
 import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
 import no.ssb.vtl.script.expressions.logic.AndExpression;
+import no.ssb.vtl.script.expressions.logic.NotExpression;
 import no.ssb.vtl.script.expressions.logic.OrExpression;
 import no.ssb.vtl.script.expressions.logic.XorExpression;
 import no.ssb.vtl.script.functions.VTLConcatenation;
-import no.ssb.vtl.script.functions.VTLNot;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
@@ -104,10 +104,10 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitUnaryExpr(VTLParser.UnaryExprContext ctx) {
-        VTLExpression operand = visit(ctx.expression());
+        VTLExpression operand = visitTypedExpression(ctx.expression(), VTLBoolean.class);
         switch (ctx.op.getType()) {
             case VTLParser.NOT:
-                return new FunctionExpression<>(VTLNot.getInstance(), operand);
+                return new NotExpression(operand);
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }
