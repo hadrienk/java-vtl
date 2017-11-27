@@ -143,8 +143,8 @@ Group|Operators|Progress|Comment
 General purpose|round parenthesis|![done][done]
 General purpose|:= (assignment)|![done][done]
 General purpose|membership|![done][done]
-General purpose|get|![usable](http://progressed.io/bar/20)|The keep, filter and aggregate are not yet reflected in the connector interface.
-General purpose|put|![usable](http://progressed.io/bar/90)|The Connector interface is defined but expressions are not recognized yet.
+General purpose|get|![usable](http://progressed.io/bar/70)|The keep, filter and aggregate options are not implemented.
+General purpose|put|![usable](http://progressed.io/bar/20)|Defined in the grammar but not implemented
 Join expression|[]{}|![done][done]
 Join clause|filter|![done][done]
 Join clause|keep|![done][done]
