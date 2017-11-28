@@ -1,4 +1,4 @@
-package no.ssb.vtl.model;
+package no.ssb.vtl.script.expressions.equality;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,26 +18,17 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VTLInteger> {
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 
-    private VTLInteger() {
+public class LesserOrEqualExpression extends AbstractEqualityExpression {
+
+    public LesserOrEqualExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
     @Override
-    public Class<VTLInteger> getVTLType() {
-        return VTLInteger.class;
-    }
-
-    public static VTLInteger of(Integer value) {
-        return VTLInteger.of(value != null ? value.longValue() : null);
-    }
-
-    public static VTLInteger of(Long value) {
-        return new VTLInteger() {
-            @Override
-            public Long get() {
-                return value;
-            }
-        };
+    protected boolean compare(VTLObject leftOperand, VTLObject rightOperand) {
+        return leftOperand.compareTo(rightOperand) <= 0;
     }
 }

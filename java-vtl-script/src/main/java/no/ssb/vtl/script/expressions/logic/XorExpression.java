@@ -1,4 +1,4 @@
-package no.ssb.vtl.model;
+package no.ssb.vtl.script.expressions.logic;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,26 +18,24 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VTLInteger> {
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLExpression;
 
-    private VTLInteger() {
+public class XorExpression extends AbstractLogicExpression {
+
+    public XorExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
     @Override
-    public Class<VTLInteger> getVTLType() {
-        return VTLInteger.class;
-    }
+    protected VTLBoolean compute(VTLBoolean left, VTLBoolean right) {
+        if (isNull(left) || isNull(right))
+            return VTLBoolean.of((Boolean) null);
 
-    public static VTLInteger of(Integer value) {
-        return VTLInteger.of(value != null ? value.longValue() : null);
-    }
-
-    public static VTLInteger of(Long value) {
-        return new VTLInteger() {
-            @Override
-            public Long get() {
-                return value;
-            }
-        };
+        if (left.get() == right.get()) {
+            return VTLBoolean.of(Boolean.FALSE);
+        } else {
+            return VTLBoolean.of(Boolean.TRUE);
+        }
     }
 }

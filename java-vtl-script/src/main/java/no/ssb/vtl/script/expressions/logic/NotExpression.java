@@ -1,6 +1,6 @@
-package no.ssb.vtl.script.functions;
+package no.ssb.vtl.script.expressions.logic;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
@@ -9,9 +9,7 @@ package no.ssb.vtl.script.functions;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,25 +19,33 @@ package no.ssb.vtl.script.functions;
  */
 
 import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 
-public class VTLNot extends AbstractVTLFunction<VTLBoolean> {
-    private static final Argument<VTLBoolean> OPERAND = new Argument<>("operand", VTLBoolean.class);
-    private static VTLNot instance;
+import javax.script.Bindings;
 
-    private VTLNot() {
-        super("not", VTLBoolean.class, OPERAND);
-    }
+import static com.google.common.base.Preconditions.checkNotNull;
 
-    public static VTLNot getInstance() {
-        if (instance == null)
-            instance = new VTLNot();
-        return instance;
+public class NotExpression implements VTLExpression<VTLBoolean> {
+
+    private final VTLExpression operand;
+
+    public NotExpression(VTLExpression operand) {
+        this.operand = checkNotNull(operand);
     }
 
     @Override
-    protected VTLBoolean safeInvoke(TypeSafeArguments arguments) {
-        VTLBoolean booleanNull = VTLBoolean.of((Boolean) null);
-        VTLBoolean operand = arguments.getNullable(OPERAND, booleanNull);
-        return booleanNull.equals(operand) ? booleanNull : VTLBoolean.of(!operand.get());
+    public VTLBoolean resolve(Bindings bindings) {
+        VTLObject resolved = operand.resolve(bindings);
+        if(resolved.get() == null)
+            return VTLBoolean.of((Boolean) null);
+
+        VTLBoolean value = (VTLBoolean) resolved;
+        return VTLBoolean.of(!value.get());
+    }
+
+    @Override
+    public Class<VTLBoolean> getVTLType() {
+        return VTLBoolean.class;
     }
 }

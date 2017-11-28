@@ -1,4 +1,4 @@
-package no.ssb.vtl.model;
+package no.ssb.vtl.script.expressions.arithmetic;
 
 /*
  * ========================LICENSE_START=================================
@@ -18,26 +18,26 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VTLInteger> {
+import com.google.common.base.MoreObjects;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLNumber;
 
-    private VTLInteger() {
+public class SubtractionExpression extends AbstractArithmeticExpression {
+
+    public SubtractionExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
     @Override
-    public Class<VTLInteger> getVTLType() {
-        return VTLInteger.class;
+    protected VTLNumber compute(VTLNumber minuend, VTLNumber subtrahend) {
+        return minuend.subtract(subtrahend);
     }
 
-    public static VTLInteger of(Integer value) {
-        return VTLInteger.of(value != null ? value.longValue() : null);
-    }
-
-    public static VTLInteger of(Long value) {
-        return new VTLInteger() {
-            @Override
-            public Long get() {
-                return value;
-            }
-        };
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .addValue(getLeftOperand())
+                .addValue(getRightOperand())
+                .toString();
     }
 }
