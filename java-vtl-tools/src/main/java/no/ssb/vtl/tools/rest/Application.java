@@ -29,6 +29,7 @@ import com.google.common.hash.Hashing;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.connectors.SsbApiConnector;
 import no.ssb.vtl.connectors.SsbKlassApiConnector;
+import no.ssb.vtl.connectors.PxApiConnector;
 import no.ssb.vtl.connectors.spring.RestTemplateConnector;
 import no.ssb.vtl.connectors.spring.converters.DataHttpConverter;
 import no.ssb.vtl.connectors.spring.converters.DataStructureHttpConverter;
@@ -88,6 +89,7 @@ public class Application {
 
         connectors.add(new SsbApiConnector(new ObjectMapper()));
         connectors.add(new SsbKlassApiConnector(new ObjectMapper(), SsbKlassApiConnector.PeriodType.YEAR));
+        connectors.add(new PxApiConnector());
         connectors.add(getKompisConnector(mapper));
 
         // Setup timeout.
