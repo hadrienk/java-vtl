@@ -33,12 +33,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.spy;
 
-public class KeepOperationTest {
+public class DropOperationTest {
 
     private Dataset dataset;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         dataset = StaticDataset.create()
                 .addComponent("id1", Component.Role.IDENTIFIER, String.class)
                 .addComponent("id2", Component.Role.IDENTIFIER, String.class)
@@ -67,7 +67,7 @@ public class KeepOperationTest {
                 componentsCapture.capture()
         );
 
-        KeepOperation resultBooleanNull = new KeepOperation(
+        DropOperation resultBooleanNull = new DropOperation(
                 dataset,
                 Sets.newHashSet(this.dataset.getDataStructure().get("m1"))
         );
@@ -88,4 +88,5 @@ public class KeepOperationTest {
 
 
     }
+
 }
