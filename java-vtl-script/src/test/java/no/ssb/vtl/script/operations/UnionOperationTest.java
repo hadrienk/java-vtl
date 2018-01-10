@@ -188,13 +188,11 @@ public class UnionOperationTest {
 
         assertThat(resultDataset.getDataStructure()).isEqualTo(dataStructure);
 
-        Stream<DataPoint> stream = resultDataset.getData(Order.createDefault(dataStructure)).orElseThrow(
-                () -> new Exception("could not sort")
-        );
+        Stream<DataPoint> stream = resultDataset.getData();
         assertThat(stream).isNotNull();
 
         assertThat(stream)
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         dataPoint("2012", "Belgium", 5L),
                         dataPoint("2012", "Greece", 2L),
                         dataPoint("2012", "France", 3L),
