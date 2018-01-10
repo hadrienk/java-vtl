@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,10 +20,13 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import org.assertj.core.api.SoftAssertions;
@@ -36,15 +39,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static no.ssb.vtl.model.Component.Role;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class UnionOperationTest {
 
     private DataStructure dataStructure;
-    
-    
+
+
     @Before
     public void setUp() throws Exception {
         dataStructure = DataStructure.of(
@@ -53,7 +58,7 @@ public class UnionOperationTest {
                 "POP", Role.MEASURE, Long.class
         );
     }
-    
+
     @Test
     public void testOneDatasetReturnedUnchanged() throws Exception {
 
@@ -108,6 +113,57 @@ public class UnionOperationTest {
     }
 
     @Test
+    public void testUnionSorted() throws Exception {
+        DataStructure structure = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, String.class)
+                .put("id2", Role.IDENTIFIER, String.class)
+                .put("me1", Role.MEASURE, String.class)
+                .build();
+
+        Dataset ds1 = StaticDataset.create(structure)
+                .addPoints("1-1", "2-1", "1")
+                .addPoints("1-2", "2-2", "1")
+                .addPoints("1-4", "2-4", "1")
+                .build();
+
+        Dataset ds2 = StaticDataset.create(structure)
+                .addPoints("1-6", "2-6", "1")
+                .addPoints("1-8", "2-8", "1")
+                .addPoints("1-9", "2-9", "1")
+                .build();
+
+        Dataset ds3 = StaticDataset.create(structure)
+                .addPoints("1-3", "2-3", "1")
+                .addPoints("1-5", "2-5", "1")
+                .addPoints("1-7", "2-7", "1")
+                .build();
+
+        Dataset empty = StaticDataset.create(structure)
+                .build();
+
+        Order order = Order.createDefault(dataStructure);
+
+        UnionOperation unionOperation = new UnionOperation(ds1, ds2, ds3, empty);
+
+        Optional<Stream<DataPoint>> stream = unionOperation.getData(order);
+
+        assertThat(Optional.of(stream)).isNotEmpty();
+
+        ImmutableList<DataPoint> collect = stream.get().collect(ImmutableList.toImmutableList());
+
+        assertThat(collect).containsExactlyElementsOf(
+                ImmutableList.sortedCopyOf(order,
+                        Stream.of(
+                                ds1.getData(),
+                                ds2.getData(),
+                                ds3.getData(),
+                                empty.getData()
+                        ).flatMap(x -> x).collect(ImmutableList.toImmutableList())
+                ));
+
+    }
+
+    @Test
     public void testUnion() throws Exception {
 
         // Example 1 of the operator specification
@@ -120,23 +176,25 @@ public class UnionOperationTest {
                 dataPoint("2012", "Finland", 9L),
                 dataPoint("2012", "Switzerland", 12L)
         ), dataStructure);
-    
+
         Dataset totalPopulation2 = new TestableDataset(Lists.newArrayList(
                 dataPoint("2012", "Netherlands", 23L),
                 dataPoint("2012", "Spain", 5L),
                 dataPoint("2012", "Iceland", 1L)
         ), dataStructure);
-    
+
         Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
-    
+
         assertThat(resultDataset.getDataStructure()).isEqualTo(dataStructure);
 
-        Stream<DataPoint> stream = resultDataset.getData();
+        Stream<DataPoint> stream = resultDataset.getData(Order.createDefault(dataStructure)).orElseThrow(
+                () -> new Exception("could not sort")
+        );
         assertThat(stream).isNotNull();
 
         assertThat(stream)
-                .contains(
+                .containsExactly(
                         dataPoint("2012", "Belgium", 5L),
                         dataPoint("2012", "Greece", 2L),
                         dataPoint("2012", "France", 3L),
@@ -176,7 +234,7 @@ public class UnionOperationTest {
                 dataPoint("2011", "Finland", 50L),
                 dataPoint("2011", "Switzerland", 60L)
         ));
-    
+
         Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
@@ -200,65 +258,65 @@ public class UnionOperationTest {
                 );
 
     }
-    
+
     @Test(expected = VTLRuntimeException.class)
     public void testUnionWithDuplicate() throws Exception {
-    
+
         Dataset totalPopulation1 = new TestableDataset(Lists.newArrayList(
                 dataPoint("2012", "Greece", 2L),
                 dataPoint("2012", "France", 3L),
                 dataPoint("2012", "Malta", 4L)
         ), dataStructure);
-    
+
         Dataset totalPopulation2 = new TestableDataset(Lists.newArrayList(
                 dataPoint("2012", "Belgium", 1L),
                 dataPoint("2012", "Greece", 2L),
                 dataPoint("2012", "France", 3L),
                 dataPoint("2012", "Malta", 4L)
         ), dataStructure);
-    
+
         Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
 
         Stream<DataPoint> stream = resultDataset.getData();
         fail("UnionOperation with duplicates did not throw exception as expected but returned: " +
-                stream.map(dataPoint -> "["+dataPoint.toString()+"]").collect(Collectors.joining(", ")));
+                stream.map(dataPoint -> "[" + dataPoint.toString() + "]").collect(Collectors.joining(", ")));
     }
-    
+
     private DataPoint dataPoint(Object... objects) {
         List<VTLObject> vtlObjects = Stream.of(objects).map(VTLObject::of).collect(Collectors.toList());
         return DataPoint.create(vtlObjects);
     }
-    
+
     private final class TestableDataset implements Dataset {
-        
+
         private final List<DataPoint> data;
         private final DataStructure dataStructure;
-        
+
         protected TestableDataset(List<DataPoint> data, DataStructure dataStructure) {
             this.data = data;
             this.dataStructure = dataStructure;
         }
-        
+
         @Override
         public Stream<DataPoint> getData() {
             return data.stream();
         }
-        
+
         @Override
         public Optional<Map<String, Integer>> getDistinctValuesCount() {
             return Optional.empty();
         }
-        
+
         @Override
         public Optional<Long> getSize() {
             return Optional.of((long) data.size());
         }
-        
+
         @Override
         public DataStructure getDataStructure() {
             return dataStructure;
         }
-        
+
     }
 }
