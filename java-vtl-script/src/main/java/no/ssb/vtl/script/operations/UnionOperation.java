@@ -119,8 +119,40 @@ public class UnionOperation extends AbstractDatasetOperation {
         }
 
         Comparator<DataPoint> comparator = Comparator.nullsLast(orders);
-        Stream<DataPoint> result = StreamUtils.interleave(createSelector(comparator), streams);
+        Stream<DataPoint> result = StreamUtils.interleave(createSelector2(comparator), streams);
         return Optional.of(result);
+    }
+
+    private <T> Selector<T> createSelector2(Comparator<T> comparator) {
+        return new Selector<T>() {
+
+            private T lastMin = null;
+
+
+            @Override
+            public Integer apply(T[] dataPoints) {
+                // Find the lowest value
+                T minVal = null;
+                int idx = -1;
+                for (int i = 0; i < dataPoints.length; i++) {
+                    T dataPoint = dataPoints[i];
+                    if (dataPoint == null)
+                        continue;
+
+                    if (minVal == null || comparator.compare(dataPoint, minVal) < 0) {
+                        minVal = dataPoint;
+                        idx = i;
+                    }
+                }
+                if (lastMin != null && comparator.compare(minVal, lastMin) == 0) {
+                    throwDuplicateError((DataPoint) minVal);
+                    return -1;
+                } else {
+                    lastMin = minVal;
+                }
+                return idx;
+            }
+        };
     }
 
     // TODO: Create PR for https://github.com/poetix/protonpack/issues/43
