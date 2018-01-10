@@ -205,6 +205,10 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
+        Optional<Stream<DataPoint>> ordered = this.getData(Order.createDefault(getDataStructure()));
+        if (ordered.isPresent())
+            return ordered.get();
+
         List<Dataset> datasets = getChildren();
         if (datasets.size() == 1) {
             return datasets.get(0).getData();
