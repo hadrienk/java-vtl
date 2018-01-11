@@ -84,7 +84,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 !namedDatasets.isEmpty(),
                 ERROR_EMPTY_DATASET_LIST
         );
-        this.datasets = ImmutableMap.copyOf(checkNotNull(namedDatasets));
+        this.datasets = ImmutableMap.copyOf(checkNotNull(Maps.transformValues(namedDatasets, DatasetDuplicate::new)));
 
         checkNotNull(identifiers);
 
@@ -323,7 +323,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     @Override
     public Stream<DataPoint> getData() {
         Order order = createDefaultOrder(getDataStructure(), getCommonIdentifiers());
-        return getData(order, null, null)
+        return getData(order)
                 .orElseThrow(() -> new RuntimeException("could not sort data"));
     }
 

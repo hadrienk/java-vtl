@@ -45,6 +45,11 @@
         </developer>
         <developer>
             <name>Pawel Buczek</name>
+            <url>https://github.com/pawbu</url>
+        </developer>
+        <developer>
+            <name>Arild Johan Takvam-Borge</name>
+            <url>https://github.com/takvamborgen</url>
         </developer>
     </developers>
 
@@ -90,7 +95,7 @@
     <profiles>
 
         <profile>
-            <!-- interal distribution for ssb -->
+            <!-- internal distribution for ssb -->
             <id>ssb</id>
             <distributionManagement>
                 <repository>
@@ -144,7 +149,7 @@
         </profile>
 
         <profile>
-            <id>travis</id>
+            <id>coverage</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <property>
@@ -157,15 +162,24 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.7.9</version>
                         <executions>
                             <execution>
-                                <id>jacoco-initialize</id>
+                                <id>pre-unit-test</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
                             </execution>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
                         </executions>
                     </plugin>
+
                 </plugins>
             </build>
         </profile>
@@ -185,6 +199,26 @@
     <build>
 
         <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.9</version>
+                <executions>
+                    <execution>
+                        <id>pre-unit-test</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-unit-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

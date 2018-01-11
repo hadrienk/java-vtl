@@ -1,6 +1,6 @@
-package no.ssb.vtl.script.functions;
+package no.ssb.vtl.script.expressions.equality;
 
-/*-
+/*
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
@@ -9,9 +9,7 @@ package no.ssb.vtl.script.functions;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,29 +18,26 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
-import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.expressions.AbstractNullFirstExpression;
 
-public class VTLAddition extends AbstractVTLFunction<VTLNumber> {
+public abstract class AbstractEqualityExpression extends AbstractNullFirstExpression {
 
-    private static final Argument<VTLNumber> LEFT = new Argument<>("left", VTLNumber.class);
-    private static final Argument<VTLNumber> RIGHT = new Argument<>("right", VTLNumber.class);
-    private static VTLAddition instance;
-
-    private VTLAddition() {
-        super("+", VTLNumber.class, LEFT, RIGHT);
-    }
-
-    public static VTLAddition getInstance() {
-        if (instance == null) {
-            instance = new VTLAddition();
-        }
-        return instance;
+    AbstractEqualityExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
+        super(leftOperand, rightOperand);
     }
 
     @Override
-    protected VTLNumber safeInvoke(TypeSafeArguments arguments) {
-        VTLNumber left = arguments.get(LEFT);
-        VTLNumber right = arguments.get(RIGHT);
-        return left.add(right);
+    protected VTLBoolean compute(VTLObject leftOperand, VTLObject rightOperand) {
+        return VTLBoolean.of(compare(leftOperand, rightOperand));
+    }
+
+    protected abstract boolean compare(VTLObject leftOperand, VTLObject rightOperand);
+
+    @Override
+    public Class getVTLType() {
+        return VTLBoolean.class;
     }
 }

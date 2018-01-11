@@ -22,6 +22,7 @@ import no.ssb.vtl.model.VTLObject;
 
 /**
  * The nvl function has dynamic return type.
+ * TODO: Remove and create a VTLExpression instead.
  */
 public class VTLNvl extends AbstractVTLFunction<VTLObject> {
 
