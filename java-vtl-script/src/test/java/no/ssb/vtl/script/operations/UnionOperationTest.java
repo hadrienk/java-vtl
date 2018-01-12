@@ -42,7 +42,10 @@ import java.util.stream.Stream;
 import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 public class UnionOperationTest {
@@ -62,14 +65,22 @@ public class UnionOperationTest {
     @Test
     public void testOneDatasetReturnedUnchanged() throws Exception {
 
-        Dataset dataset = mock(Dataset.class);
-        when(dataset.getData()).thenReturn(Stream.empty());
+        Dataset dataset = StaticDataset.create().build();
+        Stream<DataPoint> stream = dataset.getData();
+
+        Dataset spyDataset = spy(dataset);
+        doReturn(stream).when(spyDataset).getData();
+        doReturn(stream).when(spyDataset).getData(any(), any(), any());
 
         UnionOperation operator = new UnionOperation(dataset);
 
         assertThat(operator.getData())
-                .as("Check that result of union operation")
-                .isSameAs(dataset.getData());
+                .as("result of union operation")
+                .isSameAs(stream);
+
+        assertThat(operator.getData(Order.createDefault(dataset.getDataStructure())))
+                .as("result of union operation")
+                .isSameAs(stream);
 
     }
 
