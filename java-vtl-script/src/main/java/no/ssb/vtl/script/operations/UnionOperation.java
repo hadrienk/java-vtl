@@ -36,12 +36,15 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -113,7 +116,8 @@ public class UnionOperation extends AbstractDatasetOperation {
     public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
         List<Stream<DataPoint>> streams = Lists.newArrayList();
         for (Dataset dataset : getChildren()) {
-            Optional<Stream<DataPoint>> stream = dataset.getData(orders, filtering, components);
+            Order adjustedOrders = createAdjustedOrders(orders, dataset.getDataStructure());
+            Optional<Stream<DataPoint>> stream = dataset.getData(adjustedOrders, filtering, components);
             if (!stream.isPresent()) return Optional.empty();
             streams.add(stream.get());
         }
@@ -121,6 +125,19 @@ public class UnionOperation extends AbstractDatasetOperation {
         Comparator<DataPoint> comparator = Comparator.nullsLast(orders);
         Stream<DataPoint> result = StreamUtils.interleave(createSelector2(comparator), streams);
         return Optional.of(result);
+    }
+
+    private Order createAdjustedOrders(Order orders, DataStructure dataStructure) {
+
+        Order.Builder adjustedOrders = Order.create(dataStructure);
+        Collection<Component> values = dataStructure.values();
+        Queue<Component> componentQueue = new LinkedList<>(values);
+
+        for (Component component : orders.keySet()) {
+            adjustedOrders.put(componentQueue.remove(), orders.get(component));
+        }
+
+        return adjustedOrders.build();
     }
 
     private <T> Selector<T> createSelector2(Comparator<T> comparator) {
