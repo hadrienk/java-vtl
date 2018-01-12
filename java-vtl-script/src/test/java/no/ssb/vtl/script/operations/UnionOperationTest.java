@@ -70,15 +70,15 @@ public class UnionOperationTest {
 
         Dataset spyDataset = spy(dataset);
         doReturn(stream).when(spyDataset).getData();
-        doReturn(stream).when(spyDataset).getData(any(), any(), any());
+        doReturn(Optional.of(stream)).when(spyDataset).getData(any(), any(), any());
 
-        UnionOperation operator = new UnionOperation(dataset);
+        UnionOperation operator = new UnionOperation(spyDataset);
 
         assertThat(operator.getData())
                 .as("result of union operation")
                 .isSameAs(stream);
 
-        assertThat(operator.getData(Order.createDefault(dataset.getDataStructure())))
+        assertThat(operator.getData(Order.createDefault(dataset.getDataStructure())).get())
                 .as("result of union operation")
                 .isSameAs(stream);
 

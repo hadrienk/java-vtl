@@ -114,6 +114,16 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     @Override
     public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+
+        List<Dataset> datasets = getChildren();
+        if (datasets.size() == 1) {
+            return datasets.get(0).getData(orders, filtering, components);
+        }
+
+        if (datasets.size() == 2 && datasets.get(0).equals(datasets.get(1))) {
+                return datasets.get(0).getData(orders, filtering, components);
+        }
+
         List<Stream<DataPoint>> streams = Lists.newArrayList();
         for (Dataset dataset : getChildren()) {
             Order adjustedOrders = createAdjustedOrders(orders, dataset.getDataStructure());
@@ -225,17 +235,6 @@ public class UnionOperation extends AbstractDatasetOperation {
         Optional<Stream<DataPoint>> ordered = this.getData(Order.createDefault(getDataStructure()));
         if (ordered.isPresent())
             return ordered.get();
-
-        List<Dataset> datasets = getChildren();
-        if (datasets.size() == 1) {
-            return datasets.get(0).getData();
-        }
-
-        if (datasets.size() == 2) {
-            if (datasets.get(0).equals(datasets.get(1))) {
-                return datasets.get(0).getData();
-            }
-        }
 
         // TODO: Attribute propagation.
         Order order = Order.create(getDataStructure())
