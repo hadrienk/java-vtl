@@ -116,13 +116,8 @@ public class UnionOperation extends AbstractDatasetOperation {
     public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
 
         List<Dataset> datasets = getChildren();
-        if (datasets.size() == 1) {
+        if (datasets.size() == 1)
             return datasets.get(0).getData(orders, filtering, components);
-        }
-
-        if (datasets.size() == 2 && datasets.get(0).equals(datasets.get(1))) {
-                return datasets.get(0).getData(orders, filtering, components);
-        }
 
         List<Stream<DataPoint>> streams = Lists.newArrayList();
         for (Dataset dataset : getChildren()) {
@@ -154,7 +149,6 @@ public class UnionOperation extends AbstractDatasetOperation {
         return new Selector<T>() {
 
             private T lastMin = null;
-
 
             @Override
             public Integer apply(T[] dataPoints) {
