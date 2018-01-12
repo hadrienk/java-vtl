@@ -275,6 +275,13 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     @Override
     public Optional<Long> getSize() {
-        return Optional.empty();
+        Long size = 0L;
+        for (Dataset child : getChildren()) {
+            Optional<Long> childSize = child.getSize();
+            if (!childSize.isPresent())
+                return Optional.empty();
+            size += childSize.get();
+        }
+        return Optional.of(size);
     }
 }
