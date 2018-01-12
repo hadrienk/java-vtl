@@ -221,28 +221,29 @@ public class UnionOperationTest {
 
         // Example 2 of the operator specification.
 
-        Dataset totalPopulation1 = mock(Dataset.class);
-        Dataset totalPopulation2 = mock(Dataset.class);
-        when(totalPopulation1.getDataStructure()).thenReturn(dataStructure);
-        when(totalPopulation2.getDataStructure()).thenReturn(dataStructure);
+        Dataset totalPopulation1 = StaticDataset.create()
+                .addComponent("TIME", Role.IDENTIFIER, String.class)
+                .addComponent("GEO", Role.IDENTIFIER, String.class)
+                .addComponent("POP", Role.MEASURE, Long.class)
+                .addPoints("2012", "Belgium", 1L)
+                .addPoints("2012", "Greece", 2L)
+                .addPoints("2012", "France", 3L)
+                .addPoints("2012", "Malta", 4L)
+                .addPoints("2012", "Finland", 5L)
+                .addPoints("2012", "Switzerland", 6L)
+                .build();
 
-        when(totalPopulation1.getData()).thenReturn(Stream.of(
-                dataPoint("2012", "Belgium", 1L),
-                dataPoint("2012", "Greece", 2L),
-                dataPoint("2012", "France", 3L),
-                dataPoint("2012", "Malta", 4L),
-                dataPoint("2012", "Finland", 5L),
-                dataPoint("2012", "Switzerland", 6L)
-        ));
-
-        when(totalPopulation2.getData()).thenReturn(Stream.of(
-                dataPoint("2011", "Belgium", 10L),
-                dataPoint("2011", "Greece", 20L),
-                dataPoint("2011", "France", 30L),
-                dataPoint("2011", "Malta", 40L),
-                dataPoint("2011", "Finland", 50L),
-                dataPoint("2011", "Switzerland", 60L)
-        ));
+        Dataset totalPopulation2 = StaticDataset.create()
+                .addComponent("TIME", Role.IDENTIFIER, String.class)
+                .addComponent("GEO", Role.IDENTIFIER, String.class)
+                .addComponent("POP", Role.MEASURE, Long.class)
+                .addPoints("2011", "Belgium", 10L)
+                .addPoints("2011", "Greece", 20L)
+                .addPoints("2011", "France", 30L)
+                .addPoints("2011", "Malta", 40L)
+                .addPoints("2011", "Finland", 50L)
+                .addPoints("2011", "Switzerland", 60L)
+                .build();
 
         Dataset resultDataset = new UnionOperation(totalPopulation1, totalPopulation2);
         assertThat(resultDataset).isNotNull();
