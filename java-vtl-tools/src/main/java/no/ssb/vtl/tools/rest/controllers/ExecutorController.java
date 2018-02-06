@@ -26,8 +26,6 @@ import no.ssb.vtl.tools.rest.representations.DatasetRepresentation;
 import no.ssb.vtl.tools.rest.representations.ExecutionRepresentation;
 import no.ssb.vtl.tools.rest.representations.ResultRepresentation;
 import no.ssb.vtl.tools.rest.representations.ThrowableRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +39,8 @@ import javax.script.Bindings;
 import javax.script.ScriptException;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Simple execution service that allows executions of a VTL expression
  * and returns the context.
@@ -53,12 +53,11 @@ import java.util.Map;
 @RestController
 public class ExecutorController {
 
-    @Autowired
-    public VTLScriptEngine vtlEngine;
+    private final VTLScriptEngine vtlEngine;
 
-    @Autowired
-    @Qualifier("vtlBindings")
-    public Bindings bindings;
+    public ExecutorController(VTLScriptEngine vtlEngine) {
+        this.vtlEngine = checkNotNull(vtlEngine);
+    }
 
     @ExceptionHandler
     @ResponseStatus()
@@ -80,13 +79,16 @@ public class ExecutorController {
             String name = dataset.getName();
             bindings.put(name, DatasetRepresentation.convertToDataset(dataset));
         }
-        vtlEngine.eval(execution.getExpression(), bindings);
+        Object eval = vtlEngine.eval(execution.getExpression(), bindings);
+        Dataset finalResult = (Dataset) eval;
 
         ResultRepresentation datasets = new ResultRepresentation();
         for (Map.Entry<String, Object> entry : bindings.entrySet()) {
-            datasets.getDatasets().add(
-                    DatasetRepresentation.create(entry.getKey(), (Dataset) entry.getValue())
-            );
+            Dataset dataset = (Dataset) entry.getValue();
+            if (dataset.equals(finalResult)) {
+                datasets.setResultDataset(DatasetRepresentation.create(entry.getKey(), finalResult));
+            }
+            datasets.getDatasets().add(DatasetRepresentation.create(entry.getKey(), dataset));
         }
         return datasets;
     }

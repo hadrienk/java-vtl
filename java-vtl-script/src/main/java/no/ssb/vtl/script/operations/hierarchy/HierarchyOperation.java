@@ -123,6 +123,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     }
 
     public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component component) {
+        // TODO: Should NOT happen in the constructor.
         this(dataset, convertToHierarchy(hierarchy), component);
     }
 
@@ -149,22 +150,24 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 .build();
 
         // Add all the points.
-        for (DataPoint point : (Iterable<? extends DataPoint>) hierarchy.getData()::iterator) {
+        try (Stream<DataPoint> stream = hierarchy.getData()) {
+            for (DataPoint point : (Iterable<? extends DataPoint>) stream::iterator) {
 
-            Map<Component, VTLObject> asMap = structure.asMap(point);
+                Map<Component, VTLObject> asMap = structure.asMap(point);
 
-            VTLObject from = asMap.get(fromComponent);
-            VTLObject to = asMap.get(toComponent);
-            VTLObject sign = asMap.get(signComponent);
+                VTLObject from = asMap.get(fromComponent);
+                VTLObject to = asMap.get(toComponent);
+                VTLObject sign = asMap.get(signComponent);
 
-            Composition composition = checkNotNull(COMPOSITION_MAP.get(sign.get()), UNKNOWN_SIGN_VALUE, sign);
+                Composition composition = checkNotNull(COMPOSITION_MAP.get(sign.get()), UNKNOWN_SIGN_VALUE, sign);
 
-            List<List<VTLObject>> paths = findPaths(graph, to, from);
-            checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
+                List<List<VTLObject>> paths = findPaths(graph, to, from);
+                checkArgument(paths.isEmpty(), CIRCULAR_DEPENDENCY, from, composition, to, paths);
 
-            graph.putEdgeValue(from, to, composition);
+                graph.putEdgeValue(from, to, composition);
+            }
+            return graph;
         }
-        return graph;
     }
 
     @VisibleForTesting
@@ -281,12 +284,12 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
         // Get the data sorted.
         Stream<DataPoint> sortedData = getChild().getData(groupOrder)
-                .orElse(getChild().getData().sorted(groupOrder));
+                .orElseGet(() -> getChild().getData().sorted(groupOrder));
 
         Stream<ComposedDataPoint> streamToAggregate = StreamUtils.aggregate(
                 sortedData,
                 (prev, current) -> groupPredicate.compare(prev, current) == 0
-        ).map(dataPoints -> {
+        ).onClose(sortedData::close).map(dataPoints -> {
 
             // Organize the data points in "buckets" for each component. Here we add "sign" information
             // to the data points so that we can use it later when we aggregate.
@@ -334,7 +337,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return StreamUtils.aggregate(
                 streamToAggregate,
                 (dataPoint, dataPoint2) -> groupOrder.compare(dataPoint, dataPoint2) == 0
-        ).map(dataPoints -> {
+        ).onClose(streamToAggregate::close).map(dataPoints -> {
 
             DataPoint aggregate;
             // Optimization.

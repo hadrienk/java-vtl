@@ -46,12 +46,10 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
-
-import static java.util.Optional.ofNullable;
 
 /**
  * A visitor that handles the clauses.
@@ -72,35 +70,25 @@ public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
     @Override
     public Function<Dataset, Dataset> visitRenameClause(VTLParser.RenameClauseContext ctx) {
         return dataset -> {
-            ReferenceVisitor visitor = new ReferenceVisitor(dataset.getDataStructure());
+
+            ComponentBindings bindings = new ComponentBindings(dataset);
+            ComponentVisitor componentVisitor = new ComponentVisitor(bindings);
 
             List<VTLParser.RenameParamContext> parameters = ctx.renameParam();
 
             ImmutableMap.Builder<Component, String> names = ImmutableMap.builder();
             ImmutableMap.Builder<Component, Component.Role> roles = ImmutableMap.builder();
 
+            ComponentRoleVisitor roleVisitor = ComponentRoleVisitor.getInstance();
+
             for (VTLParser.RenameParamContext parameter : parameters) {
-                Component from = (Component) visitor.visit(parameter.from);
+                Component from = componentVisitor.visit(parameter.from);
                 String to = parameter.to.getText();
                 names.put(from, to);
 
-                Optional<String> role = ofNullable(parameter.role()).map(VTLParser.RoleContext::getText);
-                if (role.isPresent()) {
-                    Component.Role roleEnum;
-                    switch (role.get()) {
-                        case "IDENTIFIER":
-                            roleEnum = Component.Role.IDENTIFIER;
-                            break;
-                        case "MEASURE":
-                            roleEnum = Component.Role.MEASURE;
-                            break;
-                        case "ATTRIBUTE":
-                            roleEnum = Component.Role.ATTRIBUTE;
-                            break;
-                        default:
-                            throw new RuntimeException("unknown component type " + role.get());
-                    }
-                    roles.put(from, roleEnum);
+                if (parameter.role != null) {
+                    Component.Role role = roleVisitor.visit(parameter.role);
+                    roles.put(from, role);
                 }
             }
 

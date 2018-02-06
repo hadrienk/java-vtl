@@ -29,7 +29,7 @@ The project is divided in modules;
 - java-vtl-parent
     - java-vtl-parser, contains the lexer and parser for VTL.
     - java-vtl-model, VTL data model.
-    - java-vtl-script, JSR-223 implementation.
+    - java-vtl-script, JSR-223 (ScriptEngine) implementation.
     - java-vtl-connector, connector API.
     - java-vtl-tools, various tools.
 
@@ -55,7 +55,7 @@ engine.eval("ds1 := get(\"foo\")" +
             "ds2 := get(\"bar\")" +
             "ds3 := [ds1, ds2] {" +
             "   filter ds1.id = \"string\"," +
-            "   sum := ds1.measure + ds2.measure" +
+            "   total := ds1.measure + ds2.measure" +
             "}");
 
 System.out.println(bindings.get("ds3"))
@@ -143,8 +143,8 @@ Group|Operators|Progress|Comment
 General purpose|round parenthesis|![done][done]
 General purpose|:= (assignment)|![done][done]
 General purpose|membership|![done][done]
-General purpose|get|![usable](http://progressed.io/bar/20)|The keep, filter and aggregate are not yet reflected in the connector interface.
-General purpose|put|![usable](http://progressed.io/bar/90)|The Connector interface is defined but expressions are not recognized yet.
+General purpose|get|![usable](http://progressed.io/bar/70)|The keep, filter and aggregate options are not implemented.
+General purpose|put|![usable](http://progressed.io/bar/20)|Defined in the grammar but not implemented
 Join expression|[]{}|![done][done]
 Join clause|filter|![done][done]
 Join clause|keep|![done][done]
@@ -161,8 +161,8 @@ Clauses|calc|![todo][todo]
 Clauses|attrcalc|![todo][todo]
 Clauses|aggregate|![todo][todo]
 Conditional|if-then-else|![todo][todo]
-Conditional|nvl|![usable](http://progressed.io/bar/50)|Dataset as input not implemented.
-Validation|Comparisons (>,<,>=,<=,=,<>)|![usable](http://progressed.io/bar/30)|Only inside join expression (no lifting).
+Conditional|nvl|![done][done]
+Validation|Comparisons (>,<,>=,<=,=,<>)|![done][done]
 Validation|in,not in, between|![todo][todo]
 Validation|isnull|![done][done]|Implemented syntax are `isnull(value)`, `value is null` and `value is not null`|
 Validation|exist_in, not_exist_in|![todo][todo]
@@ -174,30 +174,33 @@ Statistical|min, max|![todo][todo]
 Statistical|hierarchy|![usable](http://progressed.io/bar/80)|The inline definition is not supported. A dataset that has a correct structure can be used instead.
 Statistical|aggregate|![todo][todo]
 Relational|union|![done][done]
-Relational|intersect|![todo][todo]
+Relational|intersect||![todo][todo]
 Relational|symdiff|![todo][todo]
-Relational|setdiff|![todo][todo]
+Relational|setdiff|![done][done]
 Relational|merge|![todo][todo]
 Boolean|and|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Boolean|or|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Boolean|xor|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
 Boolean|not|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|unary plus and minus|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|addition, substraction|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|multiplication, division|![usable](http://progressed.io/bar/80)|Only inside join expression (no lifting).
-Mathematical|round|![todo][todo]
-Mathematical|abs|![todo][todo]
-Mathematical|trunc|![todo][todo]
-Mathematical|power, exp, nroot|![todo][todo]
-Mathematical|in, log|![todo][todo]
-Mathematical|mod|![todo][todo]
+Mathematical|unary plus and minus|![done][done]
+Mathematical|addition, substraction|![done][done]
+Mathematical|multiplication, division|![done][done]
+Mathematical|round, ceil, floor|![done][done]
+Mathematical|abs|![done][done]
+Mathematical|trunc|![done][done]
+Mathematical|power, exp, nroot|![done][done]
+Mathematical|ln, log|![done][done]
+Mathematical|mod|![done][done]
 String|length|![todo][todo]
-String|concatenation|![todo][todo]
+String|concatenation|![done][done]
 String|trim|![todo][todo]
 String|upper/lower case|![todo][todo]
-String|substring|![todo][todo]
+String|substr|![usable](http://progressed.io/bar/80)|No lifting.
 String|indexof|![todo][todo]
 String|date_from_string|![usable](http://progressed.io/bar/25)|Dataset as input not implemented. Only YYYY date format accepted.
+Outside specification|integer_from_string|![done][done]
+Outside specification|float_from_string|![done][done]
+Outside specification|string_from_number|![done][done]
 
 [![Analytics](https://ga-beacon.appspot.com/UA-85245041-2/readme)](https://github.com/igrigorik/ga-beacon)
 

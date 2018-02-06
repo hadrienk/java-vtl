@@ -29,6 +29,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 
 import java.util.Arrays;
@@ -41,8 +42,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-import static java.util.Arrays.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Arrays.asList;
 
 /**
  * Union operator
@@ -100,7 +101,7 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     }
 
-    private Set<String> nonAttributeNames(DataStructure dataStructure) {
+    private Set<String> nonAttributeNames(DataStructure dataStructure   ) {
         return Maps.filterValues(dataStructure.getRoles(), role -> role != Component.Role.ATTRIBUTE).keySet();
     }
             
@@ -126,7 +127,12 @@ public class UnionOperation extends AbstractDatasetOperation {
         return getChildren().stream().flatMap(Dataset::getData)
                 .peek((o) -> {
                     if (seen.contains(o)) {
-                        throw new VTLRuntimeException("The resulting dataset from a union contains duplicates", "VTL-1xxx", o); //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
+                        //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
+                        Map<Component, VTLObject> row = getDataStructure().asMap(o);
+                        String rowAsString = row.keySet().stream()
+                                .map(k -> k.getRole() + ":" + row.get(k))
+                                .collect(Collectors.joining("\n"));
+                        throw new VTLRuntimeException(String.format("The resulting dataset from a union contains duplicates. Duplicate row: %s", rowAsString), "VTL-1xxx", o);
                     }
                 })
                 .peek(bucket::add);

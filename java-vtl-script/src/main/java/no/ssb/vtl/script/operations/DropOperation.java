@@ -21,31 +21,21 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
-import java.util.*;
-import java.util.stream.Stream;
-
-import static com.google.common.base.Preconditions.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
- * TODO: Implement "operator" and  "function" interfaces.
+ * Drop operation, implemented as the inverse of {@link KeepOperation}.
  */
-public class DropOperation extends AbstractUnaryDatasetOperation {
-
-    private final Set<Component> components;
+public class DropOperation extends KeepOperation {
 
     public DropOperation(Dataset dataset, Set<Component> components) {
-        super(checkNotNull(dataset, "the dataset was null"));
-        this.components = checkNotNull(components, "the component list was null");
-
-        checkArgument(!components.isEmpty(), "the list of component to drop was null");
+        super(dataset, components);
     }
 
     /**
@@ -69,25 +59,6 @@ public class DropOperation extends AbstractUnaryDatasetOperation {
         helper.addValue(components);
         helper.add("structure", getDataStructure());
         return helper.omitNullValues().toString();
-    }
-
-    @Override
-    public Stream<DataPoint> getData() {
-        DataStructure oldStructure = getChild().getDataStructure();
-        HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
-        HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
-        LinkedList<Component> componentsToRemove = Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
-        return getChild().getData().map(
-                dataPoints -> {
-                    Iterator<Component> descendingIterator = componentsToRemove.descendingIterator();
-                    while (descendingIterator.hasNext()) {
-                        Component component = descendingIterator.next();
-                        int index = oldStructure.indexOf(component);
-                        dataPoints.remove(index);
-                    }
-                    return dataPoints;
-                }
-        );
     }
 
     @Override

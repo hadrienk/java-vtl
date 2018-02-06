@@ -21,9 +21,7 @@ package no.ssb.vtl.tools.rest.representations;
  */
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import com.google.common.base.Throwables;
 
 /**
  * Json representation of a {@link java.lang.Throwable}.
@@ -42,9 +40,7 @@ public class ThrowableRepresentation {
     }
 
     public String getStackTrace() {
-        StringWriter sw = new StringWriter();
-        t.printStackTrace(new PrintWriter(sw));
-        return sw.toString();
+        return Throwables.getStackTraceAsString(t);
     }
 
 }

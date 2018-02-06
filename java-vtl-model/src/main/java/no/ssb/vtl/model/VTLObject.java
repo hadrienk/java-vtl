@@ -20,29 +20,15 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Root of the VTL data type hierarchy.
  */
-public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
+public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
 
-    private final Component componentReference;
-    
-    protected VTLObject() {
-        componentReference = null; //TODO: Remove any reference to component
-    }
-    
-    /**
-     * @deprecated Use {@link DataStructure#wrap(String, Object)} instead
-     */
-    private VTLObject(Component component) {
-        this.componentReference = checkNotNull(component);
-    }
-    
     /**
      * This method is marked as deprecated (Hadrien, 02-05-2017).
      *
@@ -63,52 +49,86 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
      * }
      * </pre></code>
      */
-    @Deprecated
     public static VTLObject of(Object o) {
         if (o == null)
             return VTLObject.NULL;
-
-        if (o instanceof VTLObject) {
-            // TODO: Fail here, this only makes the contract of the method confusing. Will be solved with sub types.
+        if (o instanceof VTLObject)
             return (VTLObject) o;
-        }
-        
-        return new VTLObject<Object>(){
-    
-            @Override
-            public Object get() {
-                return o;
-            }
-        };
+        if (o instanceof String)
+            return VTLObject.of((String) o);
+        if (o instanceof Double)
+            return VTLObject.of((Double) o);
+        if (o instanceof Float)
+            return VTLObject.of((Float) o);
+        if (o instanceof Long)
+            return VTLObject.of((Long) o);
+        if (o instanceof Integer)
+            return VTLObject.of((Integer)o);
+        if (o instanceof Instant)
+            return VTLObject.of((Instant) o);
+        if (o instanceof Boolean)
+            return VTLObject.of((Boolean) o);
+
+        throw new IllegalArgumentException("could not create a VTLObject from " + o + " (" + o.getClass() + ")");
     }
 
     /**
-     * Do not use!
+     * Create a new VTLString instance.
      */
-    @Deprecated
-    public static VTLObject of(Component component, Object o) {
-        if (o == null)
-            return VTLObject.NULL;
-
-        if (o instanceof VTLObject) {
-            return (VTLObject) o;
-        }
-
-        return new VTLObject<Object>(component){
-
-            @Override
-            public Object get() {
-                return o;
-            }
-        };
+    public static VTLString of(String str) {
+        return VTLString.of(str);
     }
-    
+
+    /**
+     * Create a new VTLBoolean instance.
+     */
+    public static VTLBoolean of(Boolean bool) {
+        return VTLBoolean.of(bool);
+    }
+
+    /**
+     * Create a new VTLDate instance.
+     */
+    public static VTLDate of(Instant instant) {
+        return VTLDate.of(instant);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLInteger of(Long num) {
+        return VTLInteger.of(num);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLInteger of(Integer num) {
+        return VTLInteger.of(num);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLFloat of(Float num) {
+        return VTLFloat.of(num);
+    }
+
+    /**
+     * Create a new VTLNumber instance.
+     */
+    public static VTLFloat of(Double num) {
+        return VTLFloat.of(num);
+    }
+
+
+    @Deprecated
     public static final VTLObject NULL = new VTLObject() {
         @Override
         public Object get() {
             return null;
         }
-        
+
         @Override
         public String toString() {
             return "[NULL]";
@@ -122,16 +142,9 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
     public abstract V get();
 
     /**
-     * Returns the componentReference (type and role) of this data point.
-     * @deprecated Use {@link DataStructure#asMap(DataPoint)} instead
-     */
-    public Component getComponent() {
-        return componentReference;
-    }
-    
-    /**
-     * Note: this class has a natural ordering that is inconsistent with equals. //TODO: Fix that
+     * Note: this class has a natural ordering that is inconsistent with equals.
      * <br/>
+     * TODO: Fix ordering?
      * TODO: Make comparable to only VTLObject
      */
     @Override
@@ -163,14 +176,14 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object>{
                 String.format("Cannot compare %s of type %s with %s of type %s",
                         value, value.getClass(), other, other.getClass()));
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(get());
     }
-    
+
     @Override
-    public boolean equals(Object o) { //TODO
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof VTLObject)) return false;
         VTLObject<?> value = (VTLObject<?>) o;

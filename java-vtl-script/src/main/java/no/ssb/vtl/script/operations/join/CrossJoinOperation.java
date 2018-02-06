@@ -95,7 +95,7 @@ public class CrossJoinOperation extends OuterJoinOperation {
             );
         }
 
-        return Optional.of(result.map(jdp -> jdp));
+        return Optional.of(result);
     }
 
     private Stream<DataPoint> order(Order requestedOrder, Filtering filtering, Set<String> components, Dataset first) {

@@ -25,24 +25,32 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.hierarchy.HierarchyOperation;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
 
 import static com.google.common.base.Preconditions.*;
 
 public class HierarchyVisitor extends VTLBaseVisitor<Dataset> {
 
-    private final ReferenceVisitor referenceVisitor;
+    private final DatasetExpressionVisitor datasetExpressionVisitor;
 
-    public HierarchyVisitor(ReferenceVisitor referenceVisitor) {
-        this.referenceVisitor = checkNotNull(referenceVisitor);
+    public HierarchyVisitor(DatasetExpressionVisitor datasetExpressionVisitor) {
+        this.datasetExpressionVisitor = checkNotNull(datasetExpressionVisitor);
     }
 
     @Override
     public Dataset visitHierarchyExpression(VTLParser.HierarchyExpressionContext ctx) {
 
         // Safe.
-        Dataset dataset = (Dataset) referenceVisitor.visit(ctx.datasetRef());
-        Dataset hierarchyDataset = (Dataset) referenceVisitor.visit(ctx.hierarchyReference().datasetRef());
-        Component component = (Component) referenceVisitor.visitComponentRef(ctx.componentRef());
+        Dataset dataset = datasetExpressionVisitor.visit(ctx.variable());
+
+        // Create local binding
+        ComponentBindings componentBindings = new ComponentBindings(dataset);
+        componentBindings.put(ctx.variable().getText(), new ComponentBindings(dataset));
+
+        ComponentVisitor componentVisitor = new ComponentVisitor(componentBindings);
+        Component component = componentVisitor.visit(ctx.variableExpression());
+
+        Dataset hierarchyDataset = datasetExpressionVisitor.visit(ctx.hierarchyReference());
 
         return new HierarchyOperation(dataset, hierarchyDataset, component);
 

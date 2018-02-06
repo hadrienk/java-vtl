@@ -21,6 +21,8 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
@@ -29,14 +31,24 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * Keep operation
+ */
 public class KeepOperation extends AbstractUnaryDatasetOperation {
 
-    private final Set<Component> components;
+    protected final Set<Component> components;
 
     public KeepOperation(Dataset dataset, Set<Component> names) {
         super(checkNotNull(dataset, "the dataset was null"));
@@ -70,21 +82,50 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
-        DataStructure oldStructure = getChild().getDataStructure();
-        HashSet<Component> oldComponents = Sets.newLinkedHashSet(oldStructure.values());
-        HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
-        LinkedList<Component> componentsToRemove = Lists.newLinkedList(Sets.difference(oldComponents, newComponents));
-        return getChild().getData().map(
+
+        ImmutableList<Component> componentsToRemove = getComponentsToRemove();
+
+        // Optimization.
+        if (componentsToRemove.isEmpty())
+            return getChild().getData();
+
+        // Compute indexes to remove (in reverse order to avoid shifting).
+        final ImmutableSet<Integer> indexes = computeIndexes(componentsToRemove);
+
+        return getChild().getData().peek(
                 dataPoints -> {
-                    Iterator<Component> descendingIterator = componentsToRemove.descendingIterator();
-                    while (descendingIterator.hasNext()) {
-                        Component component = descendingIterator.next();
-                        int index = oldStructure.indexOf(component);
-                        dataPoints.remove(index);
-                    }
-                    return dataPoints;
+                    for (Integer index : indexes)
+                        dataPoints.remove((int) index);
                 }
         );
+    }
+
+    /**
+     * Find the index of the component in the child data structure.
+     */
+    private ImmutableSet<Integer> computeIndexes(List<Component> componentsToRemove) {
+        TreeSet<Integer> indexes = Sets.newTreeSet();
+        List<Component> components = Lists.newArrayList(getChild().getDataStructure().values());
+        for (Component component : componentsToRemove) {
+            ListIterator<Component> iterator = components.listIterator();
+            while (iterator.hasNext()) {
+                int index = iterator.nextIndex();
+                Component next = iterator.next();
+                if (component.equals(next))
+                    indexes.add(index);
+            }
+        }
+        return ImmutableSet.copyOf(indexes.descendingIterator());
+    }
+
+    /**
+     * Compute the list of component that need to be removed.
+     */
+    private ImmutableList<Component> getComponentsToRemove() {
+        HashSet<Component> oldComponents = Sets.newLinkedHashSet(getChild().getDataStructure().values());
+        HashSet<Component> newComponents = Sets.newLinkedHashSet(getDataStructure().values());
+
+        return ImmutableList.copyOf(Sets.difference(oldComponents, newComponents));
     }
 
     @Override

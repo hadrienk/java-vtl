@@ -63,6 +63,14 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(namedDatasets, identifiers);
+        // We need the identifiers in the case of inner join.
+        ComponentBindings joinScope = this.getJoinScope();
+        for (Component component : getCommonIdentifiers()) {
+            joinScope.put(
+                    getDataStructure().getName(component),
+                    component
+            );
+        }
     }
 
     @Override
@@ -94,7 +102,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 leftMap.put(to, rightMap.get(from));
             }
 
-            return left;
+            return DataPoint.create(left);
         };
     }
 

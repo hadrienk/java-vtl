@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>no.ssb.vtl</groupId>
+        <artifactId>java-vtl-parent</artifactId>
+        <version>0.1.4-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>java-vtl-coverage</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>no.ssb.vtl</groupId>
+            <artifactId>java-vtl-script</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.9</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-initialize</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-unit-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+
+        <profile>
+            <id>travis</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <!--<property>-->
+                <!--    <name>env.TRAVIS</name>-->
+                <!--    <value>true</value>-->
+                <!--</property>-->
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.gavinmogan</groupId>
+                        <artifactId>codacy-maven-plugin</artifactId>
+                        <version>1.0.3</version>
+                        <configuration>
+                            <commit>${env.TRAVIS_COMMIT}</commit>
+                            <projectToken>${env.CODACY_PROJECT_TOKEN</projectToken>
+                            <apiToken>${env.CODACY_API_TOKEN}</apiToken>
+                            <coverageReportFile>target/site/jacoco-aggregate/jacoco.xml</coverageReportFile>
+                            <failOnMissingReportFile>false</failOnMissingReportFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>coverage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

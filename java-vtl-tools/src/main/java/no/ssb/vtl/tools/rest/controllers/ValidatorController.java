@@ -23,16 +23,19 @@ package no.ssb.vtl.tools.rest.controllers;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.VTLScriptEngine;
+import no.ssb.vtl.script.error.VTLCompileException;
+import no.ssb.vtl.script.error.VTLScriptException;
 import no.ssb.vtl.tools.rest.representations.SyntaxErrorRepresentation;
 import no.ssb.vtl.tools.rest.representations.ThrowableRepresentation;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.BufferedTokenStream;
-import org.antlr.v4.runtime.DiagnosticErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.tool.GrammarParserInterpreter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,9 +45,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A validator service that returns syntax errors for expressions.
@@ -55,6 +62,13 @@ import java.util.List;
 )
 @RestController
 public class ValidatorController {
+
+    private final VTLScriptEngine engine;
+
+    @Autowired
+    public ValidatorController(VTLScriptEngine engine) {
+        this.engine = checkNotNull(engine);
+    }
 
     @ExceptionHandler
     @ResponseStatus()
@@ -73,34 +87,69 @@ public class ValidatorController {
                     MediaType.TEXT_PLAIN_VALUE
             }
     )
-    @Cacheable(cacheNames = "expressions", key = "@hasher.apply(#expression)")
+    @Cacheable(cacheNames = "validations", key = "@hasher.apply(#expression)")
     public List<SyntaxErrorRepresentation> validate(
             @RequestBody(required = false) String expression
-    ) throws IOException {
+    ) throws IOException, ScriptException {
+        if (expression != null && !"".equals(expression)) {
 
-        if (expression == null)
-            return Collections.emptyList();
+            // OSB: ANTLRInputStream is deprecated but still contains a bug
+            VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
+            VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
 
-        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(expression));
-        VTLParser parser = new VTLParser(new BufferedTokenStream(lexer));
+            lexer.removeErrorListeners();
+            parser.removeErrorListeners();
 
-        lexer.removeErrorListeners();
-        parser.removeErrorListeners();
+            parser.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
 
-        parser.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
+            ErrorListener errorListener = new ErrorListener();
+            lexer.addErrorListener(errorListener);
+            parser.addErrorListener(errorListener);
 
-        ErrorListener errorListener = new ErrorListener();
-        lexer.addErrorListener(errorListener);
-        parser.addErrorListener(new DiagnosticErrorListener());
-        parser.addErrorListener(errorListener);
-    
-        //Should not be reported as an error. The expression works TODO: A warning might be more appropriate
-//        parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
+            parser.start();
 
-        parser.start();
+            return errorListener.getSyntaxErrors();
+        }
+        return Collections.emptyList();
+    }
 
-        return errorListener.getSyntaxErrors();
+    private static SyntaxErrorRepresentation convertToSyntaxError(VTLScriptException exception) {
+        return new SyntaxErrorRepresentation(
+                            exception.getStartLine(),
+                            exception.getStopLine(),
+                            exception.getStartColumn(),
+                            exception.getStopColumn(),
+                            exception.getMessage(),
+                            null
+                    );
+    }
 
+    /**
+     * Check a VTL Expression
+     */
+    @RequestMapping(
+            path = "/check",
+            method = RequestMethod.POST,
+            consumes = {
+                    MediaType.ALL_VALUE,
+                    MediaType.TEXT_PLAIN_VALUE
+            }
+    )
+    @Cacheable(cacheNames = "checks", key = "@hasher.apply(#expression)")
+    public List<SyntaxErrorRepresentation> check(
+            @RequestBody(required = false) String expression
+    ) throws IOException, ScriptException {
+        if (expression != null && !"".equals(expression)) {
+            try {
+                engine.eval(expression);
+            } catch (VTLCompileException vce) {
+                return vce.getErrors()
+                        .stream()
+                        .map(ValidatorController::convertToSyntaxError)
+                        .collect(Collectors.toList());
+            }
+        }
+        return Collections.emptyList();
     }
 
     /**

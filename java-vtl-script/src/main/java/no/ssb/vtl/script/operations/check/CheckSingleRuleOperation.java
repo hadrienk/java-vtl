@@ -81,7 +81,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
 
         return childDataset.getData().map(dataPoint -> {
 
-            DataPoint resultDataPoint = newStructure.wrap();
+            DataPoint resultDataPoint = DataPoint.create(newStructure.size());
             Map<Component, VTLObject> originalMap = previousStructure.asMap(dataPoint);
             Map<Component, VTLObject> resultMap = newStructure.asMap(resultDataPoint);
 

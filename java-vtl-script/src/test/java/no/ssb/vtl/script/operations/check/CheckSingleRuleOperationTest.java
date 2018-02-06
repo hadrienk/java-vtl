@@ -24,21 +24,28 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
-import static no.ssb.vtl.script.operations.check.CheckSingleRuleOperation.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.*;
+import static java.util.stream.Collectors.toList;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static no.ssb.vtl.script.operations.check.CheckSingleRuleOperation.CONDITION_LABEL;
+import static no.ssb.vtl.script.operations.check.CheckSingleRuleOperation.ERROR_CODE_LABEL;
+import static no.ssb.vtl.script.operations.check.CheckSingleRuleOperation.ERROR_LEVEL_LABEL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class CheckSingleRuleOperationTest {
 
@@ -78,8 +85,8 @@ public class CheckSingleRuleOperationTest {
     public void testArgumentDatasetComponentsTooManyBooleans() throws Exception {
         Dataset dataset = mock(Dataset.class);
         when(dataset.getDataStructure()).thenReturn(
-                DataStructure.of((s, o) -> null,
-                        "id1", Component.Role.IDENTIFIER, String.class,
+                DataStructure.of(
+                        "id1", IDENTIFIER, String.class,
                         "me1", Component.Role.MEASURE, Boolean.class,
                         "me2", Component.Role.MEASURE, Boolean.class,
                         "at1", Component.Role.ATTRIBUTE, String.class
@@ -96,34 +103,16 @@ public class CheckSingleRuleOperationTest {
     public void testCheckReturnMeasuresNotValidRows() throws Exception {
         //This data structure is a result of a boolean operation, so it will either have one CONDITION component
         //or more with "_CONDITION" suffix for each component.
-        DataStructure dataStructure = DataStructure.of((s, o) -> s,
-                "kommune_nr", Component.Role.IDENTIFIER, String.class,
-                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
-                "measure", Component.Role.MEASURE, String.class, // Some measure.
-                "CONDITION", Component.Role.MEASURE, Boolean.class
-        );
 
-        Dataset ds = mock(Dataset.class);
-        when(ds.getDataStructure()).thenReturn(dataStructure);
+        Dataset ds = StaticDataset.create()
+                .withName("kommune_nr", "code", "measure", "CONDITION")
+                .andRoles(IDENTIFIER,IDENTIFIER, MEASURE, MEASURE)
+                .andTypes(String.class, String.class, String.class, Boolean.class)
+                .addPoints("0101", "0101", "measure 0101", true)
+                .addPoints("9990", null /* not in the code list, so a null value */, "measure 9990", false)
+                .addPoints("0104", "0104", "measure 0104", true)
+                .build();
 
-        when(ds.getData()).thenReturn(Stream.of(
-                tuple(
-                        dataStructure.wrap("kommune_nr", "0101"),
-                        dataStructure.wrap("code", "0101"),
-                        dataStructure.wrap("measure", "measure 0101"),
-                        dataStructure.wrap("CONDITION", true)
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "9990"),
-                        dataStructure.wrap("code", null), //not in the code list, so a null value
-                        dataStructure.wrap("measure", "measure 9990"),
-                        dataStructure.wrap("CONDITION", false)
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "0104"),
-                        dataStructure.wrap("code", "0104"),
-                        dataStructure.wrap("measure", "measure 0104"),
-                        dataStructure.wrap("CONDITION", true)
-                )
-        ));
 
         CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
                 .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.NOT_VALID)
@@ -131,8 +120,8 @@ public class CheckSingleRuleOperationTest {
                 .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).containsExactly(
-                entry("kommune_nr", Component.Role.IDENTIFIER),
-                entry("code", Component.Role.IDENTIFIER),
+                entry("kommune_nr", IDENTIFIER),
+                entry("code", IDENTIFIER),
                 entry("measure", Component.Role.MEASURE),
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)
         );
@@ -159,34 +148,17 @@ public class CheckSingleRuleOperationTest {
     public void testCheckReturnMeasuresValidRows() throws Exception {
         //This data structure is a result of a boolean operation, so it will either has one CONDITION component
         //or more with "_CONDITION" suffix for each component.
-        DataStructure dataStructure = DataStructure.of((s, o) -> s,
-                "kommune_nr", Component.Role.IDENTIFIER, String.class,
-                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
-                "measure", Component.Role.MEASURE, String.class,
-                "CONDITION", Component.Role.MEASURE, Boolean.class
-        );
 
-        Dataset ds = mock(Dataset.class);
-        when(ds.getDataStructure()).thenReturn(dataStructure);
+        Dataset ds = StaticDataset.create()
+                .withName("kommune_nr", "code", "measure", "CONDITION")
+                .andRoles(IDENTIFIER, IDENTIFIER, MEASURE, MEASURE)
+                .andTypes(String.class, String.class, String.class, Boolean.class)
 
-        when(ds.getData()).thenReturn(Stream.of(
-                tuple(
-                        dataStructure.wrap("kommune_nr", "0101"),
-                        dataStructure.wrap("code", "0101"),
-                        dataStructure.wrap("measure", "measure 0101"),
-                        dataStructure.wrap("CONDITION", true)
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "9990"),
-                        dataStructure.wrap("code", null), //not in the code list, so a null value
-                        dataStructure.wrap("measure", "measure 9990"),
-                        dataStructure.wrap("CONDITION", false)
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "0104"),
-                        dataStructure.wrap("code", "0104"),
-                        dataStructure.wrap("measure", "measure 0104"),
-                        dataStructure.wrap("CONDITION", true)
-                )
-        ));
+                .addPoints("0101", "0101", "measure 0101", true)
+                .addPoints("9990", null, "measure 9990", false)
+                .addPoints("0104", "0104", "measure 0104", true)
+                .build();
+
 
         CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
                 .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
@@ -194,8 +166,8 @@ public class CheckSingleRuleOperationTest {
                 .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
-                entry("kommune_nr", Component.Role.IDENTIFIER),
-                entry("code", Component.Role.IDENTIFIER),
+                entry("kommune_nr", IDENTIFIER),
+                entry("code", IDENTIFIER),
                 entry("measure", Component.Role.MEASURE),
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)
         );
@@ -229,38 +201,16 @@ public class CheckSingleRuleOperationTest {
         //This data structure is a result of a boolean operation, so it will either has one CONDITION component
         //or more with "_CONDITION" suffix for each component.
         //No attribute components as the VTL 1.1 does not specify that.
-        DataStructure dataStructure = DataStructure.of((s, o) -> s,
-                "kommune_nr", Component.Role.IDENTIFIER, String.class,
-                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
-                "CONDITION_CONDITION", Component.Role.MEASURE, Boolean.class,
-                "booleanMeasure_CONDITION", Component.Role.MEASURE, Boolean.class,
-                "stringMeasure", Component.Role.MEASURE, String.class
-        );
 
-        Dataset ds = mock(Dataset.class);
-        when(ds.getDataStructure()).thenReturn(dataStructure);
+        Dataset ds = StaticDataset.create()
+                .withName("kommune_nr", "code", "CONDITION_CONDITION", "booleanMeasure_CONDITION", "stringMeasure")
+                .andRoles(IDENTIFIER, IDENTIFIER, MEASURE, MEASURE, MEASURE)
+                .andTypes(String.class, String.class, Boolean.class, Boolean.class, String.class)
 
-        when(ds.getData()).thenReturn(Stream.of(
-                tuple(
-                        dataStructure.wrap("kommune_nr", "0101"),
-                        dataStructure.wrap("code", "0101"),
-                        dataStructure.wrap("CONDITION_CONDITION", true),
-                        dataStructure.wrap("booleanMeasure_CONDITION", true),
-                        dataStructure.wrap("stringMeasure", "t1")
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "9990"),
-                        dataStructure.wrap("code", null),
-                        dataStructure.wrap("CONDITION_CONDITION", true),
-                        dataStructure.wrap("booleanMeasure_CONDITION", false),
-                        dataStructure.wrap("stringMeasure", "t2")
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "0104"),
-                        dataStructure.wrap("code", null), //not in the code list, so a null value
-                        dataStructure.wrap("CONDITION_CONDITION", false),
-                        dataStructure.wrap("booleanMeasure_CONDITION", false),
-                        dataStructure.wrap("stringMeasure", "t3")
-                )
-        ));
+                .addPoints("0101", "0101", true, true, "t1")
+                .addPoints("9990", null, true, false, "t2")
+                .addPoints("0104", null /* not in the code list, so a null value */, false, false, "t3")
+                .build();
 
         CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
                 .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.NOT_VALID)
@@ -268,8 +218,8 @@ public class CheckSingleRuleOperationTest {
                 .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).contains(
-                entry("kommune_nr", Component.Role.IDENTIFIER),
-                entry("code", Component.Role.IDENTIFIER),
+                entry("kommune_nr", IDENTIFIER),
+                entry("code", IDENTIFIER),
                 entry(CONDITION_LABEL, Component.Role.MEASURE),   //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE)  //new component
         );
@@ -304,38 +254,15 @@ public class CheckSingleRuleOperationTest {
         //This data structure is a result of a boolean operation, so it will either has one CONDITION component
         //or more with "_CONDITION" suffix for each component.
         //No attribute components as the VTL 1.1 does not specify that.
-        DataStructure dataStructure = DataStructure.of((s, o) -> s,
-                "kommune_nr", Component.Role.IDENTIFIER, String.class,
-                "code", Component.Role.IDENTIFIER, String.class, //from KLASS
-                "CONDITION_CONDITION", Component.Role.MEASURE, Boolean.class,
-                "booleanMeasure_CONDITION", Component.Role.MEASURE, Boolean.class,
-                "stringMeasure", Component.Role.MEASURE, String.class
-        );
 
-        Dataset ds = mock(Dataset.class);
-        when(ds.getDataStructure()).thenReturn(dataStructure);
-
-        when(ds.getData()).thenReturn(Stream.of(
-                tuple(
-                        dataStructure.wrap("kommune_nr", "0101"),
-                        dataStructure.wrap("code", "0101"),
-                        dataStructure.wrap("CONDITION_CONDITION", true),
-                        dataStructure.wrap("booleanMeasure_CONDITION", true),
-                        dataStructure.wrap("stringMeasure", "t1")
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "9990"),
-                        dataStructure.wrap("code", null),
-                        dataStructure.wrap("CONDITION_CONDITION", true),
-                        dataStructure.wrap("booleanMeasure_CONDITION", false),
-                        dataStructure.wrap("stringMeasure", "t2")
-                ), tuple(
-                        dataStructure.wrap("kommune_nr", "0104"),
-                        dataStructure.wrap("code", null), //not in the code list, so a null value
-                        dataStructure.wrap("CONDITION_CONDITION", false),
-                        dataStructure.wrap("booleanMeasure_CONDITION", false),
-                        dataStructure.wrap("stringMeasure", "t3")
-                )
-        ));
+        Dataset ds = StaticDataset.create()
+                .withName("kommune_nr", "code", "CONDITION_CONDITION", "booleanMeasure_CONDITION", "stringMeasure")
+                .andRoles(IDENTIFIER, IDENTIFIER, MEASURE, MEASURE, MEASURE)
+                .andTypes(String.class, String.class, Boolean.class, Boolean.class, String.class)
+                .addPoints("0101", "0101", true, true, "t1")
+                .addPoints("9990", null, true, false, "t2")
+                .addPoints("0104", null /*not in the code list, so a null value*/, false, false, "t3")
+                .build();
 
         CheckSingleRuleOperation checkOperation = new CheckSingleRuleOperation.Builder(ds)
                 .rowsToReturn(CheckSingleRuleOperation.RowsToReturn.VALID)
@@ -345,8 +272,8 @@ public class CheckSingleRuleOperationTest {
                 .build();
 
         assertThat(checkOperation.getDataStructure().getRoles()).containsExactly(
-                entry("kommune_nr", Component.Role.IDENTIFIER),
-                entry("code", Component.Role.IDENTIFIER),
+                entry("kommune_nr", IDENTIFIER),
+                entry("code", IDENTIFIER),
                 entry(CONDITION_LABEL, Component.Role.MEASURE),    //new component, result of CONDITION_CONDITION && booleanMeasure_CONDITION
                 entry(ERROR_CODE_LABEL, Component.Role.ATTRIBUTE), //new component
                 entry(ERROR_LEVEL_LABEL, Component.Role.ATTRIBUTE) //new component
@@ -369,10 +296,6 @@ public class CheckSingleRuleOperationTest {
         assertThat(map.get(dStructure.get(ERROR_CODE_LABEL)).get()).isEqualTo("error001");
         assertThat(map.get(dStructure.get(ERROR_LEVEL_LABEL)).get()).isEqualTo(10L);
 
-    }
-
-    private DataPoint tuple(VTLObject... components) {
-        return DataPoint.create(Arrays.asList(components));
     }
 
 }

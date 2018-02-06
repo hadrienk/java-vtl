@@ -27,28 +27,48 @@ import org.junit.Test;
  */
 public class IdentifiersTest extends GrammarTest {
 
+    @Test
+    public void testIdentifierWithRole() throws Exception {
+        parse("identifier 'identifier' := null", "joinClause");
+        parse("measure 'identifier' := null", "joinClause");
+        parse("attribute 'identifier' := null", "joinClause");
+    }
+
+    @Test
+    public void testIdentifierImplicit() throws Exception {
+        parse("implicit 'identifier' := null", "joinClause");
+        parse("implicit identifier 'identifier' := null", "joinClause");
+        parse("implicit measure 'identifier' := null", "joinClause");
+        parse("implicit attribute 'identifier' := null", "joinClause");
+    }
+
     @Test(expected = Exception.class)
     public void testIdentifierWithLineBreaks() throws Exception {
-        parse("'ident\nifier'", "identifier");
+        parse("'ident\nifier'", "variable");
     }
 
     @Test
     public void testIdentifierQuotes() throws Exception {
-        parse("'ident''ifier'", "identifier");
+        parse("'ident''ifier'", "variable");
+    }
+
+    @Test(expected = Exception.class)
+    public void testIdentifierReserved() throws Exception {
+        parse("identifier", "variable");
     }
 
     @Test
     public void testIdentifier() throws Exception {
-        parse("identifier", "identifier");
+        parse("identifierId", "variable");
     }
 
     @Test(expected = Exception.class)
     public void testInvalidIdentifier() throws Exception {
-        parse("123identifier", "identifier");
+        parse("123identifier", "variable");
     }
 
     @Test
     public void testQuotedInvalidIdentifier() throws Exception {
-        parse("'123identifier'", "identifier");
+        parse("'123identifier'", "variable");
     }
 }

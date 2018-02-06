@@ -1,0 +1,231 @@
+
+/*
+    comments
+    with
+    newlines
+*/
+
+/* Literals */
+
+variable := "STRING"
+
+// Integers
+variable := 1
+variable := -1
+variable := 0
+
+// Floats
+variable := -0.1e-10
+variable := -0.1e10
+variable := -0.1e+10
+
+variable := 0.1e-10
+variable := 0.1e10
+variable := 0.1e+10
+
+variable := +0.1e-10
+variable := +0.1e10
+variable := +0.1e+10
+
+variable := 0.01
+variable := -0.001
+variable := +0.0001
+
+// Booleans
+variable := true
+variable := false
+
+// Date
+variable := 2000-01-01T00:00:00.000Z
+variable := 2000-01-01T00:00:00.000+00:15
+
+// Arithmetic
+variable := 1 + 1 - 2
+variable := 10 * -10 / +10
+
+// Conditionals
+variable := nvl(variable, variable)
+variable := nvl(dataset.component, dataset.component)
+variable := nvl(variable, 1 + 1)
+variable := nvl(dataset.component, 1 + 1)
+
+variable := if true then substr(variable, 0, 5) else substr(variable, 0, 10)
+variable := if variable < 2 then substr(variable, 0, 5) else substr(variable, 0, 10)
+variable := if dataset.component < 2 then substr(dataset.component, 0, 5) else substr(dataset.component, 0, 10)
+
+variable := if variable = "string"  then 1 + 1
+        elseif anotherVariable = 10 then 1 - 1
+          else null
+
+dataset := [dataset] {
+  variable := if true then "true" else "false"
+}
+
+
+/* String operators and function */
+
+variable := length("four")          // expect 4
+variable := length(null)            // expect null
+
+variable := "left" || "right"       // expect "leftright"
+variable :=  null  || "right"       // expect null
+variable := "left" ||  null         // expect null
+
+variable :=  trim("  string  ")     // expect   "string"
+variable := rtrim("  string  ")     // expect "  string"
+variable := ltrim("  string  ")     // expect   "string  "
+variable :=  trim(null)             // expect null
+variable := rtrim(null)             // expect null
+variable := ltrim(null)             // expect null
+
+variable := upper("some, string")   // expect "SOME, STRING"
+variable := upper(null)             // expect null
+
+variable := lower("SOME, STRING")   // expect "some, string"
+variable := lower(null)             // expect null
+
+variable := substr(
+                "some, string",
+                2
+            )                       // expect "me, string"
+variable := substr(
+                "some, string",
+                2, 5
+            )                       // expect "me, s"
+
+variable := instr(
+                "some, string",
+                "s"
+            )                       // expect 1
+
+
+/* Clauses */
+
+variable := dataset[rename component1 as newName1]
+variable := dataset[rename component1 as newName1, component2 as newName2]
+variable := dataset[rename component1 as newName1,
+                           component2 as newName2,
+                           component3 as newName3,
+                           component4 as newName4]
+
+variable := dataset[filter true or false and ( true or false )]
+
+// Membership
+variable := dataset.component
+variable := dataset.'component'
+variable := 'dataset'.component
+variable := 'dataset'.'component'
+
+/* Joins */
+
+test := [dataset] { filter true }
+test := [inner dataset] { filter true }
+test := [outer dataset] { filter true }
+test := [cross dataset] { filter true }
+test := [dataset1, dataset2] { filter true }
+test := [dataset1, dataset2, dataset3] { filter true }
+test := [outer dataset1, dataset2, dataset3] { filter true }
+test := [inner dataset1, dataset2, dataset3] { filter true }
+test := [cross dataset1, dataset2, dataset3] { filter true }
+
+/* Joins with on */
+variable := [outer dataset1, dataset2, dataset3 on component1] { filter true }
+variable := [outer dataset1, dataset2, dataset3 on component1, component2] { filter true }
+variable := [inner dataset1, dataset2, dataset3 on component1] { filter true }
+variable := [inner dataset1, dataset2, dataset3 on component1, component2] { filter true }
+variable := [cross dataset1, dataset2, dataset3 on component1] { filter true }
+variable := [cross dataset1, dataset2, dataset3 on component1, component2] { filter true }
+
+/* Join clauses */
+variable := [left, right] {
+    filter true or ( false or true xor false),
+
+    filter "string1" = "string1"
+        or "string1" < "string1"
+        and "string1" > "string1"
+        xor "string1" >= "string1"
+        and not "string1" <= 1,
+
+    filter 1 = 1
+        or 1 < 1
+        and 1 > 1
+        xor 1 >= 1
+        and not 1 <= 1,
+
+    rename component1 to newName1,
+    rename component1 to newName1, component2 to newName2,
+
+    fold component1 to dimentionName, measureName,
+    fold component1, component2 to dimentionName, measureName,
+
+    unfold dimensionComponent, measureComponent to "STRING1",
+    unfold dimensionComponent, measureComponent to "STRING1", "STRING2",
+
+    keep component1,
+    keep component1, component2, component3,
+    keep ds.component1,
+    keep ds.component1, ds.component2, ds.component3,
+
+    drop component1,
+    drop component1, component2, component3,
+    drop ds.component1,
+    drop ds.component1, ds.component2, ds.component3,
+
+    variable := func1(null,"string","string" || "string",
+        1, -1, 0,
+        1.0, -0.5,
+        (true or false) and true,
+        (1 - 2) + 3 / 4,
+        func2(
+            component
+        ),
+        func3(
+            'component',
+            '1variable',
+            '1dataset'.'1component'
+        ),
+        dataset.component
+    ),
+
+    variable := "STRING1",
+    identifier variable := "STRING1",
+    measure variable := 1,
+    attribute variable := 1.1,
+
+    implicit variable := component,
+    implicit variable := dataset.component,
+
+    implicit variable := 'dataset'.component,
+    implicit variable := dataset.component,
+    implicit variable := 'dataset'.'component',
+
+    implicit identifier variable := dataset.component,
+    implicit measure variable := dataset.component,
+    implicit attribute variable := dataset.component
+
+}
+
+
+/*  Functions */
+variable := functionName()
+variable := functionName(param1)
+variable := functionName(param1, param2, param3)
+variable := functionName(namedParam1: expr)
+variable := functionName(namedParam1: expr,namedParam2: expr, namedParam3: expr)
+variable := functionName(param1, namedParam1: expr)
+variable := functionName(param1, param2, param3, namedParam1: expr,namedParam2: expr, namedParam3: expr)
+
+/* aggregation functions */
+
+variable := sum(dataset) along component1
+variable := sum(dataset) along component1, component2
+
+variable := sum(dataset) group by component1
+variable := sum(dataset) group by component1, component2
+
+variable := avg(dataset) along component1
+variable := avg(dataset) along component1, component2
+
+variable := avg(dataset) group by component1
+variable := avg(dataset) group by component1, component2
+

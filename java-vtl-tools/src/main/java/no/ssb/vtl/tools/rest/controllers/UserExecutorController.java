@@ -28,8 +28,6 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.tools.rest.representations.StructureRepresentation;
 import no.ssb.vtl.tools.rest.representations.ThrowableRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -41,12 +39,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.script.Bindings;
-import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @CrossOrigin(origins = "http://localhost:8000/")
 @RequestMapping(
@@ -56,12 +55,13 @@ import java.util.Map;
 @RestController
 public class UserExecutorController {
 
-    @Autowired
-    public VTLScriptEngine vtlEngine;
+    private final VTLScriptEngine engine;
+    private final Bindings bindings;
 
-    @Autowired
-    @Qualifier("vtlBindings")
-    public Bindings bindings;
+    public UserExecutorController(VTLScriptEngine engine, Bindings bindings) {
+        this.engine = checkNotNull(engine);
+        this.bindings = checkNotNull(bindings);
+    }
 
     @ExceptionHandler
     @ResponseStatus()
@@ -74,8 +74,7 @@ public class UserExecutorController {
             method = RequestMethod.POST
     )
     public Collection<String> execute(Reader script) throws IOException, ScriptException {
-        vtlEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        vtlEngine.eval(script);
+        engine.eval(script, bindings);
         return bindings.keySet();
     }
 
@@ -116,7 +115,7 @@ public class UserExecutorController {
         DataStructure structure = dataset.getDataStructure();
         return () -> {
             return dataset.getData().map(dataPoints -> {
-                Map<String, Object> map = Maps.newHashMap();
+                Map<String, Object> map = Maps.newLinkedHashMap();
                 for (Map.Entry<Component, VTLObject> entry : structure.asMap(dataPoints).entrySet()) {
                     map.put(structure.getName(entry.getKey()), entry.getValue().get());
                 }

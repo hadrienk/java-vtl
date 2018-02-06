@@ -132,7 +132,7 @@ public class RenameOperationTest {
 
         Dataset dataset = mock(Dataset.class);
 
-        DataStructure structure = DataStructure.of((s, o) -> null,
+        DataStructure structure = DataStructure.of(
                 "Ia", Role.IDENTIFIER, String.class,
                 "Ma", Role.MEASURE, String.class,
                 "Aa", Role.ATTRIBUTE, String.class
@@ -163,7 +163,7 @@ public class RenameOperationTest {
     public void testRenameAndCast() throws Exception {
         Dataset dataset = mock(Dataset.class);
 
-        DataStructure structure = DataStructure.of((o, aClass) -> o,
+        DataStructure structure = DataStructure.of(
                 "Identifier1", Role.IDENTIFIER, String.class,
                 "Identifier2", Role.IDENTIFIER, String.class,
                 "Measure1", Role.MEASURE, String.class,

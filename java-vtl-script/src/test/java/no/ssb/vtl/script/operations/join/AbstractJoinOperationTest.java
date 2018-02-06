@@ -32,9 +32,12 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import org.junit.Test;
 
+import javax.script.Bindings;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +48,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -55,9 +57,90 @@ import static org.assertj.guava.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
+
+    @Test
+    // TODO: Move to ComponentBindingsTest
+    public void testJoinBindingsOneDataset() throws Exception {
+
+        StaticDataset t1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, Long.class)
+                .addComponent("uni1", Role.IDENTIFIER, Double.class)
+                .addComponent("m1", Role.MEASURE, Instant.class)
+                .addComponent("a1", Role.MEASURE, Boolean.class)
+                .build();
+
+        Bindings result = AbstractJoinOperation.createJoinScope(ImmutableMap.of(
+                "t1", t1
+        ));
+
+        assertThat(result).containsOnlyKeys("id1", "id2", "uni1", "m1", "a1", "t1");
+
+    }
+
+    @Test
+    public void testGetDataOnlyOnce() {
+
+        // Makes sure getData is not called when sorting is available.
+
+        ArrayList<Long> leftData = Lists.newArrayList(
+                1L, 3L, 3L, 3L, 3L, 4L, 5L, 6L, 8L, 9L, 9L, 9L, 10L
+        );
+
+        ArrayList<Long> rightData = Lists.newArrayList(
+                1L, 1L, 1L, 2L, 3L, 5L, 7L, 7L, 8L, 8L, 9L, 9L, 9L, 10L
+        );
+
+        Dataset left = mock(Dataset.class);
+        when(left.getDataStructure()).thenReturn(
+                DataStructure.builder()
+                        .put("id", Role.IDENTIFIER, Long.class)
+                        .put("m", Role.MEASURE, String.class)
+                        .build()
+        );
+        when(left.getData()).then(o -> {
+            return Streams.mapWithIndex(leftData.stream(), (id, index) -> {
+                return Lists.newArrayList(VTLObject.of(id), VTLObject.of("left " + (index + 1)));
+            }).map(DataPoint::create);
+        });
+        when(left.getData(any(Order.class))).then(invocation -> {
+            Order order = invocation.getArgumentAt(0, Order.class);
+            Stream<DataPoint> sortedStream = Streams.mapWithIndex(leftData.stream(), (id, index) -> Lists.newArrayList(VTLObject.of(id), VTLObject.of("left " + (index + 1)))).map(DataPoint::create).sorted(order);
+            return Optional.of(sortedStream);
+        });
+
+        Dataset right = mock(Dataset.class);
+        when(right.getDataStructure()).thenReturn(
+                DataStructure.builder()
+                        .put("id", Role.IDENTIFIER, Long.class)
+                        .put("m", Role.MEASURE, String.class)
+                        .build()
+        );
+        when(right.getData()).then(o -> {
+            return Streams.mapWithIndex(rightData.stream(), (id, index) -> {
+                return Lists.newArrayList(VTLObject.of(id), VTLObject.of("right " + (index + 1)));
+            }).map(DataPoint::create);
+        });
+        when(right.getData(any(Order.class))).then(invocation -> {
+            Order order = invocation.getArgumentAt(0, Order.class);
+            Stream<DataPoint> sortedStream = Streams.mapWithIndex(leftData.stream(), (id, index) -> Lists.newArrayList(VTLObject.of(id), VTLObject.of("left " + (index + 1)))).map(DataPoint::create).sorted(order);
+            return Optional.of(sortedStream);
+        });
+
+        TestAbstractJoinOperation result = new TestAbstractJoinOperation(ImmutableMap.of("left", left, "right", right));
+
+        result.getData().forEach(dp -> {
+        });
+
+        verify(left, never()).getData();
+        verify(right, never()).getData();
+
+    }
 
     @Test
     public void testSortMerge() throws Exception {
@@ -411,6 +494,39 @@ public class AbstractJoinOperationTest {
         assertThat(result.getData())
                 .containsAll(ds1.getData().collect(Collectors.toList()));
 
+    }
+
+    @Test
+    public void testComponentNameIsUnique() {
+
+        Dataset ds1 = mock(Dataset.class);
+        DataStructure s1 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("me2", Role.MEASURE, Long.class)
+                .put("me3", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
+                .build();
+        when(ds1.getDataStructure()).thenReturn(s1);
+
+        Dataset ds2 = mock(Dataset.class);
+        DataStructure s2 = DataStructure.builder()
+                .put("id1", Role.IDENTIFIER, Long.class)
+                .put("me1", Role.MEASURE, Long.class)
+                .put("at1", Role.ATTRIBUTE, Long.class)
+                .build();
+        when(ds2.getDataStructure()).thenReturn(s2);
+
+        TestAbstractJoinOperation joinOperation = new TestAbstractJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+
+        assertThat(joinOperation.componentNameIsUnique("ds1", "me1"))
+                .isFalse();
+        assertThat(joinOperation.componentNameIsUnique("ds1", "me2"))
+                .isTrue();
+        assertThat(joinOperation.componentNameIsUnique("ds1", "me3"))
+                .isTrue();
+        assertThat(joinOperation.componentNameIsUnique("ds1", "at1"))
+                .isFalse();
     }
 
     private static class TestAbstractJoinOperation extends AbstractJoinOperation {

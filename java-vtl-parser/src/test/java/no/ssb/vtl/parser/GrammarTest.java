@@ -27,7 +27,7 @@ import org.junit.Rule;
 /**
  * Base class for grammar tests
  */
-public class GrammarTest {
+public abstract class GrammarTest {
 
     @Rule
     public GrammarRule grammarRule = new GrammarRule();

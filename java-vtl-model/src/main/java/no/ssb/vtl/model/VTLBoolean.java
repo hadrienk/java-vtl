@@ -20,20 +20,24 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLBoolean extends VTLObject<Boolean> {
-    
-    public static VTLBoolean of(Boolean value) {
-    
-        if (value == null) {
-            return null;
-        } else {
-            return new VTLBoolean() {
-                @Override
-                public Boolean get() {
-                    return value;
-                }
-            };
-        }
+public abstract class VTLBoolean extends VTLObject<Boolean> implements VTLTyped<VTLBoolean> {
+
+    private VTLBoolean() {
+        // private.
     }
-    
+
+    @Override
+    public Class<VTLBoolean> getVTLType() {
+        return VTLBoolean.class;
+    }
+
+    public static VTLBoolean of(Boolean value) {
+        return new VTLBoolean() {
+            @Override
+            public Boolean get() {
+                return value;
+            }
+        };
+    }
+
 }

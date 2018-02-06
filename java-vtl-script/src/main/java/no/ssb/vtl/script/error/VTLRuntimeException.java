@@ -21,34 +21,43 @@ package no.ssb.vtl.script.error;
  */
 
 import no.ssb.vtl.model.DataPoint;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 
-import static no.ssb.vtl.script.error.VTLErrorCodeUtil.*;
+import static no.ssb.vtl.script.error.VTLErrorCodeUtil.checkVTLCode;
 
 /**
  * Thrown when the VTL execution failed at runtime.
  */
+@Deprecated
 public class VTLRuntimeException extends RuntimeException implements VTLThrowable {
 
     private static final long serialVersionUID = 7253953869019949964L;
     private final String VTLCode;
-    private final DataPoint dataPoint;
+    private final RuleContext context;
 
     public VTLRuntimeException(String s, String vtlCode, DataPoint dataPoint) {
         super(s);
         this.VTLCode = checkVTLCode(vtlCode, "VTL-1");
-        this.dataPoint = dataPoint;
+        this.context = null;
     }
 
     public VTLRuntimeException(Exception e, String vtlCode, DataPoint dataPoint) {
         super(e);
         this.VTLCode = checkVTLCode(vtlCode, "VTL-1");
-        this.dataPoint = dataPoint;
+        this.context = null;
     }
-    
+
+    public VTLRuntimeException(String message, String vtlCode, ParserRuleContext context) {
+        super(message);
+        this.VTLCode = vtlCode;
+        this.context = context;
+    }
+
     @Override
     public String getMessage() {
         String message = super.getMessage();
-        return message + " for dataPoint: " + dataPoint;
+        return message + " at " + context;
     }
     
     @Override

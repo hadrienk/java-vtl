@@ -19,25 +19,6 @@ package no.ssb.vtl.script.operations.join;
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-/*-
- * #%L
- * java-vtl-script
- * %%
- * Copyright (C) 2016 Hadrien Kohl
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
@@ -56,9 +37,10 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.support.Closer;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
-import javax.script.Bindings;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -93,8 +75,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private final ImmutableMap<String, Dataset> datasets;
     private final ImmutableSet<Component> commonIdentifiers;
 
-    private final Bindings joinScope;
-
+    private final ComponentBindings joinScope;
 
     AbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(Lists.newArrayList(checkNotNull(namedDatasets).values()));
@@ -107,7 +88,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         checkNotNull(identifiers);
 
-        this.joinScope = new JoinScopeBindings(this.datasets);
+        this.joinScope = createJoinScope(namedDatasets);
 
         this.componentMapping = createComponentMapping(this.datasets.values());
 
@@ -119,7 +100,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // No common identifier
-        checkArgument(!idMap.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
+        checkArgument(namedDatasets.size() == 1 || !idMap.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
 
         this.commonIdentifiers = ImmutableSet.copyOf(idMap.keySet());
 
@@ -145,6 +126,14 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         );
     }
 
+    /**
+     * Creates a Bindings that contains the unique components of this join operation and the
+     * datasets.
+     */
+    @VisibleForTesting
+    static ComponentBindings createJoinScope(Map<String, Dataset> namedDatasets) {
+        return new ComponentBindings(namedDatasets);
+    }
 
     /**
      * Create a table that maps the components of the resulting dataset to the component of the underlying
@@ -192,6 +181,10 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return table.build();
     }
 
+    private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
+        return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
+    }
+
     protected abstract BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             Dataset leftDataset, Dataset rightDataset
     );
@@ -216,8 +209,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 adjustedOrder.put(component, direction);
             }
         }
-        //Order.Builder minimalOrder = Order.createCopyOf(order);
-        return dataset.getData(adjustedOrder.build()).orElse(dataset.getData().sorted(adjustedOrder.build()));
+        return dataset.getData(adjustedOrder.build()).orElseGet(() -> dataset.getData().sorted(adjustedOrder.build()));
     }
 
     private Comparator<Map<Component, VTLObject>> createKeyComparator(
@@ -289,10 +281,15 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         final DataStructure joinStructure = getDataStructure();
         final DataStructure structure = left.getDataStructure();
 
-        Stream<DataPoint> result = sortIfNeeded(left, requestedOrder)
-                .map(dataPoint -> joinStructure.fromMap(
-                        structure.asMap(dataPoint)
-                ));
+        // Close all children
+        Closer closer = Closer.create();
+
+        Stream<DataPoint> result = closer.register(
+                sortIfNeeded(left, requestedOrder)
+                        .map(dataPoint -> joinStructure.fromMap(
+                                structure.asMap(dataPoint)
+                        ))
+        );
 
         while (iterator.hasNext()) {
             left = right;
@@ -301,22 +298,25 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                     new JoinSpliterator<>(
                             createKeyComparator(right, requestedOrder),
                             result.spliterator(),
-                            sortIfNeeded(right, requestedOrder).spliterator(),
+                            closer.register(
+                                    sortIfNeeded(right, requestedOrder)
+                            ).spliterator(),
                             createKeyExtractor(joinStructure),
                             createKeyExtractor(right.getDataStructure()),
                             getMerger(left, right)
                     ), false
             );
         }
-        return Optional.of(result);
+        return Optional.of(result.onClose(() -> {
+            try {
+                closer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }));
     }
 
-    private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
-        return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
-    }
-
-
-    private ImmutableSet<Component> getCommonIdentifiers() {
+    protected ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
     }
 
@@ -371,6 +371,23 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return Optional.of(compatibleOrder.build());
     }
 
+    /**
+     * Checks if component name is unique among other datasets
+     */
+    @VisibleForTesting
+    boolean componentNameIsUnique(String datasetName, String componentName) {
+        for (String otherDatasetName : datasets.keySet()) {
+            if (!datasetName.equals(otherDatasetName)) {
+                DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
+                if (!Sets.intersection(structure.keySet(), Sets.newHashSet(componentName)).isEmpty()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     @Override
     protected DataStructure computeDataStructure() {
         // Optimization.
@@ -384,7 +401,11 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             DataStructure structure = datasets.get(datasetName).getDataStructure();
             for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
                 if (!componentEntry.getValue().isIdentifier()) {
-                    newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                    if (componentNameIsUnique(datasetName, componentEntry.getKey())) {
+                        newDataStructure.put(componentEntry.getKey(), componentEntry.getValue());
+                    } else {
+                        newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
+                    }
                 } else {
                     if (ids.add(componentEntry.getKey())) {
                         newDataStructure.put(componentEntry);
@@ -395,7 +416,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return newDataStructure.build();
     }
 
-    public Bindings getJoinScope() {
+    public ComponentBindings getJoinScope() {
         return joinScope;
     }
 

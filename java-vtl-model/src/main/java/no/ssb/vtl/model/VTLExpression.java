@@ -20,57 +20,14 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-import java.util.function.Function;
+import javax.script.Bindings;
 
 /**
- * Base VTL expression
+ * Deferred expression
  *
- * Represents a scalar value (VTLObject)  whose computation can be function of a data point (ultimately of a Bindings,
- * but we are not there yet) but still exposes its type.
- *
+ * An expression that can later be resolved using a Bindings.
  */
-public abstract class VTLExpression implements Function<DataPoint, VTLObject> {
-    
-    public abstract Class<?> getType();
-    
-    @Override
-    public String toString() {
-        return "VTLExpression";
-    }
-    
-    
-    public static class Builder {
-        private final Function<DataPoint, VTLObject> function;
-        private final Class<?> type;
-        private String description;
-    
-        public Builder(Class<?> type, Function<DataPoint, VTLObject> function) {
-            this.function = function;
-            this.type = type;
-        }
-    
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-    
-        public VTLExpression build() {
-            return new VTLExpression() {
-                @Override
-                public VTLObject apply(DataPoint dataPoint) {
-                    return function.apply(dataPoint);
-                }
-        
-                @Override
-                public Class<?> getType() {
-                    return type;
-                }
-        
-                @Override
-                public String toString() {
-                    return description;
-                }
-            };
-        }
-    }
+public interface VTLExpression<T extends VTLObject> extends VTLTyped<T> {
+
+    T resolve(Bindings bindings);
 }

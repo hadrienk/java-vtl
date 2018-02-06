@@ -20,108 +20,105 @@ package no.ssb.vtl.script.visitors;
  * =========================LICENSE_END==================================
  */
 
-/*-
- * #%L
- * java-vtl-script
- * %%
- * Copyright (C) 2016 Hadrien Kohl
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
 
+import javax.script.Bindings;
 import javax.script.ScriptContext;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Assignment visitor.
  */
-public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
+public class AssignmentVisitor extends VTLBaseVisitor<Object> {
 
-    private final ScriptContext context;
+    private final Bindings bindings;
+    private final ExpressionVisitor expressionVisitor;
+
     private final ConnectorVisitor connectorVisitor;
     private final ClauseVisitor clausesVisitor;
-    private final RelationalVisitor relationalVisitor;
+    private final DatasetExpressionVisitor datasetExpressionVisitor;
     private final CheckVisitor checkVisitor;
     private final HierarchyVisitor hierarchyVisitor;
     private final AggregationVisitor aggregationVisitor;
     
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
-        this.context = checkNotNull(context, "the context was null");
+        checkNotNull(context, "the context was null");
+
+        this.bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+        this.expressionVisitor = new ExpressionVisitor(this.bindings);
+
         connectorVisitor = new ConnectorVisitor(connectors);
         clausesVisitor = new ClauseVisitor();
-        relationalVisitor = new RelationalVisitor(this, context);
-        ReferenceVisitor referenceVisitor = new ReferenceVisitor(context.getBindings(ScriptContext.ENGINE_SCOPE));
-        checkVisitor = new CheckVisitor(relationalVisitor, referenceVisitor);
-        hierarchyVisitor = new HierarchyVisitor(referenceVisitor);
-        aggregationVisitor = new AggregationVisitor(referenceVisitor);
+        datasetExpressionVisitor = new DatasetExpressionVisitor(expressionVisitor);
+        checkVisitor = new CheckVisitor(datasetExpressionVisitor);
+        hierarchyVisitor = new HierarchyVisitor(datasetExpressionVisitor);
+        aggregationVisitor = new AggregationVisitor(datasetExpressionVisitor);
     }
 
-    @Override
-    protected Dataset aggregateResult(Dataset aggregate, Dataset nextResult) {
-        return nextResult != null ? nextResult : aggregate;
-    }
+
     
     @Override
-    public Dataset visitAssignment(VTLParser.AssignmentContext ctx) {
-        String name = ctx.identifier().getText();
-        Dataset dataset = visit(ctx.datasetExpression());
-        context.setAttribute(name, dataset, ScriptContext.ENGINE_SCOPE);
-        return (Dataset) context.getAttribute(name, ScriptContext.ENGINE_SCOPE);
+    public Object visitAssignment(VTLParser.AssignmentContext ctx) {
+        String name = ctx.variable().getText();
+        Object value;
+        if (ctx.datasetExpression() != null) {
+            value = visit(ctx.datasetExpression());
+        } else {
+            VTLExpression expression = expressionVisitor.visit(ctx.expression());
+            try {
+                value = expression.resolve(bindings).get();
+            } catch (Exception e) {
+                throw new ContextualRuntimeException(e.getMessage(), ctx);
+            }
+        }
+        bindings.put(name, value);
+        return value;
     }
 
     @Override
-    public Dataset visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
-        return relationalVisitor.visit(ctx);
+    public Object visitRelationalExpression(VTLParser.RelationalExpressionContext ctx) {
+        return datasetExpressionVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitVariableRef(VTLParser.VariableRefContext ctx) {
-        return (Dataset) context.getAttribute(ctx.getText());
-    }
-
-    @Override
-    public Dataset visitGetFunction(VTLParser.GetFunctionContext ctx) {
+    public Object visitGetFunction(VTLParser.GetFunctionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitPutFunction(VTLParser.PutFunctionContext ctx) {
+    public Object visitPutFunction(VTLParser.PutFunctionContext ctx) {
         return connectorVisitor.visit(ctx);
     }
 
     @Override
-    public Dataset visitWithClause(VTLParser.WithClauseContext ctx) {
-        Dataset dataset = visit(ctx.datasetExpression());
+    public Object visitWithClause(VTLParser.WithClauseContext ctx) {
+        Dataset dataset = (Dataset) visit(ctx.datasetExpression());
         Function<Dataset, Dataset> clause = clausesVisitor.visit(ctx.clauseExpression());
         return clause.apply(dataset);
     }
 
     @Override
-    public Dataset visitWithCheck(VTLParser.WithCheckContext ctx) {
+    public Object visitVariable(VTLParser.VariableContext ctx) {
+        VTLObject resolved = expressionVisitor.visit(ctx).resolve(bindings);
+        return resolved.get();
+    }
+
+    @Override
+    public Object visitWithCheck(VTLParser.WithCheckContext ctx) {
         return checkVisitor.visit(ctx.checkFunction());
     }
 
     @Override
-    public Dataset visitWithHierarchy(VTLParser.WithHierarchyContext ctx) {
+    public Object visitWithHierarchy(VTLParser.WithHierarchyContext ctx) {
         return hierarchyVisitor.visit(ctx.hierarchyExpression());
     }
     
@@ -133,7 +130,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Dataset> {
      * @param ctx
      */
     @Override
-    public Dataset visitWithAggregation(VTLParser.WithAggregationContext ctx) {
+    public Object visitWithAggregation(VTLParser.WithAggregationContext ctx) {
         return aggregationVisitor.visit(ctx.aggregationFunction());
     }
 }

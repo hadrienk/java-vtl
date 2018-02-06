@@ -20,42 +20,21 @@ package no.ssb.vtl.script;
  * =========================LICENSE_END==================================
  */
 
-/*-
- * #%L
- * java-vtl-script
- * %%
- * Copyright (C) 2016 Hadrien Kohl
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.error.SyntaxException;
-import no.ssb.vtl.script.error.WrappedException;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
+import no.ssb.vtl.script.error.VTLCompileException;
+import no.ssb.vtl.script.error.VTLScriptException;
+import no.ssb.vtl.script.support.SyntaxErrorListener;
 import no.ssb.vtl.script.visitors.AssignmentVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -67,7 +46,9 @@ import javax.script.SimpleBindings;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.TimeZone;
+import java.util.function.Consumer;
 
 /**
  * A VTL {@link ScriptEngine} implementation.
@@ -134,89 +115,57 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         return eval(new StringReader(script), context);
     }
 
+    public VTLParser.StartContext parse(Reader reader, Consumer<VTLScriptException> errorConsumer) throws IOException {
+        // TODO: Change to CharStreams.fromString() when #1977 makes it to release.
+        VTLLexer lexer = new VTLLexer(new ANTLRInputStream(reader));
+        VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
+
+        lexer.removeErrorListeners();
+        parser.removeErrorListeners();
+
+        BaseErrorListener errorListener = new SyntaxErrorListener(errorConsumer);
+
+        lexer.addErrorListener(errorListener);
+        parser.addErrorListener(errorListener);
+
+        return parser.start();
+    }
+
     @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
-        /*
-            Until compilation is done, this is the main method that allows
-            VTL execution.
-            Exceptions' hierarchy is as follow:
-                - ScriptException
-                    - CompilationException
-                        - SyntaxException
-                        - TypeException
-                        - ConstraintException
-                    - ValidationException
-                    - VTLRuntimeException
-            The WrappedScriptException is used to report errors that are not originating
-            from the VTL Parser.
-         */
         try {
-            VTLLexer lexer = new VTLLexer(new ANTLRInputStream(reader));
-            VTLParser parser = new VTLParser(new CommonTokenStream(lexer));
-
-            lexer.removeErrorListeners();
-            parser.removeErrorListeners();
-
-            BaseErrorListener errorListener = new BaseErrorListener() {
-                @Override
-                public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int column, String msg, RecognitionException e) {
-                    WrappedException wrappedException;
-                    if (e instanceof WrappedException) {
-                        wrappedException = (WrappedException) e;
-                    } else {
-                        wrappedException = new WrappedException(
-                                msg,
-                                recognizer,
-                                e != null ? e.getInputStream() : null,
-                                e != null ? (ParserRuleContext) e.getCtx() : null,
-                                new SyntaxException(
-                                        msg, null, line, column, "VTL-0199"
-                                )
-                        );
-                    }
-                    wrappedException.setLine(line);
-                    wrappedException.setColumn(column);
-                    throw new ParseCancellationException(msg, wrappedException);
-                }
-            };
-            lexer.addErrorListener(errorListener);
-            parser.addErrorListener(errorListener);
-
-            VTLParser.StartContext start = parser.start();
-
-            // Run loop.
-            AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
-            Dataset last = null;
-            for (VTLParser.AssignmentContext assignmentContext : start.assignment()) {
-                last = assignmentVisitor.visit(assignmentContext);
-            }
-            return last;
-
-        } catch (ParseCancellationException pce) {
-            if (pce.getCause() instanceof WrappedException) {
-                WrappedException cause = (WrappedException) pce.getCause();
-
-                if (cause.getCause() instanceof ScriptException) {
-                    throw ((ScriptException) cause.getCause());
-                } else {
-                    throw new ScriptException(
-                            pce.getMessage(),
-                            null,
-                            cause.getLineNumber(),
-                            cause.getColumnNumber()
-                    );
-                }
-
+            ArrayList<VTLScriptException> errors = Lists.newArrayList();
+            VTLParser.StartContext start = parse(reader, errors::add);
+            Object returnValue = run(start, errors::add, context);
+            if (!errors.isEmpty()) {
+                throw new VTLCompileException(errors);
             } else {
-                if (pce.getCause() != null) {
-                    throw new ScriptException(pce.getCause().getMessage());
+                return returnValue;
+            }
+        } catch (IOException | RuntimeException unknownException) {
+            throw new ScriptException(unknownException);
+        }
+    }
+
+    /**
+     * Run loop
+     */
+    private Object run(VTLParser.StartContext start, Consumer<VTLScriptException> errorConsumer, ScriptContext context) throws VTLScriptException {
+        AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
+        Object last = null;
+        for (VTLParser.StatementContext statementContext : start.statement()) {
+            try {
+                last = assignmentVisitor.visit(statementContext);
+            } catch (ContextualRuntimeException cre) {
+                ParserRuleContext ctx = cre.getContext();
+                if (cre.getCause() != null) {
+                    errorConsumer.accept(new VTLScriptException((Exception) cre.getCause(), ctx));
                 } else {
-                    throw new ScriptException(pce.getMessage());
+                    errorConsumer.accept(new VTLScriptException(cre.getMessage(), ctx));
                 }
             }
-        } catch (IOException | RuntimeException ioe) {
-            throw new ScriptException(ioe);
         }
+        return last;
     }
 
     @Override

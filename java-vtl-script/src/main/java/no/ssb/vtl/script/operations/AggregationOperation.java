@@ -63,6 +63,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
                 if (Number.class.isAssignableFrom(entry.getValue().getType())) {
                     newDataStructure.put(entry);
                 } else {
+                    // TODO: This should be handled in the visitor (before execution)
                     throw new ParseCancellationException(
                             new TypeException(String.format("Cannot aggregate component %s of type %s. It must be numeric", entry.getKey(), entry.getValue().getType()), "VTL-02xx"));
                 }
@@ -80,9 +81,10 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
         Order order = builder.build();
     
-        Stream<DataPoint> data = getChild().getData(order).orElse(getChild().getData().sorted(order));
+        Stream<DataPoint> data = getChild().getData(order).orElseGet(() -> getChild().getData().sorted(order));
         Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(data,
-                (dataPoint1, dataPoint2) -> order.compare(dataPoint1, dataPoint2) == 0);
+                (dataPoint1, dataPoint2) -> order.compare(dataPoint1, dataPoint2) == 0)
+                .onClose(data::close);
     
         @SuppressWarnings("UnnecessaryLocalVariable")
         Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {
@@ -91,10 +93,10 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     
             for (Component aggregationComponent : aggregationComponents) {
     
-                List<VTLNumber> aggregationValues = dataPoints.stream()
+                List<VTLNumber> aggregationValues = (List) dataPoints.stream()
                         .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
                         .filter(vtlObject -> !VTLObject.NULL.equals(vtlObject))
-                        .map(vtlObject -> VTLNumber.of((Number) vtlObject.get()))
+                        .map(vtlObject -> VTLObject.of(vtlObject.get()))
                         .collect(Collectors.toList());
     
                 resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));

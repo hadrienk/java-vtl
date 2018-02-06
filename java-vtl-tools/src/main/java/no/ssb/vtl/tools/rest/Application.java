@@ -22,11 +22,23 @@ package no.ssb.vtl.tools.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import no.ssb.vtl.connectors.Connector;
+import no.ssb.vtl.connectors.PxApiConnector;
+import no.ssb.vtl.connectors.SsbApiConnector;
+import no.ssb.vtl.connectors.SsbKlassApiConnector;
+import no.ssb.vtl.connectors.spring.RestTemplateConnector;
+import no.ssb.vtl.connectors.spring.converters.DataHttpConverter;
+import no.ssb.vtl.connectors.spring.converters.DataStructureHttpConverter;
+import no.ssb.vtl.connectors.spring.converters.DatasetHttpMessageConverter;
+import no.ssb.vtl.connectors.utils.CachedConnector;
+import no.ssb.vtl.connectors.utils.RegexConnector;
+import no.ssb.vtl.connectors.utils.TimeoutConnector;
 import no.ssb.vtl.script.VTLScriptEngine;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -35,12 +47,20 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.script.Bindings;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
@@ -56,18 +76,76 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 @EnableCaching
 public class Application {
 
+    @Value("${pxApi.baseUrl}")
+    private String pxApiBaseUrl;
+
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
 
     @Bean
     List<Connector> getConnectors(ObjectMapper mapper) {
+
         List<Connector> connectors = Lists.newArrayList();
         ServiceLoader<Connector> loader = ServiceLoader.load(Connector.class);
         for (Connector connector : loader) {
             connectors.add(connector);
         }
+
+        connectors.add(new SsbApiConnector(new ObjectMapper()));
+        connectors.add(new SsbKlassApiConnector(new ObjectMapper(), SsbKlassApiConnector.PeriodType.YEAR));
+        connectors.add(getKompisConnector(mapper));
+        if (!StringUtils.isEmpty(pxApiBaseUrl)) {
+            connectors.add(new PxApiConnector(pxApiBaseUrl));
+        }
+
+        // Setup timeout.
+        connectors = Lists.transform(connectors, c -> TimeoutConnector.create(c, 100, TimeUnit.SECONDS));
+
+        CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
+                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .maximumSize(100);
+
+
+        connectors = Lists.transform(connectors, c -> CachedConnector.create(c, cacheBuilder));
+
         return connectors;
+    }
+
+    Connector getKompisConnector(ObjectMapper mapper) {
+
+        SimpleClientHttpRequestFactory schrf = new SimpleClientHttpRequestFactory();
+        schrf.setBufferRequestBody(false);
+
+        schrf.setTaskExecutor(new ConcurrentTaskExecutor());
+
+        schrf.setConnectTimeout(200);
+        schrf.setReadTimeout(1000);
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        RestTemplate template = new RestTemplate(schrf);
+
+        template.getMessageConverters().add(
+                0, new DataHttpConverter(mapper)
+        );
+        template.getMessageConverters().add(
+                0, new DataStructureHttpConverter(mapper)
+        );
+        template.getMessageConverters().add(
+                0, new DatasetHttpMessageConverter(mapper)
+        );
+
+        RestTemplateConnector restTemplateConnector = new RestTemplateConnector(
+                template,
+                executorService
+        );
+
+        // TODO: Remove when old API is deprecated.
+        return RegexConnector.create(restTemplateConnector,
+                Pattern.compile("(?<host>(?:http|https)://.*?)/api/data/(?<id>.*)/latest(?<param>[?|#].*)"),
+                "${host}/api/v3/data/${id}${param}"
+        );
     }
 
     @Bean
