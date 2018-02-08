@@ -14,7 +14,6 @@
         <module>java-vtl-parser</module>
         <module>java-vtl-script</module>
         <module>java-vtl-test</module>
-        <module>java-vtl-tools</module>
         <module>java-vtl-coverage</module>
     </modules>
 
