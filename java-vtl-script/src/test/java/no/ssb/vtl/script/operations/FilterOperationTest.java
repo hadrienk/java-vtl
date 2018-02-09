@@ -42,7 +42,7 @@ public class FilterOperationTest {
     private static VTLExpression NULL = new VTLExpression() {
         @Override
         public VTLObject resolve(Bindings bindings) {
-            return VTLBoolean.of((Boolean) null);
+            return VTLObject.of((VTLObject) null);
         }
 
         @Override
@@ -76,23 +76,24 @@ public class FilterOperationTest {
     };
 
     @Before
-    public void setUp() throws Exception {
-        dataset= StaticDataset.create()
+    public void setUp() {
+        dataset = StaticDataset.create()
                 .addComponent("id", Component.Role.IDENTIFIER, String.class)
-                .addPoints("idValue")
+                .addComponent("mc", Component.Role.MEASURE, String.class)
+                .addPoints("idValue", null)
                 .build();
         componentBindings = new ComponentBindings(dataset);
     }
 
     @Test
-    public void testPredicateReturnsNull() throws Exception {
+    public void testPredicateReturnsNull() {
 
         FilterOperation resultBooleanNull = new FilterOperation(dataset, NULL, componentBindings);
         assertThat(resultBooleanNull.getData()).isEmpty();
     }
 
     @Test
-    public void testPredicateReturnsFalse() throws Exception {
+    public void testPredicateReturnsFalse() {
 
         FilterOperation result = new FilterOperation(dataset, FALSE, componentBindings);
         assertThat(result.getData()).isEmpty();
@@ -100,7 +101,7 @@ public class FilterOperationTest {
 
 
     @Test
-    public void testPredicateReturnsTrue() throws Exception {
+    public void testPredicateReturnsTrue() {
 
         FilterOperation result = new FilterOperation(dataset, TRUE, componentBindings);
         assertThat(result.getData()).isNotEmpty();
