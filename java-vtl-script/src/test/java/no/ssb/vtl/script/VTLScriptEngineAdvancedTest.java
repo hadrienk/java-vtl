@@ -53,7 +53,7 @@ public class VTLScriptEngineAdvancedTest {
 
     @Test
     public void testManyAndBools() throws Exception {
-        runExpressionLoop("true", "or");
+        runExpressionLoop("true", "and");
     }
 
     @Test
