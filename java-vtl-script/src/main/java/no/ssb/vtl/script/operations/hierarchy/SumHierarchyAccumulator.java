@@ -57,8 +57,10 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
         switch (sign) {
             case UNION:
                 return (left, right) -> {
-                    VTLNumber leftNumber = (VTLNumber) left;
-                    VTLNumber rightNumber = (VTLNumber) right;
+                    VTLNumber leftNumber =
+                            left == null || left.get() == null ? VTLNumber.of(0) : (VTLNumber) left;
+                    VTLNumber rightNumber =
+                            right == null || right.get() == null ? VTLNumber.of(0) : (VTLNumber) right;
                     return leftNumber.add(rightNumber);
                 };
             case COMPLEMENT:
