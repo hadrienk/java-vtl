@@ -42,6 +42,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.brotli.dec.BrotliInputStream;
@@ -122,7 +123,14 @@ public class HierarchyOperationTest extends RandomizedTest {
                 createInstant(2003), "Luxembourg", 2003L, -2003L,
                 createInstant(2003), "Benelux", 6009L, -6009L,
                 createInstant(2003), "Italy", 2003L, -2003L,
-                createInstant(2003), "Holland", 2003L, -2003L
+                createInstant(2003), "Holland", 2003L, -2003L,
+                createInstant(2006), "European Union", 2006L, -2006L,
+                createInstant(2006), "Benelux", 2006L, -2006L,
+                createInstant(2006), "Holland", 2006L, -2006L,
+                createInstant(2006), "Luxembourg", null, null,
+                createInstant(2007), "European Union", null, null,
+                createInstant(2007), "Benelux", null, null,
+                createInstant(2007), "Luxembourg", null, null
         );
     }
 
@@ -257,6 +265,21 @@ public class HierarchyOperationTest extends RandomizedTest {
                 data.add(point);
             }
         }
+        //Add point with null value in MC
+        data.add(new DataPoint(
+                Year.of(2006).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                "Luxembourg", VTLObject.of((Object)null), VTLObject.of((Object)null)));
+        data.add(new DataPoint(
+                Year.of(2006).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                "Holland", VTLObject.of(2006), VTLObject.of(-2006)));
+        data.add(new DataPoint(
+                Year.of(2007).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                "Luxembourg", VTLObject.of((Object)null), VTLObject.of((Object)null)));
+
+
+
+
+
         Collections.shuffle(data, new Random(randomLong()));
 
         return new Dataset() {
@@ -332,9 +355,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         return Streams.stream(rows)
                 .filter(map -> !map.get("from").toString().isEmpty())
                 .filter(map -> !map.get("to").toString().isEmpty())
-                .map((map) -> {
-                    return hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey));
-                }).collect(toList());
+                .map((map) -> hierarchyStructure.wrap(Maps.filterKeys(map, hierarchyStructure::containsKey))).collect(toList());
     }
 
     private static Dataset createEmptyDataset(final DataStructure structure) {
@@ -362,7 +383,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testConstraintComponentIsInDataset() throws Exception {
+    public void testConstraintComponentIsInDataset() {
         // Component must part of the structure.
         MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
         DataStructure structure = DataStructure.builder()
@@ -379,13 +400,13 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         Dataset dataset = createEmptyDataset(structure);
 
-        assertThatThrownBy(() -> {
-            new HierarchyOperation(dataset, graph, otherStructure.get("m1"));
-        }).isNotNull().hasMessageContaining(otherStructure.get("m1").toString());
+        assertThatThrownBy(
+                () -> new HierarchyOperation(dataset, graph, otherStructure.get("m1")))
+                .isNotNull().hasMessageContaining(otherStructure.get("m1").toString());
     }
 
     @Test
-    public void testConstraintComponentIsNumeric() throws Exception {
+    public void testConstraintComponentIsNumeric() {
         // Component must be an identifier.
         MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
         DataStructure structure = DataStructure.builder()
@@ -396,9 +417,9 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         Dataset dataset = createEmptyDataset(structure);
 
-        assertThatThrownBy(() -> {
-            new HierarchyOperation(dataset, graph, structure.get("m1"));
-        }).isNotNull().hasMessageContaining("m1");
+        assertThatThrownBy(() ->
+            new HierarchyOperation(dataset, graph, structure.get("m1"))
+        ).isNotNull().hasMessageContaining("m1");
     }
 
     @Test
@@ -415,19 +436,19 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         Dataset dataset = createEmptyDataset(structure);
 
-        assertThatThrownBy(() -> {
-            new HierarchyOperation(dataset, graph, structure.get("id2"));
-        }).isNotNull().hasMessageContaining("m4");
+        assertThatThrownBy(() ->
+            new HierarchyOperation(dataset, graph, structure.get("id2"))
+        ).isNotNull().hasMessageContaining("m4");
     }
 
     //@Test
-    public void testConstaintGraphType() throws Exception {
+    public void testConstaintGraphType() {
         // TODO: The type of the graph should be the same as the component.
         fail("TODO");
     }
 
     @Test
-    public void testTopologicalSort() throws Exception {
+    public void testTopologicalSort() {
         MutableValueGraph<VTLObject, Composition> graph = ValueGraphBuilder.directed().allowsSelfLoops(false).build();
         graph.putEdgeValue(VTLObject.of("Austria"), VTLObject.of("European Union"), Composition.UNION);
         graph.putEdgeValue(VTLObject.of("Italy"), VTLObject.of("European Union"), Composition.UNION);
@@ -455,7 +476,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testCheckNoPath() throws Exception {
+    public void testCheckNoPath() {
 
         MutableGraph<String> graph = GraphBuilder.directed().allowsSelfLoops(false).build();
 
@@ -553,7 +574,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testWithComplement() throws Exception {
+    public void testWithComplement() {
 
         // Here the hierarchy uses complement
         //
@@ -590,6 +611,8 @@ public class HierarchyOperationTest extends RandomizedTest {
         PS.println(result);
 
         List<Object> aggregatedPopulation = createAggregatedPopulation();
+        List<DataPoint> collect = result.getData().collect(toList());
+        System.out.println("stuff");
 
         assertThat(result.getData())
                 .flatExtracting(input -> input)
@@ -599,7 +622,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testWithComposition() throws Exception {
+    public void testWithComposition() {
 
         // Here the hierarchy contains two levels;
         //
@@ -641,7 +664,7 @@ public class HierarchyOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testWithoutComposition() throws Exception {
+    public void testWithoutComposition() {
 
         // Here the hierarchy contains node that are connected to two others nodes;
         // Luxembourg -> European Union

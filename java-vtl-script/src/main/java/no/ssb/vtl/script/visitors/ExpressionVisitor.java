@@ -139,11 +139,11 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
-        VTLExpression leftExpression = visit(ctx.left);
-        VTLExpression rightExpression = visit(ctx.right);
         switch (ctx.op.getType()) {
 
             case VTLParser.CONCAT:
+                VTLExpression leftExpression = visit(ctx.left);
+                VTLExpression rightExpression = visit(ctx.right);
                 return new FunctionExpression<>(VTLConcatenation.getInstance(), leftExpression, rightExpression);
 
             case VTLParser.EQ:
