@@ -58,9 +58,9 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
             case UNION:
                 return (left, right) -> {
                     VTLNumber leftNumber =
-                            left == null || left.get() == null ? VTLNumber.of(0) : (VTLNumber) left;
+                            left.get() == null ? VTLNumber.of(0) : (VTLNumber) left;
                     VTLNumber rightNumber =
-                            right == null || right.get() == null ? VTLNumber.of(0) : (VTLNumber) right;
+                            right.get() == null ? VTLNumber.of(0) : (VTLNumber) right;
                     return leftNumber.add(rightNumber);
                 };
             case COMPLEMENT:
