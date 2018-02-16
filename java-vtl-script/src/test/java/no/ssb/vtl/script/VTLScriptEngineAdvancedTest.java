@@ -27,7 +27,6 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.script.Bindings;
@@ -62,13 +61,11 @@ public class VTLScriptEngineAdvancedTest {
     }
 
     @Test
-    @Ignore //TODO fix addition
     public void testManyAdd() throws Exception {
         runExpressionLoop("1", "+");
     }
 
     @Test
-    @Ignore //TODO fix subtraction
     public void testManySubtract() throws Exception {
         runExpressionLoop("1", "-");
     }
@@ -79,7 +76,6 @@ public class VTLScriptEngineAdvancedTest {
     }
 
     @Test
-    @Ignore //TODO Fix multiplication
     public void testManyMultiply() throws Exception {
         runExpressionLoop("2", "*");
     }
