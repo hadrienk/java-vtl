@@ -62,13 +62,11 @@ public class VTLScriptEngineAdvancedTest {
     }
 
     @Test
-    @Ignore //TODO fix addition
     public void testManyAdd() throws Exception {
         runExpressionLoop("1", "+");
     }
 
     @Test
-    @Ignore //TODO fix subtraction
     public void testManySubtract() throws Exception {
         runExpressionLoop("1", "-");
     }
@@ -79,7 +77,6 @@ public class VTLScriptEngineAdvancedTest {
     }
 
     @Test
-    @Ignore //TODO Fix multiplication
     public void testManyMultiply() throws Exception {
         runExpressionLoop("2", "*");
     }
