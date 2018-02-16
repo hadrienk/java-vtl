@@ -30,19 +30,25 @@ import no.ssb.vtl.script.expressions.AbstractNullFirstExpression;
  */
 public abstract class AbstractArithmeticExpression extends AbstractNullFirstExpression {
 
+    // Arithmetic expression are often composed so we need caching.
+    private Class type = null;
+
     AbstractArithmeticExpression(VTLExpression leftOperand, VTLExpression rightOperand) {
         super(leftOperand, rightOperand);
     }
 
     @Override
     public Class getVTLType() {
-        if (hasOperandOfType(VTLNumber.class)) {
-            return VTLNumber.class;
+        if (type == null) {
+            if (hasOperandOfType(VTLNumber.class)) {
+                type = VTLNumber.class;
+            }
+            else if (hasOperandOfType(VTLFloat.class))
+                type = VTLFloat.class;
+            else
+                type = VTLInteger.class;
         }
-        else if (hasOperandOfType(VTLFloat.class))
-            return VTLFloat.class;
-        else
-            return VTLInteger.class;
+        return type;
     }
 
     private boolean hasOperandOfType(Class clazz) {

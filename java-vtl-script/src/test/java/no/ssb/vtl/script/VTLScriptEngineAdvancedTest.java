@@ -27,7 +27,6 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.script.Bindings;
