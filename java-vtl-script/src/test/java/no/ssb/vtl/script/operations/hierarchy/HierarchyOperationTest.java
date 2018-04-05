@@ -44,6 +44,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.brotli.dec.BrotliInputStream;
 import org.junit.Test;
@@ -612,9 +613,8 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         List<Object> aggregatedPopulation = createAggregatedPopulation();
         List<DataPoint> collect = result.getData().collect(toList());
-        System.out.println("stuff");
 
-        assertThat(result.getData())
+        assertThat(collect)
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsOnlyElementsOf(aggregatedPopulation);
@@ -681,7 +681,7 @@ public class HierarchyOperationTest extends RandomizedTest {
         graph.putEdgeValue(VTLObject.of("Luxembourg"), VTLObject.of("Benelux"), Composition.UNION);
 
         // Year, Country, Pop
-        Dataset population = createPopulationDataset();
+        DatasetCloseWatcher population = DatasetCloseWatcher.wrap(createPopulationDataset());
 
         PS.println(population);
 
@@ -695,10 +695,14 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         List<Object> aggregatedPopulation = createAggregatedPopulation();
 
-        assertThat(result.getData())
-                .flatExtracting(input -> input)
-                .extracting(VTLObject::get)
-                .containsOnlyElementsOf(aggregatedPopulation);
+        try (Stream<DataPoint> data = result.getData()) {
+            assertThat(data)
+                    .flatExtracting(input -> input)
+                    .extracting(VTLObject::get)
+                    .containsOnlyElementsOf(aggregatedPopulation);
+        } finally {
+            assertThat(population.allStreamWereClosed()).isTrue();
+        }
 
     }
 }
