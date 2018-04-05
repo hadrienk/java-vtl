@@ -38,11 +38,6 @@ import static org.mockito.Mockito.*;
 public class UnfoldOperationTest {
 
     @Test
-    public void testStreamClosed() {
-
-    }
-
-    @Test
     public void testArguments() {
 
         Dataset dataset = mock(Dataset.class);
