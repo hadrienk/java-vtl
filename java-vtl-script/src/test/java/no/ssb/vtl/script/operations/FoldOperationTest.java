@@ -26,12 +26,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.*;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
@@ -42,6 +38,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.*;
 import static no.ssb.vtl.model.Component.Role.*;
@@ -176,28 +173,26 @@ public class FoldOperationTest extends RandomizedTest {
 
     @Test
     @Repeat(iterations = 10)
-    public void testFold() throws Exception {
+    public void testFold() {
 
-        Dataset dataset = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", IDENTIFIER, String.class,
-                "id2", IDENTIFIER, String.class, // TODO: What if the dataset already contains id2?
-                "measure1", MEASURE, String.class,
-                "measure2", MEASURE, String.class,
-                "attribute1", ATTRIBUTE, String.class // TODO: Okay with attributes?
-        );
-        when(dataset.getDataStructure()).thenReturn(structure);
+        DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("id2", IDENTIFIER, String.class ) // TODO: What if the dataset already contains id2?
+                .addComponent("measure1", MEASURE, String.class)
+                .addComponent("measure2", MEASURE, String.class) // TODO: Okay with attributes?
+                .addComponent("attribute1", ATTRIBUTE, String.class)
 
-        // Randomly shuffle the data in.
-        ArrayList<DataPoint> data = Lists.newArrayList(
-                tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
-                tuple(structure, "id1-1", "id2-2", null, "measure2-2", "attribute1-2"),
-                tuple(structure, "id1-2", "id2-1", "measure1-3", null, "attribute1-3"),
-                tuple(structure, "id1-2", "id2-2", "measure1-4", "measure2-4", null),
-                tuple(structure, "id1-3", "id2-1", null, null, null)
-        );
-        Collections.shuffle(data, new Random(randomLong()));
-        when(dataset.getData()).then(invocation -> data.stream());
+                .addPoints("id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1")
+                .addPoints("id1-1", "id2-2", null, "measure2-2", "attribute1-2")
+                .addPoints("id1-2", "id2-1", "measure1-3", null, "attribute1-3")
+                .addPoints("id1-2", "id2-2", "measure1-4", "measure2-4", null)
+                .addPoints("id1-3", "id2-1", null, null, null)
+
+                .build());
+
+        // Collections.shuffle(data, new Random(randomLong()));
+
+        DataStructure structure = dataset.getDataStructure();
 
         // Randomly shuffle the measures
         ArrayList<Component> elements = Lists.newArrayList(
@@ -227,7 +222,8 @@ public class FoldOperationTest extends RandomizedTest {
                     .put("newId", Order.Direction.ASC)
                     .build();
 
-            softly.assertThat(clause.getData().sorted(order)).flatExtracting(input -> input).extracting(VTLObject::get)
+            Stream<DataPoint> stream = clause.getData();
+            softly.assertThat(stream.sorted(order)).flatExtracting(input -> input).extracting(VTLObject::get)
                     .containsExactly(
                             "id1-1", "id2-1", "attribute1", "attribute1-1",
                             "id1-1", "id2-1", "measure1", "measure1-1",
@@ -245,6 +241,9 @@ public class FoldOperationTest extends RandomizedTest {
                             "id1-2", "id2-2", "measure1", "measure1-4",
                             "id1-2", "id2-2", "measure2", "measure2-4"
                     );
+            stream.close();
+
+            softly.assertThat(dataset.allStreamWereClosed()).isTrue();
         }
     }
 }
