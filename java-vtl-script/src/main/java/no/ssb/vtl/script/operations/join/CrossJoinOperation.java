@@ -99,7 +99,8 @@ public class CrossJoinOperation extends OuterJoinOperation {
     }
 
     private Stream<DataPoint> order(Order requestedOrder, Filtering filtering, Set<String> components, Dataset first) {
-        return first.getData(requestedOrder, filtering, components).orElse(
-                first.getData().sorted(requestedOrder).filter(filtering));
+        return first.getData(requestedOrder, filtering, components).orElseGet(
+                () -> first.getData().sorted(requestedOrder).filter(filtering)
+        );
     }
 }
