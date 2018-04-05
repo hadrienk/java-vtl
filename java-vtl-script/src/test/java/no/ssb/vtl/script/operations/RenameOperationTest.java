@@ -42,11 +42,8 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.*;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.junit.Test;
 
 import java.util.Map;
@@ -126,6 +123,36 @@ public class RenameOperationTest {
 //        assertThat(ex).hasMessageContaining("1a");
 //
 //    }
+
+    @Test
+    public void testStreamClosed() {
+        DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("measure", Role.MEASURE, String.class)
+                .addComponent("attribute", Role.MEASURE, String.class)
+
+                .addPoints("id1", "measure1", "attribute1")
+                .build()
+        );
+
+        RenameOperation rename;
+        DataStructure structure = dataset.getDataStructure();
+        rename = new RenameOperation(
+                dataset,
+                ImmutableMap.of(
+                        structure.get("id"), "newId",
+                        structure.get("measure"), "newMeasure",
+                        structure.get("attribute"), "newAttribute"
+                )
+        );
+
+
+        try (Stream<DataPoint> data = rename.getData()) {
+            assertThat(data).isNotNull();
+        } finally {
+            assertThat(dataset.allStreamWereClosed()).isTrue();
+        }
+    }
 
     @Test
     public void testRename() throws Exception {
