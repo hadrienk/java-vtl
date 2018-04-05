@@ -20,15 +20,13 @@ package no.ssb.vtl.script.support;
  * =========================LICENSE_END==================================
  */
 
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.*;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A {@link PrintStream} that can print vtl objects
@@ -60,15 +58,17 @@ public class VTLPrintStream extends PrintStream {
                         )
                         .collect(Collectors.toList())
         );
-        dataset.getData().forEach(tuple -> {
-            table.addRow(
-                    tuple.stream()
-                            .map(VTLObject::get)
-                            .map(o -> o == null ? "[NULL]" : o)
-                            .map(Object::toString)
-                            .collect(Collectors.toList())
-            );
-        });
+        try (Stream<DataPoint> data = dataset.getData()) {
+            data.forEach(tuple -> {
+                table.addRow(
+                        tuple.stream()
+                                .map(VTLObject::get)
+                                .map(o -> o == null ? "[NULL]" : o)
+                                .map(Object::toString)
+                                .collect(Collectors.toList())
+                );
+            });
+        }
         table.showTable(this);
     }
 
