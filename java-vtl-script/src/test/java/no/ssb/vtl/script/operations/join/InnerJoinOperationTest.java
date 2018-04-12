@@ -26,11 +26,8 @@ import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.StaticDataset;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.*;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
@@ -129,7 +126,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         Integer rowAmount = scaledRandomIntBetween(0, 100);
         Set<Component> allComponents = Sets.newHashSet();
 
-        Map<String, Dataset> datasets = Maps.newLinkedHashMap();
+        Map<String, DatasetCloseWatcher> datasets = Maps.newLinkedHashMap();
         for (int i = 0; i < datasetAmount; i++) {
 
             StaticDataset.ValueBuilder datasetBuilder = StaticDataset.create()
@@ -148,13 +145,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
             }
 
             StaticDataset dataset = datasetBuilder.build();
-            datasets.put("ds" + i, dataset);
+            datasets.put("ds" + i, DatasetCloseWatcher.wrap(dataset));
             allComponents.addAll(dataset.getDataStructure().values());
 
             new VTLPrintStream(System.out).println(datasetBuilder);
         }
 
-        InnerJoinOperation result = new InnerJoinOperation(datasets);
+        InnerJoinOperation result = new InnerJoinOperation(Maps.transformValues(datasets, ds -> ds));
 
         new VTLPrintStream(System.out).println(result);
 
@@ -171,13 +168,18 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 .flatMap(Collection::stream)
                 .map(VTLObject::get)
                 .collect(Collectors.toList());
-    
-        assertThat(result.getData().flatMap(Collection::stream))
-                .describedAs("the data")
-                .extracting(VTLObject::get)
-                .containsOnlyElementsOf(
-                        data
-                );
+
+        try (Stream<DataPoint> stream = result.getData()) {
+            assertThat(stream.flatMap(Collection::stream))
+                    .describedAs("the data")
+                    .extracting(VTLObject::get)
+                    .containsOnlyElementsOf(
+                            data
+                    );
+        } finally {
+            assertThat(datasets.values()).allMatch(DatasetCloseWatcher::allStreamWereClosed);
+        }
+
 
     }
 
