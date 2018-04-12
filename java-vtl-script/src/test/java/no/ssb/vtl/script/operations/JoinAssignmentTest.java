@@ -182,7 +182,7 @@ public class JoinAssignmentTest {
                 dataset,
                 expression,
                 "measure",
-                Component.Role.ATTRIBUTE,
+                Component.Role.MEASURE,
                 false,
                 new ComponentBindings(Collections.emptyMap())
         );
