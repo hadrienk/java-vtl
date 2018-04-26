@@ -62,8 +62,8 @@ public class RandomizedDataset extends ForwardingObject implements Dataset {
 
     @Override
     public Stream<DataPoint> getData() {
-        Stream<DataPoint> stream = shuffledData != null ? shuffledData.stream() : delegate.getData();
-        return stream.map(new DatapointNormalizer(delegate.getDataStructure(), getDataStructure()));
+        Stream<DataPoint> stream = shuffledData != null ? Lists.newArrayList(shuffledData).stream() : delegate.getData();
+        return stream.map(DataPoint::create).map(new DatapointNormalizer(delegate.getDataStructure(), getDataStructure()));
     }
 
     @Override
