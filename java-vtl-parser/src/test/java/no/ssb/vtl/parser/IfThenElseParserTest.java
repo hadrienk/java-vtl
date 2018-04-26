@@ -31,6 +31,13 @@ public class IfThenElseParserTest extends GrammarTest {
     }
 
     @Test
+    public void testIfThenElseWithNull() throws Exception {
+        parse("if true then null elseif true then 2 else 3");
+        parse("if true then 1 elseif true then null else 3");
+        parse("if true then 1 elseif true then 2 else null");
+    }
+
+    @Test
     public void testIfThenElse() throws Exception {
         parse("if true then 1 elseif true then 2 else 3");
     }
