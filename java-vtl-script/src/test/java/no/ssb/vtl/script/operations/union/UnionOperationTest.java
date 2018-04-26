@@ -71,7 +71,7 @@ public class UnionOperationTest extends RandomizedTest {
     @Test
     public void testOneDatasetReturnedUnchanged() {
 
-        Dataset dataset = StaticDataset.create().build();
+        Dataset dataset = StaticDataset.create(dataStructure).build();
         Stream<DataPoint> stream = dataset.getData();
 
         Dataset spyDataset = spy(dataset);
