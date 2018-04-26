@@ -117,22 +117,36 @@ public class UnionOperation extends AbstractDatasetOperation {
     public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
 
         List<Dataset> datasets = getChildren();
+        Order orderWithIdentifiers = createOrderWithIdentifiers(orders);
         if (datasets.size() == 1)
-            return datasets.get(0).getData(orders, filtering, components);
+            return datasets.get(0).getData(orderWithIdentifiers, filtering, components);
 
         List<Stream<DataPoint>> streams = Lists.newArrayList();
         for (Dataset dataset : getChildren()) {
-            Order adjustedOrders = createAdjustedOrders(orders, dataset.getDataStructure());
+            Order adjustedOrders = createAdjustedOrders(orderWithIdentifiers, dataset.getDataStructure());
             Optional<Stream<DataPoint>> stream = dataset.getData(adjustedOrders, filtering, components);
             if (!stream.isPresent()) return Optional.empty();
             streams.add(stream.get().map(new DatapointNormalizer(dataset.getDataStructure(), getDataStructure())));
         }
 
-        Comparator<DataPoint> comparator = Comparator.nullsLast(orders);
+        Comparator<DataPoint> comparator = Comparator.nullsLast(orderWithIdentifiers);
         Stream<DataPoint> result = StreamUtils.interleave(createSelector2(comparator), streams);
         return Optional.of(result);
     }
 
+    private Order createOrderWithIdentifiers(Order orders) {
+        // Union require to sort on all identifiers.
+        DataStructure structure = getDataStructure();
+        Order.Builder builder = Order.create(structure);
+        for (Component component : structure.values()) {
+            if(!component.isIdentifier())
+                continue;
+
+            builder.put(component, orders.getOrDefault(component, Order.Direction.ASC));
+        }
+
+        return builder.build();
+    }
     private Order createAdjustedOrders(Order orders, DataStructure dataStructure) {
 
         DataStructure structure = getDataStructure();
