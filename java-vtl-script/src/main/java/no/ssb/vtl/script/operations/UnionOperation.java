@@ -34,6 +34,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.script.support.DatapointNormalizer;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -124,7 +125,7 @@ public class UnionOperation extends AbstractDatasetOperation {
             Order adjustedOrders = createAdjustedOrders(orders, dataset.getDataStructure());
             Optional<Stream<DataPoint>> stream = dataset.getData(adjustedOrders, filtering, components);
             if (!stream.isPresent()) return Optional.empty();
-            streams.add(stream.get());
+            streams.add(stream.get().map(new DatapointNormalizer(dataset.getDataStructure(), getDataStructure())));
         }
 
         Comparator<DataPoint> comparator = Comparator.nullsLast(orders);
