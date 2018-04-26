@@ -130,10 +130,13 @@ public class UnionOperation extends AbstractDatasetOperation {
         }
 
         Comparator<DataPoint> comparator = Comparator.nullsLast(orderWithIdentifiers);
-        Stream<DataPoint> result = StreamUtils.interleave(createSelector2(comparator), streams);
+        Stream<DataPoint> result = StreamUtils.interleave(createSelector(comparator), streams);
         return Optional.of(result);
     }
 
+    /**
+     * Add missing identifiers in the given {@link Order}.
+     */
     private Order createOrderWithIdentifiers(Order orders) {
         // Union require to sort on all identifiers.
         DataStructure structure = getDataStructure();
@@ -147,6 +150,10 @@ public class UnionOperation extends AbstractDatasetOperation {
 
         return builder.build();
     }
+
+    /**
+     * Convert the {@link Order} so it uses the given structure.
+     */
     private Order createAdjustedOrders(Order orders, DataStructure dataStructure) {
 
         DataStructure structure = getDataStructure();
@@ -160,7 +167,7 @@ public class UnionOperation extends AbstractDatasetOperation {
         return adjustedOrders.build();
     }
 
-    private <T> Selector<T> createSelector2(Comparator<T> comparator) {
+    private <T> Selector<T> createSelector(Comparator<T> comparator) {
         return new Selector<T>() {
 
             private T lastMin = null;
@@ -191,74 +198,10 @@ public class UnionOperation extends AbstractDatasetOperation {
         };
     }
 
-    // TODO: Create PR for https://github.com/poetix/protonpack/issues/43
-    private <T> Selector<T> createSelector(Comparator<T> comparator) {
-        return new Selector<T>() {
-
-            private T lastMin = null;
-
-            private boolean isBeforeLast(T dataPoint) {
-                if (lastMin == null)
-                    return false;
-
-                int beforeLast = comparator.compare(dataPoint, lastMin);
-                if (beforeLast == 0) {
-                    throwDuplicateError((DataPoint) dataPoint);
-                    return false;
-                } else {
-                    return beforeLast < 0;
-                }
-            }
-
-
-            @Override
-            public Integer apply(T[] dataPoints) {
-                // Advance the stream that is the most behind.
-                T minBeforeLast = null;
-                T minGlobal = null;
-                int mblIdx = -1;
-                int mgIdx = -1;
-                for (int i = 0; i < dataPoints.length; i++) {
-
-                    T dataPoint = dataPoints[i];
-                    if (isBeforeLast(dataPoint)) {
-
-                        if (comparator.compare(dataPoint, minBeforeLast) < 0) {
-                            mblIdx = i;
-                            minBeforeLast = dataPoint;
-                        }
-
-                    }
-                    if ((minGlobal == null && dataPoint != null) || comparator.compare(dataPoint, minGlobal) < 0) {
-                        mgIdx = i;
-                        minGlobal = dataPoint;
-                    }
-                }
-                return mblIdx < 0 ? mgIdx : mblIdx;
-            }
-        };
-    }
-
     @Override
     public Stream<DataPoint> getData() {
         Optional<Stream<DataPoint>> ordered = this.getData(Order.createDefault(getDataStructure()));
-        if (ordered.isPresent())
-            return ordered.get();
-
-        // TODO: Attribute propagation.
-        Order order = Order.create(getDataStructure())
-                .putAll(rolesInOrder(getDataStructure(), Order.Direction.DESC, Component.Role.IDENTIFIER, Component.Role.MEASURE))
-                .build();
-        Set<DataPoint> bucket = Sets.newTreeSet(order);
-        Set<DataPoint> seen = Collections.synchronizedSet(bucket);
-        return getChildren().stream().flatMap(Dataset::getData)
-                .peek((o) -> {
-                    if (seen.contains(o)) {
-                        throwDuplicateError(o);
-                        return;
-                    }
-                })
-                .peek(bucket::add);
+        return ordered.orElseThrow(() -> new RuntimeException("could not sort"));
     }
 
     private void throwDuplicateError(DataPoint o) {
