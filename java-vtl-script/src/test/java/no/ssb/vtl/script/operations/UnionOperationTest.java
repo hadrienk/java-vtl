@@ -20,6 +20,9 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import no.ssb.vtl.model.DataPoint;
@@ -29,14 +32,17 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -48,13 +54,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class UnionOperationTest {
+public class UnionOperationTest extends RandomizedTest {
 
     private DataStructure dataStructure;
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         dataStructure = DataStructure.of(
                 "TIME", Role.IDENTIFIER, String.class,
                 "GEO", Role.IDENTIFIER, String.class,
@@ -63,7 +69,7 @@ public class UnionOperationTest {
     }
 
     @Test
-    public void testOneDatasetReturnedUnchanged() throws Exception {
+    public void testOneDatasetReturnedUnchanged() {
 
         Dataset dataset = StaticDataset.create().build();
         Stream<DataPoint> stream = dataset.getData();
@@ -124,58 +130,61 @@ public class UnionOperationTest {
     }
 
     @Test
-    public void testUnionSorted() throws Exception {
+    @Seed("D0F9C3812680DCC1")
+    public void testFail1() {
+        testUnionSorted();
+    }
+
+    @Test
+    @Repeat(iterations = 100)
+    public void testUnionSorted() {
+
+        // Generate random data.
+        Integer numRow = scaledRandomIntBetween(100, 1000);
+        List<DataPoint> dataPoints = IntStream.range(0, numRow).mapToObj(value -> DataPoint.create(
+                value,
+                value + numRow,
+                randomAsciiOfLength(10) + " (" + value + ")",
+                randomAsciiOfLength(10) + " (" + value + ")",
+                randomAsciiOfLength(10) + " (" + value + ")"
+        )).collect(Collectors.toList());
+        Collections.shuffle(dataPoints, getRandom());
+
         DataStructure structure = DataStructure.builder()
-                .put("id1", Role.IDENTIFIER, String.class)
-                .put("id2", Role.IDENTIFIER, String.class)
+                .put("id1", Role.IDENTIFIER, Integer.class)
+                .put("id2", Role.IDENTIFIER, Integer.class)
                 .put("me1", Role.MEASURE, String.class)
+                .put("me2", Role.MEASURE, String.class)
+                .put("me3", Role.MEASURE, String.class)
                 .build();
 
-        Dataset ds1 = StaticDataset.create(structure)
-                .addPoints("1-1", "2-1", "1")
-                .addPoints("1-2", "2-2", "1")
-                .addPoints("1-4", "2-4", "1")
-                .build();
+        Integer numDataset = scaledRandomIntBetween(1, 10);
+        List<StaticDataset.ValueBuilder> builders = Stream.generate(() -> StaticDataset.create(structure))
+                .limit(numDataset).collect(Collectors.toList());
 
-        Dataset ds2 = StaticDataset.create(structure)
-                .addPoints("1-6", "2-6", "1")
-                .addPoints("1-8", "2-8", "1")
-                .addPoints("1-9", "2-9", "1")
-                .build();
+        for (DataPoint dataPoint : dataPoints)
+            randomFrom(builders).addPoints(dataPoint);
 
-        Dataset ds3 = StaticDataset.create(structure)
-                .addPoints("1-3", "2-3", "1")
-                .addPoints("1-5", "2-5", "1")
-                .addPoints("1-7", "2-7", "1")
-                .build();
+        List<Dataset> datasets = builders.stream().map(valueBuilder -> {
+            RandomizedDataset dataset = RandomizedDataset.create(getRandom(), valueBuilder.build());
+            return dataset.shuffleStructure().shuffleData();
+        }).collect(Collectors.toList());
 
-        Dataset empty = StaticDataset.create(structure)
-                .build();
+        UnionOperation unionOperation = new UnionOperation(datasets);
 
-        Order order = Order.createDefault(dataStructure);
-
-        UnionOperation unionOperation = new UnionOperation(ds1, ds2, ds3, empty);
-
+        Order order = Order.createDefault(unionOperation.getDataStructure());
         Optional<Stream<DataPoint>> stream = unionOperation.getData(order);
 
         assertThat(Optional.of(stream)).isNotEmpty();
 
         ImmutableList<DataPoint> collect = stream.get().collect(ImmutableList.toImmutableList());
 
-        assertThat(collect).containsExactlyElementsOf(
-                ImmutableList.sortedCopyOf(order,
-                        Stream.of(
-                                ds1.getData(),
-                                ds2.getData(),
-                                ds3.getData(),
-                                empty.getData()
-                        ).flatMap(x -> x).collect(ImmutableList.toImmutableList())
-                ));
-
+        assertThat(collect).hasSameSizeAs(dataPoints);
+        assertThat(collect).isSortedAccordingTo(order);
     }
 
     @Test
-    public void testUnion() throws Exception {
+    public void testUnion() {
 
         // Example 1 of the operator specification
 
