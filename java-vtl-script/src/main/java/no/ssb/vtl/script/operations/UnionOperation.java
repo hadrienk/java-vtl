@@ -134,12 +134,12 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     private Order createAdjustedOrders(Order orders, DataStructure dataStructure) {
 
+        DataStructure structure = getDataStructure();
         Order.Builder adjustedOrders = Order.create(dataStructure);
-        Collection<Component> values = dataStructure.values();
-        Queue<Component> componentQueue = new LinkedList<>(values);
 
         for (Component component : orders.keySet()) {
-            adjustedOrders.put(componentQueue.remove(), orders.get(component));
+            // Use names since child structure can be different.
+            adjustedOrders.put(structure.getName(component), orders.get(component));
         }
 
         return adjustedOrders.build();
