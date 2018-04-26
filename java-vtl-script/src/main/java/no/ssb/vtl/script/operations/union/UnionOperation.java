@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.union;
 
 /*-
  * ========================LICENSE_START=================================
