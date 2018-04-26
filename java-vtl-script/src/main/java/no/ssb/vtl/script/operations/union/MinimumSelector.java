@@ -29,22 +29,21 @@ class MinimumSelector<T> implements Selector<T> {
     private final Comparator<T> comparator;
 
     public MinimumSelector(Comparator<T> comparator) {
-        this.comparator = comparator;
+        this.comparator = Comparator.nullsLast(comparator);
     }
 
     @Override
     public Integer apply(T[] values) {
 
         // Find the lowest value
-        T minimum = null;
-        int idx = -1;
-        for (int i = 0; i < values.length; i++) {
+        int idx = 0;
+        T minimum = values[0];
+        for (int i = 1; i < values.length; i++) {
             T current = values[i];
 
-            if (current == null)
-                continue;
-            
-            if (minimum == null || comparator.compare(current, minimum) < 0) {
+            // Values can be null. This works because comparator
+            // is wrapped with Comparator.nullsLast() in the constructor.
+            if (current != null && comparator.compare(current, minimum) < 0) {
                 idx = i;
                 minimum = current;
             }
