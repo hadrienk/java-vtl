@@ -8,6 +8,8 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.VTLObject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.UnaryOperator;
@@ -20,7 +22,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DatapointNormalizer implements UnaryOperator<DataPoint> {
 
-    private final int[] swaps;
+    private final int[] fromIndices;
+    private final int[] toIndices;
 
     public DatapointNormalizer(DataStructure from, DataStructure to) {
         checkNotNull(from);
@@ -32,36 +35,29 @@ public class DatapointNormalizer implements UnaryOperator<DataPoint> {
         ImmutableList<String> fromList = ImmutableSet.copyOf(from.keySet()).asList();
         ImmutableList<String> toList = ImmutableSet.copyOf(to.keySet()).asList();
 
-        // build indices swaps
-        LinkedList<Integer> swaps = Lists.newLinkedList();
-        String current;
+        // build indices
+        ArrayList<Integer> fromIndices = Lists.newArrayList();
+        ArrayList<Integer> toIndices = Lists.newArrayList();
         for (String fromName : fromList) {
-            current = fromName;
-            int fromIdx = fromList.indexOf(current);
-            int toIdx = toList.indexOf(current);
-            while (fromIdx != toIdx) {
-                if (swaps.isEmpty() || swaps.getLast() != fromIdx)
-                    swaps.add(fromIdx);
-                toIdx = toList.indexOf(current);
-                swaps.add(toIdx);
-                current = fromList.get(toIdx);
-                fromIdx = fromList.indexOf(current);
-            }
+            int fromIndex = fromList.indexOf(fromName);
+            int toIndex = toList.indexOf(fromName);
+            if (fromIndex == toIndex)
+                continue;
+            fromIndices.add(fromIndex);
+            toIndices.add(toIndex);
         }
-        this.swaps = Ints.toArray(swaps);
+        this.fromIndices = Ints.toArray(fromIndices);
+        this.toIndices = Ints.toArray(toIndices);
     }
 
     @Override
     public DataPoint apply(DataPoint datapoint) {
-        if (swaps.length == 0)
+        if (fromIndices.length == 0)
             return datapoint;
 
-        VTLObject last = datapoint.get(swaps[0]);
-        for (int i = 1; i < swaps.length; i++) {
-            VTLObject tmp = datapoint.get(swaps[i]);
-            datapoint.set(swaps[i], last);
-            last = tmp;
-        }
+        DataPoint copy = (DataPoint) datapoint.clone();
+        for (int i = 0; i < fromIndices.length; i++)
+            datapoint.set(toIndices[i], copy.get(fromIndices[i]));
 
         return datapoint;
     }
