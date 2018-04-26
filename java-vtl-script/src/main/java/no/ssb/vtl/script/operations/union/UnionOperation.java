@@ -37,15 +37,11 @@ import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.support.DatapointNormalizer;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -130,7 +126,8 @@ public class UnionOperation extends AbstractDatasetOperation {
         }
 
         Comparator<DataPoint> comparator = Comparator.nullsLast(orderWithIdentifiers);
-        Stream<DataPoint> result = StreamUtils.interleave(createSelector(comparator), streams);
+        Stream<DataPoint> result = StreamUtils.interleave(createSelector(comparator), streams)
+                .map(new DuplicateChecker(orderWithIdentifiers, getDataStructure()));
         return Optional.of(result);
     }
 
@@ -159,65 +156,21 @@ public class UnionOperation extends AbstractDatasetOperation {
         DataStructure structure = getDataStructure();
         Order.Builder adjustedOrders = Order.create(dataStructure);
 
+        // Uses names since child structure can be different.
         for (Component component : orders.keySet()) {
-            // Use names since child structure can be different.
             adjustedOrders.put(structure.getName(component), orders.get(component));
         }
-
         return adjustedOrders.build();
     }
 
     private <T> Selector<T> createSelector(Comparator<T> comparator) {
-        return new Selector<T>() {
-
-            private T lastMin = null;
-
-            @Override
-            public Integer apply(T[] dataPoints) {
-                // Find the lowest value
-                T minVal = null;
-                int idx = -1;
-                for (int i = 0; i < dataPoints.length; i++) {
-                    T dataPoint = dataPoints[i];
-                    if (dataPoint == null)
-                        continue;
-
-                    if (minVal == null || comparator.compare(dataPoint, minVal) < 0) {
-                        minVal = dataPoint;
-                        idx = i;
-                    }
-                }
-                if (lastMin != null && comparator.compare(minVal, lastMin) == 0) {
-                    throwDuplicateError((DataPoint) minVal);
-                    return -1;
-                } else {
-                    lastMin = minVal;
-                }
-                return idx;
-            }
-        };
+        return new MinimumSelector<>(comparator);
     }
 
     @Override
     public Stream<DataPoint> getData() {
         Optional<Stream<DataPoint>> ordered = this.getData(Order.createDefault(getDataStructure()));
         return ordered.orElseThrow(() -> new RuntimeException("could not sort"));
-    }
-
-    private void throwDuplicateError(DataPoint o) {
-        //TODO: define an error code encoding. See VTL User Manuel "Constraints and errors"
-        Map<Component, VTLObject> row = getDataStructure().asMap(o);
-        String rowAsString = row.keySet().stream()
-                .map(k -> k.getRole() + ":" + row.get(k))
-                .collect(Collectors.joining("\n"));
-        throw new VTLRuntimeException(String.format("The resulting dataset from a union contains duplicates. Duplicate row: %s", rowAsString), "VTL-1xxx", o);
-    }
-
-    private Map<Component, Order.Direction> rolesInOrder(DataStructure dataStructure, Order.Direction desc, Component.Role... roles) {
-        ImmutableSet<Component.Role> roleSet = Sets.immutableEnumSet(Arrays.asList(roles));
-        return dataStructure.values().stream()
-                .filter(component -> roleSet.contains(component.getRole()))
-                .collect(Collectors.toMap(o -> o, o -> desc));
     }
 
     @Override
@@ -236,4 +189,5 @@ public class UnionOperation extends AbstractDatasetOperation {
         }
         return Optional.of(size);
     }
+
 }
