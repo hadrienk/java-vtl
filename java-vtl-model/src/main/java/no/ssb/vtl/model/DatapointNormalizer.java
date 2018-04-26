@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.support;
+package no.ssb.vtl.model;
 
 /*-
  * ========================LICENSE_START=================================
@@ -9,9 +9,9 @@ package no.ssb.vtl.script.support;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,14 +24,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
-import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.VTLObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkArgument;

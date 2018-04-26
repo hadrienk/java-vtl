@@ -26,9 +26,9 @@ import com.google.common.collect.Lists;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.DatapointNormalizer;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
-import no.ssb.vtl.script.support.DatapointNormalizer;
 
 import java.util.ArrayList;
 import java.util.Collections;
