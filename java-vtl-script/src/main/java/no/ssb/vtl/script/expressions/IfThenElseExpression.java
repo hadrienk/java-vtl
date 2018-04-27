@@ -42,9 +42,10 @@ public class IfThenElseExpression implements VTLExpression {
 
     private IfThenElseExpression(ImmutableMap<VTLExpression, VTLExpression> conditionToExpression,
                                  VTLExpression defaultExpression, Class vtlType) {
+        checkArgument(vtlType != null, "could not infer data type. One value must be typed in if-then-else expressions");
+        this.vtlType = vtlType;
         this.conditionToExpression = conditionToExpression;
         this.defaultExpression = defaultExpression;
-        this.vtlType = vtlType;
     }
 
     @Override
@@ -96,7 +97,7 @@ public class IfThenElseExpression implements VTLExpression {
                     VTLBoolean.class.getName(),
                     condition.getVTLType().getName()
             );
-           return condition;
+            return condition;
         }
 
         public Builder(VTLExpression defaultExpression) {

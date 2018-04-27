@@ -29,12 +29,17 @@ import org.junit.Test;
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IfThenElseExpressionTest {
 
     private static VTLExpression createBooleanExpression(boolean value) {
         return new LiteralExpression(VTLObject.of(value));
+    }
+
+    private static VTLExpression createNullExpression() {
+        return new LiteralExpression(VTLObject.NULL);
     }
 
     private static VTLExpression CONDITION_WITH_EXCEPTION = new VTLExpression() {
@@ -177,6 +182,19 @@ public class IfThenElseExpressionTest {
         assertThat(resolve.get()).isEqualTo(null);
     }
 
+    @Test
+    public void testFailIfAllNulls() {
+        assertThatThrownBy(() -> {
+                    IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(createNullExpression());
+                    builder.addCondition(createBooleanExpression(true), createNullExpression());
+                    builder.addCondition(createBooleanExpression(false), createNullExpression());
+                    builder.build();
+                }
+        )
+                .as("exception when condition expression is not VTLBoolean")
+                .hasMessage("could not infer data type. One value must be typed in if-then-else expressions")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
+    }
 
     @Test
     public void testFailOnInconsistentConditionType() throws Exception {
