@@ -83,7 +83,7 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
         Map<Component, Direction> order = dataStructure.entrySet().stream()
                 .filter(e -> e.getValue().isIdentifier())
                 .sorted(BY_ROLE.thenComparing(BY_NAME))
-                .collect(Collectors.toMap(o -> o.getValue(), o -> ASC));
+                .collect(ImmutableMap.toImmutableMap(Entry::getValue, o -> ASC));
         return new Order(dataStructure, ImmutableMap.copyOf(order));
     }
 
