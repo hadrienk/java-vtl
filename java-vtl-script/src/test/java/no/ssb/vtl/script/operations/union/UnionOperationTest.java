@@ -23,8 +23,10 @@ package no.ssb.vtl.script.operations.union;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.carrotsearch.randomizedtesting.annotations.Seed;
+import com.google.common.collect.Comparators;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -32,6 +34,7 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.script.support.AsciiTable4j;
 import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Before;
@@ -142,8 +145,8 @@ public class UnionOperationTest extends RandomizedTest {
         // Generate random data.
         Integer numRow = scaledRandomIntBetween(100, 1000);
         List<DataPoint> dataPoints = IntStream.range(0, numRow).mapToObj(value -> DataPoint.create(
-                value,
-                value + numRow,
+                value, //rarely() ? null : value,
+                rarely() ? null : value,
                 randomAsciiOfLength(10) + " (" + value + ")",
                 randomAsciiOfLength(10) + " (" + value + ")",
                 randomAsciiOfLength(10) + " (" + value + ")"
