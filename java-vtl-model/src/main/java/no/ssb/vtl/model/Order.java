@@ -9,9 +9,9 @@ package no.ssb.vtl.model;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,14 +24,13 @@ import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.*;
-import static no.ssb.vtl.model.Order.Direction.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.Order.Direction.ASC;
 
 /**
  * Represent the ordering the {@link DataPoint}s in a Dataset.
@@ -81,14 +80,11 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
      * Return the default Order for the given DataStructure.
      */
     public static Order createDefault(DataStructure dataStructure) {
-        Set<Entry<String, Component>> sortedEntrySet = Sets.newTreeSet(BY_ROLE.thenComparing(BY_NAME));
-        sortedEntrySet.addAll(dataStructure.entrySet());
-
-        ImmutableMap.Builder<Component, Direction> order = ImmutableMap.builder();
-        for (Entry<String, Component> entry : sortedEntrySet) {
-            order.put(entry.getValue(), ASC);
-        }
-        return new Order(dataStructure, order.build());
+        Map<Component, Direction> order = dataStructure.entrySet().stream()
+                .filter(e -> e.getValue().isIdentifier())
+                .sorted(BY_ROLE.thenComparing(BY_NAME))
+                .collect(Collectors.toMap(o -> o.getValue(), o -> ASC));
+        return new Order(dataStructure, ImmutableMap.copyOf(order));
     }
 
     @Override
