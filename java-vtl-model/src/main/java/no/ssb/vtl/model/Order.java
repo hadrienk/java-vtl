@@ -25,13 +25,12 @@ import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static no.ssb.vtl.model.Order.Direction.ASC;
@@ -98,14 +97,11 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
      * Return the default Order for the given DataStructure.
      */
     public static Order createDefault(DataStructure dataStructure) {
-        Set<Entry<String, Component>> sortedEntrySet = Sets.newTreeSet(BY_ROLE.thenComparing(BY_NAME));
-        sortedEntrySet.addAll(dataStructure.entrySet());
-
-        ImmutableMap.Builder<Component, Direction> order = ImmutableMap.builder();
-        for (Entry<String, Component> entry : sortedEntrySet) {
-            order.put(entry.getValue(), ASC);
-        }
-        return new Order(dataStructure, order.build());
+        Map<Component, Direction> order = dataStructure.entrySet().stream()
+                .filter(e -> e.getValue().isIdentifier())
+                .sorted(BY_ROLE.thenComparing(BY_NAME))
+                .collect(Collectors.toMap(o -> o.getValue(), o -> ASC));
+        return new Order(dataStructure, ImmutableMap.copyOf(order));
     }
 
     @Override

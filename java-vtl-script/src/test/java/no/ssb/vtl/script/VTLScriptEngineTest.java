@@ -40,6 +40,7 @@ import javax.script.ScriptException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -785,6 +786,42 @@ public class VTLScriptEngineTest {
                         1L, 101L + 102L,
                         2L, 201L + 202L
                 );
+    }
+
+    @Test
+    public void testIfThenElse() throws ScriptException {
+        StaticDataset dataset = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, Long.class)
+                .addComponent("m1", Role.MEASURE, Boolean.class)
+                .addComponent("m2", Role.MEASURE, Boolean.class)
+                .addPoints(1L, false, false)
+                .addPoints(2L, false, true)
+                .addPoints(3L, true, false)
+                .addPoints(4L, true, false)
+                .build();
+
+        bindings.put("ds", dataset);
+        engine.eval("result := [ds] { " +
+                "   test1 := if m1 then 1 elseif m2 then 2 else null," +
+                "   test2 := if m1 then 1 elseif m2 then null else 2," +
+                "   test3 := if m1 then null elseif m2 then 2 else 3," +
+                "   keep test1, test2, test3" +
+                "}");
+
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result).isNotNull();
+
+        assertThat(result.getDataStructure().getTypes().values())
+                .containsOnly(Long.class);
+                
+        assertThat(result.getData()).extracting(dataPoint -> Lists.transform(dataPoint, VTLObject::get))
+                .containsExactlyInAnyOrder(
+                        Arrays.asList(1L, null, 2L, 3L),
+                        Arrays.asList(2L, 2L, null, 2L),
+                        Arrays.asList(3L, 1L, 1L, null),
+                        Arrays.asList(4L, 1L, 1L, null)
+                );
+
     }
 
     @Test

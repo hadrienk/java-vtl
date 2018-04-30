@@ -29,33 +29,18 @@ import org.junit.Test;
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IfThenElseExpressionTest {
 
-    private static VTLExpression CONDITION_TRUE = new VTLExpression() {
-        @Override
-        public VTLObject resolve(Bindings bindings) {
-            return VTLBoolean.of(true);
-        }
+    private static VTLExpression createBooleanExpression(boolean value) {
+        return new LiteralExpression(VTLObject.of(value));
+    }
 
-        @Override
-        public Class getVTLType() {
-            return VTLBoolean.class;
-        }
-    };
-
-    private static VTLExpression CONDITION_FALSE = new VTLExpression() {
-        @Override
-        public VTLObject resolve(Bindings bindings) {
-            return VTLBoolean.of(false);
-        }
-
-        @Override
-        public Class getVTLType() {
-            return VTLBoolean.class;
-        }
-    };
+    private static VTLExpression createNullExpression() {
+        return new LiteralExpression(VTLObject.NULL);
+    }
 
     private static VTLExpression CONDITION_WITH_EXCEPTION = new VTLExpression() {
         @Override
@@ -107,12 +92,29 @@ public class IfThenElseExpressionTest {
 
     };
 
+    private static VTLExpression VALUE_NULL = new LiteralExpression(VTLObject.NULL);
+
+    @SuppressWarnings("Duplicates")
+    @Test
+    public void testResolveFirstConditionWithNull() {
+        IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_ELSE);
+        IfThenElseExpression function = builder
+                .addCondition(createBooleanExpression(true), VALUE_NULL)
+                .addCondition(CONDITION_WITH_EXCEPTION, VALUE_OK)
+                .build();
+
+        assertThat(function.getVTLType()).isEqualTo(VTLString.class);
+
+        VTLObject resolve = function.resolve(new SimpleBindings());
+        assertThat(resolve.get()).isEqualTo(null);
+    }
+
     @SuppressWarnings("Duplicates")
     @Test
     public void testResolveFirstCondition() throws Exception {
         IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_ELSE);
         IfThenElseExpression function = builder
-                .addCondition(CONDITION_TRUE, VALUE_OK)
+                .addCondition(createBooleanExpression(true), VALUE_OK)
                 .addCondition(CONDITION_WITH_EXCEPTION, VALUE_OK)
                 .build();
 
@@ -127,8 +129,8 @@ public class IfThenElseExpressionTest {
     public void testResolveSecondCondition() throws Exception {
         IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_ELSE);
         IfThenElseExpression function = builder
-                .addCondition(CONDITION_FALSE, VALUE_WITH_EXCEPTION)
-                .addCondition(CONDITION_TRUE, VALUE_OK)
+                .addCondition(createBooleanExpression(false), VALUE_WITH_EXCEPTION)
+                .addCondition(createBooleanExpression(true), VALUE_OK)
                 .build();
 
         assertThat(function.getVTLType()).isEqualTo(VTLString.class);
@@ -137,28 +139,61 @@ public class IfThenElseExpressionTest {
         assertThat(resolve.get()).isEqualTo("OK");
     }
 
+    @SuppressWarnings("Duplicates")
+    @Test
+    public void testResolveSecondConditionWithNull() {
+        IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_ELSE);
+        IfThenElseExpression function = builder
+                .addCondition(createBooleanExpression(false), VALUE_WITH_EXCEPTION)
+                .addCondition(createBooleanExpression(true), VALUE_NULL)
+                .build();
+
+        assertThat(function.getVTLType()).isEqualTo(VTLString.class);
+
+        VTLObject resolve = function.resolve(new SimpleBindings());
+        assertThat(resolve.get()).isEqualTo(null);
+    }
+
     @Test
     public void testResolveElse() throws Exception {
         IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_ELSE);
         IfThenElseExpression function = builder
-                .addCondition(CONDITION_FALSE, VALUE_WITH_EXCEPTION)
-                .addCondition(new VTLExpression() {
-                    @Override
-                    public VTLObject resolve(Bindings bindings) {
-                        return VTLBoolean.of(false);
-                    }
-
-                    @Override
-                    public Class getVTLType() {
-                        return VTLBoolean.class;
-                    }
-                }, VALUE_WITH_EXCEPTION)
+                .addCondition(createBooleanExpression(false), VALUE_WITH_EXCEPTION)
+                .addCondition(createBooleanExpression(false), VALUE_WITH_EXCEPTION)
                 .build();
 
         assertThat(function.getVTLType()).isEqualTo(VTLString.class);
 
         VTLObject resolve = function.resolve(new SimpleBindings());
         assertThat(resolve.get()).isEqualTo("else");
+    }
+
+    @Test
+    public void testResolveElseWithNull() throws Exception {
+        IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_NULL);
+        IfThenElseExpression function = builder
+                .addCondition(createBooleanExpression(false), VALUE_WITH_EXCEPTION)
+                .addCondition(createBooleanExpression(false), VALUE_WITH_EXCEPTION)
+                .build();
+
+        assertThat(function.getVTLType()).isEqualTo(VTLString.class);
+
+        VTLObject resolve = function.resolve(new SimpleBindings());
+        assertThat(resolve.get()).isEqualTo(null);
+    }
+
+    @Test
+    public void testFailIfAllNulls() {
+        assertThatThrownBy(() -> {
+                    IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(createNullExpression());
+                    builder.addCondition(createBooleanExpression(true), createNullExpression());
+                    builder.addCondition(createBooleanExpression(false), createNullExpression());
+                    builder.build();
+                }
+        )
+                .as("exception when condition expression is not VTLBoolean")
+                .hasMessage("could not infer data type. One value must be typed in if-then-else expressions")
+                .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -187,7 +222,7 @@ public class IfThenElseExpressionTest {
     public void testFailOnInconsistentReturnType() throws Exception {
         assertThatThrownBy(() -> {
                     IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(VALUE_ELSE);
-                    builder.addCondition(CONDITION_TRUE, new VTLExpression() {
+                    builder.addCondition(createBooleanExpression(true), new VTLExpression() {
                         @Override
                         public VTLObject resolve(Bindings bindings) {
                             throw new RuntimeException("Should not be called");

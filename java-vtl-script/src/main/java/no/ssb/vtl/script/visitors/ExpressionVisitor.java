@@ -347,13 +347,21 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     public VTLExpression visitIfThenElseExpression(VTLParser.IfThenElseExpressionContext ctx) {
         IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(visit(ctx.ifBodyExpression()));
 
-        ctx.ifBody().forEach(ifBody -> {
-            VTLExpression condition = visit(ifBody.ifBodyExpression(0));
-            VTLExpression value = visit(ifBody.ifBodyExpression(1));
-            builder.addCondition(condition, value);
-        });
+        for (VTLParser.IfBodyContext bodyContext : ctx.ifBody()) {
+            try {
+                VTLExpression condition = visit(bodyContext.ifBodyExpression(0));
+                VTLExpression value = visit(bodyContext.ifBodyExpression(1));
+                builder.addCondition(condition, value);
+            } catch (IllegalArgumentException iae) {
+                throw new ContextualRuntimeException(iae, bodyContext);
+            }
+        }
 
-        return builder.build();
+        try {
+            return builder.build();
+        } catch (IllegalArgumentException iae) {
+            throw new ContextualRuntimeException(iae, ctx);
+        }
     }
 
     private static String unEscape(String identifier) {
