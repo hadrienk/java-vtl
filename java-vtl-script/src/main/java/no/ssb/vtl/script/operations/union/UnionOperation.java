@@ -167,8 +167,12 @@ public class UnionOperation extends AbstractDatasetOperation {
     private Order createOrderWithIdentifiers(Order orders) {
         DataStructure structure = getDataStructure();
         Order.Builder builder = Order.create(structure);
+        builder.putAll(orders);
+
         for (Component component : structure.values()) {
             if(!component.isIdentifier())
+                continue;
+            if (orders.containsKey(component))
                 continue;
 
             builder.put(component, orders.getOrDefault(component, Order.Direction.ASC));
