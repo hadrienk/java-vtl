@@ -23,8 +23,11 @@ package no.ssb.vtl.model;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.primitives.Ints;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,10 +55,24 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
 
     private final DataStructure structure;
     private final ImmutableMap<Component, Direction> delegate;
+    private final int[] indices;
+    private final Direction[] directions;
 
     Order(DataStructure structure, ImmutableMap<Component, Direction> orders) {
         this.delegate = ImmutableMap.copyOf(orders);
         this.structure = checkNotNull(structure);
+
+        ArrayList<Integer> indices = Lists.newArrayList();
+        ArrayList<Direction> directions = Lists.newArrayList();
+        for (Component component : orders.keySet()) {
+            indices.add(structure.indexOf(component));
+            directions.add(orders.get(component));
+        }
+
+        this.indices = Ints.toArray(indices);
+        this.directions = directions.toArray(new Direction[]{});
+
+
     }
 
     /**
@@ -91,25 +108,12 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
     public int compare(DataPoint o1, DataPoint o2) {
         int result;
 
-        // TODO migrate to Map<Component, Direction> and remove the DataStructure dependency.
-        Map<Component, ? extends Comparable> m1 = structure.asMap(o1), m2 = structure.asMap(o2);
-        for (Entry<Component, Direction> order : delegate.entrySet()) {
-            result = NULLS_FIRST.compare(m1.get(order.getKey()), m2.get(order.getKey()));
+        for (int i = 0; i < indices.length; i++) {
+            result = NULLS_FIRST.compare(o1.get(indices[i]), o2.get(indices[i]));
             if (result != 0) {
-                return order.getValue() == ASC ? result : -result;
+                return directions[i] == ASC ? result : -result;
             }
         }
-
-        // TODO build an index?
-//        Comparable[] c1 = new Comparable[1], c2 = new Comparable[1];
-//        ImmutableMap<Integer, Direction> index = ImmutableMap.copyOf(Collections.emptyMap());
-//        for (Entry<Integer, Direction> order : index.entrySet()) {
-//            Integer i = order.getKey();
-//            result = NULLS_FIRST.compare(c1[i], c2[i]);
-//            if (result != 0) {
-//                return order.getValue() == ASC ? result : -result;
-//            }
-//        }
         return 0;
     }
 
