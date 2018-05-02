@@ -142,8 +142,8 @@ public class UnionOperationTest extends RandomizedTest {
         // Generate random data.
         Integer numRow = scaledRandomIntBetween(100, 1000);
         List<DataPoint> dataPoints = IntStream.range(0, numRow).mapToObj(value -> DataPoint.create(
-                value,
-                value + numRow,
+                value, //rarely() ? null : value,
+                rarely() ? null : value,
                 randomAsciiOfLength(10) + " (" + value + ")",
                 randomAsciiOfLength(10) + " (" + value + ")",
                 randomAsciiOfLength(10) + " (" + value + ")"
