@@ -23,9 +23,12 @@ package no.ssb.vtl.model;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -40,19 +43,27 @@ public class DatapointNormalizer implements UnaryOperator<DataPoint> {
     private final int[] toIndices;
 
     public DatapointNormalizer(DataStructure from, DataStructure to) {
-        checkNotNull(from);
-        checkNotNull(to);
+        this(from, to, s -> true);
+    }
 
-        checkArgument(from.keySet().containsAll(to.keySet()));
+    public DatapointNormalizer(DataStructure from, DataStructure to, Predicate<String> predicate) {
+        checkNotNull(from);
         checkArgument(!from.isEmpty());
+        checkNotNull(to);
 
         ImmutableList<String> fromList = ImmutableSet.copyOf(from.keySet()).asList();
         ImmutableList<String> toList = ImmutableSet.copyOf(to.keySet()).asList();
 
+        // Make sure that both structures contains the columns we are mapping.
+        Set<String> filteredFrom = Sets.filter(from.keySet(), predicate::test);
+        Set<String> filteredTo = Sets.filter(to.keySet(), predicate::test);
+        checkArgument(filteredFrom.containsAll(filteredTo));
+
         // build indices
         ArrayList<Integer> fromIndices = Lists.newArrayList();
         ArrayList<Integer> toIndices = Lists.newArrayList();
-        for (String fromName : fromList) {
+        for (String fromName : filteredFrom) {
+
             int fromIndex = fromList.indexOf(fromName);
             int toIndex = toList.indexOf(fromName);
             if (fromIndex == toIndex)
