@@ -72,7 +72,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private static final String ERROR_NO_COMMON_IDENTIFIERS = "could not find common identifiers in the datasets %s";
 
     private final Table<Component, Dataset, Component> componentMapping;
-    private final ImmutableMap<String, Dataset> datasets;
+    protected final ImmutableMap<String, Dataset> datasets;
     private final ImmutableSet<Component> commonIdentifiers;
 
     private final ComponentBindings joinScope;
@@ -192,7 +192,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     /**
      * Ensure sorted.
      */
-    private Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
+    protected Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
         // Adjust the order to the structure.
 
         Order.Builder adjustedOrder = Order.create(dataset.getDataStructure());
