@@ -1,17 +1,21 @@
 package no.ssb.vtl.script.operations.join;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.DatapointNormalizer;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLObject;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -21,15 +25,17 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class NewInnerJoinOperation extends AbstractJoinOperation  {
+public class NewInnerJoinOperation extends AbstractJoinOperation {
 
 
     public NewInnerJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets, Collections.emptySet());
+        this(namedDatasets, Collections.emptySet());
     }
 
     public NewInnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
-        super(namedDatasets, identifiers);
+        super(namedDatasets.entrySet()
+                .stream()
+                .sorted(Comparator.comparing(stringDatasetEntry -> stringDatasetEntry.getValue().getSize().orElse(Long.MAX_VALUE))).collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)), identifiers);
         // We need the identifiers in the case of inner join.
         ComponentBindings joinScope = this.getJoinScope();
         for (Component component : getCommonIdentifiers()) {
@@ -57,60 +63,98 @@ public class NewInnerJoinOperation extends AbstractJoinOperation  {
         return adjustedOrders.build();
     }
 
-    private Order addCommonIdentifiersIfMissing(Order requestedOrder) {
-        // Get all the requested directions.
-        Order.Builder newOrder = Order.create(getDataStructure());
-        Sets.SetView<Component> commonComponents = Sets.difference(requestedOrder.keySet(), getCommonIdentifiers());
-        for (Component component : commonComponents) {
-            newOrder.put(component, requestedOrder.get(component));
-        }
-
-        //Add the identifier components that are missing.
-        Sets.SetView<Component> missingComponents = Sets.difference(getCommonIdentifiers(), requestedOrder.keySet());
-        for (Component component : missingComponents) {
-            newOrder.put(component, Order.Direction.ASC);
-        }
-        return newOrder.build();
-    }
-
-    private Stream<DataPoint> normalizeDataset(Dataset dataset, Order requiredOrder) {
-        List<String> identifierNames = Lists.transform(
-                getCommonIdentifiers().asList(),
-                input -> getDataStructure().getName(input)
-        );
-        Order childOrder = adjustOrderForStructure(requiredOrder, dataset.getDataStructure());
-        return dataset.getData(childOrder).get().map(new DatapointNormalizer(dataset.getDataStructure(), getDataStructure(), identifierNames::contains));
-    }
-
     @Override
     public Stream<DataPoint> getData() {
         Order order = Order.createDefault(getDataStructure());
-        return getData(order, null, null)
+        return getData(order, input -> true, Collections.emptySet())
                 .orElseThrow(() -> new RuntimeException("could not sort data"));
+    }
+
+    /**
+     * TODO: Move to the {@link no.ssb.vtl.model.AbstractDatasetOperation}.
+     */
+    private Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Dataset.Filtering filtering, Set<String> components) {
+        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
+        if (sortedData.isPresent()) {
+            return sortedData.get();
+        } else {
+            return dataset.getData().sorted(order).filter(filtering);
+        }
     }
 
     @Override
     public Optional<Stream<DataPoint>> getData(Order requestedOrder, Dataset.Filtering filtering, Set<String> components) {
-        Order requiredOrder = addCommonIdentifiersIfMissing(requestedOrder);
+
+        // Try to create a compatible order. If not, the caller will have to sort
+        // the result manually.
+        Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
+        if (!compatibleOrder.isPresent())
+            return Optional.empty();
+
+        Order requiredOrder = compatibleOrder.get();
+
+        // Compute the predicate
+        Order predicate = computePredicate(requiredOrder);
 
         Iterator<Dataset> iterator = datasets.values().iterator();
         Dataset left = iterator.next();
         Dataset right = left;
 
-        Stream<DataPoint> result = normalizeDataset(left, requiredOrder);
+        Table<Component, Dataset, Component> componentMapping = getComponentMapping();
+        Stream<DataPoint> result = getOrSortData(
+                left,
+                adjustOrderForStructure(requiredOrder, left.getDataStructure()),
+                filtering,
+                components
+        ).peek(dataPoint -> {
+            dataPoint.ensureCapacity(getDataStructure().size());
+            while (dataPoint.size() < getDataStructure().size()) {
+                dataPoint.add(VTLObject.NULL);
+            }
+        });
         while (iterator.hasNext()) {
             left = right;
             right = iterator.next();
             result = StreamSupport.stream(
                     new InnerJoinSpliterator<>(
-                            requiredOrder,
+                            new JoinKeyExtractor(left.getDataStructure(), predicate, componentMapping.column(left)),
+                            new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
+                            predicate,
                             getMerger(left, right),
                             result.spliterator(),
-                            normalizeDataset(right, requiredOrder).spliterator()
+                            getOrSortData(
+                                    right,
+                                    adjustOrderForStructure(requiredOrder, right.getDataStructure()),
+                                    filtering,
+                                    components
+                            ).spliterator()
                     ), false
             );
         }
         return Optional.of(result);
+    }
+
+    /**
+     * Compute the predicate.
+     *
+     * @param requestedOrder the requested order.
+     * @return order of the common identifiers only.
+     */
+    private Order computePredicate(Order requestedOrder) {
+        DataStructure structure = getDataStructure();
+
+        // We need to create a fake structure to allow the returned
+        // Order to work with the result of the key extractors.
+        DataStructure.Builder fakeStructure = DataStructure.builder();
+        for (Component component : getCommonIdentifiers()) {
+            fakeStructure.put(structure.getName(component), component);
+        }
+
+        Order.Builder predicateBuilder = Order.create(fakeStructure.build());
+        for (Component component : getCommonIdentifiers()) {
+            predicateBuilder.put(component, requestedOrder.get(component));
+        }
+        return predicateBuilder.build();
     }
 
     @Override
@@ -125,28 +169,29 @@ public class NewInnerJoinOperation extends AbstractJoinOperation  {
         ImmutableList<Component> rightList = ImmutableList.copyOf(rightStructure.values());
 
         // Save the indexes of the right data point that need to be moved to the left.
-        ImmutableMap.Builder<Integer, Integer> indexMapBuilder = ImmutableMap.builder();
-        for (Map.Entry<Component, Component> entry : getComponentMapping().column(rightDataset).entrySet()) {
-            Component leftComponent = entry.getKey();
-            Component rightComponent = entry.getValue();
-            indexMapBuilder.put(rightList.indexOf(rightComponent), leftList.lastIndexOf(leftComponent));
+        final ImmutableListMultimap<Integer, Integer> indexMap;
+
+        ImmutableListMultimap.Builder<Integer, Integer> indexMapBuilder = ImmutableListMultimap.builder();
+        for (int i = 0; i < rightList.size(); i++) {
+            Component rightComponent = rightList.get(i);
+            for (int j = 0; j < leftList.size(); j++) {
+                Component leftComponent = leftList.get(j);
+                if (rightComponent.equals(leftComponent)) {
+                    indexMapBuilder.put(i, j);
+                }
+            }
         }
-        final ImmutableMap<Integer, Integer> indexMap = indexMapBuilder.build();
+        indexMap = indexMapBuilder.build();
 
         return (left, right) -> {
 
             if (left == null || right == null)
                 return null;
 
-            left.ensureCapacity(structure.size());
-            while (left.size() < structure.size()) {
-                left.add(null);
-            }
-
-            for (Map.Entry<Integer, Integer> entry : indexMap.entrySet())
+            for (Map.Entry<Integer, Integer> entry : indexMap.entries())
                 left.set(entry.getValue(), right.get(entry.getKey()));
 
-            return left;
+            return DataPoint.create(left);
         };
     }
 
