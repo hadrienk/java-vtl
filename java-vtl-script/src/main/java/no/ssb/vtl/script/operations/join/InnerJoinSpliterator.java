@@ -5,89 +5,92 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Queues;
+import no.ssb.vtl.model.DataPoint;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class InnerJoinSpliterator<I, O> implements Spliterator<O> {
+public class InnerJoinSpliterator<L,R, K, O> implements Spliterator<O> {
 
-    private final Comparator<I> predicate;
-    private final BiFunction<I, I, O> merger;
+    private final Comparator<K> predicate;
+    private final BiFunction<L, R, O> merger;
 
-    private Deque<I> leftBuffer = Queues.newArrayDeque();
-    private Deque<I> rightBuffer = Queues.newArrayDeque();
-    private final PeekingIterator<I> leftIterator;
-    private final PeekingIterator<I> rightIterator;
+    private final Function<L, K> leftKeyExtractor;
+    private final Function<R, K> rightKeyExtractor;
+
+    private Deque<L> leftBuffer = Queues.newArrayDeque();
+    private Deque<R> rightBuffer = Queues.newArrayDeque();
+    private final PeekingIterator<L> leftIterator;
+    private final PeekingIterator<R> rightIterator;
 
     private Iterator<O> output = Collections.emptyIterator();
 
-    public InnerJoinSpliterator(Comparator<I> predicate, BiFunction<I, I, O> merger, Spliterator<I> leftSpliterator, Spliterator<I> rightSpliterator) {
+    public InnerJoinSpliterator(
+            Function<L, K> leftKeyExtractor, Function<R, K> rightKeyExtractor, Comparator<K> predicate,
+            BiFunction<L, R, O> merger,
+            Spliterator<L> leftSpliterator,
+            Spliterator<R> rightSpliterator
+    ) {
+        this.leftKeyExtractor = leftKeyExtractor;
+        this.rightKeyExtractor = rightKeyExtractor;
         this.predicate = checkNotNull(predicate);
         this.merger = checkNotNull(merger);
+
         this.leftIterator = Iterators.peekingIterator(Spliterators.iterator(leftSpliterator));
         this.rightIterator = Iterators.peekingIterator(Spliterators.iterator(rightSpliterator));
     }
 
-    private void advance(PeekingIterator<I> source, Deque<I> buffer) {
+    private <I> K advance(PeekingIterator<I> source, Deque<I> buffer, Function<I, K> keyExtractor, Comparator<K> predicate) {
         buffer.clear();
 
         if (!source.hasNext())
-            return;
+            return null;
 
-        do {
+        buffer.addLast(source.next());
+        K key = keyExtractor.apply(buffer.getFirst());
+        while (source.hasNext() && predicate.compare(key, keyExtractor.apply(source.peek())) == 0) {
             buffer.addLast(source.next());
-        } while (source.hasNext() && predicate.compare(buffer.getFirst(), source.peek()) == 0);
+        }
+        return key;
     }
 
-    private void advanceRight() {
-        advance(rightIterator, rightBuffer);
+    private K advanceRight() {
+        return advance(rightIterator, rightBuffer, rightKeyExtractor, predicate);
     }
 
-    private void advanceLeft() {
-        advance(leftIterator, leftBuffer);
+    private K advanceLeft() {
+        return advance(leftIterator, leftBuffer, leftKeyExtractor, predicate);
     }
 
     @Override
     public void forEachRemaining(Consumer<? super O> action) {
-        advanceLeft();
-        advanceRight();
+        K leftKey = advanceLeft();
+        K rightKey = advanceRight();
         while (!leftBuffer.isEmpty() && !rightBuffer.isEmpty()) {
-            if (compare()) {
+            int compare = predicate.compare(leftKey, rightKey);
+            if (0 < compare) {
+                // left > right (right is behind)
+                rightKey = advanceRight();
+            } else if (compare < 0) {
+                // left < right (left is behind)
+                leftKey = advanceLeft();
+            } else {
                 // output hit
-                flushBuffers(action);
-                advanceLeft();
-                advanceRight();
-            }
-        }
-    }
-
-    private boolean compare() {
-        int compare = predicate.compare(
-                leftBuffer.getFirst(),
-                rightBuffer.getFirst()
-        );
-        if (0 < compare) {
-            // left > right (right is behind)
-            advanceRight();
-        } else if (compare < 0) {
-            // left < right (left is behind)
-            advanceLeft();
-        }
-        return compare == 0;
-    }
-
-    private void flushBuffers(Consumer<? super O> action) {
-        for (I left : leftBuffer) {
-            for (I right : rightBuffer) {
-                action.accept(merger.apply(left, right));
+                output = new CartesianIterator<>(leftBuffer, rightBuffer, merger);
+                output.forEachRemaining(action);
+                leftKey = advanceLeft();
+                rightKey = advanceRight();
             }
         }
     }
@@ -99,16 +102,20 @@ public class InnerJoinSpliterator<I, O> implements Spliterator<O> {
             return true;
         }
 
-        advanceLeft();
-        advanceRight();
+        K leftKey = advanceLeft();
+        K rightKey = advanceRight();
 
         while (!leftBuffer.isEmpty() && !rightBuffer.isEmpty()) {
-            if (compare()) {
+            int compare = predicate.compare(leftKey, rightKey);
+            if (0 < compare) {
+                // left > right (right is behind)
+                rightKey = advanceRight();
+            } else if (compare < 0) {
+                // left < right (left is behind)
+                leftKey = advanceLeft();
+            } else {
                 // output hit
-                output = Iterators.transform(
-                        new CartesianIterator<>(leftBuffer, rightBuffer),
-                        input -> merger.apply(input.get(0), input.get(1))
-                );
+                output = new CartesianIterator<>(leftBuffer, rightBuffer, merger);
                 return tryAdvance(action);
             }
         }

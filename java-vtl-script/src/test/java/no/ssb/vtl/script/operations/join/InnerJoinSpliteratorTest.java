@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableMap.of;
@@ -103,7 +104,7 @@ public class InnerJoinSpliteratorTest {
                 Comparator.nullsFirst(Comparator.naturalOrder())
         );
 
-        InnerJoinSpliterator<List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
 
         List<Map<String, List<String>>> result = newArrayList();
         innerJoinSpliterator.forEachRemaining(result::add);
@@ -123,7 +124,7 @@ public class InnerJoinSpliteratorTest {
                 order
         );
 
-        InnerJoinSpliterator<List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
 
         List<Map<String, List<String>>> result = newArrayList();
         innerJoinSpliterator.forEachRemaining(result::add);
@@ -143,7 +144,7 @@ public class InnerJoinSpliteratorTest {
                 order
         );
 
-        InnerJoinSpliterator<List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
 
         List<Map<String, List<String>>> result = checkTryAdvance(innerJoinSpliterator);
 
@@ -151,7 +152,7 @@ public class InnerJoinSpliteratorTest {
 
     }
 
-    private List<Map<String, List<String>>> checkTryAdvance(InnerJoinSpliterator<List<String>, Map<String, List<String>>> innerJoinSpliterator) {
+    private List<Map<String, List<String>>> checkTryAdvance(InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator) {
         List<Map<String, List<String>>> result = newArrayList();
 
         for(Iterator<Map<String, List<String>>> it = Spliterators.iterator(innerJoinSpliterator); it.hasNext();)
@@ -176,7 +177,7 @@ public class InnerJoinSpliteratorTest {
                 Comparator.nullsFirst(Comparator.naturalOrder())
         );
 
-        InnerJoinSpliterator<List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
 
         List<Map<String, List<String>>> result = checkTryAdvance(innerJoinSpliterator);
 
@@ -184,9 +185,9 @@ public class InnerJoinSpliteratorTest {
 
     }
 
-    private InnerJoinSpliterator<List<String>, Map<String, List<String>>> join(Comparator<List<String>> predicate) {
+    private InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> join(Comparator<List<String>> predicate) {
         return new InnerJoinSpliterator<>(
-                    predicate,
+                Function.identity(), Function.identity(), predicate,
                     (lefts, rights) -> of("left", lefts, "right", rights),
                     left.stream().sorted(predicate).spliterator(),
                     right.stream().sorted(predicate).spliterator()
