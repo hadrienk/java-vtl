@@ -21,7 +21,9 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.annotations.Beta;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -73,6 +75,17 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
         this.directions = directions.toArray(new Direction[]{});
 
 
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        if (structure != null && delegate != null) {
+            for (Entry<Component, Direction> entry : delegate.entrySet()) {
+                helper.add(structure.getName(entry.getKey()), entry.getValue());
+            }
+        }
+        return helper.toString();
     }
 
     /**
