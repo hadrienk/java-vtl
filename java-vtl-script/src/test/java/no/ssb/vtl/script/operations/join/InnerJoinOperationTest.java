@@ -51,67 +51,6 @@ import static org.assertj.core.api.Assertions.entry;
 public class InnerJoinOperationTest extends RandomizedTest {
 
     @Test
-    public void testDefaultJoin() throws Exception {
-
-        Dataset ds1 = StaticDataset.create()
-                .withName("time", "ref_area", "partner", "obs_value", "obs_status")
-                .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                .andTypes(Instant.class, String.class, String.class, Long.class, String.class)
-
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "CA", 20L, "E")
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "BG", 2L, "P")
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "RO", 2L, "P")
-
-                .build();
-
-        Dataset ds2 = StaticDataset.create()
-
-                .withName("time", "ref_area", "partner", "obs_value", "obs_status")
-                .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                .andTypes(Instant.class, String.class, String.class, Long.class, String.class)
-
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "CA", 10L,"P")
-
-                .build();
-
-        AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
-
-        new VTLPrintStream(System.out).println(result);
-
-        DataStructure structure = result.getDataStructure();
-        DataStructure structure1 = ds1.getDataStructure();
-        DataStructure structure2 = ds2.getDataStructure();
-
-        assertThat(structure)
-                .containsOnly(
-                        entry("time", structure1.get("time")),
-                        entry("ref_area", structure1.get("ref_area")),
-                        entry("partner", structure1.get("partner")),
-                        entry("ds1_obs_value", structure1.get("obs_value")),
-                        entry("ds1_obs_status", structure1.get("obs_status")),
-                        entry("ds2_obs_value", structure2.get("obs_value")),
-                        entry("ds2_obs_status", structure2.get("obs_status"))
-                );
-
-        assertThat(result.getData())
-                .flatExtracting(dataPoint -> {
-                    return structure.asMap(dataPoint).entrySet().stream()
-                            .flatMap(e -> Stream.of(e.getKey().getRole(), e.getKey(), e.getValue().get()))
-                            .collect(Collectors.toList());
-                })
-
-                .startsWith(
-                        IDENTIFIER, structure1.get("time"), Instant.ofEpochMilli(0),
-                        IDENTIFIER, structure1.get("ref_area"), "EU25",
-                        IDENTIFIER, structure1.get("partner"), "CA",
-                        MEASURE, structure1.get("obs_value"), 20L,
-                        ATTRIBUTE, structure1.get("obs_status"), "E",
-                        MEASURE, structure2.get("obs_value"), 10L,
-                        ATTRIBUTE, structure2.get("obs_status"), "P"
-                );
-    }
-
-    @Test
     @Seed("9DC9B02FF9A216E4")
     public void testRegression() throws Exception {
         //D0E9B354FC19C5A:9DC9B02FF9A216E4
