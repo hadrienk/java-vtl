@@ -1,15 +1,12 @@
 package no.ssb.vtl.script.operations.join;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.DatapointNormalizer;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
@@ -17,7 +14,6 @@ import no.ssb.vtl.model.VTLObject;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -85,11 +81,12 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
     @Override
     public Optional<Stream<DataPoint>> getData(Order requestedOrder, Dataset.Filtering filtering, Set<String> components) {
 
-        // Try to create a compatible order. If not, the caller will have to sort
-        // the result manually.
+        // Try to create a compatible order.
+        // If not, the caller will have to sort the result manually.
         Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
-        if (!compatibleOrder.isPresent())
+        if (!compatibleOrder.isPresent()) {
             return Optional.empty();
+        }
 
         Order requiredOrder = compatibleOrder.get();
 
@@ -107,6 +104,7 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
                 filtering,
                 components
         ).peek(dataPoint -> {
+
             dataPoint.ensureCapacity(getDataStructure().size());
             while (dataPoint.size() < getDataStructure().size()) {
                 dataPoint.add(VTLObject.NULL);
@@ -145,13 +143,16 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
 
         // We need to create a fake structure to allow the returned
         // Order to work with the result of the key extractors.
+
+        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
         DataStructure.Builder fakeStructure = DataStructure.builder();
-        for (Component component : getCommonIdentifiers()) {
+        for (Component component : commonIdentifiers) {
             fakeStructure.put(structure.getName(component), component);
         }
 
         Order.Builder predicateBuilder = Order.create(fakeStructure.build());
-        for (Component component : getCommonIdentifiers()) {
+        Sets.SetView<Component> filteredRequestedOrder = Sets.intersection(requestedOrder.keySet(), commonIdentifiers);
+        for (Component component : filteredRequestedOrder) {
             predicateBuilder.put(component, requestedOrder.get(component));
         }
         return predicateBuilder.build();
@@ -161,38 +162,7 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
     protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
-
-        DataStructure structure = getDataStructure();
-        ImmutableList<Component> leftList = ImmutableList.copyOf(structure.values());
-
-        DataStructure rightStructure = rightDataset.getDataStructure();
-        ImmutableList<Component> rightList = ImmutableList.copyOf(rightStructure.values());
-
-        // Save the indexes of the right data point that need to be moved to the left.
-        final ImmutableListMultimap<Integer, Integer> indexMap;
-
-        ImmutableListMultimap.Builder<Integer, Integer> indexMapBuilder = ImmutableListMultimap.builder();
-        for (int i = 0; i < rightList.size(); i++) {
-            Component rightComponent = rightList.get(i);
-            for (int j = 0; j < leftList.size(); j++) {
-                Component leftComponent = leftList.get(j);
-                if (rightComponent.equals(leftComponent)) {
-                    indexMapBuilder.put(i, j);
-                }
-            }
-        }
-        indexMap = indexMapBuilder.build();
-
-        return (left, right) -> {
-
-            if (left == null || right == null)
-                return null;
-
-            for (Map.Entry<Integer, Integer> entry : indexMap.entries())
-                left.set(entry.getValue(), right.get(entry.getKey()));
-
-            return DataPoint.create(left);
-        };
+        return new InnerJoinMerger(getDataStructure(), rightDataset.getDataStructure());
     }
 
     @Override
