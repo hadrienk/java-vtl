@@ -2,7 +2,9 @@ package no.ssb.vtl.script.operations.join;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -10,6 +12,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.script.operations.KeepOperation;
+import no.ssb.vtl.script.support.VTLPrintStream;
 import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
@@ -22,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -98,7 +100,7 @@ public class NewInnerJoinOperationTest extends RandomizedTest {
     StaticDataset randomDatasetFromValues(DataStructure structure, List<DataPoint> data) {
         StaticDataset.ValueBuilder builder = StaticDataset.create(structure);
         ArrayList<DataPoint> copy = Lists.newArrayList(data);
-        Collections.shuffle(copy);
+        Collections.shuffle(copy, getRandom());
         int max = randomInt(data.size());
         for (int i = 0; i < max; i++) {
             builder.addPoints(data.get(i));
@@ -150,6 +152,13 @@ public class NewInnerJoinOperationTest extends RandomizedTest {
     }
 
     @Test
+    @Repeat(iterations = 1, useConstantSeed = true)
+    @Seed("D1F262C1DA20FE15")
+    public void regressionTest() {
+        testInnerJoin();
+    }
+
+    @Test
     @Repeat(iterations = 10)
     public void testInnerJoin() {
         // A couple of important things to test:
@@ -162,10 +171,10 @@ public class NewInnerJoinOperationTest extends RandomizedTest {
 
         // Keep a list of identifiers that will be common.
         List<String> commonIdentifiers = randomIdentifiersName(structureTemplate, 1);
-
-        Map<String, Dataset> datasetMap = IntStream.range(1, randomIntBetween(2, 5))
+        System.out.println("Common identifier" + commonIdentifiers);
+        Map<String, Dataset> datasetMap = IntStream.range(1, randomIntBetween(2, 3))
                 .mapToObj(value -> "ds" + Integer.toString(value))
-                .collect(Collectors.toMap(
+                .collect(ImmutableMap.toImmutableMap(
                         o -> o,
                         o -> {
                             StaticDataset staticDataset = randomDatasetFromValues(structureTemplate, dataPoints);
@@ -185,7 +194,15 @@ public class NewInnerJoinOperationTest extends RandomizedTest {
 
         NewInnerJoinOperation innerJoinOperation = new NewInnerJoinOperation(datasetMap);
 
-        innerJoinOperation.getData().forEach(System.out::println);
+        // Uncomment to debug.
+        // VTLPrintStream printStream = new VTLPrintStream(System.out);
+        // datasetMap.forEach((name, dataset) -> {
+        //     printStream.println("Dataset " + name);
+        //     printStream.println(dataset);
+        // });
+        // printStream.println(innerJoinOperation);
+
+
 
     }
 }

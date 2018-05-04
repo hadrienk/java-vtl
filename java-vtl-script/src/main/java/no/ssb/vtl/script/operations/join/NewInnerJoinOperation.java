@@ -10,7 +10,9 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.support.Closer;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -40,6 +42,11 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
                     component
             );
         }
+    }
+
+    @Override
+    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
+        return null;
     }
 
     /**
@@ -97,39 +104,60 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
         Dataset left = iterator.next();
         Dataset right = left;
 
-        Table<Component, Dataset, Component> componentMapping = getComponentMapping();
-        Stream<DataPoint> result = getOrSortData(
-                left,
-                adjustOrderForStructure(requiredOrder, left.getDataStructure()),
-                filtering,
-                components
-        ).peek(dataPoint -> {
+        // Close all children
+        Closer closer = Closer.create();
+        try {
 
-            dataPoint.ensureCapacity(getDataStructure().size());
-            while (dataPoint.size() < getDataStructure().size()) {
-                dataPoint.add(VTLObject.NULL);
+            Table<Component, Dataset, Component> componentMapping = getComponentMapping();
+            Stream<DataPoint> result = getOrSortData(
+                    left,
+                    adjustOrderForStructure(requiredOrder, left.getDataStructure()),
+                    filtering,
+                    components
+            ).peek(new DataPointCapacityExpander(getDataStructure().size()));
+            closer.register(result);
+
+            while (iterator.hasNext()) {
+                left = right;
+                right = iterator.next();
+
+                Stream<DataPoint> rightStream = getOrSortData(
+                        right,
+                        adjustOrderForStructure(requiredOrder, right.getDataStructure()),
+                        filtering,
+                        components
+                );
+                closer.register(rightStream);
+
+                result = StreamSupport.stream(
+                        new InnerJoinSpliterator<>(
+                                new JoinKeyExtractor(left.getDataStructure(), predicate, componentMapping.column(left)),
+                                new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
+                                predicate,
+                                new InnerJoinMerger(getDataStructure(), right.getDataStructure()),
+                                result.spliterator(),
+                                rightStream.spliterator()
+                        ), false
+                );
             }
-        });
-        while (iterator.hasNext()) {
-            left = right;
-            right = iterator.next();
-            result = StreamSupport.stream(
-                    new InnerJoinSpliterator<>(
-                            new JoinKeyExtractor(left.getDataStructure(), predicate, componentMapping.column(left)),
-                            new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
-                            predicate,
-                            getMerger(left, right),
-                            result.spliterator(),
-                            getOrSortData(
-                                    right,
-                                    adjustOrderForStructure(requiredOrder, right.getDataStructure()),
-                                    filtering,
-                                    components
-                            ).spliterator()
-                    ), false
-            );
+
+            // Close all the underlying streams.
+            return Optional.of(result.onClose(() -> {
+                try {
+                    closer.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }));
+
+        } catch (Exception ex) {
+            try {
+                closer.close();
+            } catch (IOException ioe) {
+                ex.addSuppressed(ioe);
+            }
+            throw ex;
         }
-        return Optional.of(result);
     }
 
     /**
@@ -156,13 +184,6 @@ public class NewInnerJoinOperation extends AbstractJoinOperation {
             predicateBuilder.put(component, requestedOrder.get(component));
         }
         return predicateBuilder.build();
-    }
-
-    @Override
-    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
-            final Dataset leftDataset, final Dataset rightDataset
-    ) {
-        return new InnerJoinMerger(getDataStructure(), rightDataset.getDataStructure());
     }
 
     @Override
