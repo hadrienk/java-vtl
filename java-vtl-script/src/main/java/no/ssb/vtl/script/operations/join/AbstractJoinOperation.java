@@ -321,10 +321,14 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     @Override
-    public Stream<DataPoint> getData() {
-        Order order = createDefaultOrder(getDataStructure(), getCommonIdentifiers());
-        return getData(order, null, null)
-                .orElseThrow(() -> new RuntimeException("could not sort data"));
+    public final Stream<DataPoint> getData() {
+        // Use the order that is best.
+        Order.Builder orderBuilder = Order.create(getDataStructure());
+        for (Component identifier : getCommonIdentifiers()) {
+            // TODO: Direction.ANY
+            orderBuilder.put(identifier, Order.Direction.ASC);
+        }
+        return getData(orderBuilder.build()).orElseThrow(() -> new RuntimeException("could not sort data"));
     }
 
     @VisibleForTesting

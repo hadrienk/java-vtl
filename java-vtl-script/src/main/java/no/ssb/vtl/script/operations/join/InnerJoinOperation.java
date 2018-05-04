@@ -85,13 +85,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         return adjustedOrders.build();
     }
 
-    @Override
-    public Stream<DataPoint> getData() {
-        Order order = Order.createDefault(getDataStructure());
-        return getData(order, input -> true, Collections.emptySet())
-                .orElseThrow(() -> new RuntimeException("could not sort data"));
-    }
-
     /**
      * TODO: Move to the {@link no.ssb.vtl.model.AbstractDatasetOperation}.
      */
