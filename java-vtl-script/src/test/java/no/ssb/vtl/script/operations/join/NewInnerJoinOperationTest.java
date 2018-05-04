@@ -12,7 +12,6 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.script.operations.KeepOperation;
-import no.ssb.vtl.script.support.VTLPrintStream;
 import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
@@ -192,7 +191,7 @@ public class NewInnerJoinOperationTest extends RandomizedTest {
                         }
                 ));
 
-        NewInnerJoinOperation innerJoinOperation = new NewInnerJoinOperation(datasetMap);
+        InnerJoinOperation innerJoinOperation = new InnerJoinOperation(datasetMap);
 
         // Uncomment to debug.
         // VTLPrintStream printStream = new VTLPrintStream(System.out);
