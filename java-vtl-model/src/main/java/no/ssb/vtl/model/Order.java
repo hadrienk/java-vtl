@@ -43,6 +43,7 @@ import static no.ssb.vtl.model.Order.Direction.ASC;
 public final class Order extends ForwardingMap<Component, Order.Direction> implements Comparator<DataPoint> {
 
     public static final Comparator<Comparable> NULLS_FIRST = Comparator.<Comparable>nullsFirst(Comparator.naturalOrder());
+    public static final Comparator<VTLObject> VTL_OBJECT_COMPARATOR = Comparator.comparing(vtlObject -> (Comparable) vtlObject.get(), NULLS_FIRST);
 
     public static final Comparator<Entry<String, Component>> BY_ROLE = Comparator.comparing(
             entry -> entry.getValue().getRole(),
@@ -122,7 +123,7 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
         int result;
 
         for (int i = 0; i < indices.length; i++) {
-            result = NULLS_FIRST.compare(o1.get(indices[i]), o2.get(indices[i]));
+            result = VTL_OBJECT_COMPARATOR.compare(o1.get(indices[i]), o2.get(indices[i]));
             if (result != 0) {
                 return directions[i] == ASC ? result : -result;
             }
