@@ -10,9 +10,9 @@ package no.ssb.vtl.script.expressions;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +25,11 @@ import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VTLTyped;
 
 import javax.script.Bindings;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * The if then else expression.
@@ -38,10 +41,11 @@ public class IfThenElseExpression implements VTLExpression {
     private final Class vtlType;
 
     private IfThenElseExpression(ImmutableMap<VTLExpression, VTLExpression> conditionToExpression,
-                                 VTLExpression defaultExpression) {
+                                 VTLExpression defaultExpression, Class vtlType) {
+        checkArgument(vtlType != null, "could not infer data type. One value must be typed in if-then-else expressions");
+        this.vtlType = vtlType;
         this.conditionToExpression = conditionToExpression;
         this.defaultExpression = defaultExpression;
-        vtlType = defaultExpression.getVTLType();
     }
 
     @Override
@@ -63,31 +67,53 @@ public class IfThenElseExpression implements VTLExpression {
 
     public static class Builder {
         private final VTLExpression defaultExpression;
-        private final Class returnType;
+        private Class returnType;
         private final ImmutableMap.Builder<VTLExpression, VTLExpression> builder = ImmutableMap.builder();
+
+        private static boolean isNull(VTLTyped typed) {
+            return VTLObject.class.equals(typed.getVTLType());
+        }
+
+        private VTLExpression checkValueType(VTLExpression value) {
+            if (isNull(value))
+                return value;
+
+            if (returnType == null)
+                returnType = value.getVTLType();
+
+            checkArgument(
+                    returnType.equals(value.getVTLType()),
+                    "All return values must have the same type %s but was %s",
+                    returnType.getName(),
+                    value.getVTLType().getName()
+            );
+            return value;
+        }
+
+        private VTLExpression checkCondition(VTLExpression condition) {
+            checkArgument(
+                    condition.getVTLType().equals(VTLBoolean.class),
+                    "Condition must return a %s, but was %s",
+                    VTLBoolean.class.getName(),
+                    condition.getVTLType().getName()
+            );
+            return condition;
+        }
 
         public Builder(VTLExpression defaultExpression) {
             this.defaultExpression = defaultExpression;
-            this.returnType = defaultExpression.getVTLType();
+            if (!isNull(defaultExpression))
+                this.returnType = defaultExpression.getVTLType();
         }
 
         public Builder addCondition(VTLExpression cond, VTLExpression value) {
-            if (!cond.getVTLType().equals(VTLBoolean.class)) {
-                throw new IllegalArgumentException("Condition must return a " + VTLBoolean.class.getName()
-                        + ", but was " + cond.getVTLType().getName());
-            }
-
-            if (!returnType.equals(value.getVTLType())) {
-                throw new IllegalArgumentException("All return values must have the same type " + returnType.getName()
-                        + " but was " + value.getVTLType().getName());
-            }
-
-            builder.put(cond, value);
+            builder.put(checkCondition(cond), checkValueType(value));
             return this;
         }
 
         public IfThenElseExpression build() {
-            return new IfThenElseExpression(builder.build(), defaultExpression);
+            // TODO: test duplicate condition.
+            return new IfThenElseExpression(builder.build(), defaultExpression, returnType);
         }
     }
 

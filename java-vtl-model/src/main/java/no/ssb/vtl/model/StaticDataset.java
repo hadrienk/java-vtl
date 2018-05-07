@@ -50,7 +50,7 @@ public class StaticDataset implements Dataset {
 
     @Override
     public Stream<DataPoint> getData() {
-        return data.stream();
+        return data.stream().map(DataPoint::create);
     }
 
     @Override

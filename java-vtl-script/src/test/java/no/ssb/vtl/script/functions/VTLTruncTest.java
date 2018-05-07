@@ -70,7 +70,7 @@ public class VTLTruncTest extends AbstractVTLNumberBinaryFunctionTest {
         );
 
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(VTLNumber.of(5));
+        assertThat(result).isEqualTo(VTLNumber.of(5.0));
     }
 
     @Test

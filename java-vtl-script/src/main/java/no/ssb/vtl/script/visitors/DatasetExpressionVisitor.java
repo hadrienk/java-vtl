@@ -26,7 +26,7 @@ import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLDataset;
-import no.ssb.vtl.script.operations.UnionOperation;
+import no.ssb.vtl.script.operations.union.UnionOperation;
 import no.ssb.vtl.script.visitors.join.JoinBodyVisitor;
 
 import java.util.List;
