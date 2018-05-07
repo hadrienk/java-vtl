@@ -150,11 +150,12 @@ public class InnerJoinSpliterator<L,R, K, O> implements Spliterator<O> {
 
     @Override
     public long estimateSize() {
+        // TODO: This could be leftSpliterator.estimateSize() * rightSpliterator.estimateSize()
         return Long.MAX_VALUE;
     }
 
     @Override
     public int characteristics() {
-        return Spliterator.SORTED & Spliterator.ORDERED;
+        return Spliterator.ORDERED;
     }
 }

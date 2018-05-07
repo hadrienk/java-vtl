@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -114,6 +115,43 @@ public class InnerJoinSpliteratorTest {
                 of("left", asList("2017", "4", "4-2017-left"), "right", asList("2015", "4", "4-2015-right"))
 
         );
+    }
+
+    @Test
+    public void testCharacteristics() {
+        Comparator<List<String>> predicate = Comparator.comparing(
+                list -> list.get(1),
+                Comparator.nullsFirst(Comparator.naturalOrder())
+        );
+
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+
+        assertThat(innerJoinSpliterator.characteristics() & Spliterator.SORTED).isEqualTo(0);
+        assertThat(innerJoinSpliterator.characteristics() & Spliterator.ORDERED).isEqualTo(Spliterator.ORDERED);
+    }
+
+    @Test
+    public void testEstimateSize() {
+        Comparator<List<String>> predicate = Comparator.comparing(
+                list -> list.get(1),
+                Comparator.nullsFirst(Comparator.naturalOrder())
+        );
+
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+
+        assertThat(innerJoinSpliterator.estimateSize()).isEqualTo(Long.MAX_VALUE);
+    }
+
+    @Test
+    public void testTrySplitNotSupported() {
+        Comparator<List<String>> predicate = Comparator.comparing(
+                list -> list.get(1),
+                Comparator.nullsFirst(Comparator.naturalOrder())
+        );
+
+        InnerJoinSpliterator<List<String>, List<String>, List<String>, Map<String, List<String>>> innerJoinSpliterator = join(predicate);
+
+        assertThat(innerJoinSpliterator.trySplit()).isNull();
     }
 
     @Test
