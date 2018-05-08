@@ -39,6 +39,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -196,8 +197,14 @@ public class NewInnerJoinOperationTest extends RandomizedTest {
                 .collect(ImmutableMap.toImmutableMap(
                         o -> o,
                         o -> {
-                            StaticDataset staticDataset = randomDatasetFromValues(structureTemplate, dataPoints);
-                            RandomizedDataset randomizedDataset = RandomizedDataset.create(getRandom(), staticDataset).shuffleStructure();
+
+                            // Rarely return empty dataset.
+                            StaticDataset staticDataset = randomDatasetFromValues(
+                                    structureTemplate,
+                                    rarely() ? Collections.emptyList() : dataPoints
+                            );
+                            Dataset randomizedDataset = RandomizedDataset.create(getRandom(), staticDataset).shuffleStructure();
+
 
                             Set<Component> components = Stream.of(
                                     commonIdentifiers.stream(),

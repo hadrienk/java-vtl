@@ -55,20 +55,6 @@ public class JoinKeyExtractor implements UnaryOperator<DataPoint> {
      *
      * @param childStructure original structure.
      * @param order the order representing the component to extract.
-     *
-     */
-    public JoinKeyExtractor(
-            DataStructure childStructure,
-            Order order
-    ) {
-        this(childStructure, order, Function.identity());
-    }
-
-    /**
-     * Create a new JoinKeyExtractor.
-     *
-     * @param childStructure original structure.
-     * @param order the order representing the component to extract.
      * @param mapping the mapping used to translate order component to child components.
      *
      */
@@ -89,14 +75,6 @@ public class JoinKeyExtractor implements UnaryOperator<DataPoint> {
 
         ImmutableList<Component> fromList = ImmutableList.copyOf(childStructure.values());
         ImmutableList<Component> toList = ImmutableList.copyOf(order.keySet());
-
-        // TODO
-        //List<Component> mapped = fromList.stream().map(mapper).collect(Collectors.toList());
-        //checkArgument(
-        //        mapped.containsAll(toList),
-        //        "could not create key extractor. Missing %s",
-        //        Collections2.filter(toList, Predicates.not(Predicates.in(mapped)))
-        //);
 
         ArrayList<Integer> indices = Lists.newArrayList();
 

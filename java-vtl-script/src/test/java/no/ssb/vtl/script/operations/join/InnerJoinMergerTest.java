@@ -70,6 +70,19 @@ public class InnerJoinMergerTest extends RandomizedTest {
     }
 
     @Test
+    public void testToString() {
+        int rightStructureSize = randomIntBetween(dataStructure.size() / 2, dataStructure.size());
+        int leftStructureSize = randomIntBetween(dataStructure.size() / 2, dataStructure.size());
+
+        DataStructure left = randomDataStructure(leftStructureSize);
+        DataStructure right = randomDataStructure(rightStructureSize);
+
+        InnerJoinMerger merger = new InnerJoinMerger(left, right);
+
+        String tostring = merger.toString();
+    }
+
+    @Test
     @Repeat(iterations = 100)
     public void testRandom() {
         int rightStructureSize = randomIntBetween(dataStructure.size() / 2, dataStructure.size());
