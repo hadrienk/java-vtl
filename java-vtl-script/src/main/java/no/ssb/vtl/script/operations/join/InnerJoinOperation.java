@@ -50,9 +50,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
-        super(namedDatasets.entrySet()
-                .stream()
-                .sorted(Comparator.comparing(stringDatasetEntry -> stringDatasetEntry.getValue().getSize().orElse(Long.MAX_VALUE))).collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)), identifiers);
+        super(namedDatasets, identifiers);
         // We need the identifiers in the case of inner join.
         ComponentBindings joinScope = this.getJoinScope();
         for (Component component : getCommonIdentifiers()) {
