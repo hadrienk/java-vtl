@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.join;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,6 @@ package no.ssb.vtl.script.operations.join;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.base.Predicates;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
@@ -31,16 +29,9 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Order;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A key extractor used in join operations.
@@ -54,9 +45,8 @@ public class JoinKeyExtractor implements UnaryOperator<DataPoint> {
      * Create a new JoinKeyExtractor.
      *
      * @param childStructure original structure.
-     * @param order the order representing the component to extract.
-     * @param mapping the mapping used to translate order component to child components.
-     *
+     * @param order          the order representing the component to extract.
+     * @param mapping        the mapping used to translate order component to child components.
      */
     public JoinKeyExtractor(
             DataStructure childStructure,
