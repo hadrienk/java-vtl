@@ -319,15 +319,13 @@ public class VTLScriptEngineTest {
                 Lists.newArrayList(VTLObject.of("1"), VTLObject.of(1L), VTLObject.of(2D))
         );
 
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                "id", Role.IDENTIFIER, String.class,
-                "integerMeasure", Role.MEASURE, Long.class,
-                "float", Role.MEASURE, Long.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.getData()).then(invocation -> data.stream().map(DataPoint::create));
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("integerMeasure", Role.MEASURE, Long.class)
+                .addComponent("float", Role.MEASURE, Double.class)
+
+                .addPoints("1", 1L, 2D)
+                .build();
 
         // TODO: Add test that check that we can compare float and integer in VTL.
 
@@ -350,45 +348,19 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testJoinUnfold() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure ds = DataStructure.of(
-                "id1", Role.IDENTIFIER, String.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.MEASURE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(ds);
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", "1",
-                        "id2", "one",
-                        "m1", 101L,
-                        "m2", 1.1,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", "1",
-                        "id2", "two",
-                        "m1", 102L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", "2",
-                        "id2", "one",
-                        "m1", 201L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", "2",
-                        "id2", "two",
-                        "m1", 202L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                )
-        ).map(ds::wrap));
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
+
+                .addPoints("1", "one", 101L, 1.1, "attr1")
+                .addPoints("1", "two", 102L, 1.1, "attr2")
+                .addPoints("2", "one", 201L, 1.1, "attr2")
+                .addPoints("2", "two", 202L, 1.1, "attr2")
+
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
@@ -521,9 +493,13 @@ public class VTLScriptEngineTest {
                 "ds4valid   := check(dsBoolean3, valid, measures)"
         );
 
+        out.println("dsBoolean0");
         out.println(bindings.get("dsBoolean0"));
+        out.println("dsBoolean1");
         out.println(bindings.get("dsBoolean1"));
+        out.println("dsBoolean3");
         out.println(bindings.get("dsBoolean3"));
+        out.println("ds4invalid");
         out.println(bindings.get("ds4invalid"));
 
         assertThat(bindings).containsKey("ds4invalid");

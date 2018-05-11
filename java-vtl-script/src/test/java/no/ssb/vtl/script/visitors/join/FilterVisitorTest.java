@@ -26,6 +26,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLScriptEngine;
 import org.junit.Before;
@@ -53,50 +54,21 @@ public class FilterVisitorTest {
     
     @Before
     public void setUp() throws Exception {
-        ds1 = mock(Dataset.class);
-        DataStructure structure1 = DataStructure.of(
-                "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Long.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure1);
+        ds1 = StaticDataset.create()
+                .addComponent("id1", Component.Role.IDENTIFIER, String.class)
+                .addComponent("m1", Component.Role.MEASURE, Long.class)
+                .addPoints("1", 10L)
+                .addPoints("2", 100L)
+                .build();
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "1",
-                        "m1", 10L
-                )),
-                structure1.wrap(ImmutableMap.of(
-                        "id1", "2",
-                        "m1", 100L
-                ))
-        ));
-        
-        
-        ds2 = mock(Dataset.class);
-        DataStructure structure2 = DataStructure.of(
-                "id1", Component.Role.IDENTIFIER, String.class,
-                "m1", Component.Role.MEASURE, Long.class,
-                "m2", Component.Role.MEASURE, Long.class,
-                "a1", Component.Role.ATTRIBUTE, String.class
-        );
-        when(ds2.getDataStructure()).thenReturn(structure2);
-
-        when(ds2.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds2.getData()).then(invocation -> Stream.of(
-                structure2.wrap(ImmutableMap.of(
-                        "id1", "1",
-                        "m1", 10L,
-                        "m2", 10L,
-                        "a1", "test"
-                )),
-                structure2.wrap(ImmutableMap.of(
-                        "id1", "2",
-                        "m1", 100L,
-                        "m2", 10L,
-                        "a1", "2"
-                ))
-        ));
+        ds2 = StaticDataset.create()
+                .addComponent("id1", Component.Role.IDENTIFIER, String.class)
+                .addComponent("m1", Component.Role.MEASURE, Long.class)
+                .addComponent("m2", Component.Role.MEASURE, Long.class)
+                .addComponent("a1", Component.Role.ATTRIBUTE, String.class)
+                .addPoints("1", 10L,  10L, "test")
+                .addPoints("2", 100L,  10L, "2")
+                .build();
     }
     
     @Test
