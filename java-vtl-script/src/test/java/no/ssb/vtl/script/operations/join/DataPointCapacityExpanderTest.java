@@ -55,7 +55,7 @@ public class DataPointCapacityExpanderTest {
     }
 
     @Test
-    public void testCapacityIsUnder() {
+    public void testCapacityIsOver() {
         DataPointCapacityExpander expander = new DataPointCapacityExpander(datapoint.size() * 2);
 
         Integer sizeBefore = datapoint.size();
