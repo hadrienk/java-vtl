@@ -154,7 +154,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 try {
                     closer.close();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    // ignore (cannot happen).
                 }
             }));
 

@@ -55,9 +55,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static no.ssb.vtl.model.Order.Direction.ASC;
+import static com.google.common.base.Preconditions.*;
+import static no.ssb.vtl.model.Order.Direction.*;
 
 /**
  * Abstract join operation.
@@ -335,7 +334,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         Order.Builder orderBuilder = Order.create(getDataStructure());
         for (Component identifier : getCommonIdentifiers()) {
             // TODO: Direction.ANY
-            orderBuilder.put(identifier, Order.Direction.ASC);
+            orderBuilder.put(identifier, ASC);
         }
         return getData(orderBuilder.build()).orElseThrow(() -> new RuntimeException("could not sort data"));
     }
