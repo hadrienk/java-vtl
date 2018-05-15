@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.hierarchy;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -75,12 +75,13 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             "minus", Composition.COMPLEMENT
     );
 
-    private final ImmutableValueGraph<VTLObject, Composition> graph;
+    private final Dataset hierarchy;
+    private ImmutableValueGraph<VTLObject, Composition> graph;
 
     // The component
     private final Component component;
 
-    public HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> hierarchy, Component group) {
+    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component group) {
         super(dataset);
 
         this.component = checkNotNull(group, "component cannot be null");
@@ -99,7 +100,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         );
 
         List<Map.Entry<String, Component>> wrongComponents = Lists.newArrayList();
-        for (Map.Entry<String,Component> entry : dataset.getDataStructure().entrySet()) {
+        for (Map.Entry<String, Component> entry : dataset.getDataStructure().entrySet()) {
             Component component = entry.getValue();
             if (!component.isMeasure())
                 continue;
@@ -114,17 +115,25 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
                 wrongComponents.size() > 1 ? "were" : "is"
         );
 
-
         // TODO: Hierarchy should be typed.
-        checkNotNull(hierarchy);
-        checkArgument(hierarchy.isDirected());
-        checkArgument(!hierarchy.allowsSelfLoops());
-        this.graph = ImmutableValueGraph.copyOf(hierarchy);
+        this.hierarchy = checkNotNull(hierarchy);
     }
 
-    public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component component) {
-        // TODO: Should NOT happen in the constructor.
-        this(dataset, convertToHierarchy(hierarchy), component);
+    @VisibleForTesting
+    HierarchyOperation(Dataset dataset, ValueGraph<VTLObject, Composition> graph, Component component) {
+        this(dataset, dataset, component);
+        checkNotNull(graph);
+        checkArgument(graph.isDirected());
+        checkArgument(!graph.allowsSelfLoops());
+        this.graph = ImmutableValueGraph.copyOf(graph);
+    }
+
+    public ValueGraph<VTLObject, Composition> getHierarchy() {
+        if (this.graph == null) {
+            // TODO: Hierarchy should be typed.
+            this.graph = ImmutableValueGraph.copyOf(convertToHierarchy(this.hierarchy));
+        }
+        return this.graph;
     }
 
     /**
@@ -278,7 +287,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         final Order groupPredicate = computePredicate();
 
         // TODO: Save the graph in the correct order.
-        final LinkedList<VTLObject> sorted = sortTopologically(this.graph);
+        final LinkedList<VTLObject> sorted = sortTopologically(getHierarchy());
 
         final Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
 
@@ -344,7 +353,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             if (dataPoints.size() > 1) {
 
 
-
                 // Won't fail since we check size.
                 aggregate = DataPoint.create(dataPoints.get(0));
                 Map<Component, VTLObject> result = structure.asMap(aggregate);
@@ -373,7 +381,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             return aggregate;
         });
     }
-    
+
     private Map<Component, HierarchyAccumulator> createAccumulatorMap() {
         DataStructure structure = getDataStructure();
         ImmutableMap.Builder<Component, HierarchyAccumulator> builder = ImmutableMap.builder();
