@@ -77,6 +77,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
     private final Dataset hierarchy;
     private ImmutableValueGraph<VTLObject, Composition> graph;
+    private List<VTLObject> graphValues;
 
     // The component
     private final Component component;
@@ -128,12 +129,15 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         this.graph = ImmutableValueGraph.copyOf(graph);
     }
 
-    public ValueGraph<VTLObject, Composition> getHierarchy() {
+    private List<VTLObject> getGraphValues() {
         if (this.graph == null) {
             // TODO: Hierarchy should be typed.
             this.graph = ImmutableValueGraph.copyOf(convertToHierarchy(this.hierarchy));
         }
-        return this.graph;
+        if (this.graphValues == null) {
+            this.graphValues = sortTopologically(this.graph);
+        }
+        return this.graphValues;
     }
 
     /**
@@ -287,7 +291,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         final Order groupPredicate = computePredicate();
 
         // TODO: Save the graph in the correct order.
-        final LinkedList<VTLObject> sorted = sortTopologically(getHierarchy());
+        final List<VTLObject> sorted = getGraphValues();
 
         final Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
 
