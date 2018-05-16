@@ -77,9 +77,10 @@ public class InnerJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
 
     @Override
     public DataPoint apply(DataPoint left, DataPoint right) {
+        DataPoint result = (DataPoint) left.clone();
         for (Map.Entry<Integer, Integer> entry : indexMap.entries()) {
-            left.set(entry.getValue(), right.get(entry.getKey()));
+            result.set(entry.getValue(), right.get(entry.getKey()));
         }
-        return left;
+        return result;
     }
 }

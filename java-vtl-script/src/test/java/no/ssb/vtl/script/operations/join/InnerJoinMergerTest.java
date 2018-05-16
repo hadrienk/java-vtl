@@ -52,7 +52,6 @@ public class InnerJoinMergerTest extends RandomizedTest {
                 .put("E", Component.Role.IDENTIFIER, String.class)
                 .put("F", Component.Role.IDENTIFIER, String.class)
                 .build();
-
     }
 
     private DataStructure randomDataStructure(int size) {
@@ -67,6 +66,22 @@ public class InnerJoinMergerTest extends RandomizedTest {
             }
         }
         return builder.build();
+    }
+
+    @Test
+    public void testLeftRowIsCloned() {
+        int rightStructureSize = randomIntBetween(dataStructure.size() / 2, dataStructure.size());
+        int leftStructureSize = randomIntBetween(dataStructure.size() / 2, dataStructure.size());
+
+        DataStructure left = randomDataStructure(leftStructureSize);
+        DataStructure right = randomDataStructure(rightStructureSize);
+
+        InnerJoinMerger merger = new InnerJoinMerger(left, right);
+        DataPoint leftDataPoint = DataPoint.create(left.size());
+        DataPoint rightDataPoint = DataPoint.create(right.keySet().stream().map(s -> CharMatcher.digit().removeFrom(s)).toArray());
+
+        DataPoint result = merger.apply(leftDataPoint, rightDataPoint);
+        assertThat(result).isNotSameAs(leftDataPoint);
     }
 
     @Test
@@ -96,8 +111,7 @@ public class InnerJoinMergerTest extends RandomizedTest {
         DataPoint leftDataPoint = DataPoint.create(left.size());
 
         // Extracting the identifiers of the components from the values.
-        List<String> rightNames = right.keySet().stream().map(s -> CharMatcher.digit().removeFrom(s)).collect(toList());
-        DataPoint rightDataPoint = DataPoint.create(rightNames.toArray());
+        DataPoint rightDataPoint = DataPoint.create(right.keySet().stream().map(s -> CharMatcher.digit().removeFrom(s)).toArray());
 
         DataPoint result = merger.apply(leftDataPoint, rightDataPoint);
 
