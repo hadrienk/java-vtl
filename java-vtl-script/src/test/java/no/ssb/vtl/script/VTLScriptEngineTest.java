@@ -47,13 +47,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+import static no.ssb.vtl.model.Component.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class VTLScriptEngineTest {
 
@@ -151,7 +149,7 @@ public class VTLScriptEngineTest {
                 .addComponent("at1", Role.MEASURE, String.class)
 
                 .addPoints("1", "1", -50L, 1.5D, "attr1-1")
-                .addPoints( "2", "2", 100L, 0.123456789, "attr1-2")
+                .addPoints("2", "2", 100L, 0.123456789, "attr1-2")
                 .build();
 
         Dataset ds2 = StaticDataset.create()
@@ -161,7 +159,7 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at2", Role.MEASURE, String.class)
 
-                .addPoints( "1", "1", 30L, -1.0D, "attr2-1")
+                .addPoints("1", "1", 30L, -1.0D, "attr2-1")
                 .addPoints("2", "2", -40L, 0.987654321, "attr2-2")
                 .build();
 
@@ -191,7 +189,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "1", "attr1-1"+ "attr2-1", (-50L + 30), 0.5D,
+                        "1", "1", "attr1-1" + "attr2-1", (-50L + 30), 0.5D,
                         "2", "2", "attr1-2" + "attr2-2", 60L, 1.11111111D
                 );
     }
@@ -207,7 +205,7 @@ public class VTLScriptEngineTest {
                 .addComponent("at1", Role.MEASURE, String.class)
 
                 .addPoints("1", "1", 0L, 0.0, "attr1-1")
-                .addPoints( "1", "2", 10L, 200.0, "attr1-2")
+                .addPoints("1", "2", 10L, 200.0, "attr1-2")
 
                 .build();
 
@@ -218,7 +216,7 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at2", Role.MEASURE, String.class)
 
-                .addPoints( "1", "1", 30L, 40.0, "attr2-1")
+                .addPoints("1", "1", 30L, 40.0, "attr2-1")
                 .addPoints("1", "2", 0L, 0.0, "attr2-2")
 
                 .build();
@@ -425,8 +423,8 @@ public class VTLScriptEngineTest {
 
                 .addPoints("0101", "2015", "EKG14", 100L, "attr1")
                 .addPoints("0101", "2015", "EKG15", 110L, "attr4")
-                .addPoints( "0111", "2014", "EKG14", 101L, "attr2")
-                .addPoints( "9000", "2014", "EKG14", 102L, "attr3")
+                .addPoints("0111", "2014", "EKG14", 101L, "attr2")
+                .addPoints("9000", "2014", "EKG14", 102L, "attr3")
                 .build();
 
         Dataset dsCodeList2 = StaticDataset.create()
@@ -479,13 +477,13 @@ public class VTLScriptEngineTest {
                 "   ds2_CONDITION := name is not null," +
                 "   rename name to ds2_name," +
                 "   kommune_nr_RESULTAT := ds2_CONDITION" +
-                "}"+
+                "}" +
                 "ds3r := [ds3]{rename code to kostragruppe, period to periode}" +
                 "dsBoolean1 := [outer ds1, ds3r]{" +
                 "   ds3_CONDITION := name is not null," +
                 "   rename name to ds3_name," +
                 "   kostragruppe_RESULTAT := ds3_CONDITION" +
-                "}"+
+                "}" +
                 "dsBoolean3 := [dsBoolean0, dsBoolean1]{" +
                 "   filter true" +
                 "}" +
@@ -675,7 +673,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", ZonedDateTime.of(2017,1,1,0,0,0,0, ZoneId.systemDefault()).toInstant(),
+                        "1", ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).toInstant(),
                         "2", null
                 );
 
@@ -689,6 +687,57 @@ public class VTLScriptEngineTest {
     @Test(expected = ScriptException.class)
     public void testDateFromStringAsClauseInputNotStringType() throws Exception {
         engine.eval("test := date_from_string(123, \"YYYY\")");
+    }
+
+    @Test
+    public void testAggregationAvg() throws ScriptException {
+        StaticDataset ds = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("sign", Role.IDENTIFIER, String.class)
+                .addComponent("withnulls", Role.IDENTIFIER, Boolean.class)
+                .addComponent("integerMeasure", Role.MEASURE, Long.class)
+                .addComponent("floatMeasure", Role.MEASURE, Double.class)
+
+                .addPoints("id", "pos", false, 0L, 0D)
+                .addPoints("id", "pos", false, 1L, 1D)
+                .addPoints("id", "pos", false, 2L, 2D)
+                .addPoints("id", "pos", false, 4L, 4D)
+
+                .addPoints("id", "neg", false, -0L, -0D)
+                .addPoints("id", "neg", false, -1L, -1D)
+                .addPoints("id", "neg", false, -2L, -2D)
+                .addPoints("id", "neg", false, -4L, -4D)
+
+                .addPoints("id", "pos", true, null, null)
+                .addPoints("id", "pos", true, 1L, 1D)
+                .addPoints("id", "pos", true, 2L, 2D)
+                .addPoints("id", "pos", true, 4L, 4D)
+
+                .addPoints("id", "neg", true, null, null)
+                .addPoints("id", "neg", true, -1L, -1D)
+                .addPoints("id", "neg", true, -2L, -2D)
+                .addPoints("id", "neg", true, -4L, -4D)
+                .build();
+
+        bindings.put("ds", ds);
+        engine.eval("result := avg(ds) along id");
+
+        assertThat(bindings).containsKeys("result");
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getData()).containsExactlyInAnyOrder(
+                DataPoint.create("pos", false, 1.75D, 1.75D),
+                DataPoint.create("pos", true, 2.3333333333333335, 2.3333333333333335),
+                DataPoint.create("neg", false, -1.75D, -1.75D),
+                DataPoint.create("neg", true, -2.3333333333333335, -2.3333333333333335)
+        );
+
+        assertThat(result.getData(Order.create(result.getDataStructure()).put("withnulls", Order.Direction.ASC).build()).get()).containsExactlyInAnyOrder(
+                DataPoint.create("pos", false, 1.75D, 1.75D),
+                DataPoint.create("neg", false, -1.75D, -1.75D),
+                DataPoint.create("pos", true, 2.3333333333333335, 2.3333333333333335),
+                DataPoint.create("neg", true, -2.3333333333333335, -2.3333333333333335)
+        );
+
     }
 
     @Test
@@ -789,7 +838,7 @@ public class VTLScriptEngineTest {
 
         assertThat(result.getDataStructure().getTypes().values())
                 .containsOnly(Long.class);
-                
+
         assertThat(result.getData()).extracting(dataPoint -> Lists.transform(dataPoint, VTLObject::get))
                 .containsExactlyInAnyOrder(
                         Arrays.asList(1L, null, 2L, 3L),
@@ -952,18 +1001,18 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at1", Role.MEASURE, String.class)
 
-                .addPoints( "1", 10L, 20D, "attr1-1")
-                .addPoints( "2", 100L, 200D, "attr1-2")
+                .addPoints("1", 10L, 20D, "attr1-1")
+                .addPoints("2", 100L, 200D, "attr1-2")
                 .build();
 
         Dataset ds2 = StaticDataset.create()
-               .addComponent("id1", Role.IDENTIFIER, String.class)
-               .addComponent("m1", Role.MEASURE, Long.class)
-               .addComponent("m2", Role.MEASURE, Double.class)
-               .addComponent("at1", Role.MEASURE, String.class)
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
 
                 .addPoints("3", 30L, 40D, "attr2-1")
-                .addPoints( "4", 300L, 400D, "attr2-2")
+                .addPoints("4", 300L, 400D, "attr2-2")
                 .build();
 
 
