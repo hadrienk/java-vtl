@@ -1,15 +1,17 @@
-package no.ssb.vtl.model;
+package no.ssb.vtl.script.operations.join;
 
-/*
+/*-
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * Copyright (C) 2016 - 2018 Hadrien Kohl
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,29 +20,27 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-public abstract class VTLFloat extends VTLNumber<Double>  implements VTLTyped<VTLFloat> {
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.VTLObject;
 
-    public static final VTLFloat NULL = VTLFloat.of((Float) null);
+import java.util.function.Consumer;
 
-    private VTLFloat() {
+/**
+ * A consumer that expands the size of the {@link DataPoint} it receives.
+ */
+public class DataPointCapacityExpander implements Consumer<DataPoint> {
+
+    private final int newSize;
+
+    public DataPointCapacityExpander(int newCapacity) {
+        this.newSize = newCapacity;
     }
 
     @Override
-    public Class<VTLFloat> getVTLType() {
-        return VTLFloat.class;
+    public void accept(DataPoint dataPoint) {
+        dataPoint.ensureCapacity(newSize);
+        while (dataPoint.size() < newSize) {
+            dataPoint.add(VTLObject.NULL);
+        }
     }
-
-    public static VTLFloat of(Float value) {
-        return VTLFloat.of(value != null ? value.doubleValue() : null);
-    }
-
-    public static VTLFloat of(Double value) {
-        return new VTLFloat() {
-            @Override
-            public Double get() {
-                return value;
-            }
-        };
-    }
-
 }

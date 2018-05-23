@@ -93,7 +93,7 @@ public class RandomizedDataset extends ForwardingObject implements Dataset {
 
     @Override
     public Optional<Long> getSize() {
-        return Optional.empty();
+        return shuffledData != null ? Optional.of((long) shuffledData.size()) : delegate.getSize();
     }
 
     @Override

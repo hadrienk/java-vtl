@@ -21,6 +21,7 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.annotations.Beta;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -30,7 +31,6 @@ import com.google.common.primitives.Ints;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static no.ssb.vtl.model.Order.Direction.ASC;
@@ -41,6 +41,7 @@ import static no.ssb.vtl.model.Order.Direction.ASC;
 public final class Order extends ForwardingMap<Component, Order.Direction> implements Comparator<DataPoint> {
 
     public static final Comparator<Comparable> NULLS_FIRST = Comparator.<Comparable>nullsFirst(Comparator.naturalOrder());
+    public static final Comparator<VTLObject> VTL_OBJECT_COMPARATOR = Comparator.comparing(vtlObject -> (Comparable) vtlObject.get(), NULLS_FIRST);
 
     public static final Comparator<Entry<String, Component>> BY_ROLE = Comparator.comparing(
             entry -> entry.getValue().getRole(),
@@ -73,6 +74,17 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
         this.directions = directions.toArray(new Direction[]{});
 
 
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
+        if (structure != null && delegate != null) {
+            for (Entry<Component, Direction> entry : delegate.entrySet()) {
+                helper.add(structure.getName(entry.getKey()), entry.getValue());
+            }
+        }
+        return helper.toString();
     }
 
     /**
@@ -109,7 +121,7 @@ public final class Order extends ForwardingMap<Component, Order.Direction> imple
         int result;
 
         for (int i = 0; i < indices.length; i++) {
-            result = NULLS_FIRST.compare(o1.get(indices[i]), o2.get(indices[i]));
+            result = VTL_OBJECT_COMPARATOR.compare(o1.get(indices[i]), o2.get(indices[i]));
             if (result != 0) {
                 return directions[i] == ASC ? result : -result;
             }

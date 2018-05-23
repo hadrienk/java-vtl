@@ -4,14 +4,14 @@ package no.ssb.vtl.script.operations.join;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * Copyright (C) 2016 - 2018 Hadrien Kohl
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,46 +19,32 @@ package no.ssb.vtl.script.operations.join;
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-/*-
- * #%L
- * java-vtl-script
- * %%
- * Copyright (C) 2016 Hadrien Kohl
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.Order;
+import no.ssb.vtl.script.support.Closer;
 
+import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-/**
- * Represent an inner join on datasets.
- */
 public class InnerJoinOperation extends AbstractJoinOperation {
 
+
     public InnerJoinOperation(Map<String, Dataset> namedDatasets) {
-        super(namedDatasets, Collections.emptySet());
+        this(namedDatasets, Collections.emptySet());
     }
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
@@ -74,36 +60,138 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
-            final Dataset leftDataset, final Dataset rightDataset
-    ) {
+    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
+        return null;
+    }
 
-        final DataStructure rightStructure = rightDataset.getDataStructure();
-        final DataStructure structure = getDataStructure();
+    /**
+     * Convert the {@link Order} so it uses the given structure.
+     */
+    private Order adjustOrderForStructure(Order orders, DataStructure dataStructure) {
 
-        // Create final collection to improve performances.
-        final Table<Component, Dataset, Component> componentMap = getComponentMapping();
+        DataStructure structure = getDataStructure();
+        Order.Builder adjustedOrders = Order.create(dataStructure);
 
-        return (left, right) -> {
+        // Uses names since child structure can be different.
+        for (Component component : orders.keySet()) {
+            String name = structure.getName(component);
+            if (dataStructure.containsKey(name))
+                adjustedOrders.put(name, orders.get(component));
+        }
+        return adjustedOrders.build();
+    }
 
-            if (left == null || right == null)
-                return null;
+    /**
+     * TODO: Move to the {@link no.ssb.vtl.model.AbstractDatasetOperation}.
+     */
+    private Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Dataset.Filtering filtering, Set<String> components) {
+        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
+        if (sortedData.isPresent()) {
+            return sortedData.get();
+        } else {
+            return dataset.getData().sorted(order).filter(filtering);
+        }
+    }
 
-            /*
-             * Put the measures and attributes of the right data point
-             * in the left data point.
-             */
+    @Override
+    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Dataset.Filtering filtering, Set<String> components) {
 
-            Map<Component, VTLObject> leftMap = structure.asMap(left);
-            Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
-            for (Map.Entry<Component, Component> mapping : componentMap.column(rightDataset).entrySet()) {
-                Component from = mapping.getKey();
-                Component to = mapping.getValue();
-                leftMap.put(to, rightMap.get(from));
+        // Try to create a compatible order.
+        // If not, the caller will have to sort the result manually.
+        Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
+        if (!compatibleOrder.isPresent()) {
+            return Optional.empty();
+        }
+
+        Order requiredOrder = compatibleOrder.get();
+
+        // Compute the predicate
+        Order predicate = computePredicate(requiredOrder);
+
+        Iterator<Dataset> iterator = datasets.values().iterator();
+        Dataset left = iterator.next();
+        Dataset right = left;
+
+        // Close all children
+        Closer closer = Closer.create();
+        try {
+
+            Table<Component, Dataset, Component> componentMapping = getComponentMapping();
+            Stream<DataPoint> result = getOrSortData(
+                    left,
+                    adjustOrderForStructure(requiredOrder, left.getDataStructure()),
+                    filtering,
+                    components
+            ).peek(new DataPointCapacityExpander(getDataStructure().size()));
+            closer.register(result);
+
+            while (iterator.hasNext()) {
+                left = right;
+                right = iterator.next();
+
+                Stream<DataPoint> rightStream = getOrSortData(
+                        right,
+                        adjustOrderForStructure(requiredOrder, right.getDataStructure()),
+                        filtering,
+                        components
+                );
+                closer.register(rightStream);
+
+                result = StreamSupport.stream(
+                        new InnerJoinSpliterator<>(
+                                new JoinKeyExtractor(left.getDataStructure(), predicate, componentMapping.column(left)),
+                                new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
+                                predicate,
+                                new InnerJoinMerger(getDataStructure(), right.getDataStructure()),
+                                result.spliterator(),
+                                rightStream.spliterator()
+                        ), false
+                );
             }
 
-            return DataPoint.create(left);
-        };
+            // Close all the underlying streams.
+            return Optional.of(result.onClose(() -> {
+                try {
+                    closer.close();
+                } catch (IOException e) {
+                    // ignore (cannot happen).
+                }
+            }));
+
+        } catch (Exception ex) {
+            try {
+                closer.close();
+            } catch (IOException ioe) {
+                ex.addSuppressed(ioe);
+            }
+            throw ex;
+        }
+    }
+
+    /**
+     * Compute the predicate.
+     *
+     * @param requestedOrder the requested order.
+     * @return order of the common identifiers only.
+     */
+    private Order computePredicate(Order requestedOrder) {
+        DataStructure structure = getDataStructure();
+
+        // We need to create a fake structure to allow the returned
+        // Order to work with the result of the key extractors.
+
+        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
+        DataStructure.Builder fakeStructure = DataStructure.builder();
+        for (Component component : commonIdentifiers) {
+            fakeStructure.put(structure.getName(component), component);
+        }
+
+        Order.Builder predicateBuilder = Order.create(fakeStructure.build());
+        Sets.SetView<Component> filteredRequestedOrder = Sets.intersection(requestedOrder.keySet(), commonIdentifiers);
+        for (Component component : filteredRequestedOrder) {
+            predicateBuilder.put(component, requestedOrder.get(component));
+        }
+        return predicateBuilder.build();
     }
 
     @Override

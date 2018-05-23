@@ -20,11 +20,15 @@ package no.ssb.vtl.script.functions;
  * =========================LICENSE_END==================================
  */
 
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,6 +38,83 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
     @Before
     public void setUp() {
         vtlBinaryFunction = VTLRound.getInstance();
+    }
+
+    @Test
+    public void testInvokeWithNullNumber() {
+        List<VTLObject> tests = Lists.newArrayList(
+                VTLObject.NULL,
+                VTLObject.of((Double) null),
+                VTLObject.of((Float) null),
+                VTLFloat.of((Double) null),
+                VTLFloat.of((Float) null),
+                VTLInteger.of((Double) null),
+                VTLInteger.of((Float) null)
+        );
+
+        for (VTLObject test : tests) {
+            VTLNumber<?> result = vtlBinaryFunction.invoke(
+                    Lists.newArrayList(
+                            test,
+                            VTLInteger.of(0)
+                    )
+            );
+            assertThat(result).isNotNull();
+            assertThat(result).isInstanceOf(vtlBinaryFunction.getVTLType());
+            assertThat(result).isEqualTo(VTLFloat.of((Double) null));
+            assertThat(result).isSameAs(VTLFloat.NULL);
+        }
+    }
+
+    @Test
+    public void testWithNotANumber() {
+        List<VTLObject> tests = Lists.newArrayList(
+                VTLObject.of(Double.NaN),
+                VTLObject.of(Float.NaN),
+                VTLFloat.of(Float.NaN),
+                VTLFloat.of(Double.NaN),
+                VTLInteger.of(Float.NaN),
+                VTLInteger.of(Double.NaN)
+        );
+
+        for (VTLObject test : tests) {
+            VTLNumber<?> result = vtlBinaryFunction.invoke(
+                    Lists.newArrayList(
+                            test,
+                            VTLInteger.of(0)
+                    )
+            );
+            assertThat(result).isNotNull();
+            assertThat(result).isInstanceOf(vtlBinaryFunction.getVTLType());
+            assertThat(result).isEqualTo(VTLFloat.of(Double.NaN));
+        }
+    }
+
+    @Test
+    public void testWithInfinity() {
+        List<VTLObject> tests = Lists.newArrayList(
+                VTLObject.of(Double.NEGATIVE_INFINITY),
+                VTLObject.of(Float.NEGATIVE_INFINITY),
+                VTLFloat.of(Float.NEGATIVE_INFINITY),
+                VTLFloat.of(Double.NEGATIVE_INFINITY),
+
+                VTLObject.of(Double.POSITIVE_INFINITY),
+                VTLObject.of(Float.POSITIVE_INFINITY),
+                VTLFloat.of(Float.POSITIVE_INFINITY),
+                VTLFloat.of(Double.POSITIVE_INFINITY)
+        );
+
+        for (VTLObject test : tests) {
+            VTLNumber<?> result = vtlBinaryFunction.invoke(
+                    Lists.newArrayList(
+                            test,
+                            VTLInteger.of(0)
+                    )
+            );
+            assertThat(result).isNotNull();
+            assertThat(result).isInstanceOf(vtlBinaryFunction.getVTLType());
+            assertThat(result).isEqualTo(test);
+        }
     }
 
     @Test
@@ -91,11 +172,11 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
         assertThatThrownBy(() -> vtlBinaryFunction.invoke(
                 Lists.newArrayList(
                         VTLNumber.of(4),
-                        VTLNumber.of((Double) null)
+                        VTLNumber.of((Long) null)
                 )
         ))
                 .as("exception when passing null where not null is expected")
-                .hasMessage("Argument{name=decimals, type=VTLNumber} must be greater than zero, was [NULL]")
+                .hasMessage("Argument{name=decimals, type=VTLInteger} must be greater than zero, was [NULL]")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
@@ -108,7 +189,7 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
                 )
         ))
                 .as("exception when passing a negative number where a positive value is expected")
-                .hasMessage("Argument{name=decimals, type=VTLNumber} must be greater than zero, was -5")
+                .hasMessage("Argument{name=decimals, type=VTLInteger} must be greater than zero, was -5")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 }
