@@ -53,7 +53,7 @@ public class VTLRound extends AbstractVTLFunction<VTLFloat> {
         VTLNumber ds = arguments.getNullable(DS, VTLFloat.NULL);
         VTLInteger decimals = arguments.get(DECIMALS);
 
-        if (ds == VTLFloat.NULL || ds.get() == null) {
+        if (VTLFloat.NULL.equals(ds)) {
             return VTLFloat.NULL;
         }
 

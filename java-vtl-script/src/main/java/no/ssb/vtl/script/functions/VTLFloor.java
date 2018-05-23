@@ -43,7 +43,7 @@ public class VTLFloor extends AbstractVTLFunction<VTLInteger> {
     protected VTLInteger safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.getNullable(DS, VTLInteger.NULL);
 
-        if (ds == VTLInteger.NULL || ds.get() == null) {
+        if (VTLInteger.NULL.equals(ds)) {
             return VTLInteger.NULL;
         }
 
