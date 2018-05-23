@@ -9,9 +9,9 @@ package no.ssb.vtl.script.visitors;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,10 +26,14 @@ import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.parser.VTLParser.AggregateAvgContext;
+import no.ssb.vtl.parser.VTLParser.AggregateSumContext;
 import no.ssb.vtl.parser.VTLParser.AggregationParamsContext;
+import no.ssb.vtl.parser.VTLParser.VariableContext;
+import no.ssb.vtl.parser.VTLParser.VariableExpressionContext;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
-import no.ssb.vtl.script.functions.AggregationSumFunction;
 import no.ssb.vtl.script.functions.AggregationAvgFunction;
+import no.ssb.vtl.script.functions.AggregationSumFunction;
 import no.ssb.vtl.script.operations.AggregationOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import org.antlr.v4.runtime.Token;
@@ -45,12 +49,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static no.ssb.vtl.parser.VTLParser.ALONG;
-import static no.ssb.vtl.parser.VTLParser.AggregateSumContext;
-import static no.ssb.vtl.parser.VTLParser.AggregateAvgContext;
 import static no.ssb.vtl.parser.VTLParser.GROUP_BY;
-import static no.ssb.vtl.parser.VTLParser.VariableContext;
-import static no.ssb.vtl.parser.VTLParser.VariableExpressionContext;
-import static no.ssb.vtl.parser.VTLParser.AggregationFunctionContext;
 
 public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationOperation> {
 
@@ -131,42 +130,27 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
         }
     }
 
-        @Override
+    @Override
     public AggregationOperation visitAggregateSum(AggregateSumContext ctx) {
-        return getAggregationOperation(ctx, "sum");
+        return getAggregationOperation(
+                ctx.variableExpression(),
+                ctx.aggregationParams(),
+                new AggregationSumFunction()
+        );
     }
 
-        @Override
+    @Override
     public AggregationOperation visitAggregateAvg(AggregateAvgContext ctx) {
-        return getAggregationOperation(ctx, "avg");
+        return getAggregationOperation(
+                ctx.variableExpression(),
+                ctx.aggregationParams(),
+                new AggregationAvgFunction()
+        );
     }
 
 
+    private AggregationOperation getAggregationOperation(VariableExpressionContext variableExpressionContext, AggregationParamsContext paramContexts, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
 
-    private AggregationOperation getAggregationOperation(AggregationFunctionContext ctx, String type) {
-
-        VariableExpressionContext variableExpressionContext;
-        AggregationParamsContext paramContexts;
-        Function<List<VTLNumber>, VTLNumber> aggregationFunction;
-
-        switch (type) {
-            case "sum":
-            {
-                variableExpressionContext = ((AggregateSumContext) ctx).variableExpression();
-                paramContexts = ((AggregateSumContext)ctx).aggregationParams();
-                aggregationFunction = new AggregationSumFunction();
-                break;
-            }
-            case "avg":
-            {
-                variableExpressionContext = ((AggregateAvgContext) ctx).variableExpression();
-                paramContexts = ((AggregateAvgContext)ctx).aggregationParams();
-                aggregationFunction = new AggregationAvgFunction();
-                break;
-            }
-            default:
-                throw new RuntimeException("Invalid type");
-        }
         // Get the context that represents our dataset variable.
         VariableContext datasetContext = extractDatasetContext(variableExpressionContext);
 
