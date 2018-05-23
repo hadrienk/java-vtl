@@ -20,6 +20,8 @@ package no.ssb.vtl.model;
 
 public abstract class VTLFloat extends VTLNumber<Double>  implements VTLTyped<VTLFloat> {
 
+    public static final VTLFloat NULL = VTLFloat.of((Float) null);
+
     private VTLFloat() {
     }
 
