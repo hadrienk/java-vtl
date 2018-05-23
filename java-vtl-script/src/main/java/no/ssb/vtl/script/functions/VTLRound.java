@@ -21,6 +21,7 @@ package no.ssb.vtl.script.functions;
  */
 
 import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 
@@ -32,7 +33,7 @@ public class VTLRound extends AbstractVTLFunction<VTLFloat> {
 
     private static final String ARGUMENT_GREATER_THAT_ZERO = "%s must be greater than zero, was %s";
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
-    private static final Argument<VTLNumber> DECIMALS = new Argument<>("decimals", VTLNumber.class);
+    private static final Argument<VTLInteger> DECIMALS = new Argument<>("decimals", VTLInteger.class);
     private static VTLRound instance;
 
     private VTLRound() {
@@ -49,21 +50,27 @@ public class VTLRound extends AbstractVTLFunction<VTLFloat> {
     @Override
     protected VTLFloat safeInvoke(TypeSafeArguments arguments) {
 
-        VTLNumber ds = arguments.get(DS);
-        VTLNumber decimals = arguments.get(DECIMALS);
+        VTLNumber ds = arguments.getNullable(DS, VTLFloat.NULL);
+        VTLInteger decimals = arguments.get(DECIMALS);
 
-        if (ds.get() == null) {
-            return VTLObject.of((Float) null);
+        if (ds == VTLFloat.NULL || ds.get() == null) {
+            return VTLFloat.NULL;
         }
+
         if (decimals.get() == null || decimals.get().intValue() < 0) {
             throw new IllegalArgumentException(
                     format(ARGUMENT_GREATER_THAT_ZERO, DECIMALS, decimals)
             );
         }
 
-        BigDecimal bigDecimal = BigDecimal.valueOf(ds.get().doubleValue());
+        VTLFloat castValue = VTLFloat.of((Double) ds.get());
+        if (!Double.isFinite(castValue.get())) {
+            return castValue;
+        }
+
+        BigDecimal bigDecimal = BigDecimal.valueOf(castValue.get());
         BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_HALF_UP);
 
-        return VTLObject.of(rounded.doubleValue());
+        return VTLFloat.of(rounded.doubleValue());
     }
 }
