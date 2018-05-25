@@ -1,5 +1,15 @@
 # Changelog 
 
+## develop
+
+### Added
+
+* Support for average aggregation function `ds := avg(ds1) group by ds1.x`
+
+### Changed
+
+
+
 ## 0.1.9 - 2018-05-23
 
 ### Added
