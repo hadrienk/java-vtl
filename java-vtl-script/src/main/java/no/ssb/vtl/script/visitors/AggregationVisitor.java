@@ -25,7 +25,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.parser.VTLParser.AggregateAvgContext;
 import no.ssb.vtl.parser.VTLParser.AggregateSumContext;
 import no.ssb.vtl.parser.VTLParser.AggregationParamsContext;
@@ -35,6 +34,7 @@ import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.functions.AggregationAvgFunction;
 import no.ssb.vtl.script.functions.AggregationSumFunction;
 import no.ssb.vtl.script.operations.AggregationOperation;
+import no.ssb.vtl.script.operations.aggregation.AbstractAggregationFunction;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import org.antlr.v4.runtime.Token;
 
@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -99,7 +98,7 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
             Dataset dataset,
             List<Component> groupBy,
             List<Component> aggregationComponents,
-            Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
+            AbstractAggregationFunction aggregationFunction) {
         return new AggregationOperation(dataset, groupBy, aggregationComponents, aggregationFunction);
     }
 
@@ -149,7 +148,10 @@ public class AggregationVisitor extends VTLDatasetExpressionVisitor<AggregationO
     }
 
 
-    private AggregationOperation getAggregationOperation(VariableExpressionContext variableExpressionContext, AggregationParamsContext paramContexts, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
+    private AggregationOperation getAggregationOperation(
+            VariableExpressionContext variableExpressionContext,
+            AggregationParamsContext paramContexts,
+            AbstractAggregationFunction aggregationFunction) {
 
         // Get the context that represents our dataset variable.
         VariableContext datasetContext = extractDatasetContext(variableExpressionContext);

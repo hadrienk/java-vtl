@@ -24,14 +24,19 @@ package no.ssb.vtl.script.functions;
  *
  */
 
+import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.aggregation.AbstractAggregationFunction;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
-public class AggregationSumFunction implements Function<List<VTLNumber>, VTLNumber> {
+public class AggregationSumFunction extends AbstractAggregationFunction<VTLFloat> {
+
+    public AggregationSumFunction() {
+        super(VTLFloat.class);
+    }
 
     @Override
     public VTLNumber apply(List<VTLNumber> vtlNumbers) {
@@ -39,5 +44,11 @@ public class AggregationSumFunction implements Function<List<VTLNumber>, VTLNumb
                 .filter(Objects::nonNull)
                 .filter(n -> n.get() != null)
                 .reduce(VTLNumber::add).orElse(VTLObject.of((Double) null));
+    }
+
+
+    @Override
+    public Class<?> getVTLReturnTypeFor(Class<?> clazz) {
+        return clazz;
     }
 }

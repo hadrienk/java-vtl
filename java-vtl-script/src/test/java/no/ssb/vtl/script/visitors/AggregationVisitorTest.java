@@ -356,7 +356,7 @@ public class AggregationVisitorTest {
 
         assertThat(resultingDataStructure.getTypes()).contains(
                 entry("time", String.class),
-                entry("m1", Long.class)
+                entry("m1", Double.class)
         );
 
         assertThat(avgOperation.getData()).contains(
@@ -385,7 +385,7 @@ public class AggregationVisitorTest {
 
         assertThat(resultingDataStructure.getTypes()).contains(
                 entry("time", String.class),
-                entry("m1", Long.class)
+                entry("m1", Double.class)
         );
 
         assertThat(avgOperation.getData()).contains(
@@ -417,19 +417,19 @@ public class AggregationVisitorTest {
 
         assertThat(resultingDataStructure.getTypes()).contains(
                 entry("time", String.class),
-                entry("m1", Long.class)
+                entry("m1", Double.class)
         );
 
         assertThat(avgOperation.getData()).contains(
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "DK", "m1", 60D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "NO", "m1", 20D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2010", "geo", "SE", "m1", 40D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "DK", "m1", 51D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "NO", "m1", 11D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2011", "geo", "SE", "m1", 31D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "DK", "m1", 92D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "NO", "m1", 72D)),
-                resultingDataStructure.wrap(ImmutableMap.of("time", "2012", "geo", "SE", "m1", 41D))
+                DataPoint.create("2010", "DK", 60D),
+                DataPoint.create("2010", "NO", 20D),
+                DataPoint.create("2010", "SE", 40D),
+                DataPoint.create("2011", "DK", 51D),
+                DataPoint.create("2011", "NO", 11D),
+                DataPoint.create("2011", "SE", 31D),
+                DataPoint.create("2012", "DK", 92D),
+                DataPoint.create("2012", "NO", 72D),
+                DataPoint.create("2012", "SE", 41D)
         );
     }
 
