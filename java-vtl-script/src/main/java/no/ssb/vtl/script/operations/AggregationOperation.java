@@ -47,7 +47,11 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     private final List<Component> groupBy;
     private final List<Component> aggregationComponents;
     private final AbstractAggregationFunction<? extends VTLNumber> aggregationFunction;
-    private final List<String> columnNameToAggregate;
+
+    private final List<String> aggregateColumns;
+    private final ImmutableList<String> columns;
+    private final ImmutableList<String> childColumns;
+    private final ImmutableList<String> groupByColumns;
 
     public AggregationOperation(Dataset child, List<Component> groupBy, List<Component> aggregationComponents, AbstractAggregationFunction<? extends VTLNumber> aggregationFunction) {
         super(child);
@@ -55,15 +59,34 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         this.aggregationComponents = aggregationComponents;
         this.aggregationFunction = aggregationFunction;
 
-        ImmutableList.Builder<String> columnNamesBuilder = ImmutableList.builder();
+        this.groupByColumns = computeGroupByColumns();
+        this.aggregateColumns = computeColumnsToAggregate(aggregationComponents);
+        this.columns = ImmutableList.copyOf(getDataStructure().keySet());
+        this.childColumns = ImmutableList.copyOf(getChild().getDataStructure().keySet());
+    }
+
+    private ImmutableList<String> computeGroupByColumns() {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        DataStructure structure = getDataStructure();
+        for (String columnName : structure.keySet()) {
+            Component component = structure.get(columnName);
+            if (groupBy.contains(component)) {
+                builder.add(columnName);
+            }
+        }
+        return builder.build();
+    }
+
+    private ImmutableList<String> computeColumnsToAggregate(List<Component> aggregationComponents) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
         DataStructure childStructure = getChild().getDataStructure();
         for (String columnName : childStructure.keySet()) {
             Component component = childStructure.get(columnName);
             if (aggregationComponents.contains(component)) {
-                columnNamesBuilder.add(columnName);
+                builder.add(columnName);
             }
         }
-        this.columnNameToAggregate = columnNamesBuilder.build();
+        return builder.build();
     }
 
     @Override
@@ -89,19 +112,12 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         return newDataStructure.build();
     }
 
-    public DataPoint aggregate(List<DataPoint> datapoints) {
-        ImmutableList<String> columns = ImmutableList.copyOf(getDataStructure().keySet());
-        ImmutableList<String> childColumns = ImmutableList.copyOf(getChild().getDataStructure().keySet());
+    private DataPoint aggregate(List<DataPoint> datapoints) {
 
         DataPoint result = DataPoint.create(columns.size());
-        DataPoint firstRow = datapoints.get(0);
-        for (String columnName : columns) {
-            result.set(
-                    columns.indexOf(columnName), firstRow.get(childColumns.indexOf(columnName))
-            );
-        }
 
-        for (String columnName : columnNameToAggregate) {
+        // Aggregate and copy into the result.
+        for (String columnName : aggregateColumns) {
             List<VTLNumber> list = Lists.newArrayListWithExpectedSize(datapoints.size());
             int childIndex = childColumns.indexOf(columnName);
             int index = columns.indexOf(columnName);
@@ -119,6 +135,15 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
             }
             result.set(index, aggregationFunction.apply(list));
         }
+
+        // Copy the values of the group by columns.
+        DataPoint firstRow = datapoints.get(0);
+        for (String columnName : groupByColumns) {
+            result.set(
+                    columns.indexOf(columnName), firstRow.get(childColumns.indexOf(columnName))
+            );
+        }
+
         return result;
     }
 
