@@ -26,16 +26,21 @@ package no.ssb.vtl.script.functions;
 
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLNumber;
+import no.ssb.vtl.script.operations.aggregation.AbstractAggregationFunction;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalDouble;
-import java.util.function.Function;
 
-public class AggregationAvgFunction implements Function<List<VTLNumber>, VTLNumber> {
+public class AggregationAvgFunction extends AbstractAggregationFunction<VTLFloat> {
+
+    public AggregationAvgFunction() {
+        super(VTLFloat.class);
+    }
 
     @Override
     public VTLNumber apply(List<VTLNumber> vtlNumbers) {
+        // TODO: Support for all non finite values.
         OptionalDouble average = vtlNumbers
                 .stream()
                 .filter(Objects::nonNull)
@@ -48,6 +53,11 @@ public class AggregationAvgFunction implements Function<List<VTLNumber>, VTLNumb
         } else {
             return VTLFloat.of((Double) null);
         }
+    }
+
+    @Override
+    public Class<?> getVTLReturnTypeFor(Class<?> clazz) {
+        return Double.class;
     }
 }
 
