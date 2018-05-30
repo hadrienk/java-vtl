@@ -43,10 +43,10 @@ public class VTLFloor extends AbstractVTLFunction<VTLInteger> {
     protected VTLInteger safeInvoke(TypeSafeArguments arguments) {
         VTLNumber ds = arguments.getNullable(DS, VTLInteger.NULL);
 
-        if (VTLInteger.NULL.equals(ds)) {
+        if (VTLInteger.NULL.equals(ds) || !Double.isFinite(ds.get().doubleValue())) {
             return VTLInteger.NULL;
+        } else {
+            return VTLNumber.of((long) Math.floor(ds.get().doubleValue()));
         }
-
-        return VTLNumber.of((long) Math.floor(ds.get().doubleValue()));
     }
 }
