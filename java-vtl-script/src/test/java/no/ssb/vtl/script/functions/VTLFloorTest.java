@@ -28,7 +28,6 @@ import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +82,8 @@ public class VTLFloorTest extends AbstractVTLNumberUnaryFunctionTest {
             );
             assertThat(result).isNotNull();
             assertThat(result).isInstanceOf(vtlUnaryFunction.getVTLType());
-            assertThat(result).isEqualTo(VTLFloat.of(0));
+            assertThat(result).isEqualTo(VTLInteger.of((Double) null));
+            assertThat(result).isSameAs(VTLInteger.NULL);
         }
     }
 
@@ -104,7 +104,8 @@ public class VTLFloorTest extends AbstractVTLNumberUnaryFunctionTest {
             );
             assertThat(result).isNotNull();
             assertThat(result).isInstanceOf(vtlUnaryFunction.getVTLType());
-            assertThat(result).isEqualTo(VTLInteger.of(Long.MIN_VALUE));
+            assertThat(result).isEqualTo(VTLInteger.of((Double) null));
+            assertThat(result).isSameAs(VTLInteger.NULL);
         }
     }
 
@@ -125,7 +126,8 @@ public class VTLFloorTest extends AbstractVTLNumberUnaryFunctionTest {
             );
             assertThat(result).isNotNull();
             assertThat(result).isInstanceOf(vtlUnaryFunction.getVTLType());
-            assertThat(result).isEqualTo(VTLInteger.of(Long.MAX_VALUE));
+            assertThat(result).isEqualTo(VTLInteger.of((Double) null));
+            assertThat(result).isSameAs(VTLInteger.NULL);
         }
     }
 
