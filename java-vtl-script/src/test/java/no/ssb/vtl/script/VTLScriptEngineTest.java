@@ -31,6 +31,7 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.junit.Test;
 
 import javax.script.Bindings;
@@ -61,6 +62,11 @@ public class VTLScriptEngineTest {
     private Connector connector = mock(Connector.class);
     private ScriptEngine engine = new VTLScriptEngine(connector);
     private Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+
+    @Test
+    public void testVersion() {
+        assertThat(new ComparableVersion("0.1.9")).isLessThan(new ComparableVersion("0.1.9-1"));
+    }
 
     @Test
     public void testAssignment() throws Exception {
