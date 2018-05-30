@@ -8,7 +8,11 @@
 
 ### Changed
 
+## 0.1.9-1 - 2018-05-30
 
+### Changed
+
+* Floor function returns null when given a non finite value
 
 ## 0.1.9 - 2018-05-23
 
