@@ -1,5 +1,11 @@
 # Changelog 
 
+## 0.1.9-2 - 2018-06-01
+
+### Changed
+
+- Fix a bug when trying to round an integer
+
 ## 0.1.9-1 - 2018-05-30
 
 ### Changed
