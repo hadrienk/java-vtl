@@ -67,6 +67,27 @@ public class VTLRoundTest extends AbstractVTLNumberBinaryFunctionTest {
     }
 
     @Test
+    public void testInvokeWithIntegers() {
+        List<VTLInteger> tests = Lists.newArrayList(
+                VTLInteger.of(0),
+                VTLInteger.of(Long.MAX_VALUE),
+                VTLInteger.of(Long.MIN_VALUE)
+        );
+
+        for (VTLInteger test : tests) {
+            VTLNumber<?> result = vtlBinaryFunction.invoke(
+                    Lists.newArrayList(
+                            test,
+                            VTLInteger.of(0)
+                    )
+            );
+            assertThat(result).isNotNull();
+            assertThat(result).isInstanceOf(vtlBinaryFunction.getVTLType());
+            assertThat(result).isEqualTo(VTLFloat.of(test.get().doubleValue()));
+        }
+    }
+
+    @Test
     public void testWithNotANumber() {
         List<VTLObject> tests = Lists.newArrayList(
                 VTLObject.of(Double.NaN),

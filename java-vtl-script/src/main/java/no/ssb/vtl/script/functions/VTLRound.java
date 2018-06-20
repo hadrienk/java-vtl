@@ -23,7 +23,6 @@ package no.ssb.vtl.script.functions;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
-import no.ssb.vtl.model.VTLObject;
 
 import java.math.BigDecimal;
 
@@ -63,12 +62,12 @@ public class VTLRound extends AbstractVTLFunction<VTLFloat> {
             );
         }
 
-        VTLFloat castValue = VTLFloat.of((Double) ds.get());
-        if (!Double.isFinite(castValue.get())) {
-            return castValue;
+        double castValue = ds.get().doubleValue();
+        if (!Double.isFinite(castValue)) {
+            return VTLFloat.of(castValue);
         }
 
-        BigDecimal bigDecimal = BigDecimal.valueOf(castValue.get());
+        BigDecimal bigDecimal = BigDecimal.valueOf(castValue);
         BigDecimal rounded = bigDecimal.setScale(decimals.get().intValue(), BigDecimal.ROUND_HALF_UP);
 
         return VTLFloat.of(rounded.doubleValue());
