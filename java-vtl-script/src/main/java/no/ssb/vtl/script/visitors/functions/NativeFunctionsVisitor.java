@@ -30,7 +30,7 @@ import no.ssb.vtl.model.VTLTyped;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
-import no.ssb.vtl.script.functions.FunctionExpression;
+import no.ssb.vtl.script.expressions.FunctionExpression;
 import no.ssb.vtl.script.functions.VTLAbs;
 import no.ssb.vtl.script.functions.VTLCeil;
 import no.ssb.vtl.script.functions.VTLDateFromString;
@@ -54,10 +54,9 @@ import no.ssb.vtl.script.functions.string.VTLLower;
 import no.ssb.vtl.script.functions.string.VTLRightTrim;
 import no.ssb.vtl.script.functions.string.VTLTrim;
 import no.ssb.vtl.script.functions.string.VTLUpper;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.RuleNode;
 
 import javax.script.Bindings;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -122,17 +121,6 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     @Override
-    public VTLExpression visitChildren(RuleNode node) {
-        try {
-            return super.visitChildren(node);
-        } catch (Exception ex) {
-            RuleContext context = node.getRuleContext();
-            System.out.println(context.getText());
-            throw ex;
-        }
-    }
-
-    @Override
     public VTLExpression visitNvlFunction(VTLParser.NvlFunctionContext ctx) {
         VTLParser.ExpressionContext nullableCtx = ctx.expression(0);
         VTLParser.ExpressionContext replacementCtx = ctx.expression(1);
@@ -141,7 +129,6 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
 
         // If it is a null literal (type unknown) make it the type of replacement.
         VTLExpression finalNullable = coerceNullLiteralType(nullable, replacement);
-
         if (!finalNullable.getVTLType().equals(replacement.getVTLType())) {
             throw new ContextualRuntimeException(
                     format("%s and %s must be of the same type",
@@ -160,18 +147,27 @@ public class NativeFunctionsVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitNativeFunctionCall(VTLParser.NativeFunctionCallContext ctx) {
-        if (functions.containsKey(ctx.functionName.getText())) {
-            VTLFunction<VTLObject> functionInstance = functions.get(ctx.functionName.getText());
+        try {
+            if (functions.containsKey(ctx.functionName.getText())) {
+                VTLFunction<VTLObject> functionInstance = functions.get(ctx.functionName.getText());
 
-            // Evaluate parameter expressions.
-            VTLParser.FunctionParametersContext parameters = ctx.functionParameters();
-            List<VTLExpression> parametersExp = evaluateParameters(parameters.expression());
-            Map<String, VTLExpression> namedParametersExp = evaluateNamedParameters(parameters.namedExpression());
+                // Evaluate parameter expressions.
+                List<VTLExpression> parametersExp = Collections.emptyList();
+                Map<String, VTLExpression> namedParametersExp = Collections.emptyMap();
 
-            // Wrap function as an expression.
-            return new FunctionExpression<>(functionInstance, parametersExp, namedParametersExp);
-        } else {
-            throw new UnsupportedOperationException("NOT IMPLEMENTED");
+                VTLParser.FunctionParametersContext parameters = ctx.functionParameters();
+                if (parameters != null) {
+                    parametersExp = evaluateParameters(parameters.expression());
+                    namedParametersExp = evaluateNamedParameters(parameters.namedExpression());
+                }
+
+                // Wrap function as an expression.
+                return new FunctionExpression<>(functionInstance, parametersExp, namedParametersExp);
+            } else {
+                throw new ContextualRuntimeException("user defined function not implemented", ctx);
+            }
+        } catch (IllegalArgumentException iae) {
+            throw new ContextualRuntimeException(iae, ctx);
         }
     }
 

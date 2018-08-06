@@ -3,7 +3,7 @@
 [gitter-link]: https://gitter.im/java-vtl/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link
 
 [codacy-img]: https://img.shields.io/codacy/grade/e187c210f99b4c179550b9bcb1c92860/develop.svg
-[codacy-cov-img]: https://img.shields.io/codacy/coverage/e187c210f99b4c179550b9bcb1c92860/develop.svg
+[codacy-cov-img]: https://codecov.io/gh/statisticsnorway/java-vtl/branch/master/graph/badge.svg
 [travis-img]: https://img.shields.io/travis/statisticsnorway/java-vtl/develop.svg
 [gitter-img]: https://img.shields.io/gitter/room/java-vtl/Lobby.svg
 
@@ -41,7 +41,7 @@ Add a dependency to the maven project
 <dependency>
     <groupId>no.ssb.vtl</groupId>
     <artifactId>java-vtl-script</artifactId>
-    <version>[VERSION]</version>
+    <version>0.1.8</version>
 </dependency>
 ```
 
@@ -143,8 +143,8 @@ Group|Operators|Progress|Comment
 General purpose|round parenthesis|![done][done]
 General purpose|:= (assignment)|![done][done]
 General purpose|membership|![done][done]
-General purpose|get|![usable](http://progressed.io/bar/20)|The keep, filter and aggregate are not yet reflected in the connector interface.
-General purpose|put|![usable](http://progressed.io/bar/90)|The Connector interface is defined but expressions are not recognized yet.
+General purpose|get|![usable](http://progressed.io/bar/70)|The keep, filter and aggregate options are not implemented.
+General purpose|put|![usable](http://progressed.io/bar/20)|Defined in the grammar but not implemented
 Join expression|[]{}|![done][done]
 Join clause|filter|![done][done]
 Join clause|keep|![done][done]

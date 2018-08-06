@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.join;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,9 +55,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static no.ssb.vtl.model.Order.Direction.ASC;
+import static com.google.common.base.Preconditions.*;
+import static no.ssb.vtl.model.Order.Direction.*;
 
 /**
  * Abstract join operation.
@@ -72,7 +70,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private static final String ERROR_NO_COMMON_IDENTIFIERS = "could not find common identifiers in the datasets %s";
 
     private final Table<Component, Dataset, Component> componentMapping;
-    private final ImmutableMap<String, Dataset> datasets;
+    protected final ImmutableMap<String, Dataset> datasets;
     private final ImmutableSet<Component> commonIdentifiers;
 
     private final ComponentBindings joinScope;
@@ -138,7 +136,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     /**
      * Create a table that maps the components of the resulting dataset to the component of the underlying
      * datasets.
-     * <p>
+     *
      * <pre>
      * +------+-----------------+
      * |  re  |     Dataset     |
@@ -181,10 +179,18 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return table.build();
     }
 
+    @Deprecated
     private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
         return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
     }
 
+    /**
+     * This method is deprecated.
+     * <p>
+     * Merger are closely related to the type of join. OuterJoin will be
+     * refactored to stop using this method.
+     */
+    @Deprecated
     protected abstract BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             Dataset leftDataset, Dataset rightDataset
     );
@@ -192,7 +198,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     /**
      * Ensure sorted.
      */
-    private Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
+    protected Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
         // Adjust the order to the structure.
 
         Order.Builder adjustedOrder = Order.create(dataset.getDataStructure());
@@ -212,6 +218,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return dataset.getData(adjustedOrder.build()).orElseGet(() -> dataset.getData().sorted(adjustedOrder.build()));
     }
 
+    @Deprecated
     private Comparator<Map<Component, VTLObject>> createKeyComparator(
             Dataset rightDataset,
             Order order
@@ -321,27 +328,15 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     @Override
-    public Stream<DataPoint> getData() {
-        Order order = createDefaultOrder(getDataStructure(), getCommonIdentifiers());
-        return getData(order, null, null)
-                .orElseThrow(() -> new RuntimeException("could not sort data"));
-    }
-
-    @VisibleForTesting
-    Order createDefaultOrder(DataStructure structure, Set<Component> firstComponent) {
-        LinkedHashSet<Component> components = Sets.newLinkedHashSet(
-                structure.values()
-        );
-        components.removeAll(firstComponent);
-
-        Order.Builder order = Order.create(structure);
-        for (Component component : firstComponent) {
-            order.put(component, ASC);
+    public final Stream<DataPoint> getData() {
+        // Use the order that is best; using the
+        // identifiers we are joining on only.
+        Order.Builder orderBuilder = Order.create(getDataStructure());
+        for (Component identifier : getCommonIdentifiers()) {
+            // TODO: Direction.ANY
+            orderBuilder.put(identifier, ASC);
         }
-        for (Component component : components) {
-            order.put(component, ASC);
-        }
-        return order.build();
+        return getData(orderBuilder.build()).orElseThrow(() -> new RuntimeException("could not sort data"));
     }
 
     /**

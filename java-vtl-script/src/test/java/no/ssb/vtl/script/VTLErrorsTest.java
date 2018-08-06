@@ -42,6 +42,6 @@ public class VTLErrorsTest {
                 .isInstanceOf(VTLCompileException.class)
                 .hasMessageContaining("undefined variable bla")
                 .hasMessageContaining("missing ','")
-                .hasMessageContaining("missing arguments [decimals]");
+                .hasMessageContaining("missing argument(s): decimals");
     }
 }

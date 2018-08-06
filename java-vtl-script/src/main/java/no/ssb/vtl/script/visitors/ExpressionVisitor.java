@@ -23,8 +23,6 @@ package no.ssb.vtl.script.visitors;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
-import no.ssb.vtl.model.VTLFloat;
-import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLTyped;
@@ -33,26 +31,32 @@ import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.error.VTLRuntimeException;
-import no.ssb.vtl.script.functions.FunctionExpression;
+import no.ssb.vtl.script.expressions.FunctionExpression;
 import no.ssb.vtl.script.expressions.IfThenElseExpression;
-import no.ssb.vtl.script.functions.VTLAddition;
-import no.ssb.vtl.script.functions.VTLAnd;
+import no.ssb.vtl.script.expressions.LiteralExpression;
+import no.ssb.vtl.script.expressions.arithmetic.AdditionExpression;
+import no.ssb.vtl.script.expressions.arithmetic.DivisionExpression;
+import no.ssb.vtl.script.expressions.arithmetic.MultiplicationExpression;
+import no.ssb.vtl.script.expressions.arithmetic.SubtractionExpression;
+import no.ssb.vtl.script.expressions.equality.EqualExpression;
+import no.ssb.vtl.script.expressions.equality.GraterThanExpression;
+import no.ssb.vtl.script.expressions.equality.GreaterOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.LesserOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
+import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
+import no.ssb.vtl.script.expressions.logic.AndExpression;
+import no.ssb.vtl.script.expressions.logic.NotExpression;
+import no.ssb.vtl.script.expressions.logic.OrExpression;
+import no.ssb.vtl.script.expressions.logic.XorExpression;
 import no.ssb.vtl.script.functions.VTLConcatenation;
-import no.ssb.vtl.script.functions.VTLDivision;
-import no.ssb.vtl.script.functions.VTLMultiplication;
-import no.ssb.vtl.script.functions.VTLNot;
-import no.ssb.vtl.script.functions.VTLOr;
-import no.ssb.vtl.script.functions.VTLSubtraction;
-import no.ssb.vtl.script.functions.VTLXor;
 import no.ssb.vtl.script.visitors.functions.NativeFunctionsVisitor;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import javax.script.Bindings;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.*;
-import static java.lang.String.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 /**
  * TODO: extend abstract variable visitor.
@@ -76,29 +80,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     @Override
     public VTLExpression visitLiteral(VTLParser.LiteralContext ctx) {
         VTLObject literal = literalVisitor.visit(ctx);
-
-        // Literal are always resolved.
-        // TODO: Literal extends Expression2?
-        return new VTLExpression() {
-
-            @Override
-            public String toString() {
-                return literal.toString();
-            }
-
-            @Override
-            public Class<?> getVTLType() {
-                if (literal instanceof VTLTyped)
-                    return ((VTLTyped) literal).getVTLType();
-                return VTLObject.class;
-            }
-
-            @Override
-            public VTLObject resolve(Bindings dataPoint) {
-                return literal;
-            }
-        };
-
+        return new LiteralExpression(literal);
     }
 
     @Override
@@ -121,52 +103,35 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitUnaryExpr(VTLParser.UnaryExprContext ctx) {
-        VTLExpression operand = visit(ctx.expression());
+        VTLExpression operand = visitTypedExpression(ctx.expression(), VTLBoolean.class);
         switch (ctx.op.getType()) {
             case VTLParser.NOT:
-                return new FunctionExpression<>(VTLNot.getInstance(), operand);
+                return new NotExpression(operand);
             default:
-                throw new ParseCancellationException("unknown operator " + ctx.op.getText());
+                throw new ContextualRuntimeException("unknown operator " + ctx.op.getText(), ctx);
         }
+    }
+
+    private static boolean isNull(VTLTyped typed) {
+        return VTLObject.class.equals(typed.getVTLType());
     }
 
     @Override
     public VTLExpression visitArithmeticExpr(VTLParser.ArithmeticExprContext ctx) {
-        VTLExpression leftExpression = visit(ctx.left);
-        VTLExpression rightExpression = visit(ctx.right);
 
-        // Arithmetic expression types are function of the type of the operands.
+        // Check that the operands are of type number.
+        VTLExpression leftExpression = visitTypedExpression(ctx.left, VTLNumber.class);
+        VTLExpression rightExpression = visitTypedExpression(ctx.right, VTLNumber.class);
+
         switch (ctx.op.getType()) {
             case VTLParser.MUL:
-                return new FunctionExpression<VTLNumber>(VTLMultiplication.getInstance(), leftExpression, rightExpression) {
-                    @Override
-                    public Class getVTLType() {
-                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
-                            return VTLFloat.class;
-                        return VTLInteger.class;
-                    }
-                };
+                return new MultiplicationExpression(leftExpression, rightExpression);
             case VTLParser.DIV:
-                return new FunctionExpression<>(VTLDivision.getInstance(), leftExpression, rightExpression);
+                return new DivisionExpression(leftExpression, rightExpression);
             case VTLParser.PLUS:
-                return new FunctionExpression<VTLNumber>(VTLAddition.getInstance(), leftExpression, rightExpression) {
-                    @Override
-                    public Class getVTLType() {
-                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
-                            return VTLFloat.class;
-                        return VTLInteger.class;
-                    }
-                };
+                return new AdditionExpression(leftExpression, rightExpression);
             case VTLParser.MINUS:
-                return new FunctionExpression<VTLNumber>(VTLSubtraction.getInstance(), leftExpression, rightExpression) {
-                    @Override
-                    public Class getVTLType() {
-                        if (leftExpression.getVTLType() == VTLFloat.class || rightExpression.getVTLType() == VTLFloat.class)
-                            return VTLFloat.class;
-                        return VTLInteger.class;
-                    }
-                };
-
+                return new SubtractionExpression(leftExpression, rightExpression);
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }
@@ -174,35 +139,97 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitBinaryExpr(VTLParser.BinaryExprContext ctx) {
-        VTLExpression leftExpression = visit(ctx.left);
-        VTLExpression rightExpression = visit(ctx.right);
         switch (ctx.op.getType()) {
 
             case VTLParser.CONCAT:
+                VTLExpression leftExpression = visit(ctx.left);
+                VTLExpression rightExpression = visit(ctx.right);
                 return new FunctionExpression<>(VTLConcatenation.getInstance(), leftExpression, rightExpression);
 
             case VTLParser.EQ:
-                return getBooleanExpression((left, right) -> left.compareTo(right) == 0, leftExpression, rightExpression);
             case VTLParser.NE:
-                return getBooleanExpression((left, right) -> left.compareTo(right) != 0, leftExpression, rightExpression);
             case VTLParser.LE:
-                return getBooleanExpression((l, r) ->  l.compareTo(r) <= 0, leftExpression, rightExpression);
             case VTLParser.LT:
-                return getBooleanExpression((l, r) -> l.compareTo(r) < 0, leftExpression, rightExpression);
             case VTLParser.GE:
-                return getBooleanExpression((l, r) -> l.compareTo(r) >= 0, leftExpression, rightExpression);
             case VTLParser.GT:
-                return getBooleanExpression((l, r) -> l.compareTo(r) > 0, leftExpression, rightExpression);
+                return getEqualityExpression(ctx);
 
             case VTLParser.AND:
-                return new FunctionExpression<>(VTLAnd.getInstance(), leftExpression, rightExpression);
             case VTLParser.OR:
-                return  new FunctionExpression<>(VTLOr.getInstance(), leftExpression, rightExpression);
             case VTLParser.XOR:
-                return new FunctionExpression<>(VTLXor.getInstance(), leftExpression, rightExpression);
+                return getBooleanExpression(ctx);
+
             default:
                 throw new ParseCancellationException("unknown operator " + ctx.op.getText());
         }
+    }
+
+    private VTLExpression getEqualityExpression(VTLParser.BinaryExprContext ctx) {
+        VTLExpression leftExpression = visit(ctx.left);
+        VTLExpression rightExpression = visit(ctx.right);
+
+        VTLExpression result;
+        switch (ctx.op.getType()) {
+            case VTLParser.EQ:
+                result = new EqualExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.NE:
+                result = new NotEqualExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.LE:
+                result = new LesserOrEqualExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.LT:
+                result = new LesserThanExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.GE:
+                result = new GreaterOrEqualExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.GT:
+                result = new GraterThanExpression(leftExpression, rightExpression);
+                break;
+            default:
+                throw new ContextualRuntimeException("unknown equality operator " + ctx.op.getText(), ctx);
+        }
+        return result;
+    }
+
+    private VTLExpression getBooleanExpression(VTLParser.BinaryExprContext ctx) {
+
+        // Check that the operands are of type boolean.
+        VTLExpression leftExpression = visitTypedExpression(ctx.left, VTLBoolean.class);
+        VTLExpression rightExpression = visitTypedExpression(ctx.right, VTLBoolean.class);
+
+        VTLExpression result;
+        switch (ctx.op.getType()) {
+            case VTLParser.AND:
+                result = new AndExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.OR:
+                result = new OrExpression(leftExpression, rightExpression);
+                break;
+            case VTLParser.XOR:
+                result = new XorExpression(leftExpression, rightExpression);
+                break;
+            default:
+                throw new ContextualRuntimeException("unknown logic operator " + ctx.op.getText(), ctx);
+        }
+        return result;
+    }
+
+    private VTLExpression visitTypedExpression(VTLParser.ExpressionContext ctx, Class<? extends VTLObject> requiredType) {
+        VTLExpression expression = visit(ctx);
+        if (!isNull(expression) && !requiredType.isAssignableFrom(expression.getVTLType())) {
+            throw new ContextualRuntimeException(
+                    format(
+                            "invalid type %s, expected %s",
+                            expression.getVTLType().getSimpleName(),
+                            requiredType.getSimpleName()
+                    ),
+                    ctx
+            );
+        }
+        return expression;
     }
 
     private VTLExpression getIsNullExpression(Predicate<VTLObject> predicate, VTLExpression expression) {
@@ -217,23 +244,6 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
             public Class getVTLType() {
                 return VTLBoolean.class;
             }
-        };
-    }
-
-    private VTLExpression getBooleanExpression(BiPredicate<VTLObject, VTLObject> predicate, VTLExpression leftExpression, VTLExpression rightExpression) {
-        return new VTLExpression() {
-            @Override
-            public VTLObject resolve(Bindings bindings) {
-                VTLObject left = leftExpression.resolve(bindings);
-                VTLObject right = rightExpression.resolve(bindings);
-                return VTLBoolean.of(predicate.test(left, right));
-            }
-
-            @Override
-            public Class getVTLType() {
-                return VTLBoolean.class;
-            }
-
         };
     }
 
@@ -337,13 +347,21 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     public VTLExpression visitIfThenElseExpression(VTLParser.IfThenElseExpressionContext ctx) {
         IfThenElseExpression.Builder builder = new IfThenElseExpression.Builder(visit(ctx.ifBodyExpression()));
 
-        ctx.ifBody().forEach(ifBody -> {
-            VTLExpression condition = visit(ifBody.ifBodyExpression(0));
-            VTLExpression value = visit(ifBody.ifBodyExpression(1));
-            builder.addCondition(condition, value);
-        });
+        for (VTLParser.IfBodyContext bodyContext : ctx.ifBody()) {
+            try {
+                VTLExpression condition = visit(bodyContext.ifBodyExpression(0));
+                VTLExpression value = visit(bodyContext.ifBodyExpression(1));
+                builder.addCondition(condition, value);
+            } catch (IllegalArgumentException iae) {
+                throw new ContextualRuntimeException(iae, bodyContext);
+            }
+        }
 
-        return builder.build();
+        try {
+            return builder.build();
+        } catch (IllegalArgumentException iae) {
+            throw new ContextualRuntimeException(iae, ctx);
+        }
     }
 
     private static String unEscape(String identifier) {

@@ -22,9 +22,8 @@ package no.ssb.vtl.script.functions;
 
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
-import no.ssb.vtl.model.VTLObject;
 
-public class VTLFloor extends AbstractVTLFunction<VTLInteger>{
+public class VTLFloor extends AbstractVTLFunction<VTLInteger> {
 
     private static final Argument<VTLNumber> DS = new Argument<>("ds", VTLNumber.class);
     private static VTLFloor instance;
@@ -42,12 +41,12 @@ public class VTLFloor extends AbstractVTLFunction<VTLInteger>{
 
     @Override
     protected VTLInteger safeInvoke(TypeSafeArguments arguments) {
-        VTLNumber ds = arguments.get(DS);
+        VTLNumber ds = arguments.getNullable(DS, VTLInteger.NULL);
 
-        if (ds.get() == null) {
-            return VTLObject.of((Long) null);
+        if (VTLInteger.NULL.equals(ds) || !Double.isFinite(ds.get().doubleValue())) {
+            return VTLInteger.NULL;
+        } else {
+            return VTLNumber.of((long) Math.floor(ds.get().doubleValue()));
         }
-
-        return VTLNumber.of((long) Math.floor(ds.get().doubleValue()));
     }
 }

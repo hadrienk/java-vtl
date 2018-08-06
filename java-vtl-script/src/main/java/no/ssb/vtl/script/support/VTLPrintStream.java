@@ -9,9 +9,9 @@ package no.ssb.vtl.script.support;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,14 +21,16 @@ package no.ssb.vtl.script.support;
  */
 
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.VTLObject;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A {@link PrintStream} that can print vtl objects
@@ -60,15 +62,17 @@ public class VTLPrintStream extends PrintStream {
                         )
                         .collect(Collectors.toList())
         );
-        dataset.getData().forEach(tuple -> {
-            table.addRow(
-                    tuple.stream()
-                            .map(VTLObject::get)
-                            .map(o -> o == null ? "[NULL]" : o)
-                            .map(Object::toString)
-                            .collect(Collectors.toList())
-            );
-        });
+        try (Stream<DataPoint> data = dataset.getData()) {
+            data.forEach(tuple -> {
+                table.addRow(
+                        tuple.stream()
+                                .map(VTLObject::get)
+                                .map(o -> o == null ? "[NULL]" : o)
+                                .map(Object::toString)
+                                .collect(Collectors.toList())
+                );
+            });
+        }
         table.showTable(this);
     }
 

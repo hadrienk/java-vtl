@@ -83,7 +83,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
         // Try to get data sorted as required. If impossible, sort it.
         Stream<? extends DataPoint> stream = getChild()
                 .getData(requiredOrder)
-                .orElse(getChild().getData().sorted(requiredOrder));
+                .orElseGet(() -> getChild().getData().sorted(requiredOrder));
 
 
         return StreamUtils.aggregate(stream, (left, right) -> {
