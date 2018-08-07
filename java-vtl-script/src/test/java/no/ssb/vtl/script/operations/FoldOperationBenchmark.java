@@ -1,13 +1,27 @@
 package no.ssb.vtl.script.operations;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.Dataset;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
@@ -17,38 +31,70 @@ public class FoldOperationBenchmark {
 
     @State(Scope.Benchmark)
     public static class FoldState {
-        private StaticDataset dataset;
+
+        private Dataset dataset;
         private FoldOperation clause;
+        private Spliterator<DataPoint> spliterator;
 
-        @Setup
+        @Setup()
         public void setup() {
-            dataset = StaticDataset.create()
-                    .addComponent("id1", IDENTIFIER, String.class)
-                    .addComponent("id2", IDENTIFIER, String.class)
-                    .addComponent("measure1", MEASURE, String.class)
-                    .addComponent("measure2", MEASURE, String.class)
-                    .addComponent("attribute", ATTRIBUTE, String.class)
 
-                    .addPoints("id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1")
-                    .addPoints("id1-1", "id2-2", null, "measure2-2", "attribute1-2")
-                    .addPoints("id1-2", "id2-1", "measure1-3", null, "attribute1-3")
-                    .addPoints("id1-2", "id2-2", "measure1-4", "measure2-4", null)
-                    .addPoints("id1-3", "id2-1", null, null, null)
-
+            DataStructure structure = DataStructure.builder()
+                    .put("id1", IDENTIFIER, String.class)
+                    .put("id2", IDENTIFIER, String.class)
+                    .put("measure1", MEASURE, String.class)
+                    .put("measure2", MEASURE, String.class)
+                    .put("attribute", ATTRIBUTE, String.class)
                     .build();
 
-            DataStructure structure = dataset.getDataStructure();
+            Iterator<DataPoint> source = Iterators.cycle(
+                    Arrays.asList(DataPoint.create("id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
+                    DataPoint.create("id1-1", "id2-2", null, "measure2-2", "attribute1-2"),
+                    DataPoint.create("id1-2", "id2-1", "measure1-3", null, "attribute1-3"),
+                    DataPoint.create("id1-2", "id2-2", "measure1-4", "measure2-4", null),
+                    DataPoint.create("id1-3", "id2-1", null, null, null))
+            );
+
+            dataset = new Dataset() {
+
+                @Override
+                public Stream<DataPoint> getData() {
+                    return Stream.generate(source::next);
+                }
+
+                @Override
+                public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public Optional<Long> getSize() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public DataStructure getDataStructure() {
+                    return structure;
+                }
+            };
+
             clause = new FoldOperation(
                     dataset,
                     "newId",
                     "newMeasure",
                     ImmutableSet.of(structure.get("measure1"), structure.get("measure2"))
             );
+
+            spliterator = clause.getData().spliterator();
         }
     }
 
     @Benchmark
+    @Fork(value = 4, warmups = 1)
+    @Warmup(iterations = 5)
+    @BenchmarkMode(Mode.Throughput)
+    @Measurement(iterations = 10)
     public void foldBenchmark(FoldState state, Blackhole blackhole) {
-        state.clause.getData().forEach(blackhole::consume);
+        state.spliterator.tryAdvance(blackhole::consume);
     }
 }
