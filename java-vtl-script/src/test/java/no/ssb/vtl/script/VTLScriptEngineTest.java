@@ -22,6 +22,7 @@ package no.ssb.vtl.script;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -30,7 +31,9 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.script.support.VTLPrintStream;
+import org.antlr.v4.runtime.Vocabulary;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.junit.Test;
 
@@ -42,17 +45,23 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.*;
-import static org.assertj.core.api.Assertions.*;
+import static no.ssb.vtl.model.Component.Role;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VTLScriptEngineTest {
 
@@ -61,6 +70,66 @@ public class VTLScriptEngineTest {
     private ScriptEngine engine = new VTLScriptEngine(connector);
     private Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
+    @Test
+    public void testKeywords() {
+        Map<String, Set<String>> keywords = ((VTLScriptEngine) engine).getVTLKeywords();
+        Set<String> keywordsList = keywords.values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        Set<String> keywordsFromLexer = IntStream.range(0, VTLLexer.VOCABULARY.getMaxTokenType())
+                .mapToObj(VTLLexer.VOCABULARY::getLiteralName)
+                .filter(Objects::nonNull)
+                .map(s -> s.replaceAll("'", ""))
+                .collect(Collectors.toSet());
+
+        Sets.SetView<String> symmetricDifference = Sets.symmetricDifference(keywordsList, keywordsFromLexer);
+
+        System.out.println("Missing in keywords: " + Sets.difference(keywordsFromLexer, keywordsList));
+        System.out.println("Missing in lexer: " + Sets.difference(keywordsList, keywordsFromLexer));
+
+        // Will fail if a new keyword is added in the grammar or list of keywords without updating
+        // the test.
+        assertThat(symmetricDifference).containsExactly(
+                "time_aggregate", "exists_in_all", "match_characters", 
+                "timeshift", "join", "flow_to_stock", "identifier", 
+                "string_from_date", "subscript", "transcode", 
+                "setdiff", "current_date", "measure", 
+                "extract", "eval", "concatenation", 
+                "unique", "true", "exists_in", 
+                "func_dep", "symdiff", "attribute",
+                "fill_time_series", "intersect", "not_exists_in_all",
+                "false", "any", 
+                "lenght", "stock_to_flow", "not_exists_in",
+                "aggregatefunctions", "alterdataset", "||",
+                "<=", "<>", "measures",
+                "trim", "else", "elseif",
+                "if", "is null", "(",
+                ")", "*", "then",
+                "+", ",", "-",
+                ".", "/", "condition",
+                "not_valid", ":", "<",
+                "is not null", "=",
+                ">", ">=", "implicit",
+                ":=", "role", "errorlevel",
+                "valid", "not", "avg",
+                "xor", "[", "]",
+                "errorcode", "prod", "length",
+                "{", "}"
+        );
+
+        Vocabulary vocabulary = VTLLexer.VOCABULARY;
+        for (int i = 0; i < vocabulary.getMaxTokenType(); i++) {
+            System.out.printf(
+                    "[%s] litName: %s, symName: %s, dispName:%s\n",
+                    i,
+                    vocabulary.getLiteralName(i),
+                    vocabulary.getSymbolicName(i),
+                    vocabulary.getDisplayName(i)
+            );
+        }
+    }
     @Test
     public void testVersion() {
         assertThat(new ComparableVersion("0.1.9")).isLessThan(new ComparableVersion("0.1.9-1"));
@@ -618,7 +687,7 @@ public class VTLScriptEngineTest {
                 entry("m22", String.class)
         );
 
-        assertThat(ds2.getData())
+        assertThat(ds2.getData(Order.createDefault(ds2.getDataStructure())).get())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
