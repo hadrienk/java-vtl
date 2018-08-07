@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -75,45 +74,31 @@ public class FoldOperationTest extends RandomizedTest {
                 "element2", MEASURE, String.class
         );
 
-        Set<Component> validElements = Sets.newHashSet(structure.values());
+        Set<String> validElements = Sets.newHashSet(structure.keySet());
         Dataset dataset = mock(Dataset.class);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
             softly.assertThatThrownBy(() -> new FoldOperation(null, validDimensionReference, validMeasureReference, validElements))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("dataset")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, null, validMeasureReference, validElements))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("dimensionReference")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, null, validElements))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("measureReference")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("elements")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, "", validMeasureReference, validElements))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("dimensionReference")
-                    .hasMessageContaining("empty");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, "", validElements))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("measureReference")
-                    .hasMessageContaining("empty");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, Collections.emptySet()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("elements")
-                    .hasMessageContaining("empty");
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -137,23 +122,22 @@ public class FoldOperationTest extends RandomizedTest {
                 "m3", MEASURE, Instant.class
         );
 
-        Set<Component> validElements = Sets.newHashSet(
-                structure.get("m1"),
-                structure.get("m2"),
-                structure.get("m3")
+        Set<String> validElements = Sets.newHashSet(
+                "m1",
+                "m2",
+                "m3"
         );
 
-        Set<Component> invalidElements = Sets.newHashSet(
-                structure.get("m1"),
-                structure.get("m2"),
-                structure.get("m3"),
-                wrongTypesDataset.get("m1")
+        Set<String> invalidElements = Sets.newHashSet(
+                "m1",
+                "m2",
+                "m3",
+                "m4"
         );
 
-        Set<Component> wrongTypesElements = Sets.newHashSet(
-                wrongTypesDataset.values()
+        Set<String> wrongTypesElements = Sets.newHashSet(
+                wrongTypesDataset.keySet()
         );
-
 
         when(dataset.getDataStructure()).thenReturn(structure);
         when(invalidDataset.getDataStructure()).thenReturn(wrongTypesDataset);
@@ -164,7 +148,7 @@ public class FoldOperationTest extends RandomizedTest {
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("m1")
+                    .hasMessageContaining("m4")
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
@@ -180,7 +164,7 @@ public class FoldOperationTest extends RandomizedTest {
     }
 
     @Test
-    @Repeat(iterations = 1)
+    @Repeat(iterations = 10)
     public void testFold() {
 
         DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
@@ -201,13 +185,11 @@ public class FoldOperationTest extends RandomizedTest {
 
         // Collections.shuffle(data, new Random(randomLong()));
 
-        DataStructure structure = dataset.getDataStructure();
-
         // Randomly shuffle the measures
-        ArrayList<Component> elements = Lists.newArrayList(
-                structure.get("measure2"),
-                structure.get("measure1"),
-                structure.get("measure3")
+        ArrayList<String> elements = Lists.newArrayList(
+                "measure2",
+                "measure1",
+                "measure3"
         );
         Collections.shuffle(elements, new Random(randomLong()));
 

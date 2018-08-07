@@ -82,7 +82,7 @@ public class FoldOperationBenchmark {
                     dataset,
                     "newId",
                     "newMeasure",
-                    ImmutableSet.of(structure.get("measure1"), structure.get("measure2"))
+                    ImmutableSet.of("measure1", "measure2")
             );
 
             spliterator = clause.getData().spliterator();
