@@ -5,6 +5,7 @@
 ### Added
 
 * Support for average aggregation function `ds := avg(ds1) group by ds1.x`
+* Expose keyword list in `VTLScriptEngine`
 
 ### Changed
 
