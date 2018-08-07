@@ -33,7 +33,9 @@ public class DataPoint extends ArrayList<VTLObject> {
         super(initialCapacity);
     }
 
-    protected DataPoint() {}
+    protected DataPoint() {
+        super();
+    }
 
     protected DataPoint(Collection<? extends VTLObject> c) {
         super(c);
