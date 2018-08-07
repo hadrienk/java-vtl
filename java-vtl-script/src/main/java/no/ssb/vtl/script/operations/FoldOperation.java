@@ -22,28 +22,25 @@ package no.ssb.vtl.script.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.Ints;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLObject;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-import static no.ssb.vtl.model.Component.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.Component.Role;
 
 /**
  * Fold clause.
@@ -239,52 +236,5 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
         helper.add("identifier", dimension);
         helper.add("measure", measure);
         return helper.omitNullValues().toString();
-    }
-
-    /**
-     * Copies the values from a data point to a new structure.
-     */
-    private final class DataPointMapper implements UnaryOperator<DataPoint> {
-
-        private final int[] fromIndices;
-        private final int[] toIndices;
-        private final int size;
-
-        DataPointMapper(DataStructure from, DataStructure to) {
-            this(ImmutableSet.copyOf(from.keySet()), ImmutableSet.copyOf(to.keySet()));
-        }
-
-        DataPointMapper(
-                ImmutableSet<String> from,
-                ImmutableSet<String> to
-        ) {
-
-            ImmutableList<String> fromList = from.asList();
-            ImmutableList<String> toList = to.asList();
-
-            ArrayList<Integer> fromIndices = Lists.newArrayList();
-            ArrayList<Integer> toIndices = Lists.newArrayList();
-
-            for (String columnName : Sets.intersection(from, to)) {
-                int fromIndex = fromList.indexOf(columnName);
-                int toIndex = toList.indexOf(columnName);
-                fromIndices.add(fromIndex);
-                toIndices.add(toIndex);
-            }
-
-            this.fromIndices = Ints.toArray(fromIndices);
-            this.toIndices = Ints.toArray(toIndices);
-            this.size = to.size();
-        }
-
-
-        @Override
-        public DataPoint apply(DataPoint dataPoint) {
-            DataPoint result = DataPoint.create(size);
-            for (int i = 0; i < fromIndices.length; i++) {
-                result.set(toIndices[i], dataPoint.get(fromIndices[i]));
-            }
-            return result;
-        }
     }
 }
