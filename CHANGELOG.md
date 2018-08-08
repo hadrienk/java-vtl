@@ -5,6 +5,8 @@
 ### Added
 
 * Support for average aggregation function `ds := avg(ds1) group by ds1.x`
+* Attribute components are now kept when using `fold`
+* Fold optimization
 * Expose keyword list in `VTLScriptEngine`
 
 ### Changed

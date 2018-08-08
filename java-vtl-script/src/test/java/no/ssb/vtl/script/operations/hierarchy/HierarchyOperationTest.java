@@ -42,7 +42,6 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -267,13 +266,13 @@ public class HierarchyOperationTest extends RandomizedTest {
             }
         }
         //Add point with null value in MC
-        data.add(new DataPoint(
+        data.add(DataPoint.create(
                 Year.of(2006).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
                 "Luxembourg", VTLObject.of((Object)null), VTLObject.of((Object)null)));
-        data.add(new DataPoint(
+        data.add(DataPoint.create(
                 Year.of(2006).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
                 "Holland", VTLObject.of(2006), VTLObject.of(-2006)));
-        data.add(new DataPoint(
+        data.add(DataPoint.create(
                 Year.of(2007).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
                 "Luxembourg", VTLObject.of((Object)null), VTLObject.of((Object)null)));
 

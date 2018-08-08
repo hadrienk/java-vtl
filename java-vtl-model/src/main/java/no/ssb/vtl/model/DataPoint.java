@@ -24,47 +24,37 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataPoint extends ArrayList<VTLObject> {
-
-    ArrayList<VTLObject> delegate;
 
     protected DataPoint(int initialCapacity) {
         super(initialCapacity);
     }
 
     protected DataPoint() {
+        super();
     }
 
     protected DataPoint(Collection<? extends VTLObject> c) {
         super(c);
     }
 
-    public DataPoint(VTLObject... values) {
-        super(Arrays.asList(values));
-    }
-
-    public DataPoint(Object... values) {
-        super(Stream.of(values).map(VTLObject::of).collect(Collectors.toList()));
-    }
-
     public static DataPoint create(int initialCapacity) {
         return new DataPoint(Collections.nCopies(initialCapacity, VTLObject.NULL));
     }
 
-    public static DataPoint create(List<? extends VTLObject> components) {
+    public static DataPoint create(Collection<? extends VTLObject> components) {
         return new DataPoint(components);
     }
 
     public static DataPoint create(VTLObject... values) {
-        return new DataPoint(values);
+        return new DataPoint(Arrays.asList(values));
     }
 
     public static DataPoint create(Object... values) {
-        return new DataPoint(values);
+        return new DataPoint(Stream.of(values).map(VTLObject::of).collect(Collectors.toList()));
     }
 
     @Override
