@@ -164,16 +164,21 @@ public class VTLScriptEngine extends AbstractScriptEngine {
      */
     public Map<String, Set<String>> getVTLKeywords() {
 
+        // TODO can we generate these lists automatically from the grammar file?
         Map<String, Set<String>> allKeywords = new HashMap<>();
-        allKeywords.put("implementedVtlKeywords", new HashSet<>(Arrays.asList("get", "put", "and", "or", "join", "inner", "outer", "cross", "on", "rename",
+        allKeywords.put("implementedVtlKeywords", new HashSet<>(Arrays.asList("get", "put", "and", "or", "join",
+                "xor", "not", "is null", "is not null",
+                "inner", "outer", "cross", "on", "rename",
                 "fold", "unfold", "keep", "drop", "filter", "to", "union", "nvl", "as", "isnull", "check",
-                "hierarchy", "abs", "ceil", "date_from_string", "exp", "float_from_string", "floor", "integer_from_string",
-                "ln", "log", "mod", "nroot", "power", "round", "sqrt", "string_from_number", "substr", "trunc",
-                "ltrim", "lower", "rtrim", "upper",
-                "sum", "along", "group by")));
-        allKeywords.put("builtinFunctions", new HashSet<>(Collections.singletonList("date_from_string")));
+                "hierarchy", "abs", "ceil", "date_from_string", "exp", "floor", "ln", "log", "mod", "nroot",
+                "power", "round", "sqrt", "string_from_number", "substr", "trunc",
+                "trim", "ltrim", "lower", "rtrim", "upper",
+                "sum", "avg", "along", "group by", "if", "then", "else", "elseif")));
+        allKeywords.put("builtinFunctions", new HashSet<>(Arrays.asList("integer_from_string",
+                "float_from_string", "string_from_number")));
         allKeywords.put("dataTypes", new HashSet<>(Arrays.asList("identifier", "measure", "attribute")));
-        allKeywords.put("notImplementedKeywordsAndFunctions", new HashSet<>(Arrays.asList("exists_in", "not_exists_in", "exists_in_all", "not_exists_in_all",
+        allKeywords.put("notImplementedKeywordsAndFunctions", new HashSet<>(Arrays.asList("exists_in", "not_exists_in",
+                "exists_in_all", "not_exists_in_all",
                 "match_characters", "all", "any", "unique", "func_dep", "extract", "string_from_date", "current_date",
                 "listsum", "alterdataset", "eval", "lenght", "concatenation", "instr", "replace", "intersect",
                 "symdiff", "setdiff", "subscript", "transcode", "aggregate", "aggregatefunctions", "time_aggregate",
