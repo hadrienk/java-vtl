@@ -4,6 +4,12 @@
 
 ### Added
 
+### Changed
+
+## 0.1.10 - 2018-08-31
+
+### Added
+
 * Support for average aggregation function `ds := avg(ds1) group by ds1.x`
 * Attribute components are now kept when using `fold`
 * Fold optimization
