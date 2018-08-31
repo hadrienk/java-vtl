@@ -6,6 +6,12 @@
 
 ### Changed
 
+## 0.1.10-1 - 2018-08-31
+
+### Added 
+
+* Fix missing jmh dependencies
+
 ## 0.1.10 - 2018-08-31
 
 ### Added
