@@ -25,14 +25,17 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableList;
-import no.ssb.vtl.model.*;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.script.functions.AggregationSumFunction;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.*;
+import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AggregationOperationTest {
@@ -70,13 +73,12 @@ public class AggregationOperationTest {
     @Test
     public void testClosesStreams() {
 
-
         DataStructure structure = this.dataset.getDataStructure();
         AggregationOperation aggregationOperation = new AggregationOperation(
                 this.dataset,
                 ImmutableList.of(structure.get("id1")),
                 ImmutableList.of(structure.get("m1")),
-                vtlNumbers -> vtlNumbers.stream().reduce(VTLNumber.of(0L), VTLNumber::add)
+                new AggregationSumFunction()
         );
 
         try (Stream<DataPoint> data = aggregationOperation.getData()) {

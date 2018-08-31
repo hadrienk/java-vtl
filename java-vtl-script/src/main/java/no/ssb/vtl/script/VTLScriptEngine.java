@@ -47,6 +47,12 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 
@@ -145,6 +151,41 @@ public class VTLScriptEngine extends AbstractScriptEngine {
         } catch (IOException | RuntimeException unknownException) {
             throw new ScriptException(unknownException);
         }
+    }
+
+    /**
+     * Returns a collection of all keywords/reserved words in VTL, divided into the following categories:
+     * - implementedVtlKeywords - implemented functions from the specifications
+     * - builtinFunctions - implemented custom functions
+     * - dataTypes - the data types used in VTL
+     * - notImplementedKeywordsAndFunctions - functions from the specifications that are not yet implemented
+     * - builtInConstants - VTL constants
+     * @return Collection of VTL keywords/reserved words
+     */
+    public Map<String, Set<String>> getVTLKeywords() {
+
+        // TODO can we generate these lists automatically from the grammar file?
+        Map<String, Set<String>> allKeywords = new HashMap<>();
+        allKeywords.put("implementedVtlKeywords", new HashSet<>(Arrays.asList("get", "put", "and", "or", "join",
+                "xor", "not", "is null", "is not null",
+                "inner", "outer", "cross", "on", "rename",
+                "fold", "unfold", "keep", "drop", "filter", "to", "union", "nvl", "as", "isnull", "check",
+                "hierarchy", "abs", "ceil", "date_from_string", "exp", "floor", "ln", "log", "mod", "nroot",
+                "power", "round", "sqrt", "string_from_number", "substr", "trunc",
+                "trim", "ltrim", "lower", "rtrim", "upper",
+                "sum", "avg", "along", "group by", "if", "then", "else", "elseif")));
+        allKeywords.put("builtinFunctions", new HashSet<>(Arrays.asList("integer_from_string",
+                "float_from_string", "string_from_number")));
+        allKeywords.put("dataTypes", new HashSet<>(Arrays.asList("identifier", "measure", "attribute")));
+        allKeywords.put("notImplementedKeywordsAndFunctions", new HashSet<>(Arrays.asList("exists_in", "not_exists_in",
+                "exists_in_all", "not_exists_in_all",
+                "match_characters", "all", "any", "unique", "func_dep", "extract", "string_from_date", "current_date",
+                "listsum", "alterdataset", "eval", "lenght", "concatenation", "instr", "replace", "intersect",
+                "symdiff", "setdiff", "subscript", "transcode", "aggregate", "aggregatefunctions", "time_aggregate",
+                "fill_time_series", "flow_to_stock", "stock_to_flow", "timeshift", "calc", "attrcalc")));
+        allKeywords.put("builtinConstants", new HashSet<>(Arrays.asList("true", "false", "null")));
+
+        return allKeywords;
     }
 
     /**

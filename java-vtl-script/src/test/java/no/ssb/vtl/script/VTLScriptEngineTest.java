@@ -22,6 +22,7 @@ package no.ssb.vtl.script;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import no.ssb.vtl.connectors.Connector;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -30,7 +31,9 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.script.support.VTLPrintStream;
+import org.antlr.v4.runtime.Vocabulary;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.junit.Test;
 
@@ -42,10 +45,14 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
@@ -63,6 +70,62 @@ public class VTLScriptEngineTest {
     private ScriptEngine engine = new VTLScriptEngine(connector);
     private Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
+    @Test
+    public void testKeywords() {
+        Map<String, Set<String>> keywords = ((VTLScriptEngine) engine).getVTLKeywords();
+        Set<String> keywordsList = keywords.values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        Set<String> keywordsFromLexer = IntStream.range(0, VTLLexer.VOCABULARY.getMaxTokenType())
+                .mapToObj(VTLLexer.VOCABULARY::getLiteralName)
+                .filter(Objects::nonNull)
+                .map(s -> s.replaceAll("'", ""))
+                .collect(Collectors.toSet());
+
+        Sets.SetView<String> symmetricDifference = Sets.symmetricDifference(keywordsList, keywordsFromLexer);
+
+        System.out.println("Missing in keywords: " + Sets.difference(keywordsFromLexer, keywordsList));
+        System.out.println("Missing in lexer: " + Sets.difference(keywordsList, keywordsFromLexer));
+
+        // Will fail if a new keyword is added in the grammar or list of keywords without updating
+        // the test.
+        assertThat(symmetricDifference).containsExactly(
+                "time_aggregate", "exists_in_all", "match_characters", 
+                "timeshift", "join", "flow_to_stock", "identifier", 
+                "string_from_date", "subscript", "transcode", 
+                "setdiff", "current_date", "measure", 
+                "extract", "eval", "concatenation", 
+                "unique", "true", "exists_in", 
+                "func_dep", "symdiff", "attribute",
+                "fill_time_series", "intersect", "not_exists_in_all",
+                "false", "any", 
+                "lenght", "stock_to_flow", "not_exists_in",
+                "aggregatefunctions", "alterdataset", "||",
+                "<=", "<>", "measures",
+                "(", ")", "*",
+                "+", ",", "-",
+                ".", "/", "condition",
+                "not_valid", ":", "<", "=",
+                ">", ">=", "implicit",
+                ":=", "role", "errorlevel",
+                "valid", "[", "]",
+                "errorcode", "prod", "length",
+                "{", "}"
+        );
+
+        Vocabulary vocabulary = VTLLexer.VOCABULARY;
+        for (int i = 0; i < vocabulary.getMaxTokenType(); i++) {
+            System.out.printf(
+                    "[%s] litName: %s, symName: %s, dispName:%s\n",
+                    i,
+                    vocabulary.getLiteralName(i),
+                    vocabulary.getSymbolicName(i),
+                    vocabulary.getDisplayName(i)
+            );
+        }
+    }
     @Test
     public void testVersion() {
         assertThat(new ComparableVersion("0.1.9")).isLessThan(new ComparableVersion("0.1.9-1"));
@@ -157,7 +220,7 @@ public class VTLScriptEngineTest {
                 .addComponent("at1", Role.MEASURE, String.class)
 
                 .addPoints("1", "1", -50L, 1.5D, "attr1-1")
-                .addPoints( "2", "2", 100L, 0.123456789, "attr1-2")
+                .addPoints("2", "2", 100L, 0.123456789, "attr1-2")
                 .build();
 
         Dataset ds2 = StaticDataset.create()
@@ -167,7 +230,7 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at2", Role.MEASURE, String.class)
 
-                .addPoints( "1", "1", 30L, -1.0D, "attr2-1")
+                .addPoints("1", "1", 30L, -1.0D, "attr2-1")
                 .addPoints("2", "2", -40L, 0.987654321, "attr2-2")
                 .build();
 
@@ -197,7 +260,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "1", "attr1-1"+ "attr2-1", (-50L + 30), 0.5D,
+                        "1", "1", "attr1-1" + "attr2-1", (-50L + 30), 0.5D,
                         "2", "2", "attr1-2" + "attr2-2", 60L, 1.11111111D
                 );
     }
@@ -213,7 +276,7 @@ public class VTLScriptEngineTest {
                 .addComponent("at1", Role.MEASURE, String.class)
 
                 .addPoints("1", "1", 0L, 0.0, "attr1-1")
-                .addPoints( "1", "2", 10L, 200.0, "attr1-2")
+                .addPoints("1", "2", 10L, 200.0, "attr1-2")
 
                 .build();
 
@@ -224,7 +287,7 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at2", Role.MEASURE, String.class)
 
-                .addPoints( "1", "1", 30L, 40.0, "attr2-1")
+                .addPoints("1", "1", 30L, 40.0, "attr2-1")
                 .addPoints("1", "2", 0L, 0.0, "attr2-2")
 
                 .build();
@@ -431,8 +494,8 @@ public class VTLScriptEngineTest {
 
                 .addPoints("0101", "2015", "EKG14", 100L, "attr1")
                 .addPoints("0101", "2015", "EKG15", 110L, "attr4")
-                .addPoints( "0111", "2014", "EKG14", 101L, "attr2")
-                .addPoints( "9000", "2014", "EKG14", 102L, "attr3")
+                .addPoints("0111", "2014", "EKG14", 101L, "attr2")
+                .addPoints("9000", "2014", "EKG14", 102L, "attr3")
                 .build();
 
         Dataset dsCodeList2 = StaticDataset.create()
@@ -485,13 +548,13 @@ public class VTLScriptEngineTest {
                 "   ds2_CONDITION := name is not null," +
                 "   rename name to ds2_name," +
                 "   kommune_nr_RESULTAT := ds2_CONDITION" +
-                "}"+
+                "}" +
                 "ds3r := [ds3]{rename code to kostragruppe, period to periode}" +
                 "dsBoolean1 := [outer ds1, ds3r]{" +
                 "   ds3_CONDITION := name is not null," +
                 "   rename name to ds3_name," +
                 "   kostragruppe_RESULTAT := ds3_CONDITION" +
-                "}"+
+                "}" +
                 "dsBoolean3 := [dsBoolean0, dsBoolean1]{" +
                 "   filter true" +
                 "}" +
@@ -620,7 +683,7 @@ public class VTLScriptEngineTest {
                 entry("m22", String.class)
         );
 
-        assertThat(ds2.getData())
+        assertThat(ds2.getData(Order.createDefault(ds2.getDataStructure())).get())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
@@ -681,7 +744,7 @@ public class VTLScriptEngineTest {
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", ZonedDateTime.of(2017,1,1,0,0,0,0, ZoneId.systemDefault()).toInstant(),
+                        "1", ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).toInstant(),
                         "2", null
                 );
 
@@ -695,6 +758,57 @@ public class VTLScriptEngineTest {
     @Test(expected = ScriptException.class)
     public void testDateFromStringAsClauseInputNotStringType() throws Exception {
         engine.eval("test := date_from_string(123, \"YYYY\")");
+    }
+
+    @Test
+    public void testAggregationAvg() throws ScriptException {
+        StaticDataset ds = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("sign", Role.IDENTIFIER, String.class)
+                .addComponent("withnulls", Role.IDENTIFIER, Boolean.class)
+                .addComponent("integerMeasure", Role.MEASURE, Long.class)
+                .addComponent("floatMeasure", Role.MEASURE, Double.class)
+
+                .addPoints("id", "pos", false, 0L, 0D)
+                .addPoints("id", "pos", false, 1L, 1D)
+                .addPoints("id", "pos", false, 2L, 2D)
+                .addPoints("id", "pos", false, 4L, 4D)
+
+                .addPoints("id", "neg", false, -0L, -0D)
+                .addPoints("id", "neg", false, -1L, -1D)
+                .addPoints("id", "neg", false, -2L, -2D)
+                .addPoints("id", "neg", false, -4L, -4D)
+
+                .addPoints("id", "pos", true, null, null)
+                .addPoints("id", "pos", true, 1L, 1D)
+                .addPoints("id", "pos", true, 2L, 2D)
+                .addPoints("id", "pos", true, 4L, 4D)
+
+                .addPoints("id", "neg", true, null, null)
+                .addPoints("id", "neg", true, -1L, -1D)
+                .addPoints("id", "neg", true, -2L, -2D)
+                .addPoints("id", "neg", true, -4L, -4D)
+                .build();
+
+        bindings.put("ds", ds);
+        engine.eval("result := avg(ds) along id");
+
+        assertThat(bindings).containsKeys("result");
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getData()).containsExactlyInAnyOrder(
+                DataPoint.create("pos", false, 1.75D, 1.75D),
+                DataPoint.create("pos", true, 2.3333333333333335, 2.3333333333333335),
+                DataPoint.create("neg", false, -1.75D, -1.75D),
+                DataPoint.create("neg", true, -2.3333333333333335, -2.3333333333333335)
+        );
+
+        assertThat(result.getData(Order.create(result.getDataStructure()).put("withnulls", Order.Direction.ASC).build()).get()).containsExactlyInAnyOrder(
+                DataPoint.create("pos", false, 1.75D, 1.75D),
+                DataPoint.create("neg", false, -1.75D, -1.75D),
+                DataPoint.create("pos", true, 2.3333333333333335, 2.3333333333333335),
+                DataPoint.create("neg", true, -2.3333333333333335, -2.3333333333333335)
+        );
+
     }
 
     @Test
@@ -795,7 +909,7 @@ public class VTLScriptEngineTest {
 
         assertThat(result.getDataStructure().getTypes().values())
                 .containsOnly(Long.class);
-                
+
         assertThat(result.getData()).extracting(dataPoint -> Lists.transform(dataPoint, VTLObject::get))
                 .containsExactlyInAnyOrder(
                         Arrays.asList(1L, null, 2L, 3L),
@@ -958,18 +1072,18 @@ public class VTLScriptEngineTest {
                 .addComponent("m2", Role.MEASURE, Double.class)
                 .addComponent("at1", Role.MEASURE, String.class)
 
-                .addPoints( "1", 10L, 20D, "attr1-1")
-                .addPoints( "2", 100L, 200D, "attr1-2")
+                .addPoints("1", 10L, 20D, "attr1-1")
+                .addPoints("2", 100L, 200D, "attr1-2")
                 .build();
 
         Dataset ds2 = StaticDataset.create()
-               .addComponent("id1", Role.IDENTIFIER, String.class)
-               .addComponent("m1", Role.MEASURE, Long.class)
-               .addComponent("m2", Role.MEASURE, Double.class)
-               .addComponent("at1", Role.MEASURE, String.class)
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.MEASURE, String.class)
 
                 .addPoints("3", 30L, 40D, "attr2-1")
-                .addPoints( "4", 300L, 400D, "attr2-2")
+                .addPoints("4", 300L, 400D, "attr2-2")
                 .build();
 
 
