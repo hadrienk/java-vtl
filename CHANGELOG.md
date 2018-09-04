@@ -4,7 +4,11 @@
 
 ### Added
 
+## 0.1.10-2 - 2018-09-04
+
 ### Changed
+
+* Fix invalid key extraction in InnerJoinOperation
 
 ## 0.1.10-1 - 2018-08-31
 
