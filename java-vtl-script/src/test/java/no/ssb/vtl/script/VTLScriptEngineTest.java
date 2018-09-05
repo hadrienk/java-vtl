@@ -145,6 +145,102 @@ public class VTLScriptEngineTest {
     }
 
     @Test
+    public void testEscapedAssignment() throws Exception {
+
+        bindings.put("ds1", dataset);
+        engine.eval("'1escapedDs2' := ds1");
+
+        assertThat(bindings).containsKey("1escapedDs2");
+        Object ds2 = bindings.get("ds2");
+        assertThat(ds2).isInstanceOf(Dataset.class);
+        assertThat(ds2).isSameAs(dataset);
+
+    }
+
+    @Test
+    public void testEscapedExpression() throws Exception {
+
+        bindings.put("123escaped-ds1", dataset);
+        engine.eval("ds2 := '123escaped-ds1'");
+
+        assertThat(bindings).containsKey("1escapedDs2");
+        Object ds2 = bindings.get("ds2");
+        assertThat(ds2).isInstanceOf(Dataset.class);
+        assertThat(ds2).isSameAs(dataset);
+
+    }
+
+    @Test
+    public void testJoinAssignment() throws ScriptException {
+        Dataset simpleDataset = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("me", Role.MEASURE, Long.class)
+                .addPoints("id", 0L)
+                .build();
+
+        bindings.put("ds", simpleDataset);
+        engine.eval("/* join assignment */" +
+                "res := [ds] {" +
+                "   assigned := me + 1" +
+                "}");
+
+        assertThat(bindings).containsKey("res");
+        Object res = bindings.get("res");
+        assertThat(res).isInstanceOf(Dataset.class);
+        assertThat(((Dataset)res).getDataStructure()).containsKeys("assigned");
+        assertThat(((Dataset) res).getData()).containsExactly(
+                DataPoint.create("id", 0L, +1L)
+        );
+    }
+
+    @Test
+    public void testJoinEscapedAssignment() throws ScriptException {
+
+        Dataset simpleDataset = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("me", Role.MEASURE, Long.class)
+                .addPoints("id", 0L)
+                .build();
+
+        bindings.put("ds", simpleDataset);
+        engine.eval("/* join assignment */" +
+                "res := [ds] {" +
+                "   '123escaped-assigned' := me + 1" +
+                "}");
+
+        assertThat(bindings).containsKey("res");
+        Object res = bindings.get("res");
+        assertThat(res).isInstanceOf(Dataset.class);
+        assertThat(((Dataset)res).getDataStructure()).containsKeys("123escaped-assigned");
+        assertThat(((Dataset) res).getData()).containsExactly(
+                DataPoint.create("id", 0L, 1L)
+        );
+    }
+
+    @Test
+    public void testJoinEscapedExpression() throws ScriptException {
+        Dataset simpleDataset = StaticDataset.create()
+                .addComponent("id", Role.IDENTIFIER, String.class)
+                .addComponent("123escaped-me", Role.MEASURE, Long.class)
+                .addPoints("id", 0L)
+                .build();
+
+        bindings.put("ds", simpleDataset);
+        engine.eval("/* join assignment */" +
+                "res := [ds] {" +
+                "   assigned := '123escaped-me' + 1" +
+                "}");
+
+        assertThat(bindings).containsKey("res");
+        Object res = bindings.get("res");
+        assertThat(res).isInstanceOf(Dataset.class);
+        assertThat(((Dataset)res).getDataStructure()).containsKeys("assigned");
+        assertThat(((Dataset) res).getData()).containsExactly(
+                DataPoint.create("id", 0L, 1L)
+        );
+    }
+
+    @Test
     public void testAssignmentLiterals() throws Exception {
 
         StaticDataset dataset = StaticDataset.create()
