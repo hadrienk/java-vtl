@@ -4,6 +4,8 @@
 
 ### Added
 
+* Throw ContextualRuntimeException in user function visitor 
+
 ## 0.1.10-2 - 2018-09-04
 
 ### Changed
