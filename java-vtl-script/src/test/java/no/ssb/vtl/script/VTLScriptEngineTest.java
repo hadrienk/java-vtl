@@ -433,7 +433,7 @@ public class VTLScriptEngineTest {
                 .addComponent("id1", Role.IDENTIFIER, String.class)
                 .addComponent("m1", Role.MEASURE, Long.class)
                 .addComponent("m2", Role.MEASURE, Long.class)
-                .addComponent("m3", Role.MEASURE, Long.class)
+                .addComponent("123-m3", Role.MEASURE, Long.class)
 
                 .addPoints("1", 101L, 102L, 103L)
                 .addPoints("2", 201L, 202L, 203L)
@@ -443,8 +443,8 @@ public class VTLScriptEngineTest {
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := [ds1] {" +
-                "  total := ds1.m1 + ds1.m2 + ds1.m3," +
-                "  fold ds1.m1, ds1.m2, ds1.m3, total to type, value" +
+                "  total := ds1.m1 + ds1.m2 + ds1.'123-m3'," +
+                "  fold ds1.m1, m2, ds1.'123-m3', total to type, '123-value'" +
                 "}"
         );
 
@@ -454,7 +454,7 @@ public class VTLScriptEngineTest {
         assertThat(ds2.getDataStructure().getRoles()).containsOnly(
                 entry("id1", Role.IDENTIFIER),
                 entry("type", Role.IDENTIFIER),
-                entry("value", Role.MEASURE)
+                entry("123-value", Role.MEASURE)
         );
 
         assertThat(ds2.getData()).flatExtracting(input -> input)
@@ -462,17 +462,17 @@ public class VTLScriptEngineTest {
                 .containsExactly(
                         "1", "m1", 101L,
                         "1", "m2", 102L,
-                        "1", "m3", 103L,
+                        "1", "123-m3", 103L,
                         "1", "total", 101L + 102L + 103L,
 
                         "2", "m1", 201L,
                         "2", "m2", 202L,
-                        "2", "m3", 203L,
+                        "2", "123-m3", 203L,
                         "2", "total", 201L + 202L + 203L,
 
                         "3", "m1", 301L,
                         "3", "m2", 302L,
-                        "3", "m3", 303L,
+                        "3", "123-m3", 303L,
                         "3", "total", 301L + 302L + 303L
                 );
     }
