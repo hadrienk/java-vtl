@@ -151,7 +151,7 @@ public class VTLScriptEngineTest {
         engine.eval("'1escapedDs2' := ds1");
 
         assertThat(bindings).containsKey("1escapedDs2");
-        Object ds2 = bindings.get("ds2");
+        Object ds2 = bindings.get("1escapedDs2");
         assertThat(ds2).isInstanceOf(Dataset.class);
         assertThat(ds2).isSameAs(dataset);
 
@@ -163,7 +163,7 @@ public class VTLScriptEngineTest {
         bindings.put("123escaped-ds1", dataset);
         engine.eval("ds2 := '123escaped-ds1'");
 
-        assertThat(bindings).containsKey("1escapedDs2");
+        assertThat(bindings).containsKey("ds2");
         Object ds2 = bindings.get("ds2");
         assertThat(ds2).isInstanceOf(Dataset.class);
         assertThat(ds2).isSameAs(dataset);
