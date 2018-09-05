@@ -259,7 +259,12 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
 
     @Override
     public VTLExpression visitUserFunctionCall(VTLParser.UserFunctionCallContext ctx) {
-        throw new IllegalArgumentException("undefined function " +  ctx.functionName.getText());
+        // TODO: look for function. Check signature.
+
+        throw new ContextualRuntimeException(
+                "undefined function " + ctx.functionName.getText(),
+                ctx
+        );
     }
 
     @Override
