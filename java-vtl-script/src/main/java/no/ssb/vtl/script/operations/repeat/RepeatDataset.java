@@ -1,49 +1,37 @@
 package no.ssb.vtl.script.operations.repeat;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 
-import java.util.Map;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-public class RepeatDataset implements Dataset {
+import static com.google.common.base.Preconditions.checkNotNull;
 
-    private final Dataset source;
-    private final ImmutableSet<String> identifiers;
+/**
+ * A dataset that avoid sorting on data that is already sorted.
+ */
+public class RepeatDataset extends IteratorDataset {
 
-    public RepeatDataset(Dataset source, Set<String> identifiers) {
-        this.source = source;
-        this.identifiers = ImmutableSet.copyOf(identifiers);
+    private final Order order;
+
+    public RepeatDataset(
+            DataStructure structure,
+            Iterator<DataPoint> source,
+            Order order
+    ) {
+        super(structure, source);
+        this.order = checkNotNull(order);
     }
 
     @Override
-    public Stream<DataPoint> getData() {
-        // Delay the creation.
-        StreamSupport.stream(
+    public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+        if (orders.equals(order)) {
 
-        );
-        Stream<DataPoint> data = source.getData();
-        return null;
-    }
-
-    @Override
-    public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        return source.getDistinctValuesCount();
-    }
-
-    @Override
-    public Optional<Long> getSize() {
-        return source.getSize();
-    }
-
-    @Override
-    public DataStructure getDataStructure() {
-        return source.getDataStructure();
+        }
+        return Optional.empty();
     }
 }

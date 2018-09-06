@@ -24,6 +24,8 @@ statement : assignment ;
 
 assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
+repeat : 'foreach' variable (',' variable)* 'in' variable (',' variable)* 'do' statement+ 'done';
+
 
 functionCall       : nvlFunction // TODO: Create one rule per function?
                    | nativeFunctionCall
@@ -82,6 +84,7 @@ datasetExpression : <assoc=right>datasetExpression clauseExpression     #withCla
                   | relationalExpression                                #withRelational
                   | function                                            #withFunction
                   | variable                                            #withAtom
+                  | repeat                                              #withRepeat
                   ;
 
 hierarchyExpression : 'hierarchy' '(' variable ',' variableExpression ',' hierarchyReference ',' BOOLEAN_LITERAL ( ',' ('sum' | 'prod') )? ')' ;
