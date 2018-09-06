@@ -4,6 +4,8 @@
 
 ### Added
 
+* Throw ContextualRuntimeException in user function visitor 
+
 ### Changed
 
 * Add support for escaped variable names
