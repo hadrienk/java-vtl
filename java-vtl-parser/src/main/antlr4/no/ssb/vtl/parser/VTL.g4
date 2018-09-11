@@ -24,7 +24,8 @@ statement : assignment ;
 
 assignment : variable ASSIGNMENT ( expression | datasetExpression ) ;
 
-repeat : 'foreach' variable (',' variable)* 'in' variable (',' variable)* 'do' statement+ 'done';
+repeat : 'foreach' identifiers=variableList 'in' datasets=variableList 'do' statement+ 'done';
+variableList : variable (COMMA variable)*;
 
 
 functionCall       : nvlFunction // TODO: Create one rule per function?

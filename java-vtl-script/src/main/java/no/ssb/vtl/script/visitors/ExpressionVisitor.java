@@ -217,6 +217,21 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
         return result;
     }
 
+    public VTLExpression visitTypedVariable(VTLParser.VariableContext ctx, Class<? extends VTLObject> requiredType) {
+        VTLExpression expression = visit(ctx);
+        if (!isNull(expression) && !requiredType.isAssignableFrom(expression.getVTLType())) {
+            throw new ContextualRuntimeException(
+                    format(
+                            "invalid type %s, expected %s",
+                            expression.getVTLType().getSimpleName(),
+                            requiredType.getSimpleName()
+                    ),
+                    ctx
+            );
+        }
+        return expression;
+    }
+
     private VTLExpression visitTypedExpression(VTLParser.ExpressionContext ctx, Class<? extends VTLObject> requiredType) {
         VTLExpression expression = visit(ctx);
         if (!isNull(expression) && !requiredType.isAssignableFrom(expression.getVTLType())) {
@@ -296,6 +311,7 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     private static String checkVariableExist(Bindings bindings, VTLParser.VariableContext ctx) {
         String identifier = ctx.getText();
         // TODO: Remove escape logic.
+        // TODO: Already in superclass
         identifier = unEscape(identifier);
 
         if (bindings.containsKey(identifier))
