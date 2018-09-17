@@ -56,15 +56,19 @@ public class MaxSelector<T> implements Supplier<Optional<T>> {
     public Optional<T> get() {
         this.lastMax = null;
         for (PeekingIterator<T> iterator : iterators) {
-            if (!iterator.hasNext()) {
-                continue;
-            }
-            if (lastMax == null) {
-                lastMax = iterator.peek();
-            } else if (comparator.compare(iterator.peek(), lastMax) > 0) {
-                lastMax = iterator.peek();
+            if (iterator.hasNext()) {
+                T peek = iterator.peek();
+                max(peek);
             }
         }
         return Optional.ofNullable(lastMax);
+    }
+
+    private void max(T peek) {
+        if (lastMax == null) {
+            lastMax = peek;
+        } else if (comparator.compare(peek, lastMax) > 0) {
+            lastMax = peek;
+        }
     }
 }
