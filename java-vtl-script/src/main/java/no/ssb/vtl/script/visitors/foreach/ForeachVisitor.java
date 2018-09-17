@@ -48,7 +48,7 @@ public class ForeachVisitor extends VTLBaseVisitor<ForeachOperation> {
 
         ImmutableMap.Builder<String, Dataset> datasets = ImmutableMap.builder();
         for (VariableContext variableCtx : ctx.datasets.variable()) {
-            VTLExpression variable = expressionVisitor.visitTypedVariable(
+            VTLExpression variable = expressionVisitor.visitTyped(
                     variableCtx, VTLDataset.class
             );
             datasets.put(
