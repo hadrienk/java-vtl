@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.visitors.repeat;
+package no.ssb.vtl.script.visitors.foreach;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -6,7 +6,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.script.VTLDataset;
-import no.ssb.vtl.script.operations.repeat.RepeatOperation;
+import no.ssb.vtl.script.operations.foreach.ForeachOperation;
 import no.ssb.vtl.script.visitors.AssignmentVisitor;
 import no.ssb.vtl.script.visitors.ExpressionVisitor;
 
@@ -15,16 +15,16 @@ import static no.ssb.vtl.parser.VTLParser.RepeatContext;
 import static no.ssb.vtl.parser.VTLParser.StatementContext;
 import static no.ssb.vtl.parser.VTLParser.VariableContext;
 
-public class RepeatVisitor extends VTLBaseVisitor<RepeatOperation> {
+public class ForeachVisitor extends VTLBaseVisitor<ForeachOperation> {
 
     private final ExpressionVisitor expressionVisitor;
 
-    public RepeatVisitor(ExpressionVisitor expressionVisitor) {
+    public ForeachVisitor(ExpressionVisitor expressionVisitor) {
         this.expressionVisitor = checkNotNull(expressionVisitor);
     }
 
     @Override
-    public RepeatOperation visitRepeat(RepeatContext ctx) {
+    public ForeachOperation visitRepeat(RepeatContext ctx) {
 
         ImmutableMap.Builder<String, Dataset> datasets = ImmutableMap.builder();
         for (VariableContext variableCtx : ctx.datasets.variable()) {
@@ -44,9 +44,9 @@ public class RepeatVisitor extends VTLBaseVisitor<RepeatOperation> {
             identifiers.add(identifier.getText());
         }
 
-        RepeatOperation repeatOperation = new RepeatOperation(datasets.build(), identifiers.build());
+        ForeachOperation foreachOperation = new ForeachOperation(datasets.build(), identifiers.build());
 
-        repeatOperation.setBlock(bindings -> {
+        foreachOperation.setBlock(bindings -> {
             AssignmentVisitor assignmentVisitor = new AssignmentVisitor(bindings);
             Object last = null;
             for (StatementContext statementContext : ctx.statement()) {
@@ -55,6 +55,6 @@ public class RepeatVisitor extends VTLBaseVisitor<RepeatOperation> {
             return VTLDataset.of((Dataset) last);
         });
 
-        return repeatOperation;
+        return foreachOperation;
     }
 }

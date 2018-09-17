@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.repeat;
+package no.ssb.vtl.script.operations.foreach;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -15,7 +15,7 @@ import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
 
-public class RepeatOperationTest {
+public class ForeachOperationTest {
 
     @Test
     public void testInnerJoin() {
@@ -71,8 +71,8 @@ public class RepeatOperationTest {
 
                 .build();
 
-        RepeatOperation repeatOperation = new RepeatOperation(ImmutableMap.of("t1", data1, "t2", data2), ImmutableSet.of("year"));
-        repeatOperation.setBlock(bindings -> {
+        ForeachOperation foreachOperation = new ForeachOperation(ImmutableMap.of("t1", data1, "t2", data2), ImmutableSet.of("year"));
+        foreachOperation.setBlock(bindings -> {
             VTLDataset t1 = (VTLDataset) bindings.get("t1");
             VTLDataset t2 = (VTLDataset) bindings.get("t2");
             ImmutableMap<String, Dataset> namedDataset = ImmutableMap.of(
@@ -85,9 +85,9 @@ public class RepeatOperationTest {
             );
             return VTLDataset.of(new InnerJoinOperation(namedDataset, identifier));
         });
-        System.out.println(repeatOperation.getDataStructure());
-        repeatOperation.getData(
-                Order.create(repeatOperation.getDataStructure())
+        System.out.println(foreachOperation.getDataStructure());
+        foreachOperation.getData(
+                Order.create(foreachOperation.getDataStructure())
                         .put("year", Order.Direction.DESC).build()
         ).ifPresent(dataPointStream -> dataPointStream.forEach(System.out::println));
 
@@ -139,18 +139,18 @@ public class RepeatOperationTest {
 
                 .build();
 
-        RepeatOperation repeatOperation = new RepeatOperation(ImmutableMap.of("t1", data1, "hier", hierarchy), ImmutableSet.of("year"));
-        repeatOperation.setBlock(bindings -> {
+        ForeachOperation foreachOperation = new ForeachOperation(ImmutableMap.of("t1", data1, "hier", hierarchy), ImmutableSet.of("year"));
+        foreachOperation.setBlock(bindings -> {
             VTLDataset t1 = (VTLDataset) bindings.get("t1");
             VTLDataset hier = (VTLDataset) bindings.get("hier");
             return VTLDataset.of(new HierarchyOperation(t1.get(), hier.get(), t1.get().getDataStructure().get("id")));
         });
 
-        System.out.println(repeatOperation.getDataStructure());
-        repeatOperation.getData().forEach(System.out::println);
-        System.out.println(repeatOperation.getDataStructure());
-        repeatOperation.getData(
-                Order.create(repeatOperation.getDataStructure()                )
+        System.out.println(foreachOperation.getDataStructure());
+        foreachOperation.getData().forEach(System.out::println);
+        System.out.println(foreachOperation.getDataStructure());
+        foreachOperation.getData(
+                Order.create(foreachOperation.getDataStructure()                )
                         .put("measure", Order.Direction.DESC)
                         .put("year", Order.Direction.DESC)
                         .build()

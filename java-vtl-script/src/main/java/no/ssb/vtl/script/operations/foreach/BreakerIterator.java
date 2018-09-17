@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.repeat;
+package no.ssb.vtl.script.operations.foreach;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;

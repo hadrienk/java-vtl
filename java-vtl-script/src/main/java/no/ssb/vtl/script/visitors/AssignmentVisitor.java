@@ -27,7 +27,7 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
-import no.ssb.vtl.script.visitors.repeat.RepeatVisitor;
+import no.ssb.vtl.script.visitors.foreach.ForeachVisitor;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -52,7 +52,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
     private final CheckVisitor checkVisitor;
     private final HierarchyVisitor hierarchyVisitor;
     private final AggregationVisitor aggregationVisitor;
-    private final RepeatVisitor repeatVisitor;
+    private final ForeachVisitor foreachVisitor;
 
     public AssignmentVisitor(ScriptContext context, List<Connector> connectors) {
         this(
@@ -73,7 +73,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
         clausesVisitor = new ClauseVisitor();
 
         datasetExpressionVisitor = new DatasetExpressionVisitor(expressionVisitor);
-        repeatVisitor = new RepeatVisitor(expressionVisitor);
+        foreachVisitor = new ForeachVisitor(expressionVisitor);
 
         checkVisitor = new CheckVisitor(datasetExpressionVisitor);
         hierarchyVisitor = new HierarchyVisitor(datasetExpressionVisitor);
@@ -100,7 +100,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
 
     @Override
     public Object visitRepeat(VTLParser.RepeatContext ctx) {
-        return repeatVisitor.visitRepeat(ctx);
+        return foreachVisitor.visitRepeat(ctx);
     }
 
     @Override

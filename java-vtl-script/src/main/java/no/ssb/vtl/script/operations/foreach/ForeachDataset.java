@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.repeat;
+package no.ssb.vtl.script.operations.foreach;
 
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -14,11 +14,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A dataset that avoid sorting on data that is already sorted.
  */
-public class RepeatDataset extends IteratorDataset {
+public class ForeachDataset extends IteratorDataset {
 
     private final Order order;
 
-    public RepeatDataset(
+    public ForeachDataset(
             DataStructure structure,
             Iterator<DataPoint> source,
             Order order

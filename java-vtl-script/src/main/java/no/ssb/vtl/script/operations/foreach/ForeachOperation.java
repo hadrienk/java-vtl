@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations.repeat;
+package no.ssb.vtl.script.operations.foreach;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.AbstractIterator;
@@ -53,14 +53,14 @@ import static no.ssb.vtl.model.Order.Direction.DESC;
  * The set of identifiers much be a subset of the common identifiers of the
  * set of datasets.
  */
-public final class RepeatOperation implements Dataset {
+public final class ForeachOperation implements Dataset {
 
     private final ImmutableMap<String, Dataset> sources;
     private final ImmutableSet<String> identifiers;
     private DataStructure structure;
     private Function<Bindings, VTLDataset> block;
 
-    public RepeatOperation(Map<String, Dataset> sourceDatasets, Set<String> identifiers) {
+    public ForeachOperation(Map<String, Dataset> sourceDatasets, Set<String> identifiers) {
         this.sources = ImmutableMap.copyOf(sourceDatasets);
         this.identifiers = ImmutableSet.copyOf(identifiers);
     }
