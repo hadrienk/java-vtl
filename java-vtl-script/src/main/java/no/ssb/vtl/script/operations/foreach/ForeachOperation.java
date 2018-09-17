@@ -25,6 +25,7 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
@@ -33,7 +34,6 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.VTLDataset;
 
 import javax.script.Bindings;
@@ -51,7 +51,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Order.Direction.ASC;
-import static no.ssb.vtl.model.Order.Direction.DESC;
 
 /**
  * Operation that repeats a set of operations
@@ -85,6 +84,14 @@ public final class ForeachOperation implements Dataset {
         this.identifiers = ImmutableSet.copyOf(identifiers);
     }
 
+    public static Stream<DataPoint> sort(Stream<DataPoint> stream, Order order) {
+        System.out.println("WARN: needed to sort");
+        Stopwatch started = Stopwatch.createStarted();
+        Stream<DataPoint> sorted = stream.sorted(order);
+        System.out.println("WARN: done sorting: " + started.stop().elapsed(TimeUnit.SECONDS));
+        return sorted;
+    }
+
     public void setBlock(Function<Bindings, VTLDataset> block) {
         this.block = block;
     }
@@ -92,14 +99,6 @@ public final class ForeachOperation implements Dataset {
     private Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
         Order actualOrder = rearrangeOrder(order, dataset.getDataStructure());
         return dataset.getData(actualOrder).orElseGet(() -> sort(dataset.getData(), actualOrder));
-    }
-
-    public static Stream<DataPoint> sort(Stream<DataPoint> stream, Order order) {
-        System.out.println("WARN: needed to sort");
-        Stopwatch started = Stopwatch.createStarted();
-        Stream<DataPoint> sorted = stream.sorted(order);
-        System.out.println("WARN: done sorting: " + started.stop().elapsed(TimeUnit.SECONDS));
-        return sorted;
     }
 
     @Override
@@ -213,25 +212,17 @@ public final class ForeachOperation implements Dataset {
         Bindings scope = new SimpleBindings(new LinkedHashMap<>());
 
 
-        Comparator<DataPointMap.View> comparator = createDataPointMapComparator(orders);
-        DataPointMap.View max = null;
-        for (PeekingIterator<DataPointMap.View> iterator : iterators.values()) {
-            if (iterator.hasNext()) {
-                if (max == null) {
-                    max = iterator.peek();
-                } else if (comparator.compare(iterator.peek(), max) > 0) {
-                    max = iterator.peek();
-                }
-            }
-        }
+        Comparator<DataPointMap.View> comparator = createComparator(orders);
 
-        if (max == null) {
+        MaxSelector<DataPointMap.View> maxSupplier = new MaxSelector<>(iterators.values(), comparator);
+        Optional<DataPointMap.View> max = maxSupplier.get();
+        if (!max.isPresent()) {
             return Collections.emptyIterator();
         }
 
         for (String name : iterators.keySet()) {
             PeekingIterator<DataPointMap.View> iterator = iterators.get(name);
-            DataPointMap.View finalMax = max;
+            DataPointMap.View finalMax = max.get();
             Iterator<DataPointMap.View> slice = new AbstractIterator<DataPointMap.View>() {
                 @Override
                 protected DataPointMap.View computeNext() {
@@ -256,30 +247,11 @@ public final class ForeachOperation implements Dataset {
         return dataset.getData(orders).orElseGet(() -> sort(dataset.getData(), orders)).iterator();
     }
 
-    /**
-     * Create a comparator that operates on the identifiers.
-     * @param orders
-     */
-    private Comparator<DataPointMap.View> createDataPointMapComparator(Order orders) {
-        DataStructure structure = getDataStructure();
-        Comparator<DataPointMap.View> comparator = null;
-        for (String identifier : identifiers) {
-            Comparator<VTLObject> objectComparator = Order.VTL_OBJECT_COMPARATOR;
-            if (orders.get(structure.get(identifier)) == DESC) {
-                objectComparator = objectComparator.reversed();
-            }
-
-            Comparator<DataPointMap.View> nextComparator = Comparator.comparing(
-                    dataPointMap -> dataPointMap.get(identifier),
-                    objectComparator
-            );
-            if (comparator == null) {
-                comparator = nextComparator;
-            } else {
-                comparator = comparator.thenComparing(nextComparator);
-            }
-        }
-        return comparator;
+    private Comparator<DataPointMap.View> createComparator(Order orders) {
+        return new DataPointMapComparator(
+                Maps.filterKeys(getDataStructure(), identifiers::contains),
+                orders
+        );
     }
 
     private Order getDefaultOrder() {
