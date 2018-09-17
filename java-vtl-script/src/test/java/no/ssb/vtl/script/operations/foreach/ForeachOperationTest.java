@@ -3,6 +3,7 @@ package no.ssb.vtl.script.operations.foreach;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
@@ -11,9 +12,15 @@ import no.ssb.vtl.script.operations.hierarchy.HierarchyOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ForeachOperationTest {
 
@@ -86,11 +93,24 @@ public class ForeachOperationTest {
             return VTLDataset.of(new InnerJoinOperation(namedDataset, identifier));
         });
         System.out.println(foreachOperation.getDataStructure());
-        foreachOperation.getData(
-                Order.create(foreachOperation.getDataStructure())
-                        .put("year", Order.Direction.DESC).build()
-        ).ifPresent(dataPointStream -> dataPointStream.forEach(System.out::println));
 
+        Order orderedByYear = Order.create(foreachOperation.getDataStructure())
+                .put("year", Order.Direction.DESC).build();
+
+        Optional<Stream<DataPoint>> data = foreachOperation.getData(orderedByYear);
+        assertThat(data).isNotEmpty();
+        Stream<DataPoint> stream = data.get();
+        assertThat(stream).containsExactly(
+                DataPoint.create(2004, 1, "m1", "t1-2004", "m1", "t2-2004"),
+                DataPoint.create(2004, 2, "m2", "t1-2004", "m2", "t2-2004"),
+                DataPoint.create(2004, 3, "m3", "t1-2004", "m3", "t2-2004"),
+                DataPoint.create(2003, 1, "m1", "t1-2003", "m1", "t2-2003"),
+                DataPoint.create(2003, 2, "m2", "t1-2003", "m2", "t2-2003"),
+                DataPoint.create(2003, 3, "m3", "t1-2003", "m3", "t2-2003"),
+                DataPoint.create(2000, 1, "m1", "t1-2000", "m1", "t2-2000"),
+                DataPoint.create(2000, 2, "m2", "t1-2000", "m2", "t2-2000"),
+                DataPoint.create(2000, 3, "m3", "t1-2000", "m3", "t2-2000")
+        );
 
     }
 
@@ -149,12 +169,22 @@ public class ForeachOperationTest {
         System.out.println(foreachOperation.getDataStructure());
         foreachOperation.getData().forEach(System.out::println);
         System.out.println(foreachOperation.getDataStructure());
-        foreachOperation.getData(
-                Order.create(foreachOperation.getDataStructure()                )
-                        .put("measure", Order.Direction.DESC)
-                        .put("year", Order.Direction.DESC)
-                        .build()
-        ).get().forEach(System.out::println);
+
+        Order orderedByMeasureAndYearDesc = Order.create(foreachOperation.getDataStructure())
+                .put("measure", Order.Direction.DESC)
+                .put("year", Order.Direction.DESC)
+                .build();
+
+        Optional<Stream<DataPoint>> data = foreachOperation.getData(
+                orderedByMeasureAndYearDesc
+        );
+        assertThat(data).as("result of the foreach operation")
+                .isNotEmpty();
+
+        List<DataPoint> points = data.get().collect(Collectors.toList());
+        assertThat(points).isSortedAccordingTo(orderedByMeasureAndYearDesc);
+        points.forEach(System.out::println);
+
 
     }
 }
