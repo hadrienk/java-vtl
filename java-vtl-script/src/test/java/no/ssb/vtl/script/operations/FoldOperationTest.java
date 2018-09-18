@@ -26,12 +26,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
@@ -42,10 +42,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.Mockito.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class FoldOperationTest extends RandomizedTest {
 
@@ -70,45 +74,31 @@ public class FoldOperationTest extends RandomizedTest {
                 "element2", MEASURE, String.class
         );
 
-        Set<Component> validElements = Sets.newHashSet(structure.values());
+        Set<String> validElements = Sets.newHashSet(structure.keySet());
         Dataset dataset = mock(Dataset.class);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
             softly.assertThatThrownBy(() -> new FoldOperation(null, validDimensionReference, validMeasureReference, validElements))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("dataset")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, null, validMeasureReference, validElements))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("dimensionReference")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, null, validElements))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("measureReference")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("elements")
-                    .hasMessageContaining("null");
+                    .isInstanceOf(NullPointerException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, "", validMeasureReference, validElements))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("dimensionReference")
-                    .hasMessageContaining("empty");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, "", validElements))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("measureReference")
-                    .hasMessageContaining("empty");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, Collections.emptySet()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("elements")
-                    .hasMessageContaining("empty");
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -132,23 +122,22 @@ public class FoldOperationTest extends RandomizedTest {
                 "m3", MEASURE, Instant.class
         );
 
-        Set<Component> validElements = Sets.newHashSet(
-                structure.get("m1"),
-                structure.get("m2"),
-                structure.get("m3")
+        Set<String> validElements = Sets.newHashSet(
+                "m1",
+                "m2",
+                "m3"
         );
 
-        Set<Component> invalidElements = Sets.newHashSet(
-                structure.get("m1"),
-                structure.get("m2"),
-                structure.get("m3"),
-                wrongTypesDataset.get("m1")
+        Set<String> invalidElements = Sets.newHashSet(
+                "m1",
+                "m2",
+                "m3",
+                "m4"
         );
 
-        Set<Component> wrongTypesElements = Sets.newHashSet(
-                wrongTypesDataset.values()
+        Set<String> wrongTypesElements = Sets.newHashSet(
+                wrongTypesDataset.keySet()
         );
-
 
         when(dataset.getDataStructure()).thenReturn(structure);
         when(invalidDataset.getDataStructure()).thenReturn(wrongTypesDataset);
@@ -159,7 +148,7 @@ public class FoldOperationTest extends RandomizedTest {
                 clause.getDataStructure();
             })
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("m1")
+                    .hasMessageContaining("m4")
                     .hasMessageContaining("not found");
 
             softly.assertThatThrownBy(() -> {
@@ -176,34 +165,31 @@ public class FoldOperationTest extends RandomizedTest {
 
     @Test
     @Repeat(iterations = 10)
-    public void testFold() throws Exception {
+    public void testFold() {
 
-        Dataset dataset = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", IDENTIFIER, String.class,
-                "id2", IDENTIFIER, String.class, // TODO: What if the dataset already contains id2?
-                "measure1", MEASURE, String.class,
-                "measure2", MEASURE, String.class,
-                "attribute1", ATTRIBUTE, String.class // TODO: Okay with attributes?
-        );
-        when(dataset.getDataStructure()).thenReturn(structure);
+        DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("id2", IDENTIFIER, String.class )
+                .addComponent("measure1", MEASURE, String.class)
+                .addComponent("measure2", MEASURE, String.class)
+                .addComponent("measure3", MEASURE, String.class)
+                .addComponent("attribute", ATTRIBUTE, String.class)
 
-        // Randomly shuffle the data in.
-        ArrayList<DataPoint> data = Lists.newArrayList(
-                tuple(structure, "id1-1", "id2-1", "measure1-1", "measure2-1", "attribute1-1"),
-                tuple(structure, "id1-1", "id2-2", null, "measure2-2", "attribute1-2"),
-                tuple(structure, "id1-2", "id2-1", "measure1-3", null, "attribute1-3"),
-                tuple(structure, "id1-2", "id2-2", "measure1-4", "measure2-4", null),
-                tuple(structure, "id1-3", "id2-1", null, null, null)
-        );
-        Collections.shuffle(data, new Random(randomLong()));
-        when(dataset.getData()).then(invocation -> data.stream());
+                .addPoints("id1-1", "id2-1", "measure1-1", "measure2-1", "measure3-1", "attribute1-1")
+                .addPoints("id1-1", "id2-2", null,         "measure2-2", "measure3-2", "attribute1-2")
+                .addPoints("id1-2", "id2-1", "measure1-3", null,         "measure3-3", "attribute1-3")
+                .addPoints("id1-2", "id2-2", "measure1-4", "measure2-4", null,         "attribute1-4")
+                .addPoints("id1-3", "id2-1", "measure1-5", "measure2-5", "measure3-5",         null)
+
+                .build());
+
+        // Collections.shuffle(data, new Random(randomLong()));
 
         // Randomly shuffle the measures
-        ArrayList<Component> elements = Lists.newArrayList(
-                structure.get("measure2"),
-                structure.get("measure1"),
-                structure.get("attribute1")
+        ArrayList<String> elements = Lists.newArrayList(
+                "measure2",
+                "measure1",
+                "measure3"
         );
         Collections.shuffle(elements, new Random(randomLong()));
 
@@ -217,7 +203,7 @@ public class FoldOperationTest extends RandomizedTest {
             );
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
-                    "id1", "id2", "newId", "newMeasure"
+                    "id1", "id2", "newId", "newMeasure", "attribute"
             );
 
             // Need to sort back before assert.
@@ -227,24 +213,32 @@ public class FoldOperationTest extends RandomizedTest {
                     .put("newId", Order.Direction.ASC)
                     .build();
 
-            softly.assertThat(clause.getData().sorted(order)).flatExtracting(input -> input).extracting(VTLObject::get)
+            Stream<DataPoint> stream = clause.getData();
+            softly.assertThat(stream.sorted(order))
                     .containsExactly(
-                            "id1-1", "id2-1", "attribute1", "attribute1-1",
-                            "id1-1", "id2-1", "measure1", "measure1-1",
-                            "id1-1", "id2-1", "measure2", "measure2-1",
+                            DataPoint.create("id1-1", "id2-1", "attribute1-1", "measure1", "measure1-1"),
+                            DataPoint.create("id1-1", "id2-1", "attribute1-1", "measure2", "measure2-1"),
+                            DataPoint.create("id1-1", "id2-1", "attribute1-1", "measure3", "measure3-1"),
 
-                            "id1-1", "id2-2", "attribute1", "attribute1-2",
-                            // null
-                            "id1-1", "id2-2", "measure2", "measure2-2",
+                            // DataPoint.create("id1-1", "id2-2", null, "measure1", "measure1-2"),
+                            DataPoint.create("id1-1", "id2-2", "attribute1-2", "measure2", "measure2-2"),
+                            DataPoint.create("id1-1", "id2-2", "attribute1-2", "measure3", "measure3-2"),
 
-                            "id1-2", "id2-1", "attribute1", "attribute1-3",
-                            "id1-2", "id2-1", "measure1", "measure1-3",
-                            // null
+                            DataPoint.create("id1-2", "id2-1", "attribute1-3", "measure1", "measure1-3"),
+                            // DataPoint.create("id1-2", "id2-1", null, "measure2", "measure2-3"),
+                            DataPoint.create("id1-2", "id2-1", "attribute1-3", "measure3", "measure3-3"),
 
-                            // null
-                            "id1-2", "id2-2", "measure1", "measure1-4",
-                            "id1-2", "id2-2", "measure2", "measure2-4"
+                            DataPoint.create("id1-2", "id2-2", "attribute1-4", "measure1", "measure1-4"),
+                            DataPoint.create("id1-2", "id2-2", "attribute1-4", "measure2", "measure2-4"),
+                            //DataPoint.create("id1-2", "id2-2", null, "measure3", "measure3-4"),
+
+                            DataPoint.create("id1-3", "id2-1", null, "measure1", "measure1-5"),
+                            DataPoint.create("id1-3", "id2-1", null, "measure2", "measure2-5"),
+                            DataPoint.create("id1-3", "id2-1", null, "measure3", "measure3-5")
                     );
+            stream.close();
+
+            softly.assertThat(dataset.allStreamWereClosed()).isTrue();
         }
     }
 }

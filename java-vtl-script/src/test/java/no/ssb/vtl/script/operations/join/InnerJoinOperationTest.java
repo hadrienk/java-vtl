@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.join;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,10 +27,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
 
@@ -38,6 +41,7 @@ import java.time.Instant;
 import java.time.Year;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,64 +58,42 @@ import static org.assertj.core.api.Assertions.entry;
 public class InnerJoinOperationTest extends RandomizedTest {
 
     @Test
-    public void testDefaultJoin() throws Exception {
-
-        Dataset ds1 = StaticDataset.create()
-                .withName("time", "ref_area", "partner", "obs_value", "obs_status")
-                .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                .andTypes(Instant.class, String.class, String.class, Long.class, String.class)
-
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "CA", 20L, "E")
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "BG", 2L, "P")
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "RO", 2L, "P")
-
+    public void testInvalidKeyExtractorBug() {
+        // When the position of the first dataset's identifiers does not match those of
+        // the subsequent datasets the key extractor can return the wrong objects.
+        StaticDataset t1 = StaticDataset.create()
+                .addComponent("ms1", MEASURE, Long.class)
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("id2", IDENTIFIER, String.class)
+                .addPoints(4L, "1", "2")
                 .build();
 
-        Dataset ds2 = StaticDataset.create()
-
-                .withName("time", "ref_area", "partner", "obs_value", "obs_status")
-                .andRoles(IDENTIFIER, IDENTIFIER, IDENTIFIER, MEASURE, ATTRIBUTE)
-                .andTypes(Instant.class, String.class, String.class, Long.class, String.class)
-
-                .addPoints(Instant.ofEpochMilli(0), "EU25", "CA", 10L,"P")
-
+        StaticDataset t2 = StaticDataset.create()
+                .addComponent("ms2", MEASURE, Long.class)
+                .addComponent("ms3", MEASURE, Long.class)
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("id2", IDENTIFIER, String.class)
+                .addPoints(8L, 16L, "1", "2")
                 .build();
 
-        AbstractJoinOperation result = new InnerJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
+        StaticDataset t3 = StaticDataset.create()
+                .addComponent("ms2", MEASURE, Long.class)
+                .addComponent("ms4", MEASURE, Long.class)
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("id2", IDENTIFIER, String.class)
+                .addPoints(32L, 64L, "1", "2")
+                .build();
 
-        new VTLPrintStream(System.out).println(result);
+        InnerJoinOperation result = new InnerJoinOperation(ImmutableMap.of(
+                "t1", t1,
+                "t2", t2,
+                "t3", t3
+        ));
 
-        DataStructure structure = result.getDataStructure();
-        DataStructure structure1 = ds1.getDataStructure();
-        DataStructure structure2 = ds2.getDataStructure();
+        assertThat(result.getData()).containsExactly(
+                DataPoint.create(4, "1", "2", 8, 16, 32, 64)
+        );
 
-        assertThat(structure)
-                .containsOnly(
-                        entry("time", structure1.get("time")),
-                        entry("ref_area", structure1.get("ref_area")),
-                        entry("partner", structure1.get("partner")),
-                        entry("ds1_obs_value", structure1.get("obs_value")),
-                        entry("ds1_obs_status", structure1.get("obs_status")),
-                        entry("ds2_obs_value", structure2.get("obs_value")),
-                        entry("ds2_obs_status", structure2.get("obs_status"))
-                );
-
-        assertThat(result.getData())
-                .flatExtracting(dataPoint -> {
-                    return structure.asMap(dataPoint).entrySet().stream()
-                            .flatMap(e -> Stream.of(e.getKey().getRole(), e.getKey(), e.getValue().get()))
-                            .collect(Collectors.toList());
-                })
-
-                .startsWith(
-                        IDENTIFIER, structure1.get("time"), Instant.ofEpochMilli(0),
-                        IDENTIFIER, structure1.get("ref_area"), "EU25",
-                        IDENTIFIER, structure1.get("partner"), "CA",
-                        MEASURE, structure1.get("obs_value"), 20L,
-                        ATTRIBUTE, structure1.get("obs_status"), "E",
-                        MEASURE, structure2.get("obs_value"), 10L,
-                        ATTRIBUTE, structure2.get("obs_status"), "P"
-                );
     }
 
     @Test
@@ -122,6 +104,122 @@ public class InnerJoinOperationTest extends RandomizedTest {
     }
 
     @Test
+    public void testGerMergerReturnsNull() {
+        // getMerger()  is deprecated.
+        StaticDataset ds1 = StaticDataset.create().addComponent("id", IDENTIFIER, String.class).build();
+        StaticDataset ds2 = StaticDataset.create().addComponent("id", IDENTIFIER, String.class).build();
+
+        InnerJoinOperation joinOperation = new InnerJoinOperation(
+                ImmutableMap.of(
+                        "ds1", ds1, "ds2", ds2
+                ), Collections.emptySet()
+        );
+        assertThat(joinOperation.getMerger(ds1, ds2)).isNull();
+    }
+
+    @Test
+    public void testIncompatibleOrder() {
+        StaticDataset ds1 = StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("idx", IDENTIFIER, String.class)
+                .addPoints("D", "ds1 match")
+                .addPoints("B", "ds1 miss")
+                .addPoints("C", "ds1 match")
+                .addPoints("A", "ds1 miss")
+                .build();
+
+        StaticDataset ds2 = StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("idy", IDENTIFIER, String.class)
+                .addPoints("F", "ds2 miss")
+                .addPoints("C", "ds2 match")
+                .addPoints("E", "ds2 miss")
+                .addPoints("D", "ds2 match")
+                .build();
+
+        InnerJoinOperation joinOperation = new InnerJoinOperation(
+                ImmutableMap.of(
+                        "ds1", ds1, "ds2", ds2
+                ), Collections.emptySet()
+        );
+
+        // This order is not possible.
+        Optional<Stream<DataPoint>> emptyData = joinOperation.getData(
+                Order.create(joinOperation.getDataStructure())
+                        .put("idx", Order.Direction.DESC)
+                        .build()
+        );
+        assertThat(emptyData.isPresent()).isFalse();
+
+        assertThat(joinOperation.getData()).containsExactlyInAnyOrder(
+                DataPoint.create("D", "ds1 match", "ds2 match"),
+                DataPoint.create("C", "ds1 match", "ds2 match")
+        );
+    }
+
+    @Test
+    public void testSourceOrderEmpty() {
+        StaticDataset ds1 = StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("idx", IDENTIFIER, String.class)
+                .addPoints("D", "ds1 match")
+                .addPoints("B", "ds1 miss")
+                .addPoints("C", "ds1 match")
+                .addPoints("A", "ds1 miss")
+                .build();
+
+        StaticDataset ds2 = StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("idy", IDENTIFIER, String.class)
+                .addPoints("F", "ds2 miss")
+                .addPoints("C", "ds2 match")
+                .addPoints("E", "ds2 miss")
+                .addPoints("D", "ds2 match")
+                .build();
+
+        Dataset orderCheckDataset = new Dataset() {
+
+            @Override
+            public Stream<DataPoint> getData() {
+                return ds2.getData();
+            }
+
+            @Override
+            public Optional<Map<String, Integer>> getDistinctValuesCount() {
+                return ds2.getDistinctValuesCount();
+            }
+
+            @Override
+            public Optional<Long> getSize() {
+                return ds2.getSize();
+            }
+
+            @Override
+            public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+                return Optional.empty();
+            }
+
+            @Override
+            public DataStructure getDataStructure() {
+                return ds2.getDataStructure();
+            }
+        };
+
+        InnerJoinOperation joinOperation = new InnerJoinOperation(
+                ImmutableMap.of(
+                        "ds1", ds1, "ds2", orderCheckDataset
+                ), Collections.emptySet()
+        );
+
+        Optional<Stream<DataPoint>> data = joinOperation.getData(Order.create(joinOperation.getDataStructure()).put("id1", Order.Direction.DESC).build());
+        assertThat(data.isPresent()).isTrue();
+        assertThat(data.get()).containsExactly(
+                DataPoint.create("D", "ds1 match", "ds2 match"),
+                DataPoint.create("C", "ds1 match", "ds2 match")
+        );
+    }
+
+    @Test
     @Repeat(iterations = 10)
     public void testRandomDatasets() throws Exception {
 
@@ -129,7 +227,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         Integer rowAmount = scaledRandomIntBetween(0, 100);
         Set<Component> allComponents = Sets.newHashSet();
 
-        Map<String, Dataset> datasets = Maps.newLinkedHashMap();
+        Map<String, DatasetCloseWatcher> datasets = Maps.newLinkedHashMap();
         for (int i = 0; i < datasetAmount; i++) {
 
             StaticDataset.ValueBuilder datasetBuilder = StaticDataset.create()
@@ -148,13 +246,13 @@ public class InnerJoinOperationTest extends RandomizedTest {
             }
 
             StaticDataset dataset = datasetBuilder.build();
-            datasets.put("ds" + i, dataset);
+            datasets.put("ds" + i, DatasetCloseWatcher.wrap(dataset));
             allComponents.addAll(dataset.getDataStructure().values());
 
             new VTLPrintStream(System.out).println(datasetBuilder);
         }
 
-        InnerJoinOperation result = new InnerJoinOperation(datasets);
+        InnerJoinOperation result = new InnerJoinOperation(Maps.transformValues(datasets, ds -> ds));
 
         new VTLPrintStream(System.out).println(result);
 
@@ -171,13 +269,17 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 .flatMap(Collection::stream)
                 .map(VTLObject::get)
                 .collect(Collectors.toList());
-    
-        assertThat(result.getData().flatMap(Collection::stream))
-                .describedAs("the data")
-                .extracting(VTLObject::get)
-                .containsOnlyElementsOf(
-                        data
-                );
+
+        try (Stream<DataPoint> stream = result.getData()) {
+            assertThat(stream.flatMap(Collection::stream))
+                    .describedAs("the data")
+                    .extracting(VTLObject::get)
+                    .containsOnlyElementsOf(
+                            data
+                    );
+        } finally {
+            assertThat(datasets.values()).allMatch(DatasetCloseWatcher::allStreamWereClosed);
+        }
 
     }
 

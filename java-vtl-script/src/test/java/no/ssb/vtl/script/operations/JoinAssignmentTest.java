@@ -34,6 +34,8 @@ import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
+import no.ssb.vtl.script.operations.join.ComponentBindings;
+import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
@@ -42,20 +44,23 @@ import org.junit.Test;
 
 import javax.script.Bindings;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JoinAssignmentTest {
     private VTLExpression expression;
-    private Dataset dataset;
+    private DatasetCloseWatcher dataset;
 
     @Rule
     public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         expression = new VTLExpression() {
             @Override
             public VTLObject resolve(Bindings bindings) {
@@ -76,16 +81,16 @@ public class JoinAssignmentTest {
 
         DataPoint dataPoint = DataPoint.create(3);
         dataPoint.set(0, VTLObject.of("idValue"));
-        dataPoint.set(0, VTLObject.of("measureValue"));
-        dataPoint.set(0, VTLObject.of("attrValue"));
+        dataPoint.set(1, VTLObject.of("measureValue"));
+        dataPoint.set(2, VTLObject.of("attrValue"));
 
-        dataset = StaticDataset.create(structure)
+        dataset = DatasetCloseWatcher.wrap(StaticDataset.create(structure)
                 .addPoints(dataPoint)
-                .build();
+                .build());
     }
 
     @Test
-    public void testTypeConversion() throws Exception {
+    public void testTypeConversion() {
         ImmutableMap<Class<? extends VTLObject>, Class<?>> types = ImmutableMap.<Class<? extends VTLObject>, Class<?>>builder()
                 .put(VTLNumber.class, Number.class)
                 .put(VTLInteger.class, Long.class)
@@ -104,7 +109,7 @@ public class JoinAssignmentTest {
 
     // Replacing identifier is not allowed.
     @Test
-    public void testIdentifierFails() throws Exception {
+    public void testIdentifierFails() {
 
         List<JoinAssignment> operations = Lists.newArrayList(
                 new JoinAssignment(dataset, expression, "id", Component.Role.IDENTIFIER, true),
@@ -123,7 +128,7 @@ public class JoinAssignmentTest {
 
     // When using implicit the role must be the same if the component is already present.
     @Test
-    public void testImplicitFails() throws Exception {
+    public void testImplicitFails() {
 
         List<JoinAssignment> operations = Lists.newArrayList(
                 new JoinAssignment(dataset, expression, "measure", Component.Role.MEASURE, true),
@@ -147,9 +152,53 @@ public class JoinAssignmentTest {
         }
     }
 
+    @Test
+    public void testNewAttributeValue() {
+
+        JoinAssignment operation;
+        operation = new JoinAssignment(
+                dataset,
+                expression,
+                "attr",
+                Component.Role.ATTRIBUTE,
+                false,
+                new ComponentBindings(Collections.emptyMap())
+        );
+        try (Stream<DataPoint> data = operation.getData()) {
+            assertThat(data.map(dp -> dp.get(2))).containsExactly(
+                    VTLObject.of("changed")
+            );
+        } finally {
+            assertThat(dataset.allStreamWereClosed()).isTrue();
+        }
+
+    }
+
+    @Test
+    public void testNewMeasureValue() {
+
+        JoinAssignment operation;
+        operation = new JoinAssignment(
+                dataset,
+                expression,
+                "measure",
+                Component.Role.MEASURE,
+                false,
+                new ComponentBindings(Collections.emptyMap())
+        );
+        try (Stream<DataPoint> data = operation.getData()) {
+            assertThat(data.map(dp -> dp.get(1))).containsExactly(
+                    VTLObject.of("changed")
+            );
+        } finally {
+            assertThat(dataset.allStreamWereClosed()).isTrue();
+        }
+
+    }
+
     // Measure and attribute roles can be changed.
     @Test
-    public void testChangeRoles() throws Exception {
+    public void testChangeRoles() {
 
         JoinAssignment operation;
 
@@ -166,7 +215,7 @@ public class JoinAssignmentTest {
     }
 
     @Test
-    public void testNewRoles() throws Exception {
+    public void testNewRoles() {
 
         JoinAssignment operation;
 

@@ -21,60 +21,135 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.VTLFloat;
+import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.TypeException;
+import no.ssb.vtl.script.operations.aggregation.AbstractAggregationFunction;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
     private final List<Component> groupBy;
     private final List<Component> aggregationComponents;
-    private final Function<List<VTLNumber>, VTLNumber> aggregationFunction;
+    private final AbstractAggregationFunction<? extends VTLNumber> aggregationFunction;
 
-    public AggregationOperation(Dataset child, List<Component> groupBy, List<Component> aggregationComponents, Function<List<VTLNumber>, VTLNumber> aggregationFunction) {
+    private final List<String> aggregateColumns;
+    private final ImmutableList<String> columns;
+    private final ImmutableList<String> childColumns;
+    private final ImmutableList<String> groupByColumns;
+
+    public AggregationOperation(Dataset child, List<Component> groupBy, List<Component> aggregationComponents, AbstractAggregationFunction<? extends VTLNumber> aggregationFunction) {
         super(child);
         this.groupBy = groupBy;
         this.aggregationComponents = aggregationComponents;
         this.aggregationFunction = aggregationFunction;
-        
+
+        this.groupByColumns = computeGroupByColumns();
+        this.aggregateColumns = computeColumnsToAggregate(aggregationComponents);
+        this.columns = ImmutableList.copyOf(getDataStructure().keySet());
+        this.childColumns = ImmutableList.copyOf(getChild().getDataStructure().keySet());
+    }
+
+    private ImmutableList<String> computeGroupByColumns() {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        DataStructure structure = getDataStructure();
+        for (String columnName : structure.keySet()) {
+            Component component = structure.get(columnName);
+            if (groupBy.contains(component)) {
+                builder.add(columnName);
+            }
+        }
+        return builder.build();
+    }
+
+    private ImmutableList<String> computeColumnsToAggregate(List<Component> aggregationComponents) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        DataStructure childStructure = getChild().getDataStructure();
+        for (String columnName : childStructure.keySet()) {
+            Component component = childStructure.get(columnName);
+            if (aggregationComponents.contains(component)) {
+                builder.add(columnName);
+            }
+        }
+        return builder.build();
     }
 
     @Override
     protected DataStructure computeDataStructure() {
         DataStructure.Builder newDataStructure = DataStructure.builder();
-        for (Map.Entry<String, Component> entry : getChild().getDataStructure().entrySet()) {
-            if (groupBy.contains(entry.getValue())) {
-                newDataStructure.put(entry);
-            } else if (aggregationComponents.contains(entry.getValue())) {
-                if (Number.class.isAssignableFrom(entry.getValue().getType())) {
-                    newDataStructure.put(entry);
+        DataStructure childStructure = getChild().getDataStructure();
+        for (String column : childStructure.keySet()) {
+            Component component = childStructure.get(column);
+            if (groupBy.contains(component)) {
+                newDataStructure.put(column, component);
+            } else if (aggregationComponents.contains(component)) {
+                Class<?> originalType = component.getType();
+                if (Number.class.isAssignableFrom(originalType)) {
+                    Class<?> newType = aggregationFunction.getVTLReturnTypeFor(originalType);
+                    newDataStructure.put(column, component.getRole(), newType);
                 } else {
+                    // TODO: This should be handled in the visitor (before execution)
                     throw new ParseCancellationException(
-                            new TypeException(String.format("Cannot aggregate component %s of type %s. It must be numeric", entry.getKey(), entry.getValue().getType()), "VTL-02xx"));
+                            new TypeException(String.format("Cannot aggregate component %s of type %s. It must be numeric", column, component.getType()), "VTL-02xx"));
                 }
             }
         }
         return newDataStructure.build();
     }
 
+    private DataPoint aggregate(List<DataPoint> datapoints) {
+
+        DataPoint result = DataPoint.create(columns.size());
+
+        // Aggregate and copy into the result.
+        for (String columnName : aggregateColumns) {
+            List<VTLNumber> list = Lists.newArrayListWithExpectedSize(datapoints.size());
+            int childIndex = childColumns.indexOf(columnName);
+            int index = columns.indexOf(columnName);
+            for (DataPoint datapoint : datapoints) {
+                VTLObject value = datapoint.get(childIndex);
+                // That's why VTLObject.NULL should be removed.
+                if (value == VTLObject.NULL) {
+                    if (getChild().getDataStructure().get(columnName).getType() == Double.class) {
+                        value = VTLFloat.of((Double) null);
+                    } else {
+                        value = VTLInteger.of((Long) null);
+                    }
+                }
+                list.add((VTLNumber) value);
+            }
+            result.set(index, aggregationFunction.apply(list));
+        }
+
+        // Copy the values of the group by columns.
+        DataPoint firstRow = datapoints.get(0);
+        for (String columnName : groupByColumns) {
+            result.set(
+                    columns.indexOf(columnName), firstRow.get(childColumns.indexOf(columnName))
+            );
+        }
+
+        return result;
+    }
+
     @Override
     public Stream<DataPoint> getData() {
         DataStructure childStructure = getChild().getDataStructure();
-        DataStructure structure = getDataStructure();
     
         Order.Builder builder = Order.create(childStructure);
         groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
@@ -82,28 +157,10 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     
         Stream<DataPoint> data = getChild().getData(order).orElseGet(() -> getChild().getData().sorted(order));
         Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(data,
-                (dataPoint1, dataPoint2) -> order.compare(dataPoint1, dataPoint2) == 0)
+                (previous, current) -> order.compare(previous, current) == 0)
                 .onClose(data::close);
-    
-        @SuppressWarnings("UnnecessaryLocalVariable")
-        Stream<DataPoint> aggregatedDataPoints = groupedDataPoints.map(dataPoints -> {
-            DataPoint firstDataPointOfGroup = DataPoint.create(dataPoints.get(0));
-            Map<Component, VTLObject> resultAsMap = childStructure.asMap(firstDataPointOfGroup);
-    
-            for (Component aggregationComponent : aggregationComponents) {
-    
-                List<VTLNumber> aggregationValues = (List) dataPoints.stream()
-                        .map(dataPoint -> childStructure.asMap(dataPoint).get(aggregationComponent))
-                        .filter(vtlObject -> !VTLObject.NULL.equals(vtlObject))
-                        .map(vtlObject -> VTLObject.of(vtlObject.get()))
-                        .collect(Collectors.toList());
-    
-                resultAsMap.put(aggregationComponent, aggregationFunction.apply(aggregationValues));
-            }
-            return structure.fromMap(resultAsMap);
-        });
         
-        return aggregatedDataPoints;
+        return groupedDataPoints.map(this::aggregate);
     }
 
     /**

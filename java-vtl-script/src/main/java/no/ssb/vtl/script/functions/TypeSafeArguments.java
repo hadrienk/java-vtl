@@ -32,7 +32,7 @@ public class TypeSafeArguments {
 
     private static final String WRONG_ARGUMENT_TYPE = "invalid type %s for argument %s, expected %s";
 
-    public TypeSafeArguments(Map<String, VTLObject> arguments, ImmutableMap<String, AbstractVTLFunction.Argument> signature) {
+    public TypeSafeArguments(Map<String, VTLObject> arguments, Map<String, AbstractVTLFunction.Argument<?>> signature) {
         checkArgument(arguments.size() == signature.size());
         ImmutableMap.Builder<AbstractVTLFunction.Argument, VTLObject<?>> builder = ImmutableMap.builder();
         for (String name : signature.keySet()) {

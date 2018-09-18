@@ -20,6 +20,8 @@ package no.ssb.vtl.model;
 
 public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VTLInteger> {
 
+    public static final VTLInteger NULL = VTLInteger.of((Integer) null);
+
     private VTLInteger() {
     }
 
@@ -29,7 +31,7 @@ public abstract class VTLInteger extends VTLNumber<Long>  implements VTLTyped<VT
     }
 
     public static VTLInteger of(Integer value) {
-        return VTLInteger.of(value.longValue());
+        return VTLInteger.of(value != null ? value.longValue() : null);
     }
 
     public static VTLInteger of(Long value) {

@@ -21,7 +21,6 @@ package no.ssb.vtl.script.visitors.join;
  */
 
 import com.google.common.collect.ImmutableSet;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.operations.FoldOperation;
@@ -31,6 +30,7 @@ import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.script.visitors.AbstractVariableVisitor.unEscape;
 
 public class FoldVisitor extends VTLDatasetExpressionVisitor<FoldOperation> {
 
@@ -44,11 +44,12 @@ public class FoldVisitor extends VTLDatasetExpressionVisitor<FoldOperation> {
 
     @Override
     public FoldOperation visitJoinFoldExpression(VTLParser.JoinFoldExpressionContext ctx) {
-        String dimension = ctx.dimension.getText();
-        String measure = ctx.measure.getText();
+        String dimension = unEscape(ctx.dimension.getText());
+        String measure = unEscape(ctx.measure.getText());
 
-        Set<Component> elements = ctx.variableExpression().stream()
+        Set<String> elements = ctx.variableExpression().stream()
                 .map(componentVisitor::visit)
+                .map(dataset.getDataStructure()::getName)
                 .collect(ImmutableSet.toImmutableSet());
 
         return new FoldOperation(dataset, dimension, measure, elements);

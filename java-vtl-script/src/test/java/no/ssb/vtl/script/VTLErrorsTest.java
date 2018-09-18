@@ -42,6 +42,23 @@ public class VTLErrorsTest {
                 .isInstanceOf(VTLCompileException.class)
                 .hasMessageContaining("undefined variable bla")
                 .hasMessageContaining("missing ','")
-                .hasMessageContaining("missing arguments [decimals]");
+                .hasMessageContaining("missing argument(s): decimals");
+    }
+
+    @Test
+    public void testUndefinedFunction() {
+
+        // @formatter:off
+        String script = "variable := notReallyAFunction(1,2,3)";
+        // @formatter:on
+
+        VTLScriptEngine engine = new VTLScriptEngine();
+        assertThatThrownBy(() -> {
+            engine.eval(script);
+        })
+                .as("engine exception")
+                .isInstanceOf(VTLCompileException.class)
+                .hasMessageContaining("undefined function")
+                .hasMessageContaining("notReallyAFunction");
     }
 }

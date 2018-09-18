@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.script.visitors.AbstractVariableVisitor.unEscape;
 
 /**
  * Assignment visitor.
@@ -68,7 +69,7 @@ public class AssignmentVisitor extends VTLBaseVisitor<Object> {
     
     @Override
     public Object visitAssignment(VTLParser.AssignmentContext ctx) {
-        String name = ctx.variable().getText();
+        String name = unEscape(ctx.variable().getText());
         Object value;
         if (ctx.datasetExpression() != null) {
             value = visit(ctx.datasetExpression());
