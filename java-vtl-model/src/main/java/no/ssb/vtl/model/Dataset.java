@@ -40,12 +40,11 @@ package no.ssb.vtl.model;
  * #L%
  */
 
-import com.google.common.base.Predicate;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
