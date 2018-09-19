@@ -10,6 +10,13 @@
 
 * Add support for escaped variable names
 
+## 0.1.10-3 - 2018-09-19
+
+### Changed
+
+* Fix a bug in InnerJoinOperation when requested order does not include all the identifiers
+
+
 ## 0.1.10-2 - 2018-09-04
 
 ### Changed
