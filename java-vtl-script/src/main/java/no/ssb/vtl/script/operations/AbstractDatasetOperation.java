@@ -1,4 +1,4 @@
-package no.ssb.vtl.model;
+package no.ssb.vtl.script.operations;
 
 /*-
  * ========================LICENSE_START=================================
@@ -21,14 +21,34 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.collect.ImmutableList;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
 
-public abstract class AbstractUnaryDatasetOperation extends AbstractDatasetOperation {
+import java.util.List;
 
-    protected AbstractUnaryDatasetOperation(Dataset child) {
-        super(ImmutableList.of(child));
+import static com.google.common.base.Preconditions.checkNotNull;
+
+/**
+ * Base class for DatasetOperations.
+ */
+public abstract class AbstractDatasetOperation implements Dataset {
+
+    private final ImmutableList<Dataset> children;
+    private DataStructure cache;
+
+    protected AbstractDatasetOperation(List<Dataset> children) {
+        this.children = ImmutableList.copyOf(checkNotNull(children));
     }
 
-    public Dataset getChild() {
-        return getChildren().get(0);
+    @Override
+    public final DataStructure getDataStructure() {
+        return cache = (cache == null ? computeDataStructure() : cache);
     }
+
+    protected abstract DataStructure computeDataStructure();
+
+    public ImmutableList<Dataset> getChildren() {
+        return children;
+    }
+
 }

@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.filter;
 
 /*-
  * ========================LICENSE_START=================================
@@ -20,22 +20,23 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
-import no.ssb.vtl.model.*;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VTLBoolean;
+import no.ssb.vtl.model.VTLExpression;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.script.Bindings;
-
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FilterOperationTest {
-
-    private DatasetCloseWatcher dataset;
-    private ComponentBindings componentBindings;
 
     private static VTLExpression NULL = new VTLExpression() {
         @Override
@@ -48,7 +49,6 @@ public class FilterOperationTest {
             return VTLBoolean.class;
         }
     };
-
     private static VTLExpression FALSE = new VTLExpression() {
         @Override
         public VTLObject resolve(Bindings bindings) {
@@ -60,7 +60,6 @@ public class FilterOperationTest {
             return VTLBoolean.class;
         }
     };
-
     private static VTLExpression TRUE = new VTLExpression() {
         @Override
         public VTLObject resolve(Bindings bindings) {
@@ -72,6 +71,8 @@ public class FilterOperationTest {
             return VTLBoolean.class;
         }
     };
+    private DatasetCloseWatcher dataset;
+    private ComponentBindings componentBindings;
 
     @Before
     public void setUp() {

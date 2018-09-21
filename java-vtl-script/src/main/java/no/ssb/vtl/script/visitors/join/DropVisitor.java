@@ -23,7 +23,7 @@ package no.ssb.vtl.script.visitors.join;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.DropOperation;
+import no.ssb.vtl.script.operations.drop.DropOperation;
 import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 

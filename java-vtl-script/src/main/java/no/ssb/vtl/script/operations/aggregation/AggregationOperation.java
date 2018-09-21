@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.aggregation;
 
 /*-
  * ========================LICENSE_START=================================
@@ -23,7 +23,6 @@ package no.ssb.vtl.script.operations;
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -34,7 +33,7 @@ import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.TypeException;
-import no.ssb.vtl.script.operations.aggregation.AbstractAggregationFunction;
+import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;

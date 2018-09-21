@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.unfold;
 
 /*-
  * ========================LICENSE_START=================================
@@ -22,7 +22,6 @@ package no.ssb.vtl.script.operations;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.base.MoreObjects;
-import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
 import no.ssb.vtl.model.DataPoint;
@@ -30,6 +29,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.Map;
 import java.util.Optional;

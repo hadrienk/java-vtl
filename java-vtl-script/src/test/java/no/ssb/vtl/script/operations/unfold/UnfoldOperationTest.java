@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.unfold;
 
 /*-
  * ========================LICENSE_START=================================
@@ -22,27 +22,34 @@ package no.ssb.vtl.script.operations;
 
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.*;
+import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
+import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Component.Role.*;
-import static org.mockito.Mockito.*;
+import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
+import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
+import static no.ssb.vtl.model.Component.Role.MEASURE;
 
 public class UnfoldOperationTest {
 
     @Test
     public void testArguments() {
 
-        Dataset dataset = mock(Dataset.class);
-        Component validIdentifierReference = mock(Component.class);
-        Component validMeasureReference = mock(Component.class);
+        Dataset dataset = Mockito.mock(Dataset.class);
+        Component validIdentifierReference = Mockito.mock(Component.class);
+        Component validMeasureReference = Mockito.mock(Component.class);
         Set<String> validElements = Sets.newHashSet("element1, element2");
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
@@ -83,12 +90,12 @@ public class UnfoldOperationTest {
                 "id2", IDENTIFIER, String.class,
                 "measure1", MEASURE, String.class
         );
-        Dataset dataset = mock(Dataset.class);
-        when(dataset.getDataStructure()).thenReturn(structure);
+        Dataset dataset = Mockito.mock(Dataset.class);
+        Mockito.when(dataset.getDataStructure()).thenReturn(structure);
 
         Component validDimension = structure.get("id2");
         Component validMeasure = structure.get("measure1");
-        Component invalidReference = mock(Component.class);
+        Component invalidReference = Mockito.mock(Component.class);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {

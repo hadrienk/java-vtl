@@ -28,6 +28,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
@@ -82,7 +83,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     /**
-     * TODO: Move to the {@link no.ssb.vtl.model.AbstractDatasetOperation}.
+     * TODO: Move to the {@link AbstractDatasetOperation}.
      */
     private Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Dataset.Filtering filtering, Set<String> components) {
         Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);

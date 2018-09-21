@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.rename.RenameOperation;
 import no.ssb.vtl.script.visitors.ComponentVisitor;
 import no.ssb.vtl.script.visitors.VTLDatasetExpressionVisitor;
 

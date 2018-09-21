@@ -45,7 +45,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLBaseVisitor;
 import no.ssb.vtl.parser.VTLParser;
-import no.ssb.vtl.script.operations.RenameOperation;
+import no.ssb.vtl.script.operations.rename.RenameOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 
 import java.util.List;

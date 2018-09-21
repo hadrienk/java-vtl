@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.fold;
 
 /*-
  * ========================LICENSE_START=================================
@@ -34,6 +34,7 @@ import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,8 +49,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class FoldOperationTest extends RandomizedTest {
 
@@ -75,7 +74,7 @@ public class FoldOperationTest extends RandomizedTest {
         );
 
         Set<String> validElements = Sets.newHashSet(structure.keySet());
-        Dataset dataset = mock(Dataset.class);
+        Dataset dataset = Mockito.mock(Dataset.class);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
@@ -105,7 +104,7 @@ public class FoldOperationTest extends RandomizedTest {
     @Test
     public void testConstraint() throws Exception {
 
-        Dataset dataset = mock(Dataset.class);
+        Dataset dataset = Mockito.mock(Dataset.class);
         DataStructure structure = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
@@ -113,7 +112,7 @@ public class FoldOperationTest extends RandomizedTest {
                 "m2", MEASURE, String.class,
                 "m3", MEASURE, String.class
         );
-        Dataset invalidDataset = mock(Dataset.class);
+        Dataset invalidDataset = Mockito.mock(Dataset.class);
         DataStructure wrongTypesDataset = DataStructure.of(
                 "id1", IDENTIFIER, String.class,
                 "id2", IDENTIFIER, String.class,
@@ -139,8 +138,8 @@ public class FoldOperationTest extends RandomizedTest {
                 wrongTypesDataset.keySet()
         );
 
-        when(dataset.getDataStructure()).thenReturn(structure);
-        when(invalidDataset.getDataStructure()).thenReturn(wrongTypesDataset);
+        Mockito.when(dataset.getDataStructure()).thenReturn(structure);
+        Mockito.when(invalidDataset.getDataStructure()).thenReturn(wrongTypesDataset);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             softly.assertThatThrownBy(() -> {

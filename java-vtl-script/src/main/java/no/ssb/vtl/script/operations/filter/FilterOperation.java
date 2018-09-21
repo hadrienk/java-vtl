@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.filter;
 
 /*-
  * ========================LICENSE_START=================================
@@ -20,13 +20,13 @@ package no.ssb.vtl.script.operations;
  * =========================LICENSE_END==================================
  */
 
-import no.ssb.vtl.model.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 
