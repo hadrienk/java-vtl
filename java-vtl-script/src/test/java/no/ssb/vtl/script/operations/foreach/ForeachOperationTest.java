@@ -28,10 +28,15 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.script.VTLDataset;
+import no.ssb.vtl.script.VTLScriptEngine;
 import no.ssb.vtl.script.operations.hierarchy.HierarchyOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import org.junit.Test;
 
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -45,58 +50,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ForeachOperationTest {
 
     @Test
+    public void testEval() throws ScriptException {
+        ScriptEngine engine = new VTLScriptEngine();
+        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+
+        bindings.put("t1", createInnerJoin1());
+        bindings.put("t2", createInnerJoin2());
+
+        engine.eval("" +
+                "res := foreach year in t1, t2 do" +
+                "  test := [t1, t2] {" +
+                "    filter true" +
+                "  }" +
+                "done" +
+                "", bindings);
+
+        assertThat(bindings).containsKeys("res");
+        Object res = bindings.get("res");
+        assertThat(res).isInstanceOf(Dataset.class);
+        Dataset ds = (Dataset) res;
+        assertThat(ds.getData()).containsExactlyInAnyOrder(
+                createInnerJoinResult()
+        );
+    }
+
+    @Test
     public void testInnerJoin() {
-        Dataset data1 = StaticDataset.create()
-                .addComponent("year", IDENTIFIER, Long.class)
-                .addComponent("id", IDENTIFIER, Long.class)
-                .addComponent("measure", MEASURE, String.class)
-                .addComponent("attribute", ATTRIBUTE, String.class)
-
-                .addPoints(2000L, 1L, "m1", "t1-2000")
-                .addPoints(2000L, 2L, "m2", "t1-2000")
-                .addPoints(2000L, 3L, "m3", "t1-2000")
-
-                .addPoints(2001L, 1L, "m1", "t1-2001")
-                .addPoints(2001L, 2L, "m2", "t1-2001")
-                .addPoints(2001L, 3L, "m3", "t1-2001")
-                .addPoints(2001L, 4L, "m4", "t1-2001")
-
-                .addPoints(2003L, 1L, "m1", "t1-2003")
-                .addPoints(2003L, 2L, "m2", "t1-2003")
-                .addPoints(2003L, 3L, "m3", "t1-2003")
-                .addPoints(2003L, 4L, "m4", "t1-2003")
-
-                .addPoints(2004L, 1L, "m1", "t1-2004")
-                .addPoints(2004L, 2L, "m2", "t1-2004")
-                .addPoints(2004L, 3L, "m3", "t1-2004")
-
-                .build();
-
-        Dataset data2 = StaticDataset.create()
-                .addComponent("year", IDENTIFIER, Long.class)
-                .addComponent("id", IDENTIFIER, Long.class)
-                .addComponent("measure", MEASURE, String.class)
-                .addComponent("attribute", ATTRIBUTE, String.class)
-
-                .addPoints(2000L, 1L, "m1", "t2-2000")
-                .addPoints(2000L, 2L, "m2", "t2-2000")
-                .addPoints(2000L, 3L, "m3", "t2-2000")
-                .addPoints(2000L, 4L, "m4", "t2-2000")
-
-                .addPoints(2002L, 1L, "m1", "t2-2002")
-                .addPoints(2002L, 2L, "m2", "t2-2002")
-                .addPoints(2002L, 3L, "m3", "t2-2002")
-                .addPoints(2002L, 4L, "m4", "t2-2002")
-
-                .addPoints(2003L, 1L, "m1", "t2-2003")
-                .addPoints(2003L, 2L, "m2", "t2-2003")
-                .addPoints(2003L, 3L, "m3", "t2-2003")
-
-                .addPoints(2004L, 1L, "m1", "t2-2004")
-                .addPoints(2004L, 2L, "m2", "t2-2004")
-                .addPoints(2004L, 3L, "m3", "t2-2004")
-
-                .build();
+        Dataset data1 = createInnerJoin1();
+        Dataset data2 = createInnerJoin2();
 
         ForeachOperation foreachOperation = new ForeachOperation(ImmutableMap.of("t1", data1, "t2", data2), ImmutableSet.of("year"));
         foreachOperation.setBlock(bindings -> {
@@ -121,7 +102,13 @@ public class ForeachOperationTest {
         assertThat(data).isNotEmpty();
         Stream<DataPoint> stream = data.get();
         assertThat(stream).containsExactly(
-                DataPoint.create(2004, 1, "m1", "t1-2004", "m1", "t2-2004"),
+                createInnerJoinResult()
+        );
+
+    }
+
+    private DataPoint[] createInnerJoinResult() {
+        return new DataPoint[]{DataPoint.create(2004, 1, "m1", "t1-2004", "m1", "t2-2004"),
                 DataPoint.create(2004, 2, "m2", "t1-2004", "m2", "t2-2004"),
                 DataPoint.create(2004, 3, "m3", "t1-2004", "m3", "t2-2004"),
                 DataPoint.create(2003, 1, "m1", "t1-2003", "m1", "t2-2003"),
@@ -129,9 +116,63 @@ public class ForeachOperationTest {
                 DataPoint.create(2003, 3, "m3", "t1-2003", "m3", "t2-2003"),
                 DataPoint.create(2000, 1, "m1", "t1-2000", "m1", "t2-2000"),
                 DataPoint.create(2000, 2, "m2", "t1-2000", "m2", "t2-2000"),
-                DataPoint.create(2000, 3, "m3", "t1-2000", "m3", "t2-2000")
-        );
+                DataPoint.create(2000, 3, "m3", "t1-2000", "m3", "t2-2000")};
+    }
 
+    private Dataset createInnerJoin2() {
+        return StaticDataset.create()
+                    .addComponent("year", IDENTIFIER, Long.class)
+                    .addComponent("id", IDENTIFIER, Long.class)
+                    .addComponent("measure", MEASURE, String.class)
+                    .addComponent("attribute", ATTRIBUTE, String.class)
+
+                    .addPoints(2000L, 1L, "m1", "t2-2000")
+                    .addPoints(2000L, 2L, "m2", "t2-2000")
+                    .addPoints(2000L, 3L, "m3", "t2-2000")
+                    .addPoints(2000L, 4L, "m4", "t2-2000")
+
+                    .addPoints(2002L, 1L, "m1", "t2-2002")
+                    .addPoints(2002L, 2L, "m2", "t2-2002")
+                    .addPoints(2002L, 3L, "m3", "t2-2002")
+                    .addPoints(2002L, 4L, "m4", "t2-2002")
+
+                    .addPoints(2003L, 1L, "m1", "t2-2003")
+                    .addPoints(2003L, 2L, "m2", "t2-2003")
+                    .addPoints(2003L, 3L, "m3", "t2-2003")
+
+                    .addPoints(2004L, 1L, "m1", "t2-2004")
+                    .addPoints(2004L, 2L, "m2", "t2-2004")
+                    .addPoints(2004L, 3L, "m3", "t2-2004")
+
+                    .build();
+    }
+
+    private Dataset createInnerJoin1() {
+        return StaticDataset.create()
+                    .addComponent("year", IDENTIFIER, Long.class)
+                    .addComponent("id", IDENTIFIER, Long.class)
+                    .addComponent("measure", MEASURE, String.class)
+                    .addComponent("attribute", ATTRIBUTE, String.class)
+
+                    .addPoints(2000L, 1L, "m1", "t1-2000")
+                    .addPoints(2000L, 2L, "m2", "t1-2000")
+                    .addPoints(2000L, 3L, "m3", "t1-2000")
+
+                    .addPoints(2001L, 1L, "m1", "t1-2001")
+                    .addPoints(2001L, 2L, "m2", "t1-2001")
+                    .addPoints(2001L, 3L, "m3", "t1-2001")
+                    .addPoints(2001L, 4L, "m4", "t1-2001")
+
+                    .addPoints(2003L, 1L, "m1", "t1-2003")
+                    .addPoints(2003L, 2L, "m2", "t1-2003")
+                    .addPoints(2003L, 3L, "m3", "t1-2003")
+                    .addPoints(2003L, 4L, "m4", "t1-2003")
+
+                    .addPoints(2004L, 1L, "m1", "t1-2004")
+                    .addPoints(2004L, 2L, "m2", "t1-2004")
+                    .addPoints(2004L, 3L, "m3", "t1-2004")
+
+                    .build();
     }
 
     @Test
