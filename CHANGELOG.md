@@ -4,6 +4,7 @@
 
 ### Added
 
+* Add support for experimental foreach operator (#96)
 * Throw ContextualRuntimeException in user function visitor 
 
 ### Changed
