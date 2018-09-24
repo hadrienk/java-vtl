@@ -35,7 +35,6 @@ import java.util.function.Supplier;
 
 public final class DataPointMap {
 
-    private final DataStructure structure;
     private final ImmutableList<String> names;
 
     class View extends ForwardingMap<String, VTLObject> {
@@ -69,9 +68,7 @@ public final class DataPointMap {
         return new View(dataPoint);
     }
 
-    public DataPointMap(DataStructure structure) {
-        this.structure = structure;
-        ImmutableMap.Builder<String, Supplier<VTLObject>> builder = ImmutableMap.builder();
+    DataPointMap(DataStructure structure) {
         names = ImmutableSet.copyOf(structure.keySet()).asList();
     }
 }
