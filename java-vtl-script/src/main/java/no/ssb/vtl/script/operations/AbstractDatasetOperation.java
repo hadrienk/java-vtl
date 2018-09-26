@@ -29,12 +29,10 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Base class for DatasetOperations.
@@ -44,14 +42,30 @@ public abstract class AbstractDatasetOperation implements Dataset {
     private final ImmutableList<AbstractDatasetOperation> children;
     private DataStructure cache;
 
-    protected AbstractDatasetOperation(List<AbstractDatasetOperation> children) {
-        this.children = ImmutableList.copyOf(checkNotNull(children));
+    public AbstractDatasetOperation(Collection<Dataset> children) {
+        ImmutableList.Builder<AbstractDatasetOperation> childrenCopy = ImmutableList.builder();
+        for (Dataset child : children) {
+            if (child instanceof AbstractDatasetOperation) {
+                childrenCopy.add((AbstractDatasetOperation) child);
+            } else {
+                childrenCopy.add(new DatasetOperationWrapper(child));
+            }
+        }
+        this.children = childrenCopy.build();
     }
 
     @Override
     public final Stream<DataPoint> getData() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public final Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
+        return Optional.of(computeData(orders, filtering, components));
+    }
+
+    public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
+
 
     @Override
     public final Optional<Stream<DataPoint>> getData(Ordering order) {

@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.aggregation;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,8 +27,10 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
@@ -40,6 +42,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class AggregationOperation extends AbstractUnaryDatasetOperation {
@@ -112,6 +115,16 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         return newDataStructure.build();
     }
 
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
     private DataPoint aggregate(List<DataPoint> datapoints) {
 
         DataPoint result = DataPoint.create(columns.size());
@@ -148,24 +161,21 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> getData() {
+    protected Stream<DataPoint> computeData(Ordering orders, no.ssb.vtl.model.Filtering filtering, Set<String> components) {
 
         DataStructure childStructure = getChild().getDataStructure();
         Order.Builder builder = Order.create(childStructure);
         groupBy.forEach(component -> builder.put(component, Ordering.Direction.ASC));
         Order order = builder.build();
-    
+
         Stream<DataPoint> data = getChild().getData(order).orElseGet(() -> getChild().getData().sorted(order));
         Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(data,
                 (previous, current) -> order.compare(previous, current) == 0)
                 .onClose(data::close);
-        
+
         return groupedDataPoints.map(this::aggregate);
     }
 
-    /**
-     * Returns the count of unique values by column.
-     */
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
         return Optional.empty();

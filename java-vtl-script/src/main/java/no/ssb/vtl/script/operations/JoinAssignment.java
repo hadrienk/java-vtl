@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,6 +25,10 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
 import no.ssb.vtl.model.VTLExpression;
@@ -39,6 +43,7 @@ import no.ssb.vtl.script.operations.join.DataPointBindings;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -80,8 +85,6 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             return Long.class;
         if (vtlType == VTLFloat.class)
             return Double.class;
-        if (vtlType == VTLInteger.class)
-            return Long.class;
         if (vtlType == VTLNumber.class)
             return Number.class;
         if (vtlType == VTLDate.class)
@@ -132,7 +135,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> getData() {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         DataStructure childDataStructure = getChild().getDataStructure();
 
         DataStructure dataStructure = getDataStructure();
@@ -140,8 +143,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, childDataStructure);
 
-        Stream<DataPoint> data = getChild().getData();
-        return data.peek(datapoint -> {
+        Stream<DataPoint> data =  getChild().getData().peek(datapoint -> {
 
             if (childDataStructure.size() < dataStructure.size())
                 datapoint.add(VTLObject.NULL);
@@ -151,6 +153,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
             dataStructure.asMap(datapoint).put(component, resolved);
         });
+        return data;
     }
 
     @Override
@@ -161,5 +164,16 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     @Override
     public Optional<Long> getSize() {
         return getChild().getSize();
+    }
+
+
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 }

@@ -200,7 +200,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     /**
      * Ensure sorted.
      */
-    protected Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
+    protected Stream<DataPoint> sortIfNeeded(Dataset dataset, Ordering order) {
         // Adjust the order to the structure.
 
         Order.Builder adjustedOrder = Order.create(dataset.getDataStructure());
@@ -223,7 +223,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     @Deprecated
     private Comparator<Map<Component, VTLObject>> createKeyComparator(
             Dataset rightDataset,
-            Order order
+            Ordering order
     ) {
 
         // Only check the values of the common identifiers.
@@ -264,18 +264,18 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Optimization.
-        if (datasets.size() == 1) {
-            Dataset dataset = datasets.values().iterator().next();
-            return Optional.of(sortIfNeeded(dataset, requestedOrder));
+        if (getChildren().size() == 1) {
+            AbstractDatasetOperation child = getChildren().iterator().next();
+            return child.computeData(requestedOrder, filtering, components);
         }
 
         // Check if requested order is compatible.
         Optional<Order> order = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
         if (!order.isPresent())
-            return Optional.empty();
+            throw new UnsupportedOperationException("TODO");
 
         // TODO: Filtering
 
@@ -316,29 +316,17 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                     ), false
             );
         }
-        return Optional.of(result.onClose(() -> {
+        return result.onClose(() -> {
             try {
                 closer.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }));
+        });
     }
 
     protected ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
-    }
-
-    @Override
-    public final Stream<DataPoint> getData() {
-        // Use the order that is best; using the
-        // identifiers we are joining on only.
-        Order.Builder orderBuilder = Order.create(getDataStructure());
-        for (Component identifier : getCommonIdentifiers()) {
-            // TODO: Direction.ANY
-            orderBuilder.put(identifier, ASC);
-        }
-        return getData(orderBuilder.build()).orElseThrow(() -> new RuntimeException("could not sort data"));
     }
 
     /**
@@ -351,7 +339,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * @param requestedOrder  the requested order
      */
     @VisibleForTesting
-    Optional<Order> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Order requestedOrder) {
+    Optional<Order> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering requestedOrder) {
 
         Set<Component> identifiers = Sets.newHashSet(firstComponents);
 

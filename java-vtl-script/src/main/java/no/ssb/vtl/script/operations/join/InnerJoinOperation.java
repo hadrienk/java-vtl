@@ -27,8 +27,10 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.support.Closer;
 
@@ -96,13 +98,13 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Try to create a compatible order.
         // If not, the caller will have to sort the result manually.
         Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
         if (!compatibleOrder.isPresent()) {
-            return Optional.empty();
+            throw new UnsupportedOperationException();
         }
 
         Order requiredOrder = compatibleOrder.get();
@@ -126,7 +128,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                     components
             ).peek(new DataPointCapacityExpander(getDataStructure().size()));
             closer.register(result);
-
 
 
             boolean first = true;
@@ -165,13 +166,13 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
 
             // Close all the underlying streams.
-            return Optional.of(result.onClose(() -> {
+            return result.onClose(() -> {
                 try {
                     closer.close();
                 } catch (IOException e) {
                     // ignore (cannot happen).
                 }
-            }));
+            });
 
         } catch (Exception ex) {
             try {
@@ -226,5 +227,15 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             // TODO
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 }

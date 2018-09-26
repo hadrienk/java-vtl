@@ -39,7 +39,7 @@ public class DataPointMapComparator implements Comparator<DataPointMap.View> {
         this.identifiers = ImmutableMap.copyOf(order);
     }
 
-    public DataPointMapComparator(Map<String, Component> identifiers, Order order) {
+    public DataPointMapComparator(Map<String, Component> identifiers, Ordering order) {
         ImmutableMap.Builder<String, Ordering.Direction> builder = ImmutableMap.builder();
         for (String key : identifiers.keySet()) {
             builder.put(key, order.get(identifiers.get(key)));

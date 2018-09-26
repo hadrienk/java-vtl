@@ -34,9 +34,12 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.script.VTLDataset;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
@@ -74,7 +77,7 @@ import static no.ssb.vtl.model.Ordering.Direction.ASC;
  * The set of identifiers much be a subset of the common identifiers of the
  * set of datasets.
  */
-public final class ForeachOperation implements Dataset {
+public final class ForeachOperation extends AbstractDatasetOperation {
 
     private final ImmutableMap<String, Dataset> sources;
     private final ImmutableSet<String> identifiers;
@@ -82,6 +85,7 @@ public final class ForeachOperation implements Dataset {
     private Function<Bindings, VTLDataset> block;
 
     public ForeachOperation(Map<String, Dataset> sourceDatasets, Set<String> identifiers) {
+        super(sourceDatasets.values());
         this.sources = ImmutableMap.copyOf(sourceDatasets);
         this.identifiers = ImmutableSet.copyOf(identifiers);
     }
@@ -98,14 +102,15 @@ public final class ForeachOperation implements Dataset {
         this.block = block;
     }
 
-    private Stream<DataPoint> sortIfNeeded(Dataset dataset, Order order) {
+    private Stream<DataPoint> sortIfNeeded(Dataset dataset, Ordering order) {
         Order actualOrder = rearrangeOrder(order, dataset.getDataStructure());
         return dataset.getData(actualOrder).orElseGet(() -> sort(dataset.getData(), actualOrder));
     }
 
-    @Override
-    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
 
+
+    @Override
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         Boolean needSort = !isCompatible(orders);
 
         ImmutableMap.Builder<String, PeekingIterator<DataPointMap.View>> iteratorBuilder = ImmutableMap.builder();
@@ -148,7 +153,7 @@ public final class ForeachOperation implements Dataset {
             }
         });
 
-        return Optional.of(needSort ? stream.sorted(orders) : stream);
+        return needSort ? stream.sorted(orders) : stream;
     }
 
     /**
@@ -163,7 +168,7 @@ public final class ForeachOperation implements Dataset {
      * @param orders the order to check
      * @return true if compatible.
      */
-    private boolean isCompatible(Order orders) {
+    private boolean isCompatible(Ordering orders) {
         DataStructure structure = getDataStructure();
         HashSet<String> requiredIdentifiers = Sets.newHashSet(this.identifiers);
         for (Component component : orders.keySet()) {
@@ -178,7 +183,7 @@ public final class ForeachOperation implements Dataset {
     /**
      * Create order with identifiers first.
      */
-    private Order rearrangeOrder(Order order, DataStructure structure) {
+    private Order rearrangeOrder(Ordering order, DataStructure structure) {
         Order.Builder orderBuilder = Order.create(structure);
         for (String identifier : this.identifiers) {
             orderBuilder.put(identifier, order.getOrDefault(identifier, ASC));
@@ -210,7 +215,7 @@ public final class ForeachOperation implements Dataset {
     private Iterator<DataPoint> slice(
             Map<String, DataStructure> structures,
             Map<String, PeekingIterator<DataPointMap.View>> iterators,
-            Order orders) {
+            Ordering orders) {
         Bindings scope = new SimpleBindings(new LinkedHashMap<>());
 
 
@@ -265,11 +270,6 @@ public final class ForeachOperation implements Dataset {
     }
 
     @Override
-    public Stream<DataPoint> getData() {
-        return getData(getDefaultOrder()).orElseThrow(() -> new RuntimeException("failed"));
-    }
-
-    @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
         return Optional.empty();
     }
@@ -280,7 +280,7 @@ public final class ForeachOperation implements Dataset {
     }
 
     @Override
-    public DataStructure getDataStructure() {
+    public DataStructure computeDataStructure() {
         if (structure == null) {
             Bindings scope = new SimpleBindings(new LinkedHashMap<>());
             for (String name : sources.keySet()) {
@@ -289,5 +289,15 @@ public final class ForeachOperation implements Dataset {
             structure = block.apply(scope).get().getDataStructure();
         }
         return structure;
+    }
+
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 }

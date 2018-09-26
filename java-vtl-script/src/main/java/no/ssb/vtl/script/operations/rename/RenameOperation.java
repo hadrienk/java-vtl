@@ -75,7 +75,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         this(child, nameMapping, Collections.emptyMap());
     }
 
-    public RenameOperation(AbstractDatasetOperation child, Map<String, String> nameMapping, Map<String, Component.Role> roleMapping) {
+    public RenameOperation(Dataset child, Map<String, String> nameMapping, Map<String, Component.Role> roleMapping) {
         super(child);
         this.nameMapping = ImmutableMap.copyOf(nameMapping);
         this.roleMapping = ImmutableMap.copyOf(roleMapping);
@@ -126,11 +126,11 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
+    public Stream<DataPoint> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
         Ordering ordering = renameOrdering(oldOrdering);
         Filtering filtering = renameFiltering(oldFiltering);
         Set<String> components = renameComponent(oldComponents);
-        return getChild().getData(ordering, filtering, components);
+        return getChild().computeData(ordering, filtering, components);
     }
 
     private Set<String> renameComponent(Set<String> oldComponents) {

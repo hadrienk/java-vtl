@@ -29,6 +29,10 @@ import com.google.common.collect.Sets;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
@@ -212,11 +216,20 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> getData() {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         // To initialize the indices.
         getDataStructure();
-
         return getChild().getData().flatMap(this::fold);
+    }
+
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Override

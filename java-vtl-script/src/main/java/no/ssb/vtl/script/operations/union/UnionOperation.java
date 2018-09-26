@@ -27,7 +27,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -68,6 +70,16 @@ public class UnionOperation extends AbstractDatasetOperation {
     @Override
     protected DataStructure computeDataStructure() {
         return getChildren().get(0).getDataStructure();
+    }
+
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        return null;
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        return null;
     }
 
     private void checkDataStructures(DataStructure baseDataStructure, DataStructure nextDataStructure) {
@@ -166,7 +178,7 @@ public class UnionOperation extends AbstractDatasetOperation {
     /**
      * Add missing identifiers in the given {@link Order}.
      */
-    private Order createOrderWithIdentifiers(Order orders) {
+    private Order createOrderWithIdentifiers(Ordering orders) {
         DataStructure structure = getDataStructure();
         Order.Builder builder = Order.create(structure);
         builder.putAll(orders);
@@ -200,12 +212,6 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     private <T> Selector<T> createSelector(Comparator<T> comparator) {
         return new MinimumSelector<>(comparator);
-    }
-
-    @Override
-    public Stream<DataPoint> getData() {
-        Optional<Stream<DataPoint>> ordered = this.getData(Order.createDefault(getDataStructure()));
-        return ordered.orElseThrow(() -> new RuntimeException("could not sort"));
     }
 
     @Override

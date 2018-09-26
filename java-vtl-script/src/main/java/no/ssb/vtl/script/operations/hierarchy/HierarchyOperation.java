@@ -34,14 +34,17 @@ import com.google.common.graph.ImmutableValueGraph;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
-import no.ssb.vtl.model.Ordering;
-import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,9 +58,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.*;
-import static java.util.stream.Collectors.*;
-import static no.ssb.vtl.script.operations.hierarchy.HierarchyAccumulator.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
+import static no.ssb.vtl.script.operations.hierarchy.HierarchyAccumulator.sumAccumulatorFor;
 
 public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
@@ -77,11 +81,10 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     );
 
     private final Dataset hierarchy;
-    private ImmutableValueGraph<VTLObject, Composition> graph;
-    private List<VTLObject> graphValues;
-
     // The component
     private final Component component;
+    private ImmutableValueGraph<VTLObject, Composition> graph;
+    private List<VTLObject> graphValues;
 
     public HierarchyOperation(Dataset dataset, Dataset hierarchy, Component group) {
         super(dataset);
@@ -128,17 +131,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         checkArgument(graph.isDirected());
         checkArgument(!graph.allowsSelfLoops());
         this.graph = ImmutableValueGraph.copyOf(graph);
-    }
-
-    private List<VTLObject> getGraphValues() {
-        if (this.graph == null) {
-            // TODO: Hierarchy should be typed.
-            this.graph = ImmutableValueGraph.copyOf(convertToHierarchy(this.hierarchy));
-        }
-        if (this.graphValues == null) {
-            this.graphValues = sortTopologically(this.graph);
-        }
-        return this.graphValues;
     }
 
     /**
@@ -249,6 +241,17 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return paths;
     }
 
+    private List<VTLObject> getGraphValues() {
+        if (this.graph == null) {
+            // TODO: Hierarchy should be typed.
+            this.graph = ImmutableValueGraph.copyOf(convertToHierarchy(this.hierarchy));
+        }
+        if (this.graphValues == null) {
+            this.graphValues = sortTopologically(this.graph);
+        }
+        return this.graphValues;
+    }
+
     private Order computePredicate() {
 
         // Same as the groupOrder, but we exclude the hierarchy component.
@@ -285,7 +288,17 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> getData() {
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
 
         final DataStructure structure = getDataStructure();
         final Order groupOrder = computeOrder();
@@ -348,7 +361,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         }).flatMap(Collection::stream);
 
 
-        return StreamUtils.aggregate(
+        Stream<DataPoint> data = StreamUtils.aggregate(
                 streamToAggregate,
                 (dataPoint, dataPoint2) -> groupOrder.compare(dataPoint, dataPoint2) == 0
         ).onClose(streamToAggregate::close).map(dataPoints -> {
@@ -385,6 +398,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
             return aggregate;
         });
+
+        return Optional.of(data);
     }
 
     private Map<Component, HierarchyAccumulator> createAccumulatorMap() {
