@@ -44,6 +44,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Order;
 
 import java.util.Collections;

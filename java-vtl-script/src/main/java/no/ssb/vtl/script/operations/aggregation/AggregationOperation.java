@@ -149,8 +149,8 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> getData() {
+
         DataStructure childStructure = getChild().getDataStructure();
-    
         Order.Builder builder = Order.create(childStructure);
         groupBy.forEach(component -> builder.put(component, Ordering.Direction.ASC));
         Order order = builder.build();

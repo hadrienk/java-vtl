@@ -28,6 +28,7 @@ import com.google.common.collect.ForwardingObject;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Order;
 
 import java.util.Map;

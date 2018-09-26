@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,8 @@ package no.ssb.vtl.script.operations;
 import com.google.common.collect.ImmutableList;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.OrderingSpecification;
 
 import java.util.List;
 
@@ -50,5 +52,16 @@ public abstract class AbstractDatasetOperation implements Dataset {
     public ImmutableList<Dataset> getChildren() {
         return children;
     }
+
+    /**
+     * Returns true if asking for data stream with the given filtering is supported
+     */
+    public abstract Boolean supportsFiltering(FilteringSpecification filtering);
+
+    /**
+     * Returns true if asking for data stream with the given ordering is supported
+     */
+    public abstract Boolean supportsOrdering(OrderingSpecification filtering);
+
 
 }

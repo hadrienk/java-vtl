@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
@@ -165,7 +166,7 @@ public class UnionOperation extends AbstractDatasetOperation {
     /**
      * Add missing identifiers in the given {@link Order}.
      */
-    private Order createOrderWithIdentifiers(Ordering orders) {
+    private Order createOrderWithIdentifiers(Order orders) {
         DataStructure structure = getDataStructure();
         Order.Builder builder = Order.create(structure);
         builder.putAll(orders);

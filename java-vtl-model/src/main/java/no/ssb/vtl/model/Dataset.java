@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -174,12 +173,5 @@ public interface Dataset {
      * Returns the data structure of the DataSet.
      */
     DataStructure getDataStructure();
-
-    /**
-     * Represent the filtering of the {@link DataPoint}s in a Dataset.
-     */
-    interface Filtering extends Predicate<DataPoint> {
-        Filtering ALL = dataPoint -> true;
-    }
 
 }
