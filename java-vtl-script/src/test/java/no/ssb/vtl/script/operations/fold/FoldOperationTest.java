@@ -30,6 +30,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
@@ -207,9 +208,9 @@ public class FoldOperationTest extends RandomizedTest {
 
             // Need to sort back before assert.
             Order order = Order.create(clause.getDataStructure())
-                    .put("id1", Order.Direction.ASC)
-                    .put("id2", Order.Direction.ASC)
-                    .put("newId", Order.Direction.ASC)
+                    .put("id1", Ordering.Direction.ASC)
+                    .put("id2", Ordering.Direction.ASC)
+                    .put("newId", Ordering.Direction.ASC)
                     .build();
 
             Stream<DataPoint> stream = clause.getData();

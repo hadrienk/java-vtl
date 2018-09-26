@@ -27,6 +27,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.support.Closer;
 
@@ -201,7 +202,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
         Order.Builder predicateBuilder = Order.create(fakeStructure.build());
         for (Component component : commonIdentifiers) {
-            predicateBuilder.put(component, requestedOrder.getOrDefault(component, Order.Direction.ASC));
+            predicateBuilder.put(component, requestedOrder.getOrDefault(component, Ordering.Direction.ASC));
         }
         return predicateBuilder.build();
     }

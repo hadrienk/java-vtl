@@ -28,6 +28,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
@@ -151,7 +152,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         DataStructure childStructure = getChild().getDataStructure();
     
         Order.Builder builder = Order.create(childStructure);
-        groupBy.forEach(component -> builder.put(component, Order.Direction.ASC));
+        groupBy.forEach(component -> builder.put(component, Ordering.Direction.ASC));
         Order order = builder.build();
     
         Stream<DataPoint> data = getChild().getData(order).orElseGet(() -> getChild().getData().sorted(order));

@@ -26,6 +26,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.VTLScriptEngine;
@@ -96,7 +97,7 @@ public class ForeachOperationTest {
         System.out.println(foreachOperation.getDataStructure());
 
         Order orderedByYear = Order.create(foreachOperation.getDataStructure())
-                .put("year", Order.Direction.DESC).build();
+                .put("year", Ordering.Direction.DESC).build();
 
         Optional<Stream<DataPoint>> data = foreachOperation.getData(orderedByYear);
         assertThat(data).isNotEmpty();
@@ -232,8 +233,8 @@ public class ForeachOperationTest {
         System.out.println(foreachOperation.getDataStructure());
 
         Order orderedByMeasureAndYearDesc = Order.create(foreachOperation.getDataStructure())
-                .put("measure", Order.Direction.DESC)
-                .put("year", Order.Direction.DESC)
+                .put("measure", Ordering.Direction.DESC)
+                .put("year", Ordering.Direction.DESC)
                 .build();
 
         Optional<Stream<DataPoint>> data = foreachOperation.getData(

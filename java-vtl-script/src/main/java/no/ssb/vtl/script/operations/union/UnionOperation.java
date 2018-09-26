@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -136,7 +137,7 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
 
         // Optimization.
         if (getChildren().size() == 1)
@@ -164,7 +165,7 @@ public class UnionOperation extends AbstractDatasetOperation {
     /**
      * Add missing identifiers in the given {@link Order}.
      */
-    private Order createOrderWithIdentifiers(Order orders) {
+    private Order createOrderWithIdentifiers(Ordering orders) {
         DataStructure structure = getDataStructure();
         Order.Builder builder = Order.create(structure);
         builder.putAll(orders);
@@ -175,7 +176,7 @@ public class UnionOperation extends AbstractDatasetOperation {
             if (orders.containsKey(component))
                 continue;
 
-            builder.put(component, orders.getOrDefault(component, Order.Direction.ASC));
+            builder.put(component, orders.getOrDefault(component, Ordering.Direction.ASC));
         }
 
         return builder.build();

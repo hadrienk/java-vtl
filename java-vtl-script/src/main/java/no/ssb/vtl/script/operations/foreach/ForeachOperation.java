@@ -34,6 +34,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.VTLDataset;
 
 import javax.script.Bindings;
@@ -50,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.Order.Direction.ASC;
+import static no.ssb.vtl.model.Ordering.Direction.ASC;
 
 /**
  * Operation that repeats a set of operations
@@ -102,7 +103,7 @@ public final class ForeachOperation implements Dataset {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
 
         Boolean needSort = !isCompatible(orders);
 
@@ -247,7 +248,7 @@ public final class ForeachOperation implements Dataset {
         return dataset.getData(orders).orElseGet(() -> sort(dataset.getData(), orders)).iterator();
     }
 
-    private Comparator<DataPointMap.View> createComparator(Order orders) {
+    private Comparator<DataPointMap.View> createComparator(Ordering orders) {
         return new DataPointMapComparator(
                 Maps.filterKeys(getDataStructure(), identifiers::contains),
                 orders

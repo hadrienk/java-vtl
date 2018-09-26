@@ -4,14 +4,14 @@ package no.ssb.vtl.model;
  * ========================LICENSE_START=================================
  * Java VTL
  * %%
- * Copyright (C) 2016 - 2017 Hadrien Kohl
+ * Copyright (C) 2016 - 2018 Hadrien Kohl
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,19 +20,10 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
-import org.junit.Test;
+public interface OrderingSpecification {
 
-import static org.assertj.core.api.Assertions.assertThat;
+    Iterable<String> columns();
 
-public class OrderTest {
+    Ordering.Direction getDirection(String column);
 
-    @Test
-    public void testToString() {
-        DataStructure structure = DataStructure.of("name", Component.Role.IDENTIFIER, String.class);
-        Order order = Order.create(structure)
-                .put("name", Ordering.Direction.ASC)
-                .build();
-
-        assertThat(order.toString()).isEqualTo("Order{name=ASC}");
-    }
 }

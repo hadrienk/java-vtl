@@ -34,6 +34,7 @@ import com.google.common.graph.ImmutableValueGraph;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -256,7 +257,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         Order.Builder builder = Order.create(structure);
         for (Component component : structure.values()) {
             if (component.isIdentifier() && !component.equals(this.component)) {
-                builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
+                builder.put(component, Ordering.Direction.ASC); // TODO: Could be ASC or DESC
             }
         }
         return builder.build();
@@ -271,10 +272,10 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         Order.Builder builder = Order.create(structure);
         for (Component component : structure.values()) {
             if (component.isIdentifier() && !component.equals(this.component)) {
-                builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
+                builder.put(component, Ordering.Direction.ASC); // TODO: Could be ASC or DESC
             }
         }
-        builder.put(component, Order.Direction.ASC); // TODO: Could be ASC or DESC
+        builder.put(component, Ordering.Direction.ASC); // TODO: Could be ASC or DESC
         return builder.build();
     }
 

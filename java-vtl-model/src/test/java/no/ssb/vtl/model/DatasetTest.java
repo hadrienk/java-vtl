@@ -24,7 +24,6 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import no.ssb.vtl.model.Order.Direction;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 
@@ -87,7 +86,7 @@ public class DatasetTest extends RandomizedTest {
             structureEntries.remove(entry);
             order.put(
                     entry.getKey(),
-                    Direction.ASC
+                    Ordering.Direction.ASC
             );
         }
         return order;

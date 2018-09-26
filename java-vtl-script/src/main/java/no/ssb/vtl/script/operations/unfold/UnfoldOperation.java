@@ -28,6 +28,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
@@ -77,8 +78,8 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
                 );
 
         Order commonIdentifierOrder = orderBuilder.build();
-        Order requiredOrder = orderBuilder.put(dimension, Order.Direction.ASC)
-                .put(measure, Order.Direction.ASC).build();
+        Order requiredOrder = orderBuilder.put(dimension, Ordering.Direction.ASC)
+                .put(measure, Ordering.Direction.ASC).build();
 
         // Try to get data sorted as required. If impossible, sort it.
         Stream<? extends DataPoint> stream = getChild()

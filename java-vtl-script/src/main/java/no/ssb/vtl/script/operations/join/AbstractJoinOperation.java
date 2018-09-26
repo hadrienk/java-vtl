@@ -30,6 +30,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
@@ -56,7 +57,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.*;
-import static no.ssb.vtl.model.Order.Direction.*;
+import static no.ssb.vtl.model.Ordering.Direction.*;
 
 /**
  * Abstract join operation.
@@ -204,14 +205,14 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         Order.Builder adjustedOrder = Order.create(dataset.getDataStructure());
         Table<Component, Dataset, Component> mapping = getComponentMapping();
 
-        for (Map.Entry<Component, Order.Direction> orderEntry : order.entrySet()) {
+        for (Map.Entry<Component, Ordering.Direction> orderEntry : order.entrySet()) {
             Map<Dataset, Component> rowMapping = mapping.row(orderEntry.getKey());
             if (!rowMapping.containsKey(dataset))
                 continue;
 
             Component component = rowMapping.get(dataset);
             if (component.isIdentifier()) {
-                Order.Direction direction = orderEntry.getValue();
+                Ordering.Direction direction = orderEntry.getValue();
                 adjustedOrder.put(component, direction);
             }
         }
@@ -227,7 +228,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         // Only check the values of the common identifiers.
 
         HashSet<Component> commonComponents = Sets.newHashSet(getCommonIdentifiers());
-        final Map<Component, Order.Direction> commonOrder = Maps.filterKeys(order, commonComponents::contains);
+        final Map<Component, Ordering.Direction> commonOrder = Maps.filterKeys(order, commonComponents::contains);
         final Table<Component, Dataset, Component> componentMap = getComponentMapping();
         return (left, right) -> {
 
@@ -239,9 +240,9 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 return 0;
 
             int result;
-            for (Map.Entry<Component, Order.Direction> entry : commonOrder.entrySet()) {
+            for (Map.Entry<Component, Ordering.Direction> entry : commonOrder.entrySet()) {
                 Component component = entry.getKey();
-                Order.Direction direction = entry.getValue();
+                Ordering.Direction direction = entry.getValue();
 
                 Map<Dataset, Component> map = componentMap.row(component);
 
@@ -262,7 +263,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Filtering filtering, Set<String> components) {
+    public Optional<Stream<DataPoint>> getData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Optimization.
         if (datasets.size() == 1) {
@@ -354,9 +355,9 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         Set<Component> identifiers = Sets.newHashSet(firstComponents);
 
         Order.Builder compatibleOrder = Order.create(structure);
-        for (Map.Entry<Component, Order.Direction> order : requestedOrder.entrySet()) {
+        for (Map.Entry<Component, Ordering.Direction> order : requestedOrder.entrySet()) {
             Component key = order.getKey();
-            Order.Direction direction = order.getValue();
+            Ordering.Direction direction = order.getValue();
 
             if (!identifiers.isEmpty() && !identifiers.remove(key))
                 return Optional.empty();

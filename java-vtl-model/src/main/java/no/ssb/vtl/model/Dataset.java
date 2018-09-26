@@ -81,7 +81,7 @@ import java.util.stream.Stream;
  * Sorting and filtering:
  * <p>
  * Independent sorting and filtering of the data points for a stream can be requested with the
- * {@link Dataset#getData(Order, Filtering, Set)} methods. This allows optimized implementations of operations like
+ * {@link Dataset#getData(Ordering, Filtering, Set)} methods. This allows optimized implementations of operations like
  * join or union.
  */
 public interface Dataset {
@@ -124,7 +124,7 @@ public interface Dataset {
      * @param filtering the filtering on the {@link Component}s of the {@link DataPoint}s
      * @return a <b>sorted</b> stream of {@link DataPoint}s if sorting is supported.
      */
-    default Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+    default Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
         return Optional.of(getData().sorted(orders).filter(filtering).map(o -> {
             // TODO
             return o;
@@ -137,9 +137,9 @@ public interface Dataset {
      * Calling this method is equivalent to
      * <code>getData(ordering, Filtering.ALL, getDataStructure.keySet())</code>
      *
-     * @see Filtering#getData(Order, Filtering, Set)
+     * @see Filtering#getData(Ordering, Filtering, Set)
      */
-    default Optional<Stream<DataPoint>> getData(Order order) {
+    default Optional<Stream<DataPoint>> getData(Ordering order) {
         DataStructure dataStructure = getDataStructure();
         return getData(order, Filtering.ALL, dataStructure.keySet());
     }
@@ -150,7 +150,7 @@ public interface Dataset {
      * Calling this method is equivalent to
      * <code>getData(Ordering.DEFAULT, filtering, getDataStructure.keySet())</code>
      *
-     * @see Filtering#getData(Order, Filtering, Set)
+     * @see Filtering#getData(Ordering, Filtering, Set)
      */
     default Optional<Stream<DataPoint>> getData(Filtering filtering) {
         DataStructure dataStructure = getDataStructure();
@@ -163,7 +163,7 @@ public interface Dataset {
      * Calling this method is equivalent to
      * <code>getData(Ordering.DEFAULT, filtering, getDataStructure.keySet())</code>
      *
-     * @see Filtering#getData(Order, Filtering, Set)
+     * @see Filtering#getData(Ordering, Filtering, Set)
      */
     default Optional<Stream<DataPoint>> getData(Set<String> components) {
         DataStructure dataStructure = getDataStructure();

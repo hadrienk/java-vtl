@@ -31,6 +31,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
@@ -146,7 +147,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
         // This order is not possible.
         Optional<Stream<DataPoint>> emptyData = joinOperation.getData(
                 Order.create(joinOperation.getDataStructure())
-                        .put("idx", Order.Direction.DESC)
+                        .put("idx", Ordering.Direction.DESC)
                         .build()
         );
         assertThat(emptyData.isPresent()).isFalse();
@@ -211,7 +212,7 @@ public class InnerJoinOperationTest extends RandomizedTest {
                 ), Collections.emptySet()
         );
 
-        Optional<Stream<DataPoint>> data = joinOperation.getData(Order.create(joinOperation.getDataStructure()).put("id1", Order.Direction.DESC).build());
+        Optional<Stream<DataPoint>> data = joinOperation.getData(Order.create(joinOperation.getDataStructure()).put("id1", Ordering.Direction.DESC).build());
         assertThat(data.isPresent()).isTrue();
         assertThat(data.get()).containsExactly(
                 DataPoint.create("D", "ds1 match", "ds2 match"),

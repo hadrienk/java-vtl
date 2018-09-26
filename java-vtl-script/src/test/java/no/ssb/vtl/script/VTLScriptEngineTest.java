@@ -29,6 +29,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.parser.VTLLexer;
@@ -898,7 +899,7 @@ public class VTLScriptEngineTest {
                 DataPoint.create("neg", true, -2.3333333333333335, -2.3333333333333335)
         );
 
-        assertThat(result.getData(Order.create(result.getDataStructure()).put("withnulls", Order.Direction.ASC).build()).get()).containsExactlyInAnyOrder(
+        assertThat(result.getData(Order.create(result.getDataStructure()).put("withnulls", Ordering.Direction.ASC).build()).get()).containsExactlyInAnyOrder(
                 DataPoint.create("pos", false, 1.75D, 1.75D),
                 DataPoint.create("neg", false, -1.75D, -1.75D),
                 DataPoint.create("pos", true, 2.3333333333333335, 2.3333333333333335),
