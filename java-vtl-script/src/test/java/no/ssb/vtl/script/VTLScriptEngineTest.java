@@ -91,7 +91,7 @@ public class VTLScriptEngineTest {
 
         // Will fail if a new keyword is added in the grammar or list of keywords without updating
         // the test.
-        assertThat(symmetricDifference).containsExactly(
+        assertThat(symmetricDifference).containsExactlyInAnyOrder(
                 "time_aggregate", "exists_in_all", "match_characters", 
                 "timeshift", "join", "flow_to_stock", "identifier", 
                 "string_from_date", "subscript", "transcode", 
