@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.rename;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,9 +29,9 @@ package no.ssb.vtl.script.operations.rename;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,13 +41,18 @@ package no.ssb.vtl.script.operations.rename;
  */
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.Collections;
@@ -56,69 +61,122 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.FilteringSpecification.Literal;
 
 /**
  * Rename operation.
- * <p>
- * TODO: Implement {@link Dataset}
  */
 public class RenameOperation extends AbstractUnaryDatasetOperation {
 
-    private final Map<Component, String> newNames;
-    private final Map<Component, Component.Role> newRoles;
+    private final ImmutableMap<String, String> nameMapping;
+    private final ImmutableMap<String, Component.Role> roleMapping;
 
-    public RenameOperation(Dataset dataset, Map<Component, String> newNames) {
-        this(dataset, newNames, Collections.emptyMap());
+    public RenameOperation(AbstractDatasetOperation child, Map<String, String> nameMapping) {
+        this(child, nameMapping, Collections.emptyMap());
     }
 
-    public RenameOperation(Dataset dataset, Map<Component, String> newNames, Map<Component, Component.Role> newRoles) {
-        super(checkNotNull(dataset));
-        this.newNames = newNames;
-        this.newRoles = newRoles;
+    public RenameOperation(AbstractDatasetOperation child, Map<String, String> nameMapping, Map<String, Component.Role> roleMapping) {
+        super(child);
+        this.nameMapping = ImmutableMap.copyOf(nameMapping);
+        this.roleMapping = ImmutableMap.copyOf(roleMapping);
     }
-
 
     @Override
     protected DataStructure computeDataStructure() {
-        Map<Component, String> map = Maps.newHashMap();
-        DataStructure.Builder newDataStructure = DataStructure.builder();
-        for (Map.Entry<String, Component> componentEntry : getChild().getDataStructure().entrySet()) {
+        DataStructure.Builder structure = DataStructure.builder();
+        DataStructure childStructure = getChild().getDataStructure();
+        for (Map.Entry<String, Component> componentEntry : childStructure.entrySet()) {
             Component component = componentEntry.getValue();
-            if (newNames.containsKey(component)) {
-                String newName = newNames.get(component);
-                map.put(component, newName);
-                newDataStructure.put(
+            if (nameMapping.containsKey(component)) {
+                String newName = nameMapping.get(component);
+                structure.put(
                         newName,
-                        newRoles.getOrDefault(component, component.getRole()),
+                        roleMapping.getOrDefault(component, component.getRole()),
                         component.getType()
                 );
             } else {
-                newDataStructure.put(componentEntry);
+                structure.put(componentEntry);
             }
         }
+        return structure.build();
+    }
 
-        return newDataStructure.build();
+    @Override
+    public Boolean supportsFiltering(FilteringSpecification filtering) {
+        return getChild().supportsFiltering(filtering);
+    }
+
+    @Override
+    public Boolean supportsOrdering(OrderingSpecification ordering) {
+        return getChild().supportsOrdering(ordering);
     }
 
     @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
-        helper.addValue(newNames);
-        helper.addValue(newRoles);
-        helper.add("structure", getDataStructure());
+        for (String from : nameMapping.keySet()) {
+            String to = nameMapping.get(from);
+            Component.Role role = roleMapping.get(from);
+            if (role != null) {
+                to = to.concat("(" + role + ")");
+            }
+            helper.add(from, to);
+        }
         return helper.omitNullValues().toString();
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
-        return Optional.empty();
+    public Optional<Stream<DataPoint>> getData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
+        Ordering ordering = renameOrdering(oldOrdering);
+        Filtering filtering = renameFiltering(oldFiltering);
+        Set<String> components = renameComponent(oldComponents);
+        return getChild().getData(ordering, filtering, components);
+    }
+
+    private Set<String> renameComponent(Set<String> oldComponents) {
+        ImmutableSet.Builder<String> components = ImmutableSet.builder();
+        for (String column : oldComponents) {
+            String childColumn = nameMapping.getOrDefault(column, column);
+            components.add(childColumn);
+        }
+        return components.build();
+    }
+
+    private Filtering renameFiltering(Filtering oldFiltering) {
+        for (Literal literal : oldFiltering.clauses()) {
+            String column = literal.getColumn();
+            String childColumn = nameMapping.getOrDefault(literal.getColumn(), column);
+            // TODO
+        }
+        return oldFiltering;
+    }
+
+    /**
+     * Make sure that the ordering uses the correct names.
+     */
+    private Ordering renameOrdering(Ordering oldOrdering) {
+        DataStructure childStructure = getChild().getDataStructure();
+        Order.Builder ordering = Order.create(childStructure);
+        for (String column : oldOrdering.columns()) {
+            String childColumn = nameMapping.getOrDefault(column, column);
+            Ordering.Direction direction = oldOrdering.getDirection(column);
+            ordering.put(childColumn, direction);
+        }
+        return ordering.build();
     }
 
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        // TODO: Adjust the names.
-        return getChild().getDistinctValuesCount();
+        Dataset child = getChild();
+        return child.getDistinctValuesCount().map(oldMap -> {
+            ImmutableMap.Builder<String, Integer> builder = ImmutableMap.builder();
+            for (String oldName : oldMap.keySet()) {
+                Integer count1 = oldMap.get(oldName);
+                String name = nameMapping.getOrDefault(oldName, oldName);
+                builder.put(name, count1);
+            }
+            return builder.build();
+        });
     }
 
     @Override

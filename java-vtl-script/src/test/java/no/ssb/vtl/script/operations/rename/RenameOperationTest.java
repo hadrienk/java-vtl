@@ -42,93 +42,27 @@ package no.ssb.vtl.script.operations.rename;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.DatasetOperationWrapper;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
 
 public class RenameOperationTest {
 
-    Dataset notNullDataset = new Dataset() {
-        @Override
-        public Stream<DataPoint> getData() {
-            return null;
-        }
-
-        @Override
-        public Optional<Map<String, Integer>> getDistinctValuesCount() {
-            return null;
-        }
-
-        @Override
-        public Optional<Long> getSize() {
-            return null;
-        }
-
-        @Override
-        public DataStructure getDataStructure() {
-            return null;
-        }
-
-    };
-
-//    @Test(expected = IllegalArgumentException.class)
-//    public void testNotDuplicates() throws Exception {
-//        ImmutableMap<String, String> names = ImmutableMap.of("a1", "a2", "b1", "a2");
-//        try {
-//            new RenameOperation(notNullDataset, names, Collections.emptyMap());
-//        } catch (Throwable t) {
-//            assertThat(t).hasMessageContaining("a2");
-//            throw t;
-//        }
-//    }
-
-//    @Test(expected = IllegalArgumentException.class)
-//    public void testConsistentArguments() throws Exception {
-//        ImmutableMap<String, String> names = ImmutableMap.of("a1", "a2", "b1", "b2");
-//        ImmutableMap<String, Component.Role> roles;
-//        roles = ImmutableMap.of("nothere", Role.IDENTIFIER);
-//        try {
-//            new RenameOperation(notNullDataset, names, roles);
-//        } catch (Throwable t) {
-//            assertThat(t).hasMessageContaining("nothere");
-//            throw t;
-//        }
-//    }
-
-//    @Test()
-//    public void testKeyNotFound() throws Exception {
-//
-//        Dataset dataset = mock(Dataset.class);
-//        when(dataset.getDataStructure()).thenReturn(
-//                DataStructure.of((s, o) -> null, "notfound", Role.IDENTIFIER, String.class)
-//        );
-//
-//        Throwable ex = null;
-//        try {
-//            RenameOperation renameOperation = new RenameOperation(dataset, ImmutableMap.of("1a", "1b"), Collections.emptyMap());
-//            renameOperation.getDataStructure();
-//        } catch (Throwable t) {
-//            ex = t;
-//        }
-//        assertThat(ex).hasMessageContaining("1a");
-//
-//    }
-
     @Test
     public void testStreamClosed() {
+
         DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
                 .addComponent("id", Role.IDENTIFIER, String.class)
                 .addComponent("measure", Role.MEASURE, String.class)
@@ -138,17 +72,14 @@ public class RenameOperationTest {
                 .build()
         );
 
-        RenameOperation rename;
-        DataStructure structure = dataset.getDataStructure();
-        rename = new RenameOperation(
-                dataset,
+        RenameOperation rename = new RenameOperation(
+                new DatasetOperationWrapper(dataset),
                 ImmutableMap.of(
-                        structure.get("id"), "newId",
-                        structure.get("measure"), "newMeasure",
-                        structure.get("attribute"), "newAttribute"
+                        "id", "newId",
+                        "measure", "newMeasure",
+                        "attribute", "newAttribute"
                 )
         );
-
 
         try (Stream<DataPoint> data = rename.getData()) {
             Assertions.assertThat(data).isNotNull();
@@ -169,15 +100,15 @@ public class RenameOperationTest {
         );
         Mockito.when(dataset.getDataStructure()).thenReturn(structure);
 
-        Map<Component, String> newNames = ImmutableMap.of(
-                structure.get("Ia"), "Ib",
-                structure.get("Ma"), "Mb",
-                structure.get("Aa"), "Ab"
+        Map<String, String> newNames = ImmutableMap.of(
+                "Ia", "Ib",
+                "Ma", "Mb",
+                "Aa", "Ab"
         );
 
         RenameOperation rename;
         rename = new RenameOperation(
-                dataset,
+                new DatasetOperationWrapper(dataset),
                 newNames
         );
 
@@ -208,26 +139,30 @@ public class RenameOperationTest {
             );
         });
 
-        ImmutableMap<Component, String> newNames = new ImmutableMap.Builder<Component, String>()
-                .put(structure.get("Identifier1"), "Identifier1Measure")
-                .put(structure.get("Identifier2"), "Identifier2Attribute")
-                .put(structure.get("Measure1"), "Measure1Identifier")
-                .put(structure.get("Measure2"), "Measure2Attribute")
-                .put(structure.get("Attribute1"), "Attribute1Identifier")
-                .put(structure.get("Attribute2"), "Attribute2Measure")
+        ImmutableMap<String, String> newNames = new ImmutableMap.Builder<String, String>()
+                .put("Identifier1", "Identifier1Measure")
+                .put("Identifier2", "Identifier2Attribute")
+                .put("Measure1", "Measure1Identifier")
+                .put("Measure2", "Measure2Attribute")
+                .put("Attribute1", "Attribute1Identifier")
+                .put("Attribute2", "Attribute2Measure")
                 .build();
 
-        ImmutableMap<Component, Role> newRoles = new ImmutableMap.Builder<Component, Role>()
-                .put(structure.get("Identifier1"), Role.MEASURE)
-                .put(structure.get("Identifier2"), Role.ATTRIBUTE)
-                .put(structure.get("Measure1"), Role.IDENTIFIER)
-                .put(structure.get("Measure2"), Role.ATTRIBUTE)
-                .put(structure.get("Attribute1"), Role.IDENTIFIER)
-                .put(structure.get("Attribute2"), Role.MEASURE)
+        ImmutableMap<String, Role> newRoles = new ImmutableMap.Builder<String, Role>()
+                .put("Identifier1", Role.MEASURE)
+                .put("Identifier2", Role.ATTRIBUTE)
+                .put("Measure1", Role.IDENTIFIER)
+                .put("Measure2", Role.ATTRIBUTE)
+                .put("Attribute1", Role.IDENTIFIER)
+                .put("Attribute2", Role.MEASURE)
                 .build();
 
         RenameOperation rename;
-        rename = new RenameOperation(dataset, newNames, newRoles);
+        rename = new RenameOperation(
+                new DatasetOperationWrapper(dataset),
+                newNames,
+                newRoles
+        );
 
         Assertions.assertThat(rename.getDataStructure().getRoles()).contains(
                 Assertions.entry("Identifier1Measure", Role.MEASURE),
