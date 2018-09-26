@@ -21,12 +21,18 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableList;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,11 +41,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class AbstractDatasetOperation implements Dataset {
 
-    private final ImmutableList<Dataset> children;
+    private final ImmutableList<AbstractDatasetOperation> children;
     private DataStructure cache;
 
-    protected AbstractDatasetOperation(List<Dataset> children) {
+    protected AbstractDatasetOperation(List<AbstractDatasetOperation> children) {
         this.children = ImmutableList.copyOf(checkNotNull(children));
+    }
+
+    @Override
+    public final Stream<DataPoint> getData() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final Optional<Stream<DataPoint>> getData(Ordering order) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final Optional<Stream<DataPoint>> getData(Filtering filtering) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final Optional<Stream<DataPoint>> getData(Set<String> components) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -47,11 +73,10 @@ public abstract class AbstractDatasetOperation implements Dataset {
         return cache = (cache == null ? computeDataStructure() : cache);
     }
 
+    /**
+     * Implementation uses this method to create the datastructure only once.
+     */
     protected abstract DataStructure computeDataStructure();
-
-    public ImmutableList<Dataset> getChildren() {
-        return children;
-    }
 
     /**
      * Returns true if asking for data stream with the given filtering is supported
@@ -63,5 +88,10 @@ public abstract class AbstractDatasetOperation implements Dataset {
      */
     public abstract Boolean supportsOrdering(OrderingSpecification filtering);
 
-
+    /**
+     * Returns the children {@link AbstractDatasetOperation} of this operation.
+     */
+    public ImmutableList<AbstractDatasetOperation> getChildren() {
+        return children;
+    }
 }

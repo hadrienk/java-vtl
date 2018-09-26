@@ -21,15 +21,14 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableList;
-import no.ssb.vtl.model.Dataset;
 
 public abstract class AbstractUnaryDatasetOperation extends AbstractDatasetOperation {
 
-    protected AbstractUnaryDatasetOperation(Dataset child) {
+    protected AbstractUnaryDatasetOperation(AbstractDatasetOperation child) {
         super(ImmutableList.of(child));
     }
 
-    public Dataset getChild() {
+    public AbstractDatasetOperation getChild() {
         return getChildren().get(0);
     }
 }

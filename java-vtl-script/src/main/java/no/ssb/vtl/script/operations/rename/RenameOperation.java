@@ -46,11 +46,14 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -108,8 +111,8 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> getData() {
-        return getChild().getData();
+    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
+        return Optional.empty();
     }
 
     @Override
