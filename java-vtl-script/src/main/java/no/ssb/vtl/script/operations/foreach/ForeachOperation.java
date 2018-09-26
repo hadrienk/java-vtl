@@ -110,7 +110,7 @@ public final class ForeachOperation extends AbstractDatasetOperation {
 
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<no.ssb.vtl.script.operations.DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         Boolean needSort = !isCompatible(orders);
 
         ImmutableMap.Builder<String, PeekingIterator<DataPointMap.View>> iteratorBuilder = ImmutableMap.builder();

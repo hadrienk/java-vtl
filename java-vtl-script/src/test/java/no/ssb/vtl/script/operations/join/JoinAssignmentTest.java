@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.join;
 
 /*-
  * ========================LICENSE_START=================================
@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLDate;
@@ -34,7 +33,6 @@ import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
-import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.assertj.core.util.Lists;
@@ -44,7 +42,6 @@ import org.junit.Test;
 
 import javax.script.Bindings;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

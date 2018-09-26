@@ -44,7 +44,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
@@ -54,6 +53,7 @@ import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.util.Collections;
 import java.util.Map;
@@ -126,7 +126,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
+    public Stream<DataPointMap> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
         Ordering ordering = renameOrdering(oldOrdering);
         Filtering filtering = renameFiltering(oldFiltering);
         Set<String> components = renameComponent(oldComponents);

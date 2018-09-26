@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Base class for DatasetOperations.
+ * Base class for dataset operations.
  */
 public abstract class AbstractDatasetOperation implements Dataset {
 
@@ -61,23 +61,25 @@ public abstract class AbstractDatasetOperation implements Dataset {
 
     @Override
     public final Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
-        return Optional.of(computeData(orders, filtering, components));
+        return Optional.of(computeData(orders, filtering, components).map(DataPointMap::getDataPoint));
     }
 
-    public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
-
+    public abstract Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components);
 
     @Override
+    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Ordering order) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Filtering filtering) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Set<String> components) {
         throw new UnsupportedOperationException();
     }

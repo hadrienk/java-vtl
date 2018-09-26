@@ -32,6 +32,7 @@ import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.util.Map;
 import java.util.Objects;
@@ -78,7 +79,7 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         Dataset childDataset = getChild();
         DataStructure newStructure = getDataStructure();
         DataStructure previousStructure = childDataset.getDataStructure();

@@ -1,4 +1,4 @@
-package no.ssb.vtl.script.operations;
+package no.ssb.vtl.script.operations.join;
 
 /*-
  * ========================LICENSE_START=================================
@@ -37,8 +37,8 @@ import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
-import no.ssb.vtl.script.operations.join.ComponentBindings;
-import no.ssb.vtl.script.operations.join.DataPointBindings;
+import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.time.Instant;
 import java.util.Map;
@@ -135,7 +135,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         DataStructure childDataStructure = getChild().getDataStructure();
 
         DataStructure dataStructure = getDataStructure();
@@ -153,7 +153,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
             dataStructure.asMap(datapoint).put(component, resolved);
         });
-        return data;
+        return data.map(dataPoint -> dataPoint);
     }
 
     @Override

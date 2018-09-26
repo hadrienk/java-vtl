@@ -31,6 +31,7 @@ import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 
@@ -57,7 +58,7 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
         Stream<DataPoint> data = getChild().getData()
                 .map(dataPointBindings::setDataPoint)

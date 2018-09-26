@@ -32,6 +32,7 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
@@ -88,7 +89,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     /**
      * TODO: Move to the {@link AbstractDatasetOperation}.
      */
-    private Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Filtering filtering, Set<String> components) {
+    private Stream<DataPoint> getOrSortData(Dataset dataset, Ordering order, Filtering filtering, Set<String> components) {
         Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
         if (sortedData.isPresent()) {
             return sortedData.get();
@@ -98,7 +99,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
+    public Stream<DataPointMap> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Try to create a compatible order.
         // If not, the caller will have to sort the result manually.

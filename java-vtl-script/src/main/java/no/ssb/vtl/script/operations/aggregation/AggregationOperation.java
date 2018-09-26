@@ -27,6 +27,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
@@ -37,6 +38,7 @@ import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.error.TypeException;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
@@ -125,7 +127,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         throw new UnsupportedOperationException("TODO");
     }
 
-    private DataPoint aggregate(List<DataPoint> datapoints) {
+    private DataPointMap aggregate(List<DataPointMap> datapoints) {
 
         DataPoint result = DataPoint.create(columns.size());
 
@@ -161,7 +163,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    protected Stream<DataPoint> computeData(Ordering orders, no.ssb.vtl.model.Filtering filtering, Set<String> components) {
+    protected Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
 
         DataStructure childStructure = getChild().getDataStructure();
         Order.Builder builder = Order.create(childStructure);

@@ -39,6 +39,7 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.script.operations.DataPointMap;
 import no.ssb.vtl.script.support.Closer;
 import no.ssb.vtl.script.support.JoinSpliterator;
 
@@ -264,7 +265,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
+    public Stream<DataPointMap> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Optimization.
         if (getChildren().size() == 1) {

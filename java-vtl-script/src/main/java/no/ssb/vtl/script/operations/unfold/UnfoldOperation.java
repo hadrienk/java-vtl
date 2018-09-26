@@ -34,6 +34,7 @@ import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +64,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         // TODO: Add an ANY sort option?
         // TODO: Filter on elements so that we minimize data transfer.
 
