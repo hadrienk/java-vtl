@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
@@ -33,7 +34,6 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
-import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.util.HashSet;
 import java.util.List;
@@ -77,12 +77,12 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         return null;
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         return null;
     }
 
@@ -95,7 +95,7 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    protected Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         ImmutableList<Component> componentsToRemove = getComponentsToRemove();
 
         // Optimization.

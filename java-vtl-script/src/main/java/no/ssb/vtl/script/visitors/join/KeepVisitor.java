@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Visit the keep clauses.
+ * Visit the keep getClauses.
  */
 public class KeepVisitor extends VTLDatasetExpressionVisitor<KeepOperation> {
 

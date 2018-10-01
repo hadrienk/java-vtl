@@ -31,7 +31,11 @@ import no.ssb.vtl.model.Component.Role;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import org.junit.Test;
@@ -46,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -545,21 +548,6 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
-            return (left, right) -> {
-                if (left != null && right != null) {
-                    hits.add(Lists.newArrayList(left, right));
-                } else {
-                    if (left != null)
-                        leftMiss.add(Lists.newArrayList(left, null));
-                    if (right != null)
-                        rightMiss.add(Lists.newArrayList(null, right));
-                }
-                return null;
-            };
-        }
-
-        @Override
         public Optional<Map<String, Integer>> getDistinctValuesCount() {
             return Optional.empty();
         }
@@ -567,6 +555,21 @@ public class AbstractJoinOperationTest {
         @Override
         public Optional<Long> getSize() {
             return Optional.empty();
+        }
+
+        @Override
+        public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+            return null;
+        }
+
+        @Override
+        public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+            return null;
+        }
+
+        @Override
+        public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
+            return null;
         }
     }
 }

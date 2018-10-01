@@ -44,6 +44,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
@@ -51,9 +52,7 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
-import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
-import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.util.Collections;
 import java.util.Map;
@@ -61,6 +60,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static no.ssb.vtl.model.FilteringSpecification.Clause;
 import static no.ssb.vtl.model.FilteringSpecification.Literal;
 
 /**
@@ -71,7 +71,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     private final ImmutableMap<String, String> nameMapping;
     private final ImmutableMap<String, Component.Role> roleMapping;
 
-    public RenameOperation(AbstractDatasetOperation child, Map<String, String> nameMapping) {
+    public RenameOperation(Dataset child, Map<String, String> nameMapping) {
         this(child, nameMapping, Collections.emptyMap());
     }
 
@@ -102,13 +102,13 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
-        return getChild().supportsFiltering(filtering);
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+        return getChild().unsupportedFiltering(filtering);
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification ordering) {
-        return getChild().supportsOrdering(ordering);
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        return getChild().unsupportedOrdering(ordering);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPointMap> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
+    public Stream<DataPoint> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
         Ordering ordering = renameOrdering(oldOrdering);
         Filtering filtering = renameFiltering(oldFiltering);
         Set<String> components = renameComponent(oldComponents);
@@ -143,10 +143,12 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     private Filtering renameFiltering(Filtering oldFiltering) {
-        for (Literal literal : oldFiltering.clauses()) {
-            String column = literal.getColumn();
-            String childColumn = nameMapping.getOrDefault(literal.getColumn(), column);
-            // TODO
+        for (Clause clause : oldFiltering.getClauses()) {
+            for (Literal literal : clause.getLiterals()) {
+                String column = literal.getColumn();
+                String childColumn = nameMapping.getOrDefault(column, column);
+                // TODO
+            }
         }
         return oldFiltering;
     }

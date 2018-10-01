@@ -23,20 +23,23 @@ package no.ssb.vtl.script.operations.union;
 import com.codepoetics.protonpack.StreamUtils;
 import com.codepoetics.protonpack.selectors.Selector;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import no.ssb.vtl.model.Filtering;
-import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Ordering;
-import no.ssb.vtl.model.OrderingSpecification;
-import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.DatapointNormalizer;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -73,12 +76,12 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         return null;
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         return null;
     }
 
@@ -121,27 +124,6 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     /**
-     * Premeare the children streams.
-     *
-     * This method makes sure that:
-     * <ul>
-     *     <li>the orders sent to the children matches with the child's structure</li>
-     *     <li>the streams are sorted</li>
-     *     <li>the datapoint respect the union's structure</li>
-     * </ul>
-     *
-     */
-    List<Stream<DataPoint>> prepareChildren(Order orders, Filtering filtering, Set<String> components) {
-        List<Stream<DataPoint>> streams = Lists.newArrayList();
-        for (Dataset dataset : getChildren()) {
-            Order adjustedOrders = adjustOrderForStructure(orders, dataset.getDataStructure());
-            Stream<DataPoint> s = sortIfNeeded(filtering, components, dataset, adjustedOrders);
-            streams.add(s.map(new DatapointNormalizer(dataset.getDataStructure(), getDataStructure())));
-        }
-        return streams;
-    }
-
-    /**
      * Manually sort the the stream if the given dataset failed to do so.
      */
     private Stream<DataPoint> sortIfNeeded(Filtering filtering, Set<String> components, Dataset dataset, Order adjustedOrders) {
@@ -150,64 +132,44 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
 
         // Optimization.
         if (getChildren().size() == 1)
-            return getChildren().get(0).getData(orders, filtering, components);
+            return getChildren().get(0).computeData(orders, filtering, components);
 
         // Union requires data to be sorted on all identifiers.
-        Order orderWithIdentifiers = createOrderWithIdentifiers(orders);
+        ImmutableMap.Builder<String, Ordering.Direction> unionOrder = ImmutableMap.builder();
+        Map<String, Component.Role> roles = getDataStructure().getRoles();
+        for (String column : roles.keySet()) {
+            Ordering.Direction direction = orders.getDirection(column);
+            if (direction == null || direction.equals(Ordering.Direction.ANY)) {
+                direction = Ordering.Direction.ASC;
+            }
+            unionOrder.put(column, direction);
+        }
 
-        List<Stream<DataPoint>> streams = prepareChildren(
-                orderWithIdentifiers,
-                filtering,
-                components
-        );
+        ImmutableList.Builder<Stream<DataPoint>> streams = ImmutableList.builder();
+        for (AbstractDatasetOperation child : getChildren()) {
 
-        if (streams.size() == 1)
-            return Optional.of(streams.get(0));
+            FilteringSpecification postFilter = child.unsupportedFiltering(filtering);
 
+            VtlOrdering unionOrdering = new VtlOrdering(unionOrder.build(), child.getDataStructure());
+            Stream<DataPoint> stream = child.computeData(unionOrdering, filtering, components);
+
+            if (postFilter != null) {
+                stream = stream.filter(new VtlFiltering(postFilter, child.getDataStructure()));
+            }
+
+            streams.add(stream.map(new DatapointNormalizer(child.getDataStructure(), getDataStructure())));
+        }
+
+        VtlOrdering unionOrdering = new VtlOrdering(unionOrder.build(), getDataStructure());
         Stream<DataPoint> result = StreamUtils.interleave(
-                createSelector(orderWithIdentifiers), streams
-        ).map(new DuplicateChecker(orderWithIdentifiers, getDataStructure()));
+                createSelector(unionOrdering), streams.build()
+        ).map(new DuplicateChecker(unionOrdering, getDataStructure()));
 
-        return Optional.of(result);
-    }
-
-    /**
-     * Add missing identifiers in the given {@link Order}.
-     */
-    private Order createOrderWithIdentifiers(Ordering orders) {
-        DataStructure structure = getDataStructure();
-        Order.Builder builder = Order.create(structure);
-        builder.putAll(orders);
-
-        for (Component component : structure.values()) {
-            if(!component.isIdentifier())
-                continue;
-            if (orders.containsKey(component))
-                continue;
-
-            builder.put(component, orders.getOrDefault(component, Ordering.Direction.ASC));
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Convert the {@link Order} so it uses the given structure.
-     */
-    private Order adjustOrderForStructure(Order orders, DataStructure dataStructure) {
-
-        DataStructure structure = getDataStructure();
-        Order.Builder adjustedOrders = Order.create(dataStructure);
-
-        // Uses names since child structure can be different.
-        for (Component component : orders.keySet()) {
-            adjustedOrders.put(structure.getName(component), orders.get(component));
-        }
-        return adjustedOrders.build();
+        return result;
     }
 
     private <T> Selector<T> createSelector(Comparator<T> comparator) {

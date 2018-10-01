@@ -23,7 +23,7 @@ package no.ssb.vtl.script.operations.join;
 import no.ssb.vtl.model.Dataset;
 
 /**
- * The working dataset is a special dataset used by the join clauses.
+ * The working dataset is a special dataset used by the join getClauses.
  */
 public interface WorkingDataset extends Dataset {
 }

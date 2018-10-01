@@ -38,7 +38,6 @@ import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
-import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.time.Instant;
 import java.util.Map;
@@ -135,7 +134,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         DataStructure childDataStructure = getChild().getDataStructure();
 
         DataStructure dataStructure = getDataStructure();
@@ -153,7 +152,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
             dataStructure.asMap(datapoint).put(component, resolved);
         });
-        return data.map(dataPoint -> dataPoint);
+        return data;
     }
 
     @Override
@@ -168,12 +167,12 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 }

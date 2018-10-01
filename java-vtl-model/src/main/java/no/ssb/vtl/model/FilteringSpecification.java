@@ -4,7 +4,7 @@ import java.util.Collection;
 
 public interface FilteringSpecification {
 
-    Collection<Literal> clauses();
+    Collection<Clause> getClauses();
 
     enum Operator {
         EQ, GT, GE, IN

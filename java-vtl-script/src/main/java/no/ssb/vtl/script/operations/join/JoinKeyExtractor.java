@@ -27,6 +27,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -50,34 +51,34 @@ public class JoinKeyExtractor implements UnaryOperator<DataPoint> {
      */
     public JoinKeyExtractor(
             DataStructure childStructure,
-            Order order,
+            Ordering ordering,
             Map<Component, Component> mapping
     ) {
-        this(childStructure, order, mapping::get);
+        this(childStructure, ordering, mapping::get);
     }
 
 
     public JoinKeyExtractor(
             DataStructure childStructure,
-            Order order,
+            Ordering order,
             Function<Component, Component> mapper
     ) {
 
-        ImmutableList<Component> fromList = ImmutableList.copyOf(childStructure.values());
-        ImmutableList<Component> toList = ImmutableList.copyOf(order.keySet());
+        ImmutableList<String> fromList = ImmutableList.copyOf(childStructure.keySet());
+        ImmutableList<String> toList = ImmutableList.copyOf(order.columns());
 
         ArrayList<Integer> indices = Lists.newArrayList();
 
         // For each component in order, find the child index.
-        for (Component orderComponent : order.keySet()) {
+        for (String column : order.columns()) {
             indices.add(
-                    toList.indexOf(orderComponent),
-                    fromList.indexOf(mapper.apply(orderComponent))
+                    toList.indexOf(column),
+                    fromList.indexOf(column)
             );
         }
 
         this.indices = Ints.toArray(indices);
-        this.buffer = DataPoint.create(order.size());
+        this.buffer = DataPoint.create(toList.size());
     }
 
     @Override

@@ -54,17 +54,19 @@ public abstract class AbstractDatasetOperation implements Dataset {
         this.children = childrenCopy.build();
     }
 
+    public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
+
     @Override
+    @Deprecated
     public final Stream<DataPoint> getData() {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
-        return Optional.of(computeData(orders, filtering, components).map(DataPointMap::getDataPoint));
+        throw new UnsupportedOperationException();
     }
-
-    public abstract Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components);
 
     @Override
     @Deprecated
@@ -95,14 +97,14 @@ public abstract class AbstractDatasetOperation implements Dataset {
     protected abstract DataStructure computeDataStructure();
 
     /**
-     * Returns true if asking for data stream with the given filtering is supported
+     * Returns a copy of the filtering specification this operation cannot handle.
      */
-    public abstract Boolean supportsFiltering(FilteringSpecification filtering);
+    public abstract FilteringSpecification unsupportedFiltering(FilteringSpecification filtering);
 
     /**
-     * Returns true if asking for data stream with the given ordering is supported
+     * Returns a copy of the ordering specification this operation cannot handle.
      */
-    public abstract Boolean supportsOrdering(OrderingSpecification filtering);
+    public abstract OrderingSpecification unsupportedOrdering(OrderingSpecification filtering);
 
     /**
      * Returns the children {@link AbstractDatasetOperation} of this operation.

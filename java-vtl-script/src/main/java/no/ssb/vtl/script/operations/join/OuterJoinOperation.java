@@ -44,6 +44,10 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
 
 import java.util.Collections;
@@ -51,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 public class OuterJoinOperation extends AbstractJoinOperation {
 
@@ -62,7 +67,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
         super(namedDatasets, identifiers);
     }
 
-    @Override
+
     protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
@@ -115,5 +120,20 @@ public class OuterJoinOperation extends AbstractJoinOperation {
             // TODO
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+        return null;
+    }
+
+    @Override
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 }

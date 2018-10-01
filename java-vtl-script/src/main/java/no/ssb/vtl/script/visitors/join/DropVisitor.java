@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Visit the drop clauses.
+ * Visit the drop getClauses.
  */
 public class DropVisitor extends VTLDatasetExpressionVisitor<DropOperation> {
 

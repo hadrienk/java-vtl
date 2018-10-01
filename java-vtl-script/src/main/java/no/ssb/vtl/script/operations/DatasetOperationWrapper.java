@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -87,13 +86,14 @@ public class DatasetOperationWrapper extends AbstractDatasetOperation {
     }
 
     @Override
-    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         Stream<DataPoint> stream = ensureStream(orders, filtering, components);
 
-        DatasetOperationSpliterator spliterator = new DatasetOperationSpliterator(stream.spliterator(),
-                dataset.getDataStructure());
+        //DatasetOperationSpliterator spliterator = new DatasetOperationSpliterator(stream.spliterator(),
+        //        dataset.getDataStructure());
 
-        return StreamSupport.stream(spliterator, true);
+        //return StreamSupport.stream(spliterator, true);
+        return stream;
     }
 
     @Override
@@ -102,13 +102,13 @@ public class DatasetOperationWrapper extends AbstractDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
-        return true;
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+        return Filtering.ALL;
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
-        return true;
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
+        return Ordering.ANY;
     }
 
     @Override

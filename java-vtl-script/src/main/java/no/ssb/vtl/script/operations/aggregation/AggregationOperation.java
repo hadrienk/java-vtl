@@ -22,23 +22,26 @@ package no.ssb.vtl.script.operations.aggregation;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.TypeException;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
-import no.ssb.vtl.script.operations.DataPointMap;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
@@ -118,16 +121,19 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        // We need all the aggregation columns to be ordered first.
+        // The direction does not matter.
+        List<String> firstColumns = ordering.columns().subList(0, groupByColumns.size());
         throw new UnsupportedOperationException("TODO");
     }
 
-    private DataPointMap aggregate(List<DataPointMap> datapoints) {
+    private DataPoint aggregate(List<DataPoint> datapoints) {
 
         DataPoint result = DataPoint.create(columns.size());
 
@@ -163,32 +169,52 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    protected Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
 
-        DataStructure childStructure = getChild().getDataStructure();
-        Order.Builder builder = Order.create(childStructure);
-        groupBy.forEach(component -> builder.put(component, Ordering.Direction.ASC));
-        Order order = builder.build();
+        AbstractDatasetOperation childOperation = getChild();
 
-        Stream<DataPoint> data = getChild().getData(order).orElseGet(() -> getChild().getData().sorted(order));
-        Stream<List<DataPoint>> groupedDataPoints = StreamUtils.aggregate(data,
-                (previous, current) -> order.compare(previous, current) == 0)
-                .onClose(data::close);
+        // Adjust the order to support aggregation. In order to reduce load we should
+        // try to put the columns with the least values last.
+        ImmutableMap.Builder<String, Ordering.Direction> groupByOrder = ImmutableMap.builder();
+        for (String column : groupByColumns) {
+            Ordering.Direction direction = orders.getDirection(column);
+            if (direction.equals(Ordering.Direction.ANY)) {
+                direction = Ordering.Direction.ASC;
+            }
+            groupByOrder.put(column, direction);
+        }
+        VtlOrdering groupByOrdering = new VtlOrdering(groupByOrder.build(), childOperation.getDataStructure());
 
-        return groupedDataPoints.map(this::aggregate);
+        // Pass the filter to the child op. Keep result as post filter.
+        FilteringSpecification postFilter = childOperation.unsupportedFiltering(filtering);
+
+        Stream<DataPoint> stream = childOperation.computeData(groupByOrdering, filtering, components);
+
+        stream = StreamUtils.aggregate(stream, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
+                .onClose(stream::close).map(this::aggregate);
+
+        if (postFilter != null) {
+            stream = stream.filter(new VtlFiltering(filtering, getDataStructure()));
+        }
+
+        // Need to reorder.
+        if (!groupByOrdering.equals(orders)) {
+            stream = stream.sorted(orders);
+        }
+
+        return stream;
     }
 
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        return Optional.empty();
+        return getChild().getDistinctValuesCount().map(distinct ->
+                Maps.filterKeys(distinct, groupByColumns::contains)
+        );
     }
 
-    /**
-     * Return the amount of {@link DataPoint} the stream obtained by the
-     * method {@link Dataset#getData()} will return.
-     */
     @Override
     public Optional<Long> getSize() {
+        //
         return Optional.empty();
     }
 }

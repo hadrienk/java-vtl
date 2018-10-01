@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * A visitor that handles the clauses.
+ * A visitor that handles the getClauses.
  */
 public class ClauseVisitor extends VTLBaseVisitor<Function<Dataset, Dataset>> {
 

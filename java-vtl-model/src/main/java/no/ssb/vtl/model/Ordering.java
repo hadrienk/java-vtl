@@ -20,12 +20,32 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * The comparator part of VTL order
  */
 public interface Ordering extends Comparator<DataPoint>, OrderingSpecification {
+
+    public static final Ordering ANY = new Ordering() {
+        @Override
+        public int compare(DataPoint o1, DataPoint o2) {
+            return 0;
+        }
+
+        @Override
+        public List<String> columns() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public Direction getDirection(String column) {
+            return Direction.ANY;
+        }
+    };
+
     enum Direction {
         ASC, DESC, ANY
     }

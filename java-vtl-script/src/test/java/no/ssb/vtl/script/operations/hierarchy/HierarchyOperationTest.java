@@ -42,7 +42,7 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
-import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -144,7 +144,7 @@ public class HierarchyOperationTest extends RandomizedTest {
             }
 
             @Override
-            public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
+            public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
                 return Optional.of(getData());
             }
 

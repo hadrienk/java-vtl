@@ -25,11 +25,9 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -38,6 +36,7 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.VTLDataset;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
@@ -55,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static no.ssb.vtl.model.Ordering.Direction.ANY;
 import static no.ssb.vtl.model.Ordering.Direction.ASC;
 
 /**
@@ -90,7 +90,7 @@ public final class ForeachOperation extends AbstractDatasetOperation {
         this.identifiers = ImmutableSet.copyOf(identifiers);
     }
 
-    public static Stream<DataPoint> sort(Stream<DataPoint> stream, Order order) {
+    public static Stream<DataPoint> sort(Stream<DataPoint> stream, Comparator<DataPoint> order) {
         System.out.println("WARN: needed to sort");
         Stopwatch started = Stopwatch.createStarted();
         Stream<DataPoint> sorted = stream.sorted(order);
@@ -103,14 +103,14 @@ public final class ForeachOperation extends AbstractDatasetOperation {
     }
 
     private Stream<DataPoint> sortIfNeeded(Dataset dataset, Ordering order) {
-        Order actualOrder = rearrangeOrder(order, dataset.getDataStructure());
+        Ordering actualOrder = rearrangeOrder(order, dataset.getDataStructure());
         return dataset.getData(actualOrder).orElseGet(() -> sort(dataset.getData(), actualOrder));
     }
 
 
 
     @Override
-    public Stream<no.ssb.vtl.script.operations.DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         Boolean needSort = !isCompatible(orders);
 
         ImmutableMap.Builder<String, PeekingIterator<DataPointMap.View>> iteratorBuilder = ImmutableMap.builder();
@@ -169,10 +169,8 @@ public final class ForeachOperation extends AbstractDatasetOperation {
      * @return true if compatible.
      */
     private boolean isCompatible(Ordering orders) {
-        DataStructure structure = getDataStructure();
         HashSet<String> requiredIdentifiers = Sets.newHashSet(this.identifiers);
-        for (Component component : orders.keySet()) {
-            String name = structure.getName(component);
+        for (String name : orders.columns()) {
             if (!requiredIdentifiers.remove(name)) {
                 break;
             }
@@ -183,20 +181,26 @@ public final class ForeachOperation extends AbstractDatasetOperation {
     /**
      * Create order with identifiers first.
      */
-    private Order rearrangeOrder(Ordering order, DataStructure structure) {
-        Order.Builder orderBuilder = Order.create(structure);
+    private Ordering rearrangeOrder(Ordering order, DataStructure structure) {
+        ImmutableMap.Builder<String, Ordering.Direction> orderBuilder = ImmutableMap.builder();
         for (String identifier : this.identifiers) {
-            orderBuilder.put(identifier, order.getOrDefault(identifier, ASC));
+            Ordering.Direction direction = order.getDirection(identifier);
+            if (direction == null || direction.equals(ANY)) {
+                direction = ASC;
+            }
+            orderBuilder.put(identifier, direction);
         }
 
-        DataStructure originalStructure = getDataStructure();
-        for (Component component : order.keySet()) {
-            String name = originalStructure.getName(component);
-            if (structure.containsKey(name) && !this.identifiers.contains(name)) {
-                orderBuilder.put(name, order.get(component));
+        for (String column : order.columns()) {
+            if (structure.containsKey(column) && !this.identifiers.contains(column)) {
+                Ordering.Direction direction = order.getDirection(column);
+                if (direction == null || direction.equals(ANY)) {
+                    direction = ASC;
+                }
+                orderBuilder.put(column, direction);
             }
         }
-        return orderBuilder.build();
+        return new VtlOrdering(orderBuilder.build(), structure);
     }
 
     /**
@@ -255,10 +259,13 @@ public final class ForeachOperation extends AbstractDatasetOperation {
     }
 
     private Comparator<DataPointMap.View> createComparator(Ordering orders) {
-        return new DataPointMapComparator(
-                Maps.filterKeys(getDataStructure(), identifiers::contains),
-                orders
-        );
+        ImmutableMap.Builder<String, Ordering.Direction> identifierOrder = ImmutableMap.builder();
+        for (String column : orders.columns()) {
+            if (identifiers.contains(column)) {
+                identifierOrder.put(column, orders.getDirection(column));
+            }
+        }
+        return new DataPointMapComparator(identifierOrder.build());
     }
 
     private Order getDefaultOrder() {
@@ -292,12 +299,12 @@ public final class ForeachOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 }

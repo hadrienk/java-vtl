@@ -35,7 +35,6 @@ import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
-import no.ssb.vtl.script.operations.DataPointMap;
 
 import java.util.List;
 import java.util.Map;
@@ -217,19 +216,19 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPointMap> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         // To initialize the indices.
         getDataStructure();
         return getChild().getData().flatMap(this::fold);
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 

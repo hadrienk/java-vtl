@@ -20,9 +20,11 @@ package no.ssb.vtl.model;
  * =========================LICENSE_END==================================
  */
 
+import java.util.List;
+
 public interface OrderingSpecification {
 
-    Iterable<String> columns();
+    List<String> columns();
 
     Ordering.Direction getDirection(String column);
 

@@ -25,9 +25,9 @@ import com.google.common.collect.ImmutableSet;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
+import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
-import no.ssb.vtl.script.operations.join.CrossJoinOperation;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import no.ssb.vtl.script.operations.join.OuterJoinOperation;
 import no.ssb.vtl.script.visitors.ComponentVisitor;
@@ -91,7 +91,8 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
             case VTLParser.OUTER:
                 return new OuterJoinOperation(datasets, identifiers);
             case VTLParser.CROSS:
-                return new CrossJoinOperation(datasets, identifiers);
+                throw new ContextualRuntimeException("Not implemented", ctx);
+                //return new CrossJoinOperation(datasets, identifiers);
 
         }
         return super.visitJoinDefinition(ctx);

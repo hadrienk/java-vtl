@@ -30,36 +30,22 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
-import no.ssb.vtl.model.Filtering;
-import no.ssb.vtl.model.Ordering;
-import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
-import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.script.operations.DataPointMap;
-import no.ssb.vtl.script.support.Closer;
-import no.ssb.vtl.script.support.JoinSpliterator;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.VtlOrdering;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
-import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.*;
-import static no.ssb.vtl.model.Ordering.Direction.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Abstract join operation.
@@ -182,149 +168,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return table.build();
     }
 
-    @Deprecated
-    private static Function<DataPoint, Map<Component, VTLObject>> createKeyExtractor(final DataStructure structure) {
-        return dataPoint -> dataPoint != null ? structure.asMap(dataPoint) : null;
-    }
-
-    /**
-     * This method is deprecated.
-     * <p>
-     * Merger are closely related to the type of join. OuterJoin will be
-     * refactored to stop using this method.
-     */
-    @Deprecated
-    protected abstract BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
-            Dataset leftDataset, Dataset rightDataset
-    );
-
-    /**
-     * Ensure sorted.
-     */
-    protected Stream<DataPoint> sortIfNeeded(Dataset dataset, Ordering order) {
-        // Adjust the order to the structure.
-
-        Order.Builder adjustedOrder = Order.create(dataset.getDataStructure());
-        Table<Component, Dataset, Component> mapping = getComponentMapping();
-
-        for (Map.Entry<Component, Ordering.Direction> orderEntry : order.entrySet()) {
-            Map<Dataset, Component> rowMapping = mapping.row(orderEntry.getKey());
-            if (!rowMapping.containsKey(dataset))
-                continue;
-
-            Component component = rowMapping.get(dataset);
-            if (component.isIdentifier()) {
-                Ordering.Direction direction = orderEntry.getValue();
-                adjustedOrder.put(component, direction);
-            }
-        }
-        return dataset.getData(adjustedOrder.build()).orElseGet(() -> dataset.getData().sorted(adjustedOrder.build()));
-    }
-
-    @Deprecated
-    private Comparator<Map<Component, VTLObject>> createKeyComparator(
-            Dataset rightDataset,
-            Ordering order
-    ) {
-
-        // Only check the values of the common identifiers.
-
-        HashSet<Component> commonComponents = Sets.newHashSet(getCommonIdentifiers());
-        final Map<Component, Ordering.Direction> commonOrder = Maps.filterKeys(order, commonComponents::contains);
-        final Table<Component, Dataset, Component> componentMap = getComponentMapping();
-        return (left, right) -> {
-
-            if (left == null)
-                return -1;
-            if (right == null)
-                return 1;
-            if (left == right)
-                return 0;
-
-            int result;
-            for (Map.Entry<Component, Ordering.Direction> entry : commonOrder.entrySet()) {
-                Component component = entry.getKey();
-                Ordering.Direction direction = entry.getValue();
-
-                Map<Dataset, Component> map = componentMap.row(component);
-
-                Component leftComponent = component; // kept for clarity
-                Component rightComponent = map.get(rightDataset);
-
-                VTLObject leftValue = left.get(leftComponent);
-                VTLObject rightValue = right.get(rightComponent);
-
-                result = Order.NULLS_FIRST.compare(leftValue, rightValue);
-
-                if (result != 0)
-                    return direction == ASC ? result : -1 * result;
-
-            }
-            return 0;
-        };
-    }
-
-    @Override
-    public Stream<DataPointMap> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
-
-        // Optimization.
-        if (getChildren().size() == 1) {
-            AbstractDatasetOperation child = getChildren().iterator().next();
-            return child.computeData(requestedOrder, filtering, components);
-        }
-
-        // Check if requested order is compatible.
-        Optional<Order> order = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
-        if (!order.isPresent())
-            throw new UnsupportedOperationException("TODO");
-
-        // TODO: Filtering
-
-        // TODO: Components
-
-        Iterator<Dataset> iterator = datasets.values().iterator();
-
-        Dataset left = iterator.next();
-        Dataset right = left;
-
-        // Create the resulting data points.
-        final DataStructure joinStructure = getDataStructure();
-        final DataStructure structure = left.getDataStructure();
-
-        // Close all children
-        Closer closer = Closer.create();
-
-        Stream<DataPoint> result = closer.register(
-                sortIfNeeded(left, requestedOrder)
-                        .map(dataPoint -> joinStructure.fromMap(
-                                structure.asMap(dataPoint)
-                        ))
-        );
-
-        while (iterator.hasNext()) {
-            left = right;
-            right = iterator.next();
-            result = StreamSupport.stream(
-                    new JoinSpliterator<>(
-                            createKeyComparator(right, requestedOrder),
-                            result.spliterator(),
-                            closer.register(
-                                    sortIfNeeded(right, requestedOrder)
-                            ).spliterator(),
-                            createKeyExtractor(joinStructure),
-                            createKeyExtractor(right.getDataStructure()),
-                            getMerger(left, right)
-                    ), false
-            );
-        }
-        return result.onClose(() -> {
-            try {
-                closer.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
 
     protected ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
@@ -340,21 +183,21 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * @param requestedOrder  the requested order
      */
     @VisibleForTesting
-    Optional<Order> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering requestedOrder) {
+    Optional<Ordering> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering requestedOrder) {
 
         Set<Component> identifiers = Sets.newHashSet(firstComponents);
 
-        Order.Builder compatibleOrder = Order.create(structure);
-        for (Map.Entry<Component, Ordering.Direction> order : requestedOrder.entrySet()) {
-            Component key = order.getKey();
-            Ordering.Direction direction = order.getValue();
+        ImmutableMap.Builder<String, Ordering.Direction> compatibleOrder = ImmutableMap.builder();
+        for (String column : requestedOrder.columns()) {
 
-            if (!identifiers.isEmpty() && !identifiers.remove(key))
+            Ordering.Direction direction = requestedOrder.getDirection(column);
+
+            if (!identifiers.isEmpty() && !identifiers.remove(structure.get(column)))
                 return Optional.empty();
 
-            compatibleOrder.put(key, direction);
+            compatibleOrder.put(column, direction);
         }
-        return Optional.of(compatibleOrder.build());
+        return Optional.of(new VtlOrdering(compatibleOrder.build(), structure));
     }
 
     /**

@@ -31,8 +31,8 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
-import no.ssb.vtl.script.operations.DataPointMap;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
@@ -64,31 +64,17 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         }
     }
 
-    @Override
-    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
-        return null;
-    }
-
     /**
      * Convert the {@link Order} so it uses the given structure.
      */
-    private Order adjustOrderForStructure(Order orders, DataStructure dataStructure) {
-
-        DataStructure structure = getDataStructure();
-        Order.Builder adjustedOrders = Order.create(dataStructure);
-
-        // Uses names since child structure can be different.
-        for (Component component : orders.keySet()) {
-            String name = structure.getName(component);
-            if (dataStructure.containsKey(name))
-                adjustedOrders.put(name, orders.get(component));
-        }
-        return adjustedOrders.build();
+    private Ordering adjustOrderForStructure(Ordering orders, DataStructure dataStructure) {
+        return new VtlOrdering(orders, dataStructure);
     }
 
     /**
-     * TODO: Move to the {@link AbstractDatasetOperation}.
+     * Unnecessary with the new {@link AbstractDatasetOperation#computeData(Ordering, Filtering, Set)}
      */
+    @Deprecated
     private Stream<DataPoint> getOrSortData(Dataset dataset, Ordering order, Filtering filtering, Set<String> components) {
         Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
         if (sortedData.isPresent()) {
@@ -99,19 +85,19 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public Stream<DataPointMap> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Try to create a compatible order.
         // If not, the caller will have to sort the result manually.
-        Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
+        Optional<Ordering> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
         if (!compatibleOrder.isPresent()) {
             throw new UnsupportedOperationException();
         }
 
-        Order requiredOrder = compatibleOrder.get();
+        Ordering requiredOrder = compatibleOrder.get();
 
         // Compute the predicate
-        Order predicate = computePredicate(requiredOrder);
+        Ordering predicate = computePredicate(requiredOrder);
 
         Iterator<Dataset> iterator = datasets.values().iterator();
         Dataset left = iterator.next();
@@ -191,7 +177,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
      * @param requestedOrder the requested order.
      * @return order of the common identifiers only.
      */
-    private Order computePredicate(Order requestedOrder) {
+    private Ordering computePredicate(Ordering requestedOrder) {
         DataStructure structure = getDataStructure();
 
         // We need to create a fake structure to allow the returned
@@ -203,11 +189,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             fakeStructure.put(structure.getName(component), component);
         }
 
-        Order.Builder predicateBuilder = Order.create(fakeStructure.build());
-        for (Component component : commonIdentifiers) {
-            predicateBuilder.put(component, requestedOrder.getOrDefault(component, Ordering.Direction.ASC));
-        }
-        return predicateBuilder.build();
+        return new VtlOrdering(requestedOrder, fakeStructure.build());
     }
 
     @Override
@@ -231,12 +213,12 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 }

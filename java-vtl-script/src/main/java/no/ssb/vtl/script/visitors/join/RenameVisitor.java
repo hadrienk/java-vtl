@@ -50,11 +50,11 @@ public class RenameVisitor extends VTLDatasetExpressionVisitor<RenameOperation> 
 
     @Override
     public RenameOperation visitJoinRenameExpression(VTLParser.JoinRenameExpressionContext ctx) {
-        ImmutableMap.Builder<Component, String> newNames = ImmutableMap.builder();
+        ImmutableMap.Builder<String, String> newNames = ImmutableMap.builder();
         for (VTLParser.JoinRenameParameterContext renameParam : ctx.joinRenameParameter()) {
             Component component = componentVisitor.visit(renameParam.from);
             String to = removeQuoteIfNeeded(renameParam.to.getText());
-            newNames.put(component, to);
+            newNames.put(renameParam.from.getText(), to);
         }
         return new RenameOperation(dataset, newNames.build());
     }

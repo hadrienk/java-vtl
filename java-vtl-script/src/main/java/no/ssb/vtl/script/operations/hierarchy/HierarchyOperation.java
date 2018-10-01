@@ -288,23 +288,22 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Boolean supportsFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Boolean supportsOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
 
         final DataStructure structure = getDataStructure();
         final Order groupOrder = computeOrder();
         final Order groupPredicate = computePredicate();
 
-        // TODO: Save the graph in the correct order.
         final List<VTLObject> sorted = getGraphValues();
 
         final Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
@@ -399,7 +398,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             return aggregate;
         });
 
-        return Optional.of(data);
+        return data;
     }
 
     private Map<Component, HierarchyAccumulator> createAccumulatorMap() {

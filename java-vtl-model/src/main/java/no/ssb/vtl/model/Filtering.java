@@ -15,7 +15,7 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
         }
 
         @Override
-        public Collection<Literal> clauses() {
+        public Collection<Clause> getClauses() {
             return Collections.emptyList();
         }
     };
@@ -27,7 +27,7 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
         }
 
         @Override
-        public Collection<Literal> clauses() {
+        public Collection<Clause> getClauses() {
             return Collections.emptyList();
         }
     };
