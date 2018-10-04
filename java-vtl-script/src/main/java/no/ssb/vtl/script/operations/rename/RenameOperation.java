@@ -85,18 +85,13 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     protected DataStructure computeDataStructure() {
         DataStructure.Builder structure = DataStructure.builder();
         DataStructure childStructure = getChild().getDataStructure();
-        for (Map.Entry<String, Component> componentEntry : childStructure.entrySet()) {
-            Component component = componentEntry.getValue();
-            if (nameMapping.containsKey(component)) {
-                String newName = nameMapping.get(component);
-                structure.put(
-                        newName,
-                        roleMapping.getOrDefault(component, component.getRole()),
-                        component.getType()
-                );
-            } else {
-                structure.put(componentEntry);
-            }
+        for (String oldColumn : childStructure.keySet()) {
+            Component oldComponent = childStructure.get(oldColumn);
+            structure.put(
+                    nameMapping.getOrDefault(oldColumn, oldColumn),
+                    roleMapping.getOrDefault(oldColumn, oldComponent.getRole()),
+                    oldComponent.getType()
+            );
         }
         return structure.build();
     }
@@ -147,7 +142,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
             for (Literal literal : clause.getLiterals()) {
                 String column = literal.getColumn();
                 String childColumn = nameMapping.getOrDefault(column, column);
-                // TODO
             }
         }
         return oldFiltering;

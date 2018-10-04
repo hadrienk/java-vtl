@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.fold;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,9 +29,11 @@ import com.google.common.collect.Sets;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
@@ -50,6 +52,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FoldOperationTest extends RandomizedTest {
 
@@ -100,6 +103,47 @@ public class FoldOperationTest extends RandomizedTest {
             softly.assertThatThrownBy(() -> new FoldOperation(dataset, validDimensionReference, validMeasureReference, Collections.emptySet()))
                     .isInstanceOf(IllegalArgumentException.class);
         }
+    }
+
+    @Test
+    public void testOrderingIncludesIdentifier() {
+
+        // Fold supports
+        Dataset dataset = StaticDataset.create()
+                .addComponent("id1", IDENTIFIER, String.class)
+                .addComponent("id2", IDENTIFIER, String.class)
+                .addComponent("m1", MEASURE, String.class)
+                .addComponent("m2", MEASURE, String.class)
+                .addComponent("m3", MEASURE, String.class)
+                .addPoints("11", "21", "a", "b", "c")
+                .addPoints("12", "22", "d", "e", "f")
+                .build();
+
+        FoldOperation fold = new FoldOperation(dataset, "id3", "m", ImmutableSet.of("m1", "m2", "m3"));
+
+        assertThat(fold.computeData(
+                VtlOrdering.using(fold).desc("id3").build(),
+                Filtering.ALL,
+                fold.getDataStructure().keySet()
+        )).containsExactly(
+                DataPoint.create("id1", "id2", "m1", "a"),
+                DataPoint.create("id1", "id2", "m2", "b"),
+                DataPoint.create("id1", "id2", "m3", "c")
+        );
+
+        assertThat(fold.computeData(
+                VtlOrdering.using(fold)
+                        .asc("id2")
+                        .desc("id3")
+                        .build(),
+                Filtering.ALL,
+                fold.getDataStructure().keySet()
+        )).containsExactly(
+                DataPoint.create("id1", "id2", "m1", "a"),
+                DataPoint.create("id1", "id2", "m2", "b"),
+                DataPoint.create("id1", "id2", "m3", "c")
+        );
+
     }
 
     @Test
@@ -169,17 +213,17 @@ public class FoldOperationTest extends RandomizedTest {
 
         DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
                 .addComponent("id1", IDENTIFIER, String.class)
-                .addComponent("id2", IDENTIFIER, String.class )
+                .addComponent("id2", IDENTIFIER, String.class)
                 .addComponent("measure1", MEASURE, String.class)
                 .addComponent("measure2", MEASURE, String.class)
                 .addComponent("measure3", MEASURE, String.class)
                 .addComponent("attribute", ATTRIBUTE, String.class)
 
                 .addPoints("id1-1", "id2-1", "measure1-1", "measure2-1", "measure3-1", "attribute1-1")
-                .addPoints("id1-1", "id2-2", null,         "measure2-2", "measure3-2", "attribute1-2")
-                .addPoints("id1-2", "id2-1", "measure1-3", null,         "measure3-3", "attribute1-3")
-                .addPoints("id1-2", "id2-2", "measure1-4", "measure2-4", null,         "attribute1-4")
-                .addPoints("id1-3", "id2-1", "measure1-5", "measure2-5", "measure3-5",         null)
+                .addPoints("id1-1", "id2-2", null, "measure2-2", "measure3-2", "attribute1-2")
+                .addPoints("id1-2", "id2-1", "measure1-3", null, "measure3-3", "attribute1-3")
+                .addPoints("id1-2", "id2-2", "measure1-4", "measure2-4", null, "attribute1-4")
+                .addPoints("id1-3", "id2-1", "measure1-5", "measure2-5", "measure3-5", null)
 
                 .build());
 
@@ -213,7 +257,7 @@ public class FoldOperationTest extends RandomizedTest {
                     .put("newId", Ordering.Direction.ASC)
                     .build();
 
-            Stream<DataPoint> stream = clause.getData();
+            Stream<DataPoint> stream = clause.computeData(Ordering.ANY, Filtering.ALL, Collections.emptySet());
             softly.assertThat(stream.sorted(order))
                     .containsExactly(
                             DataPoint.create("id1-1", "id2-1", "attribute1-1", "measure1", "measure1-1"),

@@ -1,8 +1,10 @@
 package no.ssb.vtl.model;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import java.util.Collection;
+import java.util.List;
 
 public class VtlFiltering implements Filtering {
 
@@ -12,6 +14,15 @@ public class VtlFiltering implements Filtering {
     public VtlFiltering(FilteringSpecification spec, DataStructure structure) {
         this.columns = ImmutableList.copyOf(structure.keySet());
         this.spec = spec;
+    }
+
+    public VtlFiltering(List<List<Literal>> spec, DataStructure structure) {
+        this.columns = ImmutableList.copyOf(structure.keySet());
+        List<Clause> clauses = Lists.newArrayList();
+        for (List<Literal> literals : spec) {
+            clauses.add(() -> literals);
+        }
+        this.spec = () -> clauses;
     }
 
     @Override
@@ -37,8 +48,9 @@ public class VtlFiltering implements Filtering {
                             result = variable.compareTo(value) >= 0;
                             break;
                         }
+                    result = literal.isNegated() ^ result;
                 }
-                if (result ^ literal.isNegated()) {
+                if (result) {
                     break;
                 }
             }

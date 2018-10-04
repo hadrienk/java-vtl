@@ -21,21 +21,24 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static no.ssb.vtl.model.Ordering.Direction.ASC;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Use this class to simplify implementation of the {@link Ordering} and {@link OrderingSpecification}
  */
-public class VtlOrdering implements Ordering, OrderingSpecification {
+public final class VtlOrdering implements Ordering, OrderingSpecification {
 
     private final ImmutableMap<String, Direction> delegate;
     private final int[] indices;
@@ -45,11 +48,19 @@ public class VtlOrdering implements Ordering, OrderingSpecification {
         this(toMap(specification), structure);
     }
 
-    public VtlOrdering(Map<String, Direction> specification, DataStructure structure) {
+    public VtlOrdering(ImmutableMap<String, Direction> specification, DataStructure structure) {
         this.delegate = ImmutableMap.copyOf(specification);
 
         ArrayList<Integer> indices = Lists.newArrayList();
         ArrayList<Direction> directions = Lists.newArrayList();
+
+        Sets.SetView<String> difference = Sets.difference(specification.keySet(), structure.keySet());
+        if (!difference.isEmpty()) {
+            throw new IllegalArgumentException(String.format(
+                    "columns %s not found in structure",
+                    difference
+            ));
+        }
 
         ImmutableList<String> columns = ImmutableList.copyOf(structure.keySet());
         for (String column : specification.keySet()) {
@@ -61,12 +72,20 @@ public class VtlOrdering implements Ordering, OrderingSpecification {
         this.directions = directions.toArray(new Direction[]{});
     }
 
-    public static ImmutableMap<String, Direction> toMap(OrderingSpecification specification) {
+    private static ImmutableMap<String, Direction> toMap(OrderingSpecification specification) {
         ImmutableMap.Builder<String, Direction> delegate = ImmutableMap.builder();
         for (String column : specification.columns()) {
             delegate.put(column, specification.getDirection(column));
         }
         return delegate.build();
+    }
+
+    public static Builder using(DataStructure structure) {
+        return new Builder(structure);
+    }
+
+    public static Builder using(Dataset dataset) {
+        return new Builder(dataset.getDataStructure());
     }
 
     @Override
@@ -89,6 +108,34 @@ public class VtlOrdering implements Ordering, OrderingSpecification {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        VtlOrdering other = (VtlOrdering) o;
+
+        // Ordering is the same if all columns/direction in this
+        // are present and in the same order in other.
+
+        Iterator<Map.Entry<String, Direction>> it = delegate.entrySet().iterator();
+        Iterator<Map.Entry<String, Direction>> otherIt = other.delegate.entrySet().iterator();
+        while (it.hasNext() && otherIt.hasNext()) {
+            if (!Objects.equal(it.next(), otherIt.next())) {
+                return false;
+            }
+        }
+        return !it.hasNext();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(delegate);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public int compare(DataPoint dp1, DataPoint dp2) {
         int result;
@@ -100,9 +147,44 @@ public class VtlOrdering implements Ordering, OrderingSpecification {
 
             result = o1.compareTo(o2);
             if (result != 0) {
-                return directions[i] == ASC ? result : -result;
+                return directions[i] == Direction.ASC ? result : -result;
             }
         }
         return 0;
+    }
+
+    public static class Builder {
+
+        private ImmutableMap.Builder<String, Direction> map = ImmutableMap.builder();
+        private DataStructure structure;
+
+        private Builder(DataStructure structure) {
+            this.structure = checkNotNull(structure);
+        }
+
+        public VtlOrdering build() {
+            return new VtlOrdering(map.build(), structure);
+        }
+
+        public Builder then(Direction direction, String... columns) {
+            for (String column : columns) {
+                this.map.put(column, direction);
+            }
+            return this;
+        }
+
+        public Builder any(String... columns) {
+            return then(Direction.ANY, columns);
+        }
+
+        public Builder asc(String... columns) {
+            return then(Direction.ASC, columns);
+        }
+
+        public Builder desc(String... columns) {
+            return then(Direction.DESC, columns);
+        }
+
+
     }
 }

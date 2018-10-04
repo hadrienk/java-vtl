@@ -22,6 +22,7 @@ package no.ssb.vtl.script.operations.fold;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -34,6 +35,7 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.List;
@@ -219,7 +221,27 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         // To initialize the indices.
         getDataStructure();
-        return getChild().getData().flatMap(this::fold);
+
+        // Remove the identifier and the dimension since they are not present
+        // in the child operation.
+        ImmutableMap.Builder<String, Ordering.Direction> foldOrder = ImmutableMap.builder();
+        for (String column : orders.columns()) {
+            if (!column.equals(dimension) && !column.equals(measure)) {
+                foldOrder.put(column, orders.getDirection(column));
+            }
+        }
+
+        // TODO: Filtering.
+
+        VtlOrdering foldOrdering = new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
+        Stream<DataPoint> stream = getChild()
+                .computeData(foldOrdering, filtering, components).flatMap(this::fold);
+
+        if (!foldOrdering.equals(orders)) {
+            stream = stream.sorted(orders);
+        }
+
+        return stream;
     }
 
     @Override

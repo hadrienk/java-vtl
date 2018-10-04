@@ -41,10 +41,11 @@ package no.ssb.vtl.script.operations.rename;
  */
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.operations.DatasetOperationWrapper;
@@ -53,6 +54,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -73,7 +75,7 @@ public class RenameOperationTest {
         );
 
         RenameOperation rename = new RenameOperation(
-                new DatasetOperationWrapper(dataset),
+                dataset,
                 ImmutableMap.of(
                         "id", "newId",
                         "measure", "newMeasure",
@@ -81,7 +83,9 @@ public class RenameOperationTest {
                 )
         );
 
-        try (Stream<DataPoint> data = rename.getData()) {
+        try (Stream<DataPoint> data = rename.computeData(
+                Ordering.ANY, Filtering.ALL, Collections.emptySet()
+        )) {
             Assertions.assertThat(data).isNotNull();
         } finally {
             Assertions.assertThat(dataset.allStreamWereClosed()).isTrue();
@@ -122,22 +126,17 @@ public class RenameOperationTest {
 
     @Test
     public void testRenameAndCast() throws Exception {
-        Dataset dataset = Mockito.mock(Dataset.class);
 
-        DataStructure structure = DataStructure.of(
-                "Identifier1", Role.IDENTIFIER, String.class,
-                "Identifier2", Role.IDENTIFIER, String.class,
-                "Measure1", Role.MEASURE, String.class,
-                "Measure2", Role.MEASURE, String.class,
-                "Attribute1", Role.ATTRIBUTE, String.class,
-                "Attribute2", Role.ATTRIBUTE, String.class
-        );
-        Mockito.when(dataset.getDataStructure()).thenReturn(structure);
-        Mockito.when(dataset.getData()).then(invocation -> {
-            return Stream.of(
-                    structure.wrap(Maps.asMap(structure.keySet(), (String input) -> (Object) input))
-            );
-        });
+        Dataset dataset = StaticDataset.create()
+                .addComponent("Identifier1", Role.IDENTIFIER, String.class)
+                .addComponent("Identifier2", Role.IDENTIFIER, String.class)
+                .addComponent("Measure1", Role.MEASURE, String.class)
+                .addComponent("Measure2", Role.MEASURE, String.class)
+                .addComponent("Attribute1", Role.ATTRIBUTE, String.class)
+                .addComponent("Attribute2", Role.ATTRIBUTE, String.class)
+
+                .addPoints("Identifier1", "Identifier2", "Measure1", "Measure2", "Attribute1", "Attribute2")
+                .build();
 
         ImmutableMap<String, String> newNames = new ImmutableMap.Builder<String, String>()
                 .put("Identifier1", "Identifier1Measure")
@@ -159,7 +158,7 @@ public class RenameOperationTest {
 
         RenameOperation rename;
         rename = new RenameOperation(
-                new DatasetOperationWrapper(dataset),
+                dataset,
                 newNames,
                 newRoles
         );
@@ -173,9 +172,9 @@ public class RenameOperationTest {
                 Assertions.entry("Attribute2Measure", Role.MEASURE)
         );
 
-        Assertions.assertThat(rename.getData()).flatExtracting(input -> input).extracting(VTLObject::get)
+        Assertions.assertThat(rename.computeData(Ordering.ANY, Filtering.ALL, Collections.emptySet())).flatExtracting(input -> input).extracting(VTLObject::get)
                 .containsOnlyElementsOf(
-                        structure.keySet()
+                        dataset.getDataStructure().keySet()
                 );
     }
 }
