@@ -119,7 +119,7 @@ public class VtlFilteringTest {
                 clause(equalTo("2", "a"))
         );
 
-        List<DataPoint> result = data.stream().filter(new VtlFiltering(spec, structure)).collect(Collectors.toList());
+        List<DataPoint> result = data.stream().filter(new VtlFiltering(structure, spec)).collect(Collectors.toList());
         printResult(result);
     }
 
@@ -132,7 +132,7 @@ public class VtlFilteringTest {
                 clause(notEqualTo("2", "a"))
         );
 
-        List<DataPoint> result = data.stream().filter(new VtlFiltering(spec, structure)).collect(Collectors.toList());
+        List<DataPoint> result = data.stream().filter(new VtlFiltering(structure, spec)).collect(Collectors.toList());
         printResult(result);
     }
 
@@ -145,7 +145,7 @@ public class VtlFilteringTest {
                 clause(greaterThan("2", "c"))
         );
 
-        List<DataPoint> result = data.stream().filter(new VtlFiltering(spec, structure)).collect(Collectors.toList());
+        List<DataPoint> result = data.stream().filter(new VtlFiltering(structure, spec)).collect(Collectors.toList());
         printResult(result);
     }
 
@@ -158,7 +158,7 @@ public class VtlFilteringTest {
                 clause(greaterThanOrEqualTo("2", "c"))
         );
 
-        List<DataPoint> result = data.stream().filter(new VtlFiltering(spec, structure)).collect(Collectors.toList());
+        List<DataPoint> result = data.stream().filter(new VtlFiltering(structure, spec)).collect(Collectors.toList());
         printResult(result);
     }
 
@@ -171,7 +171,7 @@ public class VtlFilteringTest {
                 clause(lessThan("2", "c"))
         );
 
-        List<DataPoint> result = data.stream().filter(new VtlFiltering(spec, structure)).collect(Collectors.toList());
+        List<DataPoint> result = data.stream().filter(new VtlFiltering(structure, spec)).collect(Collectors.toList());
         printResult(result);
     }
 
@@ -184,7 +184,7 @@ public class VtlFilteringTest {
                 clause(lessThanOrEqualTo("2", "c"))
         );
 
-        List<DataPoint> result = data.stream().filter(new VtlFiltering(spec, structure)).collect(Collectors.toList());
+        List<DataPoint> result = data.stream().filter(new VtlFiltering(structure, spec)).collect(Collectors.toList());
         printResult(result);
     }
 

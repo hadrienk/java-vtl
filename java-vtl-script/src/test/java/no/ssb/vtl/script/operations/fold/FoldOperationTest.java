@@ -22,6 +22,7 @@ package no.ssb.vtl.script.operations.fold;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -33,25 +34,33 @@ import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.PrintStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static no.ssb.vtl.model.VtlFiltering.clause;
+import static no.ssb.vtl.model.VtlFiltering.eq;
+import static no.ssb.vtl.model.VtlFiltering.neq;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FoldOperationTest extends RandomizedTest {
@@ -119,13 +128,21 @@ public class FoldOperationTest extends RandomizedTest {
                 .addPoints("12", "22", "d", "e", "f")
                 .build();
 
-        FoldOperation fold = new FoldOperation(dataset, "id3", "m", ImmutableSet.of("m1", "m2", "m3"));
+        FoldOperation fold = new FoldOperation(
+                new DebugDataset(dataset, System.err), "id3", "m", ImmutableSet.of("m1", "m2", "m3"));
 
-        assertThat(fold.computeData(
-                VtlOrdering.using(fold).desc("id3").build(),
-                Filtering.ALL,
+        DebugDataset result = new DebugDataset(new OperationDataset(fold), System.err);
+
+        assertThat(result.getData(
+                VtlOrdering.using(fold).desc("id1", "id3").build(),
+                new VtlFiltering(
+                        fold.getDataStructure(),
+                        clause(
+                                eq("id1", "11"), neq("id3", "a")
+                        )
+                ),
                 fold.getDataStructure().keySet()
-        )).containsExactly(
+        ).get()).containsExactly(
                 DataPoint.create("id1", "id2", "m1", "a"),
                 DataPoint.create("id1", "id2", "m2", "b"),
                 DataPoint.create("id1", "id2", "m3", "c")
@@ -240,7 +257,7 @@ public class FoldOperationTest extends RandomizedTest {
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
             FoldOperation clause = new FoldOperation(
-                    dataset,
+                    new DebugDataset(dataset, System.err),
                     "newId",
                     "newMeasure",
                     ImmutableSet.copyOf(elements)
@@ -283,6 +300,150 @@ public class FoldOperationTest extends RandomizedTest {
             stream.close();
 
             softly.assertThat(dataset.allStreamWereClosed()).isTrue();
+        }
+    }
+
+    public class OperationDataset implements Dataset {
+        AbstractDatasetOperation operation;
+
+        public OperationDataset(FoldOperation fold) {
+            this.operation = fold;
+        }
+
+        @Override
+        public Stream<DataPoint> getData() {
+            return getData(Ordering.ANY, Filtering.ALL, getDataStructure().keySet()).get();
+        }
+
+        @Override
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
+            return operation.getDistinctValuesCount();
+        }
+
+        @Override
+        public Optional<Long> getSize() {
+            return operation.getSize();
+        }
+
+        @Override
+        public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
+            return Optional.of(operation.computeData(orders, filtering, components));
+        }
+
+        @Override
+        public DataStructure getDataStructure() {
+            return operation.getDataStructure();
+        }
+    }
+
+    public class DebugDataset implements Dataset {
+
+        private final Dataset delegate;
+        private final PrintStream output;
+
+        public DebugDataset(Dataset delegate, PrintStream output) {
+            this.delegate = delegate;
+            this.output = output;
+        }
+
+        @Override
+        public Stream<DataPoint> getData() {
+            System.out.println("getData()");
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getData();
+            } finally {
+                stopwatch.stop();
+                System.out.println("getData() : " + stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+        }
+
+        @Override
+        public Optional<Map<String, Integer>> getDistinctValuesCount() {
+            System.out.println("getDistinctValuesCount()");
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getDistinctValuesCount();
+            } finally {
+                stopwatch.stop();
+                System.out.println("getDistinctValuesCount() : " + stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+        }
+
+        @Override
+        public Optional<Long> getSize() {
+            System.out.println("getSize()");
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getSize();
+            } finally {
+                stopwatch.stop();
+                System.out.println("getSize() : " + stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+        }
+
+        @Override
+        public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
+            System.out.printf("%h#getData(%s, %s, %s)\n", delegate.hashCode(),  orders, filtering, components);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getData(orders, filtering, components);
+            } finally {
+                stopwatch.stop();
+                System.out.printf("%h#getData(%s, %s, %s) : %s\n", delegate.hashCode(), orders, filtering, components,
+                        stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+        }
+
+        @Override
+        public Optional<Stream<DataPoint>> getData(Ordering order) {
+            System.out.printf("%h#getData(%s)\n", delegate.hashCode(), order);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getData(order);
+            } finally {
+                stopwatch.stop();
+                System.out.printf("%h#getData(%s) : %s\n", delegate.hashCode(),order,
+                        stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+
+        }
+
+        @Override
+        public Optional<Stream<DataPoint>> getData(Filtering filtering) {
+            System.out.printf("%h#getData(%s)\n", delegate.hashCode(), filtering);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getData(filtering);
+            } finally {
+                stopwatch.stop();
+                System.out.printf("%h#getData(%s) : %s\n", delegate.hashCode(), filtering, stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+        }
+
+        @Override
+        public Optional<Stream<DataPoint>> getData(Set<String> components) {
+            System.out.printf("%h#getData(%s)\n", delegate.hashCode(), components);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getData(components);
+            } finally {
+                stopwatch.stop();
+                System.out.printf("%h#getData(%s) : %s\n", delegate.hashCode(), components, stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+        }
+
+        @Override
+        public DataStructure getDataStructure() {
+            System.out.printf("%h#getDataStructure()\n", delegate.hashCode());
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            try {
+                return delegate.getDataStructure();
+            } finally {
+                stopwatch.stop();
+                System.out.printf("%h#getDataStructure() : %s\n", delegate.hashCode(), stopwatch.elapsed(TimeUnit.NANOSECONDS));
+            }
+
         }
     }
 }

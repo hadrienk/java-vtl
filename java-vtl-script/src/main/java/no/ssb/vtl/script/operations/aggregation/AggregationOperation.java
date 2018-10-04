@@ -194,7 +194,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
                 .onClose(stream::close).map(this::aggregate);
 
         if (postFilter != null) {
-            stream = stream.filter(new VtlFiltering(filtering, getDataStructure()));
+            stream = stream.filter(new VtlFiltering(getDataStructure(), filtering));
         }
 
         // Need to reorder.

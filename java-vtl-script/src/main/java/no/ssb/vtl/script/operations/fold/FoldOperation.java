@@ -35,6 +35,7 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
@@ -231,13 +232,31 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
             }
         }
 
-        // TODO: Filtering.
+        // Neutralize the parts of the filter that cannot be send to the child.
+        List<List<FilteringSpecification.Literal>> clauses = Lists.newArrayList();
+        for (FilteringSpecification.Clause clause : filtering.getClauses()) {
+            List<FilteringSpecification.Literal> literals = Lists.newArrayList();
+            for (FilteringSpecification.Literal literal : clause.getLiterals()) {
+                String column = literal.getColumn();
+                if (!column.equals(dimension) && !column.equals(measure)) {
+                    literals.add(literal);
+                }
+            }
+            if (!literals.isEmpty()) {
+                clauses.add(literals);
+            }
+        }
+        VtlFiltering foldFilter = new VtlFiltering(getDataStructure(), clauses);
 
         VtlOrdering foldOrdering = new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
         Stream<DataPoint> stream = getChild()
-                .computeData(foldOrdering, filtering, components).flatMap(this::fold);
+                .computeData(foldOrdering, foldFilter, components).flatMap(this::fold);
 
-        if (!foldOrdering.equals(orders)) {
+        if (!filtering.equals(foldFilter)) {
+            stream = stream.filter(filtering);
+        }
+
+        if (!orders.equals(foldOrdering)) {
             stream = stream.sorted(orders);
         }
 

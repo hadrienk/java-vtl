@@ -158,7 +158,7 @@ public class UnionOperation extends AbstractDatasetOperation {
             Stream<DataPoint> stream = child.computeData(unionOrdering, filtering, components);
 
             if (postFilter != null) {
-                stream = stream.filter(new VtlFiltering(postFilter, child.getDataStructure()));
+                stream = stream.filter(new VtlFiltering(child.getDataStructure(), postFilter));
             }
 
             streams.add(stream.map(new DatapointNormalizer(child.getDataStructure(), getDataStructure())));
