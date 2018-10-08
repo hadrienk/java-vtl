@@ -60,8 +60,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static no.ssb.vtl.model.FilteringSpecification.Clause;
-import static no.ssb.vtl.model.FilteringSpecification.Literal;
 
 /**
  * Rename operation.
@@ -138,13 +136,14 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     private Filtering renameFiltering(Filtering oldFiltering) {
-        for (Clause clause : oldFiltering.getClauses()) {
-            for (Literal literal : clause.getLiterals()) {
-                String column = literal.getColumn();
-                String childColumn = nameMapping.getOrDefault(column, column);
-            }
-        }
-        return oldFiltering;
+        //for (Clause clause : oldFiltering.getClauses()) {
+        //    for (Literal literal : clause.getLiterals()) {
+        //        String column = literal.getColumn();
+        //        String childColumn = nameMapping.getOrDefault(column, column);
+        //    }
+        //}
+        //return oldFiltering;
+        return null;
     }
 
     /**

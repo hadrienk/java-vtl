@@ -40,6 +40,7 @@ import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
+import org.logicng.io.parsers.ParserException;
 import org.mockito.Mockito;
 
 import java.io.PrintStream;
@@ -58,9 +59,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
-import static no.ssb.vtl.model.VtlFiltering.clause;
 import static no.ssb.vtl.model.VtlFiltering.eq;
-import static no.ssb.vtl.model.VtlFiltering.neq;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FoldOperationTest extends RandomizedTest {
@@ -115,50 +114,59 @@ public class FoldOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testOrderingIncludesIdentifier() {
+    public void testOrderingIncludesIdentifier() throws ParserException {
 
         // Fold supports
         Dataset dataset = StaticDataset.create()
-                .addComponent("id1", IDENTIFIER, String.class)
-                .addComponent("id2", IDENTIFIER, String.class)
-                .addComponent("m1", MEASURE, String.class)
-                .addComponent("m2", MEASURE, String.class)
-                .addComponent("m3", MEASURE, String.class)
-                .addPoints("11", "21", "a", "b", "c")
-                .addPoints("12", "22", "d", "e", "f")
+                .addComponent("year", IDENTIFIER, String.class)
+                .addComponent("country", IDENTIFIER, String.class)
+                .addComponent("pop", MEASURE, Long.class)
+                .addComponent("death", MEASURE, Long.class)
+                .addComponent("birth", MEASURE, Long.class)
+                .addPoints("2000", "norway", 1L, 2L, 4L)
+                .addPoints("2000", "sweden", 8L, 16L, 32L)
+                .addPoints("2001", "norway", 64L, 128L, 256L)
+                .addPoints("2001", "sweden", 512L, 1024L, 2048L)
                 .build();
 
         FoldOperation fold = new FoldOperation(
-                new DebugDataset(dataset, System.err), "id3", "m", ImmutableSet.of("m1", "m2", "m3"));
+                new DebugDataset(dataset, System.err),
+                "type",
+                "value",
+                ImmutableSet.of("pop", "death", "birth")
+        );
 
         DebugDataset result = new DebugDataset(new OperationDataset(fold), System.err);
 
+        VtlFiltering filtering = VtlFiltering.using(fold)
+                .and(eq("country", "sweden"), eq("year", "2000"))
+                .build();
+
+
         assertThat(result.getData(
-                VtlOrdering.using(fold).desc("id1", "id3").build(),
-                new VtlFiltering(
-                        fold.getDataStructure(),
-                        clause(
-                                eq("id1", "11"), neq("id3", "a")
-                        )
-                ),
+                VtlOrdering.using(fold).desc("year", "country").build(),
+                filtering,
                 fold.getDataStructure().keySet()
         ).get()).containsExactly(
-                DataPoint.create("id1", "id2", "m1", "a"),
-                DataPoint.create("id1", "id2", "m2", "b"),
-                DataPoint.create("id1", "id2", "m3", "c")
+                DataPoint.create("2000", "sweden", "pop", 8L),
+                DataPoint.create("2000", "sweden", "death", 16L),
+                DataPoint.create("2000", "sweden", "birth", 32L),
+                DataPoint.create("2000", "norway", "pop", 1L),
+                DataPoint.create("2000", "norway", "death", 2L),
+                DataPoint.create("2000", "norway", "birth", 4L)
         );
 
-        assertThat(fold.computeData(
-                VtlOrdering.using(fold)
-                        .asc("id2")
-                        .desc("id3")
-                        .build(),
-                Filtering.ALL,
+        assertThat(result.getData(
+                VtlOrdering.using(fold).desc("year", "country").asc("type").build(),
+                filtering,
                 fold.getDataStructure().keySet()
-        )).containsExactly(
-                DataPoint.create("id1", "id2", "m1", "a"),
-                DataPoint.create("id1", "id2", "m2", "b"),
-                DataPoint.create("id1", "id2", "m3", "c")
+        ).get()).containsExactly(
+                DataPoint.create("2000", "sweden", "birth", 32L),
+                DataPoint.create("2000", "sweden", "death", 16L),
+                DataPoint.create("2000", "sweden", "pop", 8L),
+                DataPoint.create("2000", "norway", "birth", 4L),
+                DataPoint.create("2000", "norway", "death", 2L),
+                DataPoint.create("2000", "norway", "pop", 1L)
         );
 
     }
@@ -384,7 +392,7 @@ public class FoldOperationTest extends RandomizedTest {
 
         @Override
         public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
-            System.out.printf("%h#getData(%s, %s, %s)\n", delegate.hashCode(),  orders, filtering, components);
+            System.out.printf("%h#getData(%s, %s, %s)\n", delegate.hashCode(), orders, filtering, components);
             Stopwatch stopwatch = Stopwatch.createStarted();
             try {
                 return delegate.getData(orders, filtering, components);
@@ -403,7 +411,7 @@ public class FoldOperationTest extends RandomizedTest {
                 return delegate.getData(order);
             } finally {
                 stopwatch.stop();
-                System.out.printf("%h#getData(%s) : %s\n", delegate.hashCode(),order,
+                System.out.printf("%h#getData(%s) : %s\n", delegate.hashCode(), order,
                         stopwatch.elapsed(TimeUnit.NANOSECONDS));
             }
 

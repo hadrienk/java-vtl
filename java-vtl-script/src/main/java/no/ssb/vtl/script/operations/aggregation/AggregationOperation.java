@@ -37,7 +37,6 @@ import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
-import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.TypeException;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
@@ -193,9 +192,9 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         stream = StreamUtils.aggregate(stream, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
                 .onClose(stream::close).map(this::aggregate);
 
-        if (postFilter != null) {
-            stream = stream.filter(new VtlFiltering(getDataStructure(), filtering));
-        }
+        //if (postFilter != null) {
+        //    stream = stream.filter(new VtlFiltering(getDataStructure(), filtering));
+        //}
 
         // Need to reorder.
         if (!groupByOrdering.equals(orders)) {

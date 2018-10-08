@@ -232,21 +232,8 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
             }
         }
 
-        // Neutralize the parts of the filter that cannot be send to the child.
-        List<List<FilteringSpecification.Literal>> clauses = Lists.newArrayList();
-        for (FilteringSpecification.Clause clause : filtering.getClauses()) {
-            List<FilteringSpecification.Literal> literals = Lists.newArrayList();
-            for (FilteringSpecification.Literal literal : clause.getLiterals()) {
-                String column = literal.getColumn();
-                if (!column.equals(dimension) && !column.equals(measure)) {
-                    literals.add(literal);
-                }
-            }
-            if (!literals.isEmpty()) {
-                clauses.add(literals);
-            }
-        }
-        VtlFiltering foldFilter = new VtlFiltering(getDataStructure(), clauses);
+
+        VtlFiltering foldFilter = VtlFiltering.using(getChild().getDataStructure()).transpose(filtering);
 
         VtlOrdering foldOrdering = new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
         Stream<DataPoint> stream = getChild()

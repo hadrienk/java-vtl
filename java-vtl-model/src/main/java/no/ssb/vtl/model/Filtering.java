@@ -15,20 +15,60 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
         }
 
         @Override
-        public Collection<Clause> getClauses() {
+        public Collection<? extends FilteringSpecification> getOperands() {
             return Collections.emptyList();
+        }
+
+        @Override
+        public Operator getOperator() {
+            return null;
+        }
+
+        @Override
+        public String getColumn() {
+            return null;
+        }
+
+        @Override
+        public VTLObject getValue() {
+            return null;
+        }
+
+        @Override
+        public Boolean isNegated() {
+            return null;
         }
     };
 
     Filtering NONE = new Filtering() {
         @Override
-        public boolean test(DataPoint dataPoint) {
-            return false;
+        public Collection<? extends FilteringSpecification> getOperands() {
+            return null;
         }
 
         @Override
-        public Collection<Clause> getClauses() {
-            return Collections.emptyList();
+        public Operator getOperator() {
+            return null;
+        }
+
+        @Override
+        public String getColumn() {
+            return null;
+        }
+
+        @Override
+        public VTLObject getValue() {
+            return null;
+        }
+
+        @Override
+        public Boolean isNegated() {
+            return null;
+        }
+
+        @Override
+        public boolean test(DataPoint dataPoint) {
+            return false;
         }
     };
 }

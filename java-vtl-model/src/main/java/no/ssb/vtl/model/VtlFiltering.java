@@ -1,206 +1,359 @@
 package no.ssb.vtl.model;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
-public class VtlFiltering implements Filtering {
+/**
+ * Representation of a filter
+ */
+public abstract class VtlFiltering implements Filtering {
 
-    private final ImmutableList<String> columns;
-    private final FilteringSpecification spec;
+    protected final String column;
+    protected final VTLObject value;
+    protected final Operator operator;
+    protected final Collection<VtlFiltering> operands;
+    private final boolean negated;
+    protected ToIntFunction<String> hashFunction;
 
-    public VtlFiltering(DataStructure structure, FilteringSpecification spec) {
-        this.columns = ImmutableList.copyOf(structure.keySet());
-        this.spec = spec;
-    }
-
-    public VtlFiltering(DataStructure structure, List<List<Literal>> spec) {
-        this.columns = ImmutableList.copyOf(structure.keySet());
-        List<Clause> clauses = Lists.newArrayList();
-        for (List<Literal> literals : spec) {
-            clauses.add(() -> literals);
+    protected VtlFiltering(
+            boolean negated,
+            Operator operator,
+            Collection<VtlFiltering> operands
+    ) {
+        if (!(operator == Operator.AND || operator == Operator.OR)) {
+            throw new IllegalArgumentException("This constructor support only OR and AND");
         }
-        this.spec = () -> clauses;
+        this.negated = negated;
+        this.operator = operator;
+        this.value = null;
+        this.column = null;
+        this.operands = ImmutableList.copyOf(operands);
     }
 
-    public VtlFiltering(DataStructure structure, FilteringSpecification.Clause... clauses) {
-        this.columns = ImmutableList.copyOf(structure.keySet());
-        this.spec = () -> Arrays.asList(clauses);
+    protected VtlFiltering(
+            boolean negated,
+            String column,
+            Operator operator,
+            VTLObject value
+    ) {
+        if (operator == Operator.AND || operator == Operator.OR) {
+            throw new IllegalArgumentException("This constructor support only EQ, LT, GT");
+        }
+        this.negated = negated;
+        this.operator = operator;
+        this.column = column;
+        this.value = value;
+        this.operands = Collections.emptyList();
     }
 
-    public static FilteringSpecification spec(FilteringSpecification.Clause... clauses) {
-        return () -> Arrays.asList(clauses);
+    public static Builder using(DataStructure structure) {
+        return new Builder(structure);
     }
 
-    public static FilteringSpecification.Clause clause(FilteringSpecification.Literal... literals) {
-        return () -> Arrays.asList(literals);
+    public static Builder using(Dataset dataset) {
+        return new Builder(dataset.getDataStructure());
     }
 
-    public static FilteringSpecification.Literal equalTo(String column, Object value) {
-        return eq(column, value);
+    public static VtlFiltering eq(String column, Object value) {
+        return new Literal(false, column, VTLObject.of(value), Operator.EQ);
     }
 
-    public static FilteringSpecification.Literal eq(String column, Object value) {
-        return literal(column, FilteringSpecification.Operator.EQ, false, value);
+    public static VtlFiltering neq(String column, Object value) {
+        return new Literal(true, column, VTLObject.of(value), Operator.EQ);
     }
 
-    public static FilteringSpecification.Literal notEqualTo(String column, Object value) {
-        return neq(column, value);
+    public static VtlFiltering gt(String column, Object value) {
+        return new Literal(false, column, VTLObject.of(value), Operator.GT);
     }
 
-    public static FilteringSpecification.Literal neq(String column, Object value) {
-        return literal(column, FilteringSpecification.Operator.EQ, true, value);
+    public static VtlFiltering lt(String column, Object value) {
+        return new Literal(false, column, VTLObject.of(value), Operator.LT);
     }
 
-    public static FilteringSpecification.Literal greaterThan(String column, Object value) {
-        return gt(column, value);
+    public static VtlFiltering ge(String column, Object value) {
+        return new Literal(true, column, VTLObject.of(value), Operator.LT);
     }
 
-    public static FilteringSpecification.Literal gt(String column, Object value) {
-        return literal(column, FilteringSpecification.Operator.GT, false, value);
+    public static VtlFiltering le(String column, Object value) {
+        return new Literal(true, column, VTLObject.of(value), Operator.GT);
     }
 
-    public static FilteringSpecification.Literal ge(String column, Object value) {
-        return literal(column, FilteringSpecification.Operator.GE, false, value);
-    }
-
-    public static FilteringSpecification.Literal lt(String column, Object value) {
-        return literal(column, FilteringSpecification.Operator.GE, true, value);
-    }
-
-    public static FilteringSpecification.Literal le(String column, Object value) {
-        return literal(column, FilteringSpecification.Operator.GT, true, value);
-    }
-
-    public static FilteringSpecification.Literal greaterThanOrEqualTo(String column, Object value) {
-        return ge(column, value);
-    }
-
-    public static FilteringSpecification.Literal lessThanOrEqualTo(String column, Object value) {
-        return le(column, value);
-    }
-
-    public static FilteringSpecification.Literal lessThan(String column, Object value) {
-        return lt(column, value);
-    }
-
-    public static FilteringSpecification.Literal literal(String column, FilteringSpecification.Operator op, boolean negated, Object... values) {
-
-        List<VTLObject> vtlValues = Arrays.stream(values).map(VTLObject::of).collect(Collectors.toList());
-
-        return new VtlLiteral(column, op, vtlValues, negated);
-    }
-
-    @Override
-    public boolean test(DataPoint dataPoint) {
-        Boolean result = true;
-        for (Clause clause : getClauses()) {
-
-            result = false;
-            for (Literal literal : clause.getLiterals()) {
-                VTLObject variable = findValue(dataPoint, literal);
-                Collection<VTLObject> values = literal.getValues();
-
-                for (VTLObject value : values) {
-                    switch (literal.getOperator()) {
-                        case IN:
-                        case EQ:
-                            result = variable.compareTo(value) == 0;
-                            break;
-                        case GT:
-                            result = variable.compareTo(value) > 0;
-                            break;
-                        case GE:
-                            result = variable.compareTo(value) >= 0;
-                            break;
-                    }
-                    result = literal.isNegated() ^ result;
-                }
-                if (result) {
-                    break;
-                }
-            }
-            if (!result) {
-                break;
+    private void setHashFunction(ToIntFunction<String> function) {
+        this.hashFunction = function;
+        for (FilteringSpecification operand : getOperands()) {
+            if (operand instanceof VtlFiltering) {
+                ((VtlFiltering) operand).setHashFunction(hashFunction);
             }
         }
-        return result;
     }
 
     @Override
-    public String toString() {
-        MoreObjects.ToStringHelper stringHelper = MoreObjects.toStringHelper(this);
-        String s = getClauses().stream().map(c -> c.getLiterals().stream().map(Object::toString).collect(
-                Collectors.joining("||", "(", ")"))).collect(Collectors.joining("&&"));
-        stringHelper.addValue(s);
-        return stringHelper.toString();
-    }
-
-    private VTLObject findValue(DataPoint dataPoint, Literal literal) {
-        int index = columns.indexOf(literal.getColumn());
-        return dataPoint.get(index);
+    public Collection<VtlFiltering> getOperands() {
+        return this.operands;
     }
 
     @Override
-    public Collection<Clause> getClauses() {
-        return spec.getClauses();
+    public Operator getOperator() {
+        return this.operator;
     }
 
-    private static class VtlLiteral implements Literal {
+    @Override
+    public String getColumn() {
+        return this.column;
+    }
 
-        private final String column;
-        private final Operator op;
-        private final ImmutableSet<VTLObject> values;
-        private final boolean negated;
+    @Override
+    public VTLObject getValue() {
+        return this.value;
+    }
 
-        public VtlLiteral(String column, Operator op, List<VTLObject> vtlValues, boolean negated) {
-            this.column = column;
-            this.op = op;
-            this.values = ImmutableSet.copyOf(vtlValues);
-            this.negated = negated;
+    @Override
+    public Boolean isNegated() {
+        return this.negated;
+    }
+
+    public static class Builder {
+
+        private final ToIntFunction<String> hashFunction;
+        private VtlFiltering predicate;
+
+        public Builder(DataStructure structure) {
+            ImmutableList<String> columns = ImmutableList.copyOf(structure.keySet());
+            hashFunction = columns::indexOf;
         }
 
-        @Override
-        public String toString() {
-            String values = this.values.stream().map(VTLObject::toString).collect(Collectors.joining(","));
-            switch (op) {
+        public Builder and(VtlFiltering... operands) {
+            if (predicate == null) {
+                predicate = new And(false, operands);
+            }
+            return this;
+        }
+
+        public Builder or(VtlFiltering... operands) {
+            if (predicate == null) {
+                predicate = new Or(false, operands);
+            }
+            return this;
+        }
+
+        /**
+         * Neutralize the literals of the given filter that cannot be send to the child.
+         */
+        public VtlFiltering transpose(FilteringSpecification original) {
+            List<VtlFiltering> ops = new ArrayList<>();
+            for (FilteringSpecification operand : original.getOperands()) {
+                if (hashFunction.applyAsInt(operand.getColumn()) >= 0) {
+                    ops.add(transpose(operand));
+                }
+            }
+            Boolean negated = original.isNegated();
+            Operator operator = original.getOperator();
+            switch (operator) {
                 case EQ:
-                    return String.format("%s %s %s", column, isNegated() ? "!=" : "=", values);
                 case GT:
-                    return String.format("%s %s %s", column, isNegated() ? "<=" : ">", values);
-                case GE:
-                    return String.format("%s %s %s", column, isNegated() ? "<" : ">=", values);
-                case IN:
-                    return String.format("%s %s(%s)", column, isNegated() ? "not in" : "in", values);
-                default:
-                    return "unknown";
+                case LT:
+                    return new Literal(
+                            negated,
+                            original.getColumn(),
+                            original.getValue(),
+                            operator
+                    );
+                case AND:
+                    return new And(
+                            negated,
+                            ops
+                    );
+                case OR:
+                    return new Or(
+                            negated,
+                            ops
+                    );
             }
+            throw new IllegalArgumentException("unknown operator: " + operator);
         }
 
+        public VtlFiltering build() {
+            predicate.setHashFunction(hashFunction);
+            return predicate;
+        }
+
+    }
+
+    static public class Literal extends VtlFiltering {
+
+        Literal(boolean negated, String column, VTLObject value, Operator operator) {
+            super(negated, column, operator, value);
+        }
+
+
         @Override
-        public String getColumn() {
-            return this.column;
+        public Collection<VtlFiltering> getOperands() {
+            return Collections.emptyList();
         }
 
         @Override
         public Operator getOperator() {
-            return this.op;
+            return this.operator;
         }
 
         @Override
-        public Collection<VTLObject> getValues() {
-            return this.values;
+        public String getColumn() {
+            return column;
         }
 
         @Override
-        public Boolean isNegated() {
-            return this.negated;
+        public VTLObject getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean test(DataPoint dataPoint) {
+            VTLObject columnValue = dataPoint.get(hashFunction.applyAsInt(getColumn()));
+            int compare = columnValue.compareTo(value);
+            switch (getOperator()) {
+                case EQ:
+                    return compare == 0 ^ isNegated();
+                case GT:
+                    return compare > 0 ^ isNegated();
+                case LT:
+                    return compare < 0 ^ isNegated();
+            }
+            throw new IllegalArgumentException();
+        }
+
+        @Override
+        public String toString() {
+            switch (getOperator()) {
+                case EQ:
+                    return String.format("%s%s%s", column, isNegated() ? "!=" : "=", getValue());
+                case GT:
+                    return String.format("%s%s%s", column, isNegated() ? "<=" : ">", getValue());
+                case LT:
+                    return String.format("%s%s%s", column, isNegated() ? ">=" : "<", getValue());
+                default:
+                    return "unknown";
+            }
+        }
+    }
+
+    static public class And extends VtlFiltering {
+
+        And(boolean negated, VtlFiltering... operands) {
+            super(negated, Operator.AND, Arrays.asList(operands));
+        }
+
+        And(boolean negated, Collection<VtlFiltering> operands) {
+            super(negated, Operator.AND, operands);
+        }
+
+        @Override
+        public boolean test(DataPoint dataPoint) {
+            if (isNegated()) {
+                // De Morgan's law
+                for (VtlFiltering operand : operands) {
+                    if (!operand.test(dataPoint)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                for (VtlFiltering operand : operands) {
+                    if (!operand.test(dataPoint)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder stringBuilder = new StringBuilder();
+            if (isNegated()) {
+                stringBuilder.append("~");
+            }
+            stringBuilder.append(
+                    operands.stream().map(Objects::toString)
+                            .collect(Collectors.joining("&", "(", ")"))
+            );
+            return stringBuilder.toString();
+        }
+
+        @Override
+        public Operator getOperator() {
+            return Operator.AND;
+        }
+
+        @Override
+        public String getColumn() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public VTLObject getValue() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    static public class Or extends VtlFiltering {
+
+        Or(boolean negated, VtlFiltering... operands) {
+            super(negated, Operator.OR, Arrays.asList(operands));
+        }
+
+        Or(boolean negated, Collection<VtlFiltering> operands) {
+            super(negated, Operator.OR, operands);
+        }
+
+        @Override
+        public boolean test(DataPoint dataPoint) {
+            if (isNegated()) {
+                // De Morgan's law
+                for (VtlFiltering operand : operands) {
+                    if (!operand.test(dataPoint)) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                for (VtlFiltering operand : operands) {
+                    if (operand.test(dataPoint)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder stringBuilder = new StringBuilder();
+            if (isNegated()) {
+                stringBuilder.append("~");
+            }
+            stringBuilder.append(
+                    operands.stream().map(Objects::toString)
+                            .collect(Collectors.joining("|", "(", ")"))
+            );
+            return stringBuilder.toString();
+        }
+
+        @Override
+        public String getColumn() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public VTLObject getValue() {
+            throw new UnsupportedOperationException();
         }
     }
 }
