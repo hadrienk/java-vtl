@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
@@ -86,6 +87,14 @@ public abstract class VtlFiltering implements Filtering {
         return new Literal(true, column, VTLObject.of(value), Operator.GT);
     }
 
+    public static VtlFiltering and(VtlFiltering... operands) {
+        return new And(false, operands);
+    }
+
+    public static VtlFiltering or(VtlFiltering... operands) {
+        return new Or(false, operands);
+    }
+
     private void setHashFunction(ToIntFunction<String> function) {
         this.hashFunction = function;
         for (FilteringSpecification operand : getOperands()) {
@@ -123,7 +132,7 @@ public abstract class VtlFiltering implements Filtering {
     public static class Builder {
 
         private final ToIntFunction<String> hashFunction;
-        private VtlFiltering predicate;
+        private VtlFiltering filter;
 
         public Builder(DataStructure structure) {
             ImmutableList<String> columns = ImmutableList.copyOf(structure.keySet());
@@ -131,58 +140,76 @@ public abstract class VtlFiltering implements Filtering {
         }
 
         public Builder and(VtlFiltering... operands) {
-            if (predicate == null) {
-                predicate = new And(false, operands);
+            if (filter == null) {
+                filter = new And(false, operands);
             }
             return this;
         }
 
         public Builder or(VtlFiltering... operands) {
-            if (predicate == null) {
-                predicate = new Or(false, operands);
+            if (filter == null) {
+                filter = new Or(false, operands);
             }
             return this;
         }
 
         /**
          * Neutralize the literals of the given filter that cannot be send to the child.
+         * <p>
+         * If the filter is a literal, include it only if the columns exists in the current
+         * hash.
          */
-        public VtlFiltering transpose(FilteringSpecification original) {
-            List<VtlFiltering> ops = new ArrayList<>();
-            for (FilteringSpecification operand : original.getOperands()) {
-                if (hashFunction.applyAsInt(operand.getColumn()) >= 0) {
-                    ops.add(transpose(operand));
+        public VtlFiltering transposeInternal(FilteringSpecification original) {
+
+            Operator operator = original.getOperator();
+            Boolean negated = original.isNegated();
+
+            if (original.getOperands().isEmpty()) {
+                if (hashFunction.applyAsInt(original.getColumn()) >= 0) {
+                    return new Literal(negated, original.getColumn(), original.getValue(), operator);
+                } else {
+                    return new Literal(negated, original.getColumn(), original.getValue(), Operator.TRUE);
+                }
+            } else {
+                List<VtlFiltering> ops = new ArrayList<>();
+                for (FilteringSpecification operand : original.getOperands()) {
+                    VtlFiltering transposed = transposeInternal(operand);
+                    if (transposed != null) {
+                        ops.add(transposed);
+                    }
+                }
+                Optional<Boolean> constant = ops.stream()
+                        .filter(filter -> filter.getOperator() == Operator.TRUE)
+                        .findAny().map(vtlFiltering -> !vtlFiltering.isNegated());
+                if (operator == Operator.AND) {
+                    if (constant.isPresent() && !constant.get()) {
+                        return new Literal(negated, null, null, Operator.TRUE);
+                    } else {
+                        return new And(negated, ops);
+                    }
+                } else {
+                    if (constant.isPresent() && constant.get()) {
+                        return new Literal(negated, null, null, Operator.TRUE);
+                    } else {
+                        return new Or(negated, ops);
+                    }
+
                 }
             }
-            Boolean negated = original.isNegated();
-            Operator operator = original.getOperator();
-            switch (operator) {
-                case EQ:
-                case GT:
-                case LT:
-                    return new Literal(
-                            negated,
-                            original.getColumn(),
-                            original.getValue(),
-                            operator
-                    );
-                case AND:
-                    return new And(
-                            negated,
-                            ops
-                    );
-                case OR:
-                    return new Or(
-                            negated,
-                            ops
-                    );
-            }
-            throw new IllegalArgumentException("unknown operator: " + operator);
+        }
+
+        /**
+         * Neutralize the literals of the given filter that cannot be send to the child.
+         */
+        public VtlFiltering transpose(FilteringSpecification original) {
+            VtlFiltering filtering = transposeInternal(original);
+            filtering.setHashFunction(hashFunction);
+            return filtering;
         }
 
         public VtlFiltering build() {
-            predicate.setHashFunction(hashFunction);
-            return predicate;
+            filter.setHashFunction(hashFunction);
+            return filter;
         }
 
     }
@@ -216,9 +243,13 @@ public abstract class VtlFiltering implements Filtering {
 
         @Override
         public boolean test(DataPoint dataPoint) {
+            Operator operator = getOperator();
+            if (operator == Operator.TRUE) {
+                return !isNegated();
+            }
             VTLObject columnValue = dataPoint.get(hashFunction.applyAsInt(getColumn()));
             int compare = columnValue.compareTo(value);
-            switch (getOperator()) {
+            switch (operator) {
                 case EQ:
                     return compare == 0 ^ isNegated();
                 case GT:
@@ -238,6 +269,8 @@ public abstract class VtlFiltering implements Filtering {
                     return String.format("%s%s%s", column, isNegated() ? "<=" : ">", getValue());
                 case LT:
                     return String.format("%s%s%s", column, isNegated() ? ">=" : "<", getValue());
+                case TRUE:
+                    return isNegated() ? "FALSE" : "TRUE";
                 default:
                     return "unknown";
             }

@@ -40,7 +40,6 @@ import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.Test;
-import org.logicng.io.parsers.ParserException;
 import org.mockito.Mockito;
 
 import java.io.PrintStream;
@@ -60,6 +59,9 @@ import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
 import static no.ssb.vtl.model.VtlFiltering.eq;
+import static no.ssb.vtl.model.VtlFiltering.ge;
+import static no.ssb.vtl.model.VtlFiltering.lt;
+import static no.ssb.vtl.model.VtlFiltering.and;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FoldOperationTest extends RandomizedTest {
@@ -114,7 +116,7 @@ public class FoldOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testOrderingIncludesIdentifier() throws ParserException {
+    public void testOrderingIncludesIdentifier() {
 
         // Fold supports
         Dataset dataset = StaticDataset.create()
@@ -139,7 +141,10 @@ public class FoldOperationTest extends RandomizedTest {
         DebugDataset result = new DebugDataset(new OperationDataset(fold), System.err);
 
         VtlFiltering filtering = VtlFiltering.using(fold)
-                .and(eq("country", "sweden"), eq("year", "2000"))
+                .or(
+                        and(eq("country", "sweden"), eq("year", "2000")),
+                        and(ge("value", 256L),lt("value", 1024L))
+                )
                 .build();
 
 

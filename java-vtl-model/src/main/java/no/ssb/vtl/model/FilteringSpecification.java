@@ -15,7 +15,7 @@ public interface FilteringSpecification {
     Boolean isNegated();
 
     enum Operator {
-        EQ, GT, LT, AND, OR
+        EQ, GT, LT, AND, OR, TRUE
     }
 
 }
