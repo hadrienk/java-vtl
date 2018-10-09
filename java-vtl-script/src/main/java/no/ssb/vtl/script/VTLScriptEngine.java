@@ -199,7 +199,7 @@ public class VTLScriptEngine extends AbstractScriptEngine {
     /**
      * Run loop
      */
-    private Object run(VTLParser.StartContext start, Consumer<VTLScriptException> errorConsumer, ScriptContext context) throws VTLScriptException {
+    protected Object run(VTLParser.StartContext start, Consumer<VTLScriptException> errorConsumer, ScriptContext context) throws VTLScriptException {
         AssignmentVisitor assignmentVisitor = new AssignmentVisitor(context, connectors);
         Object last = null;
         for (VTLParser.StatementContext statementContext : start.statement()) {
