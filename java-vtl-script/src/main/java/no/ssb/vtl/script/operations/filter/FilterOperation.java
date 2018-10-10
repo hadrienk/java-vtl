@@ -30,10 +30,27 @@ import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.script.expressions.LiteralExpression;
+import no.ssb.vtl.script.expressions.VariableExpression;
+import no.ssb.vtl.script.expressions.VtlFilteringConverter;
+import no.ssb.vtl.script.expressions.equality.AbstractEqualityExpression;
+import no.ssb.vtl.script.expressions.equality.EqualExpression;
+import no.ssb.vtl.script.expressions.equality.GraterThanExpression;
+import no.ssb.vtl.script.expressions.equality.GreaterOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.LesserOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
+import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
+import no.ssb.vtl.script.expressions.logic.AndExpression;
+import no.ssb.vtl.script.expressions.logic.OrExpression;
+import no.ssb.vtl.script.expressions.logic.XorExpression;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -59,7 +76,29 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
-        Stream<DataPoint> data = getChild().getData()
+
+        VtlFiltering combined = null;
+        try {
+
+            VtlFiltering operationFilter = VtlFilteringConverter.convert(predicate);
+            System.out.println("op filter :" + operationFilter);
+
+            if (Filtering.ALL != filtering) {
+                VtlFiltering transposed = VtlFiltering.using(this).transpose(filtering);
+                System.out.println("transposed: " + transposed);
+                combined = VtlFiltering.using(this).and(transposed, operationFilter).build();
+            } else {
+                combined = VtlFiltering.using(this).with(operationFilter);
+            }
+            System.out.println("combined  : " + combined);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        Stream<DataPoint> data = getChild().computeData(orders, combined, components)
                 .map(dataPointBindings::setDataPoint)
                 .filter(bindings -> {
                     VTLObject resolved = predicate.resolve(dataPointBindings);

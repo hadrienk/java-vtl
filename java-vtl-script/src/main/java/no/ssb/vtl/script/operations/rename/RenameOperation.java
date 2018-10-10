@@ -41,8 +41,11 @@ package no.ssb.vtl.script.operations.rename;
  */
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -52,9 +55,13 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -121,7 +128,8 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     @Override
     public Stream<DataPoint> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
         Ordering ordering = renameOrdering(oldOrdering);
-        Filtering filtering = renameFiltering(oldFiltering);
+        Filtering filtering = VtlFiltering.using(getChild()).with(renameFiltering(oldFiltering));
+        System.out.println("renamed filter: " + filtering);
         Set<String> components = renameComponent(oldComponents);
         return getChild().computeData(ordering, filtering, components);
     }
@@ -135,27 +143,38 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         return components.build();
     }
 
-    private Filtering renameFiltering(Filtering oldFiltering) {
-        //for (Clause clause : oldFiltering.getClauses()) {
-        //    for (Literal literal : clause.getLiterals()) {
-        //        String column = literal.getColumn();
-        //        String childColumn = nameMapping.getOrDefault(column, column);
-        //    }
-        //}
-        //return oldFiltering;
-        return null;
+    private VtlFiltering renameFiltering(FilteringSpecification oldFiltering) {
+        if (oldFiltering == Filtering.ALL) {
+            return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
+        }
+        Boolean negated = oldFiltering.isNegated();
+        FilteringSpecification.Operator operator = oldFiltering.getOperator();
+        if (oldFiltering.getColumn() != null) {
+            ImmutableBiMap<String, String> reverseMap = ImmutableBiMap.copyOf(nameMapping).inverse();
+            return VtlFiltering.literal(
+                    negated,
+                    operator,
+                    reverseMap.getOrDefault(oldFiltering.getColumn(), oldFiltering.getColumn()),
+                    oldFiltering.getValue()
+            );
+        } else {
+            List<VtlFiltering> operands = new ArrayList<>();
+            for (FilteringSpecification operand : oldFiltering.getOperands()) {
+                operands.add(renameFiltering(operand));
+            }
+            return VtlFiltering.nary(negated, operator, operands);
+        }
     }
 
     /**
      * Make sure that the ordering uses the correct names.
      */
     private Ordering renameOrdering(Ordering oldOrdering) {
-        DataStructure childStructure = getChild().getDataStructure();
-        Order.Builder ordering = Order.create(childStructure);
+        VtlOrdering.Builder ordering = VtlOrdering.using(getChild());
         for (String column : oldOrdering.columns()) {
             String childColumn = nameMapping.getOrDefault(column, column);
             Ordering.Direction direction = oldOrdering.getDirection(column);
-            ordering.put(childColumn, direction);
+            ordering.then(direction, childColumn);
         }
         return ordering.build();
     }

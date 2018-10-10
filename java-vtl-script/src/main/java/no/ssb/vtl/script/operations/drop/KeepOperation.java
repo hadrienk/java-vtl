@@ -99,13 +99,14 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
         ImmutableList<Component> componentsToRemove = getComponentsToRemove();
 
         // Optimization.
+        Stream<DataPoint> stream = getChild().computeData(orders, filtering, components);
         if (componentsToRemove.isEmpty())
-            return getChild().getData();
+            return stream;
 
         // Compute indexes to remove (in reverse order to avoid shifting).
         final ImmutableSet<Integer> indexes = computeIndexes(componentsToRemove);
 
-        return getChild().getData().peek(
+        return stream.peek(
                 dataPoints -> {
                     for (Integer index : indexes)
                         dataPoints.remove((int) index);

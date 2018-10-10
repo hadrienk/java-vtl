@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Predicate;
 
+import static no.ssb.vtl.model.FilteringSpecification.Operator.TRUE;
+
 /**
  * Represent the filtering of the {@link DataPoint}s in a Dataset.
  */
@@ -21,7 +23,7 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
 
         @Override
         public Operator getOperator() {
-            return null;
+            return TRUE;
         }
 
         @Override
@@ -36,19 +38,19 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
 
         @Override
         public Boolean isNegated() {
-            return null;
+            return false;
         }
     };
 
     Filtering NONE = new Filtering() {
         @Override
         public Collection<? extends FilteringSpecification> getOperands() {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override
         public Operator getOperator() {
-            return null;
+            return TRUE;
         }
 
         @Override
@@ -63,7 +65,7 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
 
         @Override
         public Boolean isNegated() {
-            return null;
+            return true;
         }
 
         @Override

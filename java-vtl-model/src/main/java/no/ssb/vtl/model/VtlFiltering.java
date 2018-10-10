@@ -95,6 +95,43 @@ public abstract class VtlFiltering implements Filtering {
         return new Or(false, operands);
     }
 
+    public static VtlFiltering nary(boolean negated, Operator operator, Collection<VtlFiltering> operands) {
+        switch (operator) {
+            case AND:
+                return new And(negated, operands);
+            case OR:
+                return new Or(negated, operands);
+            case EQ:
+            case GT:
+            case LT:
+            case TRUE:
+            default:
+                throw new IllegalArgumentException("unsupported operator: " + operator);
+        }
+    }
+
+    public static VtlFiltering nary(boolean negated, Operator operator, VtlFiltering... operands) {
+        return nary(negated, operator, Arrays.asList(operands));
+    }
+
+    public static VtlFiltering literal(boolean negated, Operator operator, String column, VTLObject value) {
+        switch (operator) {
+            case EQ:
+            case GT:
+            case LT:
+            case TRUE:
+                return new Literal(negated, column, value, operator);
+            case AND:
+            case OR:
+            default:
+                throw new IllegalArgumentException("unsupported operator: " + operator);
+        }
+    }
+
+    public static VtlFiltering literal(boolean negated, Operator operator, String column, Object value) {
+        return literal(negated, operator, column, VTLObject.of(value));
+    }
+
     private void setHashFunction(ToIntFunction<String> function) {
         this.hashFunction = function;
         for (FilteringSpecification operand : getOperands()) {
@@ -151,6 +188,14 @@ public abstract class VtlFiltering implements Filtering {
                 filter = new Or(false, operands);
             }
             return this;
+        }
+
+        public VtlFiltering with(VtlFiltering filter) {
+            if (this.filter != null) {
+                throw new IllegalArgumentException("filter already created");
+            }
+            this.filter = filter;
+            return build();
         }
 
         /**
@@ -327,12 +372,12 @@ public abstract class VtlFiltering implements Filtering {
 
         @Override
         public String getColumn() {
-            throw new UnsupportedOperationException();
+            return null;
         }
 
         @Override
         public VTLObject getValue() {
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 
@@ -381,12 +426,12 @@ public abstract class VtlFiltering implements Filtering {
 
         @Override
         public String getColumn() {
-            throw new UnsupportedOperationException();
+            return null;
         }
 
         @Override
         public VTLObject getValue() {
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 }

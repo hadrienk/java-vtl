@@ -57,33 +57,29 @@ public abstract class AbstractDatasetOperation implements Dataset {
     public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
 
     @Override
-    @Deprecated
     public final Stream<DataPoint> getData() {
-        throw new UnsupportedOperationException();
+        return computeData(Ordering.ANY, Filtering.ALL, computeDataStructure().keySet());
     }
 
     @Override
-    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
-        throw new UnsupportedOperationException();
+        return Optional.of(computeData(orders, filtering, components));
     }
 
     @Override
-    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Ordering order) {
-        throw new UnsupportedOperationException();
+        return Optional.of(computeData(order, Filtering.ALL, computeDataStructure().keySet()));
     }
 
     @Override
-    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Filtering filtering) {
-        throw new UnsupportedOperationException();
+        return Optional.of(computeData(Ordering.ANY, filtering, computeDataStructure().keySet()));
     }
 
     @Override
     @Deprecated
     public final Optional<Stream<DataPoint>> getData(Set<String> components) {
-        throw new UnsupportedOperationException();
+        return Optional.of(computeData(Ordering.ANY, Filtering.ALL, components));
     }
 
     @Override

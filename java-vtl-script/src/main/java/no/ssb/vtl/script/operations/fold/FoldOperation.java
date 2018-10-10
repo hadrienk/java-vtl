@@ -232,7 +232,6 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
             }
         }
 
-
         VtlFiltering foldFilter = VtlFiltering.using(getChild().getDataStructure()).transpose(filtering);
 
         VtlOrdering foldOrdering = new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
