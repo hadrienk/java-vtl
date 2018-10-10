@@ -34,6 +34,7 @@ import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.script.expressions.FunctionExpression;
 import no.ssb.vtl.script.expressions.IfThenElseExpression;
 import no.ssb.vtl.script.expressions.LiteralExpression;
+import no.ssb.vtl.script.expressions.VariableExpression;
 import no.ssb.vtl.script.expressions.arithmetic.AdditionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.DivisionExpression;
 import no.ssb.vtl.script.expressions.arithmetic.MultiplicationExpression;
@@ -325,23 +326,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
         String identifier = checkVariableExist(scope, ctx);
         Object object = scope.get(identifier);
         if (object instanceof VTLTyped) {
-
-            // Save the type and identifier.
-            // TODO: VariableReference extends VTLExpression2 ?
-            VTLTyped typed = (VTLTyped) object;
-            return new VTLExpression() {
-
-                @Override
-                public Class<?> getVTLType() {
-                    return typed.getVTLType();
-                }
-
-                @Override
-                public VTLObject resolve(Bindings bindings) {
-                    return (VTLObject) bindings.get(identifier);
-                }
-            };
-
+            Class type = ((VTLTyped) object).getVTLType();
+            return new VariableExpression(type, identifier);
         }
         if (object instanceof Dataset) {
             return new VTLExpression() {
