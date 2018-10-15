@@ -37,6 +37,7 @@ import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
@@ -151,9 +152,10 @@ public class UnionOperation extends AbstractDatasetOperation {
         ImmutableList.Builder<Stream<DataPoint>> streams = ImmutableList.builder();
         for (AbstractDatasetOperation child : getChildren()) {
 
-            FilteringSpecification postFilter = child.unsupportedFiltering(filtering);
+            //FilteringSpecification postFilter = child.unsupportedFiltering(filtering);
 
             VtlOrdering unionOrdering = new VtlOrdering(unionOrder.build(), child.getDataStructure());
+            //VtlFiltering unionFilter = VtlFiltering.using(child).with(filtering);
             Stream<DataPoint> stream = child.computeData(unionOrdering, filtering, components);
 
             //if (postFilter != null) {

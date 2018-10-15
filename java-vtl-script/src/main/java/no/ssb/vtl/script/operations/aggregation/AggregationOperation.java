@@ -37,6 +37,7 @@ import no.ssb.vtl.model.VTLFloat;
 import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.TypeException;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
@@ -176,7 +177,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         // try to put the columns with the least values last.
         ImmutableMap.Builder<String, Ordering.Direction> groupByOrder = ImmutableMap.builder();
         for (String column : groupByColumns) {
-            Ordering.Direction direction = orders.getDirection(column);
+            Ordering.Direction direction = orders.columns().size() > 0 ? orders.getDirection(column) : Ordering.Direction.ASC;
             if (direction.equals(Ordering.Direction.ANY)) {
                 direction = Ordering.Direction.ASC;
             }
@@ -185,9 +186,9 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering groupByOrdering = new VtlOrdering(groupByOrder.build(), childOperation.getDataStructure());
 
         // Pass the filter to the child op. Keep result as post filter.
-        FilteringSpecification postFilter = childOperation.unsupportedFiltering(filtering);
+        VtlFiltering aggregationFilter = VtlFiltering.using(childOperation).transpose(filtering);
 
-        Stream<DataPoint> stream = childOperation.computeData(groupByOrdering, filtering, components);
+        Stream<DataPoint> stream = childOperation.computeData(groupByOrdering, aggregationFilter, components);
 
         stream = StreamUtils.aggregate(stream, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
                 .onClose(stream::close).map(this::aggregate);
