@@ -4,14 +4,10 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Queues;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.Iterator;
-import java.util.SortedMap;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -29,8 +25,7 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
     private Deque<L> leftBuffer = Queues.newArrayDeque();
     private Deque<R> rightBuffer = Queues.newArrayDeque();
 
-    private Deque<O> missBuffer = Queues.newArrayDeque();
-    private Iterator<O> output = Collections.emptyIterator();
+    private Deque<O> outputBuffer = Queues.newArrayDeque();
 
     public OuterJoinSpliterator(
             Function<L, K> leftKeyExtractor,
@@ -40,7 +35,7 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Spliterator<L> leftSpliterator,
             Spliterator<R> rightSpliterator
     ) {
-        this.predicate = predicate;
+        this.predicate = Comparator.nullsLast(predicate);
         this.merger = merger;
         this.leftKeyExtractor = leftKeyExtractor;
         this.rightKeyExtractor = rightKeyExtractor;
@@ -65,14 +60,14 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     private K advanceRight() {
         while (!rightBuffer.isEmpty()) {
-            missBuffer.addLast(merger.apply(null, rightBuffer.removeFirst()));
+            outputBuffer.addLast(merger.apply(null, rightBuffer.removeFirst()));
         }
         return advance(rightIterator, rightBuffer, rightKeyExtractor, predicate);
     }
 
     private K advanceLeft() {
         while (!leftBuffer.isEmpty()) {
-            missBuffer.addLast(merger.apply(leftBuffer.removeFirst(), null));
+            outputBuffer.addLast(merger.apply(leftBuffer.removeFirst(), null));
         }
         return advance(leftIterator, leftBuffer, leftKeyExtractor, predicate);
     }
@@ -81,7 +76,17 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
     public void forEachRemaining(Consumer<? super O> action) {
         K leftKey = advanceLeft();
         K rightKey = advanceRight();
+
         while (!leftBuffer.isEmpty() || !rightBuffer.isEmpty()) {
+
+            // TODO: Use always bigger placeholders?
+            // empty source should always be bigger.
+            if (leftBuffer.isEmpty()) {
+                rightKey = advanceRight();
+            } else if (rightBuffer.isEmpty()) {
+                leftKey = advanceLeft();
+            }
+
             int compare = predicate.compare(leftKey, rightKey);
             if (0 < compare || leftBuffer.isEmpty()) {
                 // left > right (right is behind)
@@ -90,29 +95,64 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
                 // left < right (left is behind)
                 leftKey = advanceLeft();
             } else {
-                // output hit
-
-                output = Iterators.concat(
-                        Iterators.consumingIterator(missBuffer.iterator()),
-                        new CartesianIterator<>(leftBuffer,rightBuffer, merger)
-                );
-                output.forEachRemaining(action);
+                // Add cartesian product to output.
+                CartesianIterator<L, R, O> hit = new CartesianIterator<>(leftBuffer, rightBuffer, merger);
+                hit.forEachRemaining(outputBuffer::addLast);
                 leftBuffer.clear();
                 rightBuffer.clear();
+
+                outputBuffer.forEach(action);
+                outputBuffer.clear();
+
                 leftKey = advanceLeft();
                 rightKey = advanceRight();
             }
         }
-        output = Iterators.concat(
-                Iterators.consumingIterator(missBuffer.iterator()),
-                new CartesianIterator<>(leftBuffer,rightBuffer, merger)
-        );
-        output.forEachRemaining(action);
+        outputBuffer.forEach(action);
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super O> action) {
-        // As long as there is no match, advance.
+        if (!outputBuffer.isEmpty()) {
+            action.accept(outputBuffer.removeFirst());
+            return true;
+        }
+
+        K leftKey = advanceLeft();
+        K rightKey = advanceRight();
+
+        while (!leftBuffer.isEmpty() || !rightBuffer.isEmpty()) {
+
+            // TODO: Use always bigger placeholders?
+            // empty source should always be bigger.
+            if (leftBuffer.isEmpty()) {
+                rightKey = advanceRight();
+            } else if (rightBuffer.isEmpty()) {
+                leftKey = advanceLeft();
+            }
+
+            int compare = predicate.compare(leftKey, rightKey);
+            if (0 < compare || leftBuffer.isEmpty()) {
+                // left > right (right is behind)
+                rightKey = advanceRight();
+            } else if (compare < 0  || rightBuffer.isEmpty()) {
+                // left < right (left is behind)
+                leftKey = advanceLeft();
+            } else {
+                // output hit
+                CartesianIterator<L, R, O> hit = new CartesianIterator<>(leftBuffer, rightBuffer, merger);
+                hit.forEachRemaining(outputBuffer::addLast);
+                leftBuffer.clear();
+                rightBuffer.clear();
+
+                return tryAdvance(action);
+            }
+        }
+
+        if (!outputBuffer.isEmpty()) {
+            return tryAdvance(action);
+        }
+
         return false;
     }
 
