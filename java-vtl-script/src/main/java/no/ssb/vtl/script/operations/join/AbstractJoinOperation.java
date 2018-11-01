@@ -22,12 +22,16 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.AbstractDatasetOperation;
@@ -55,6 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.*;
 import static no.ssb.vtl.model.Order.Direction.*;
 
@@ -216,6 +221,45 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             }
         }
         return dataset.getData(adjustedOrder.build()).orElseGet(() -> dataset.getData().sorted(adjustedOrder.build()));
+    }
+
+    @VisibleForTesting
+    static Table<String, String, String> getColumnMapping(Map<String, Dataset> datasets) {
+
+        ImmutableTable.Builder<String, String, String> table;
+        table = ImmutableTable.builder();
+
+        // Counting column occurrences.
+        Multiset<String> sharedColumns = HashMultiset.create();
+        for (Dataset dataset : datasets.values()) {
+            DataStructure structure = dataset.getDataStructure();
+            sharedColumns.addAll(structure.keySet());
+        }
+
+        Multiset<String> identifierColumns = HashMultiset.create();
+        for (Dataset dataset : datasets.values()) {
+            DataStructure structure = dataset.getDataStructure();
+            Set<String> identifiers = structure.entrySet().stream()
+                    .filter(e -> e.getValue().isIdentifier())
+                    .map(e -> e.getKey())
+                    .collect(Collectors.toSet());
+            identifierColumns.addAll(identifiers);
+        }
+
+        for (String datasetName : datasets.keySet()) {
+            Dataset dataset = datasets.get(datasetName);
+            DataStructure structure = dataset.getDataStructure();
+            for (Map.Entry<String, Component> entry : structure.entrySet()) {
+                String column = entry.getKey();
+                if (identifierColumns.count(column) != datasets.size() && sharedColumns.count(column) > 1) {
+                    table.put(datasetName + "_" + column, datasetName, column);
+                } else {
+                    table.put(column, datasetName, column);
+                }
+            }
+        }
+
+        return table.build();
     }
 
     @Deprecated

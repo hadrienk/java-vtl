@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.guava.api.Assertions.assertThat;
+import static org.assertj.guava.api.Assertions.entry;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -62,6 +63,124 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
+
+
+    @Test
+    public void testComponentMapping() {
+        StaticDataset ds = datasetWith(
+                ImmutableSet.of("id1", "id2", "id3"),
+                ImmutableSet.of("me1", "me2", "me3"),
+                ImmutableSet.of("at1", "at2", "at3")
+        );
+
+        Table<String, String, String> columnMapping = AbstractJoinOperation.getColumnMapping(ImmutableMap.of("ds", ds));
+
+        assertThat(columnMapping).hasColumnCount(1).hasRowCount(9)
+            .containsCell("id1","ds","id1")
+            .containsCell("id2","ds","id2")
+            .containsCell("id3","ds","id3")
+            .containsCell("me1","ds","me1")
+            .containsCell("me2","ds","me2")
+            .containsCell("me3","ds","me3")
+            .containsCell("at1","ds","at1")
+            .containsCell("at2","ds","at2")
+            .containsCell("at3","ds","at3");
+
+        Table<String, String, String> columnMappingTwo = AbstractJoinOperation.getColumnMapping(
+                ImmutableMap.of("ds1", ds, "ds2", ds)
+        );
+
+        assertThat(columnMappingTwo).hasColumnCount(2).hasRowCount(15)
+                .containsCell("id1", "ds1", "id1")
+                .containsCell("id2", "ds1", "id2")
+                .containsCell("id3", "ds1", "id3")
+
+                .containsCell("id1", "ds2", "id1")
+                .containsCell("id2", "ds2", "id2")
+                .containsCell("id3", "ds2", "id3")
+
+                .containsCell("ds1_me1", "ds1", "me1")
+                .containsCell("ds1_me2", "ds1", "me2")
+                .containsCell("ds1_me3", "ds1", "me3")
+                .containsCell("ds1_at1", "ds1", "at1")
+                .containsCell("ds1_at2", "ds1", "at2")
+                .containsCell("ds1_at3", "ds1", "at3")
+
+                .containsCell("ds2_me1", "ds2", "me1")
+                .containsCell("ds2_me2", "ds2", "me2")
+                .containsCell("ds2_me3", "ds2", "me3")
+                .containsCell("ds2_at1", "ds2", "at1")
+                .containsCell("ds2_at2", "ds2", "at2")
+                .containsCell("ds2_at3", "ds2", "at3");
+
+        StaticDataset ds1 = datasetWith(
+                ImmutableSet.of("id1", "id2", "idA"),
+                ImmutableSet.of("me1", "me2"),
+                ImmutableSet.of("at1", "at2")
+        );
+
+        StaticDataset ds2 = datasetWith(
+                ImmutableSet.of("id1", "id2", "idB"),
+                ImmutableSet.of("me1", "me3"),
+                ImmutableSet.of("at1", "at3")
+        );
+
+        StaticDataset ds3 = datasetWith(
+                ImmutableSet.of("id1", "id2", "idC"),
+                ImmutableSet.of("me1"),
+                ImmutableSet.of("at2", "at3")
+        );
+
+
+        Table<String, String, String> columnMappingThree = AbstractJoinOperation.getColumnMapping(
+                ImmutableMap.of("ds1", ds1, "ds2", ds2, "ds3", ds3)
+        );
+
+        assertThat(columnMappingThree).hasColumnCount(3).hasRowCount(16)
+                .containsCell("id1", "ds1", "id1")
+                .containsCell("id1", "ds2", "id1")
+                .containsCell("id1", "ds3", "id1")
+
+                .containsCell("id2", "ds1", "id2")
+                .containsCell("id2", "ds2", "id2")
+                .containsCell("id2", "ds3", "id2")
+
+                .containsCell("idA", "ds1", "idA")
+                .containsCell("ds1_me1", "ds1", "me1")
+                .containsCell("me2", "ds1", "me2")
+                .containsCell("ds1_at1", "ds1", "at1")
+                .containsCell("ds1_at2", "ds1", "at2")
+
+                .containsCell("idB", "ds2", "idB")
+                .containsCell("ds2_me1", "ds2", "me1")
+                .containsCell("me3", "ds2", "me3")
+                .containsCell("ds2_at1", "ds2", "at1")
+                .containsCell("ds2_at3", "ds2", "at3")
+
+                .containsCell("idC", "ds3", "idC")
+                .containsCell("ds3_me1", "ds3", "me1")
+                .containsCell("ds3_at2", "ds3", "at2")
+                .containsCell("ds3_at3", "ds3", "at3")
+
+
+        ;
+
+
+    }
+
+    private StaticDataset datasetWith(Set<String> identifiers, Set<String> measures, Set<String> attributes) {
+        StaticDataset.StructureBuilder builder = StaticDataset.create();
+        for (String identifier : identifiers) {
+            builder.addComponent(identifier, Role.IDENTIFIER, String.class);
+        }
+        for (String measure : measures) {
+            builder.addComponent(measure, Role.MEASURE, String.class);
+        }
+        for (String attribute : attributes) {
+            builder.addComponent(attribute, Role.ATTRIBUTE, String.class);
+        }
+        return builder.build();
+    }
 
     @Test
     // TODO: Move to ComponentBindingsTest
