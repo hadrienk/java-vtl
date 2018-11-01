@@ -35,7 +35,7 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
             Spliterator<L> leftSpliterator,
             Spliterator<R> rightSpliterator
     ) {
-        this.predicate = Comparator.nullsLast(predicate);
+        this.predicate = Comparator.nullsFirst(predicate);
         this.merger = merger;
         this.leftKeyExtractor = leftKeyExtractor;
         this.rightKeyExtractor = rightKeyExtractor;

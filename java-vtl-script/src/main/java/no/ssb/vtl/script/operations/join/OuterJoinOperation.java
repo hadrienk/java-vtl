@@ -111,35 +111,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
-
-        final Table<Component, Dataset, Component> componentMapping = getComponentMapping();
-        final DataStructure structure = getDataStructure();
-        final DataStructure rightStructure = rightDataset.getDataStructure();
-
-        return (left, right) -> {
-
-            /*
-             * We overwrite the ids if right != null for simplicity.
-             */
-            DataPoint result;
-            if (left != null) {
-                result = DataPoint.create(left);
-            } else {
-                result = DataPoint.create(structure.size());
-            }
-
-            if (right != null) {
-                Map<Component, VTLObject> leftMap = structure.asMap(result);
-                Map<Component, VTLObject> rightMap = rightStructure.asMap(right);
-                for (Map.Entry<Component, Component> mapping : componentMapping.column(rightDataset).entrySet()) {
-                    Component to = mapping.getKey();
-                    Component from = mapping.getValue();
-                    leftMap.put(to, rightMap.get(from));
-                }
-            }
-
-            return DataPoint.create(result);
-        };
+        return new OuterJoinMerger(this, leftDataset, rightDataset);
     }
 
     /**

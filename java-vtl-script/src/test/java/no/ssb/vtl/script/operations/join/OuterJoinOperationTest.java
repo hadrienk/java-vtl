@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.join;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +30,6 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.VTLPrintStream;
@@ -39,17 +38,14 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Arrays.asList;
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 
 public class OuterJoinOperationTest extends RandomizedTest {
 
@@ -200,7 +196,8 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 .collect(
                         () -> StaticDataset.create(structure),
                         StaticDataset.ValueBuilder::addPoints,
-                        (valueBuilder, valueBuilder2) -> {}
+                        (valueBuilder, valueBuilder2) -> {
+                        }
                 ).build();
 
         Dataset ds2 = Stream.of(1, 3, 3, 3, 3, 4, 5, 6, 8, 9, 9, 9, 10)
@@ -208,13 +205,38 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 .collect(
                         () -> StaticDataset.create(structure),
                         StaticDataset.ValueBuilder::addPoints,
-                        (valueBuilder, valueBuilder2) -> {}
+                        (valueBuilder, valueBuilder2) -> {
+                        }
                 ).build();
 
         AbstractJoinOperation result = new OuterJoinOperation(ImmutableMap.of("ds1", ds1, "ds2", ds2));
 
         assertThat(result.getData()).containsExactly(
-                DataPoint.create(1L, "ds1 1", "ds2 1")
+                DataPoint.create(1L, "ds1 1", "ds2 1"),
+                DataPoint.create(1L, "ds1 1", "ds2 1"),
+                DataPoint.create(1L, "ds1 1", "ds2 1"),
+                DataPoint.create(2L, "ds1 2", null),
+                DataPoint.create(3L, "ds1 3", "ds2 3"),
+                DataPoint.create(3L, "ds1 3", "ds2 3"),
+                DataPoint.create(3L, "ds1 3", "ds2 3"),
+                DataPoint.create(3L, "ds1 3", "ds2 3"),
+                DataPoint.create(4L, null, "ds2 4"),
+                DataPoint.create(5L, "ds1 5", "ds2 5"),
+                DataPoint.create(6L, null, "ds2 6"),
+                DataPoint.create(7L, "ds1 7", null),
+                DataPoint.create(7L, "ds1 7", null),
+                DataPoint.create(8L, "ds1 8", "ds2 8"),
+                DataPoint.create(8L, "ds1 8", "ds2 8"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(9L, "ds1 9", "ds2 9"),
+                DataPoint.create(10L, "ds1 10", "ds2 10")
         );
 
         VTLPrintStream vtlPrintStream = new VTLPrintStream(System.out);
@@ -243,12 +265,12 @@ public class OuterJoinOperationTest extends RandomizedTest {
                 .addPoints("3", "left 3")
                 .build();
 
-        Dataset ds2 =  StaticDataset.create()
+        Dataset ds2 = StaticDataset.create()
                 .addComponent("id1", IDENTIFIER, String.class)
                 .addComponent("value", MEASURE, String.class)
                 .addComponent("id2", IDENTIFIER, String.class)
                 .addPoints("2", "right 2", "b")
-                .addPoints("2","right 2e", "e")
+                .addPoints("2", "right 2e", "e")
                 .addPoints("3", "right 3", "c")
                 .addPoints("4", "right 4", "d")
                 .build();
