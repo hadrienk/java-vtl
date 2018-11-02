@@ -38,9 +38,7 @@ import java.util.function.ToIntFunction;
 public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoint> {
 
     private final Map<String, String> rightMapping;
-    //private final Map<String, String> leftMapping;
 
-    //private final DataPointView leftView;
     private final DataPointView rightView;
     private final DataPointView resultView;
     private final int size;
