@@ -45,7 +45,7 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
     private final DataPointView resultView;
     private final int size;
 
-    public OuterJoinMerger(AbstractJoinOperation joinOperation, Dataset left, Dataset right) {
+    public OuterJoinMerger(AbstractJoinOperation joinOperation, Dataset right) {
 
         Table<String, String, String> mapping = AbstractJoinOperation.getColumnMapping(joinOperation.datasets);
         ImmutableBiMap<Dataset, String> datasetNames = ImmutableBiMap.copyOf(joinOperation.datasets).inverse();
@@ -53,9 +53,6 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
         size = mapping.rowKeySet().size();
 
         rightMapping = mapping.column(datasetNames.get(right));
-        //leftMapping = mapping.column(datasetNames.get(right));
-
-        //leftView = new DataPointView(joinOperation.getDataStructure());
         rightView = new DataPointView(right.getDataStructure());
         resultView = new DataPointView(joinOperation.getDataStructure());
     }
@@ -64,14 +61,10 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
     public DataPoint apply(DataPoint left, DataPoint right) {
 
         resultView.setDataDoint(DataPoint.create(size));
-        //leftView.setDataDoint(left);
         rightView.setDataDoint(right);
 
         if (left != null) {
             resultView.setDataDoint(DataPoint.create(left));
-            //for (Map.Entry<String, String> mapping : leftMapping.entrySet()) {
-            //    resultView.put(mapping.getKey(), leftView.get(mapping.getValue()));
-            //}
         } else {
             resultView.setDataDoint(DataPoint.create(size));
         }

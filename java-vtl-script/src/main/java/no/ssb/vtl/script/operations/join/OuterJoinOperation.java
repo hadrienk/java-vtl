@@ -92,7 +92,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
             final Dataset leftDataset, final Dataset rightDataset
     ) {
-        return new OuterJoinMerger(this, leftDataset, rightDataset);
+        return new OuterJoinMerger(this, rightDataset);
     }
 
     /**
