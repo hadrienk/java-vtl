@@ -59,40 +59,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(Dataset leftDataset, Dataset rightDataset) {
-        return null;
-    }
-
-    /**
-     * Convert the {@link Order} so it uses the given structure.
-     */
-    private Order adjustOrderForStructure(Order orders, DataStructure dataStructure) {
-
-        DataStructure structure = getDataStructure();
-        Order.Builder adjustedOrders = Order.create(dataStructure);
-
-        // Uses names since child structure can be different.
-        for (Component component : orders.keySet()) {
-            String name = structure.getName(component);
-            if (dataStructure.containsKey(name))
-                adjustedOrders.put(name, orders.get(component));
-        }
-        return adjustedOrders.build();
-    }
-
-    /**
-     * TODO: Move to the {@link no.ssb.vtl.model.AbstractDatasetOperation}.
-     */
-    private Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Dataset.Filtering filtering, Set<String> components) {
-        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
-        if (sortedData.isPresent()) {
-            return sortedData.get();
-        } else {
-            return dataset.getData().sorted(order).filter(filtering);
-        }
-    }
-
-    @Override
     public Optional<Stream<DataPoint>> getData(Order requestedOrder, Dataset.Filtering filtering, Set<String> components) {
 
         // Try to create a compatible order.
@@ -178,31 +144,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
             throw ex;
         }
-    }
-
-    /**
-     * Compute the predicate.
-     *
-     * @param requestedOrder the requested order.
-     * @return order of the common identifiers only.
-     */
-    private Order computePredicate(Order requestedOrder) {
-        DataStructure structure = getDataStructure();
-
-        // We need to create a fake structure to allow the returned
-        // Order to work with the result of the key extractors.
-
-        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
-        DataStructure.Builder fakeStructure = DataStructure.builder();
-        for (Component component : commonIdentifiers) {
-            fakeStructure.put(structure.getName(component), component);
-        }
-
-        Order.Builder predicateBuilder = Order.create(fakeStructure.build());
-        for (Component component : commonIdentifiers) {
-            predicateBuilder.put(component, requestedOrder.getOrDefault(component, Order.Direction.ASC));
-        }
-        return predicateBuilder.build();
     }
 
     @Override

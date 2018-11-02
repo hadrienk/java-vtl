@@ -52,7 +52,9 @@ public class InnerJoinSpliterator<L, R, K, O> implements Spliterator<O> {
     private Iterator<O> output = Collections.emptyIterator();
 
     public InnerJoinSpliterator(
-            Function<L, K> leftKeyExtractor, Function<R, K> rightKeyExtractor, Comparator<K> predicate,
+            Function<L, K> leftKeyExtractor,
+            Function<R, K> rightKeyExtractor,
+            Comparator<K> predicate,
             BiFunction<L, R, O> merger,
             Spliterator<L> leftSpliterator,
             Spliterator<R> rightSpliterator
@@ -135,7 +137,7 @@ public class InnerJoinSpliterator<L, R, K, O> implements Spliterator<O> {
             }
         }
 
-        return !leftBuffer.isEmpty() && !rightBuffer.isEmpty();
+        return !(leftBuffer.isEmpty() && rightBuffer.isEmpty());
     }
 
     @Override

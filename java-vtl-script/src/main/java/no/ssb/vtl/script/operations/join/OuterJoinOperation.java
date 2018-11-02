@@ -41,16 +41,15 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Outer join is a bit more complex than inner join since we need
- * to buffer all the rows that are not matching a match or one of
- * the input buffer goes past another one. This implementation does
- * not support the former yet.
+ * Outer join is a bit more complex than inner join since we need to buffer all the non matching rows
+ * until a match occurs or one of the input buffer goes past another one.
+ * This implementation does not support the later yet.
  * <p>
- * Note for later, the "deduplicate" algorithm that pops up all around
- * the internet on selling paper websites probably works as below.
- * Could be worth a try to see if the code is clearer and/or more effective.
+ * The "deduplicate" algorithm that pops up all around the internet on scientific paper selling websites
+ * probably works as below. It could be worth a try to see if the code is clearer and/or more effective.
  * <p>
  * <pre><code>
+ * // Mark each row.
  * r1 := [t1] {
  *   identifier table := "t1"
  * }
@@ -85,42 +84,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                     getDataStructure().getName(component),
                     component
             );
-        }
-    }
-
-    @Override
-    protected BiFunction<DataPoint, DataPoint, DataPoint> getMerger(
-            final Dataset leftDataset, final Dataset rightDataset
-    ) {
-        return new OuterJoinMerger(this, rightDataset);
-    }
-
-    /**
-     * Convert the {@link Order} so it uses the given structure.
-     */
-    private Order adjustOrderForStructure(Order orders, DataStructure dataStructure) {
-
-        DataStructure structure = getDataStructure();
-        Order.Builder adjustedOrders = Order.create(dataStructure);
-
-        // Uses names since child structure can be different.
-        for (Component component : orders.keySet()) {
-            String name = structure.getName(component);
-            if (dataStructure.containsKey(name))
-                adjustedOrders.put(name, orders.get(component));
-        }
-        return adjustedOrders.build();
-    }
-
-    /**
-     * TODO: Move to the {@link no.ssb.vtl.model.AbstractDatasetOperation}.
-     */
-    private Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Dataset.Filtering filtering, Set<String> components) {
-        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
-        if (sortedData.isPresent()) {
-            return sortedData.get();
-        } else {
-            return dataset.getData().sorted(order).filter(filtering);
         }
     }
 
@@ -183,7 +146,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                                 ),
                                 new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
                                 predicate,
-                                getMerger(this, right),
+                                new OuterJoinMerger(this, right),
                                 result.spliterator(),
                                 rightStream.spliterator()
                         ), false
@@ -208,51 +171,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                 ex.addSuppressed(ioe);
             }
             throw ex;
-        }
-    }
-
-    /**
-     * Compute the predicate.
-     *
-     * @param requestedOrder the requested order.
-     * @return order of the common identifiers only.
-     */
-    private Order computePredicate(Order requestedOrder) {
-        DataStructure structure = getDataStructure();
-
-        // We need to create a fake structure to allow the returned
-        // Order to work with the result of the key extractors.
-
-        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
-        DataStructure.Builder fakeStructure = DataStructure.builder();
-        for (Component component : commonIdentifiers) {
-            fakeStructure.put(structure.getName(component), component);
-        }
-
-        Order.Builder predicateBuilder = Order.create(fakeStructure.build());
-        for (Component component : commonIdentifiers) {
-            predicateBuilder.put(component, requestedOrder.getOrDefault(component, Order.Direction.ASC));
-        }
-        return predicateBuilder.build();
-    }
-
-    @Override
-    public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        if (getChildren().size() == 1) {
-            return getChildren().get(0).getDistinctValuesCount();
-        } else {
-            // TODO
-            return Optional.empty();
-        }
-    }
-
-    @Override
-    public Optional<Long> getSize() {
-        if (getChildren().size() == 1) {
-            return getChildren().get(0).getSize();
-        } else {
-            // TODO
-            return Optional.empty();
         }
     }
 }
