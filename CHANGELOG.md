@@ -2,6 +2,8 @@
 
 ## develop
 
+* Fix a bug in outer join expression with more than two datasets
+
 ### Added
 
 * Add support for experimental foreach operator (#96)
