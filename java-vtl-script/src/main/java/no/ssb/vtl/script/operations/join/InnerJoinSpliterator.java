@@ -23,6 +23,7 @@ package no.ssb.vtl.script.operations.join;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Queues;
+import com.google.common.math.LongMath;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,12 +44,12 @@ public class InnerJoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     private final Function<L, K> leftKeyExtractor;
     private final Function<R, K> rightKeyExtractor;
-
-    private Deque<L> leftBuffer = Queues.newArrayDeque();
-    private Deque<R> rightBuffer = Queues.newArrayDeque();
+    private final Spliterator<L> leftSpliterator;
+    private final Spliterator<R> rightSpliterator;
     private final PeekingIterator<L> leftIterator;
     private final PeekingIterator<R> rightIterator;
-
+    private Deque<L> leftBuffer = Queues.newArrayDeque();
+    private Deque<R> rightBuffer = Queues.newArrayDeque();
     private Iterator<O> output = Collections.emptyIterator();
 
     public InnerJoinSpliterator(
@@ -64,8 +65,10 @@ public class InnerJoinSpliterator<L, R, K, O> implements Spliterator<O> {
         this.predicate = checkNotNull(predicate);
         this.merger = checkNotNull(merger);
 
-        this.leftIterator = Iterators.peekingIterator(Spliterators.iterator(leftSpliterator));
-        this.rightIterator = Iterators.peekingIterator(Spliterators.iterator(rightSpliterator));
+        this.leftSpliterator = leftSpliterator;
+        this.rightSpliterator = rightSpliterator;
+        this.leftIterator = Iterators.peekingIterator(Spliterators.iterator(this.leftSpliterator));
+        this.rightIterator = Iterators.peekingIterator(Spliterators.iterator(this.rightSpliterator));
     }
 
     private <I> K advance(PeekingIterator<I> source, Deque<I> buffer, Function<I, K> keyExtractor, Comparator<K> predicate) {
@@ -147,12 +150,15 @@ public class InnerJoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     @Override
     public long estimateSize() {
-        // TODO: This could be leftSpliterator.estimateSize() * rightSpliterator.estimateSize()
-        return Long.MAX_VALUE;
+        try {
+            return LongMath.checkedAdd(leftSpliterator.estimateSize(), rightSpliterator.estimateSize());
+        } catch (ArithmeticException ae) {
+            return Long.MAX_VALUE;
+        }
     }
 
     @Override
     public int characteristics() {
-        return Spliterator.ORDERED;
+        return Spliterator.ORDERED | Spliterator.IMMUTABLE;
     }
 }

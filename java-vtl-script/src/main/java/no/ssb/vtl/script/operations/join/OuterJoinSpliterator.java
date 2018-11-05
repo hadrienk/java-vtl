@@ -23,6 +23,7 @@ package no.ssb.vtl.script.operations.join;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Queues;
+import com.google.common.math.LongMath;
 
 import java.util.Comparator;
 import java.util.Deque;
@@ -41,6 +42,8 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
     private final Function<R, K> rightKeyExtractor;
     private final PeekingIterator<L> leftIterator;
     private final PeekingIterator<R> rightIterator;
+    private final Spliterator<L> leftSpliterator;
+    private final Spliterator<R> rightSpliterator;
 
     private Deque<L> leftBuffer = Queues.newArrayDeque();
     private Deque<R> rightBuffer = Queues.newArrayDeque();
@@ -60,8 +63,10 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
         this.leftKeyExtractor = leftKeyExtractor;
         this.rightKeyExtractor = rightKeyExtractor;
 
-        this.leftIterator = Iterators.peekingIterator(Spliterators.iterator(leftSpliterator));
-        this.rightIterator = Iterators.peekingIterator(Spliterators.iterator(rightSpliterator));
+        this.leftSpliterator = leftSpliterator;
+        this.rightSpliterator = rightSpliterator;
+        this.leftIterator = Iterators.peekingIterator(Spliterators.iterator(this.leftSpliterator));
+        this.rightIterator = Iterators.peekingIterator(Spliterators.iterator(this.rightSpliterator));
     }
 
     private <I> K advance(PeekingIterator<I> source, Deque<I> buffer, Function<I, K> keyExtractor, Comparator<K> predicate) {
@@ -155,7 +160,7 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
             if (0 < compare || leftBuffer.isEmpty()) {
                 // left > right (right is behind)
                 rightKey = advanceRight();
-            } else if (compare < 0  || rightBuffer.isEmpty()) {
+            } else if (compare < 0 || rightBuffer.isEmpty()) {
                 // left < right (left is behind)
                 leftKey = advanceLeft();
             } else {
@@ -183,11 +188,15 @@ public class OuterJoinSpliterator<L, R, K, O> implements Spliterator<O> {
 
     @Override
     public long estimateSize() {
-        return 0;
+        try {
+            return LongMath.checkedAdd(leftSpliterator.estimateSize(), rightSpliterator.estimateSize());
+        } catch (ArithmeticException ae) {
+            return Long.MAX_VALUE;
+        }
     }
 
     @Override
     public int characteristics() {
-        return 0;
+        return Spliterator.ORDERED | Spliterator.IMMUTABLE;
     }
 }

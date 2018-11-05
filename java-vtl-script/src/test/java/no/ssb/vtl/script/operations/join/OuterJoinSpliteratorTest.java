@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -54,16 +56,16 @@ public class OuterJoinSpliteratorTest {
     @Before
     public void setUp() throws Exception {
         left = newArrayList(
-                asList(null,    "1", "null-1-left"),
-                asList("A",     "2", "A-2-left"),
-                asList("A",     "3", "A-3-left"),
-                asList("B",     "4", "B-4-left"),
-                asList("C",     "5", "C-5-left"),
-                asList("D",     "6", "D-6-left"),
-                asList("D",     "7", "D-7-left"),
-                asList("E",     "8", "E-8-left"),
-                asList("E",     "9", "E-9-left"),
-                asList("F",     "10", "F-10-left")
+                asList(null, "1", "null-1-left"),
+                asList("A", "2", "A-2-left"),
+                asList("A", "3", "A-3-left"),
+                asList("B", "4", "B-4-left"),
+                asList("C", "5", "C-5-left"),
+                asList("D", "6", "D-6-left"),
+                asList("D", "7", "D-7-left"),
+                asList("E", "8", "E-8-left"),
+                asList("E", "9", "E-9-left"),
+                asList("F", "10", "F-10-left")
         );
 
         right = newArrayList(
@@ -81,29 +83,44 @@ public class OuterJoinSpliteratorTest {
 
         // @formatter:off
         expected = asList(
-                of("left", asList(null, "1", "null-1-left"),    "right", null),
-                of("left", asList("A",  "2", "A-2-left"),       "right", null),
-                of("left", asList("A",  "3", "A-3-left"),       "right", null),
-                of("left", asList("B",  "4", "B-4-left"),       "right", null),
-                of("left", asList("C",  "5", "C-5-left"),       "right", null),
+                of("left", asList(null, "1", "null-1-left"), "right", null),
+                of("left", asList("A", "2", "A-2-left"), "right", null),
+                of("left", asList("A", "3", "A-3-left"), "right", null),
+                of("left", asList("B", "4", "B-4-left"), "right", null),
+                of("left", asList("C", "5", "C-5-left"), "right", null),
 
-                of("left", asList("D",  "6", "D-6-left"),       "right", asList("D",    "1", "D-1-right")),
-                of("left", asList("D",  "7", "D-7-left"),       "right", asList("D",    "1", "D-1-right")),
+                of("left", asList("D", "6", "D-6-left"), "right", asList("D", "1", "D-1-right")),
+                of("left", asList("D", "7", "D-7-left"), "right", asList("D", "1", "D-1-right")),
 
-                of("left", asList("E",  "8", "E-8-left"),       "right", asList("E",    "2", "E-2-right")),
-                of("left", asList("E",  "8", "E-8-left"),       "right", asList("E",    "3", "E-3-right")),
-                of("left", asList("E",  "9", "E-9-left"),       "right", asList("E",    "2", "E-2-right")),
-                of("left", asList("E",  "9", "E-9-left"),       "right", asList("E",    "3", "E-3-right")),
+                of("left", asList("E", "8", "E-8-left"), "right", asList("E", "2", "E-2-right")),
+                of("left", asList("E", "8", "E-8-left"), "right", asList("E", "3", "E-3-right")),
+                of("left", asList("E", "9", "E-9-left"), "right", asList("E", "2", "E-2-right")),
+                of("left", asList("E", "9", "E-9-left"), "right", asList("E", "3", "E-3-right")),
 
-                of("left", asList("F",  "10", "F-10-left"),     "right", asList("F",    "4", "F-4-right")),
-                of("left", asList("F",  "10", "F-10-left"),     "right", asList("F",    "5", "F-5-right")),
-                of("left", null,                             "right", asList("G",    "6", "G-6-right")),
-                of("left", null,                             "right", asList("H",    "7", "H-7-right")),
-                of("left", null,                             "right", asList("I",    "8", "I-8-right")),
-                of("left", null,                             "right", asList("I",    "9", "I-9-right")),
-                of("left", null,                             "right", asList(null,   "10", "null-10-right"))
+                of("left", asList("F", "10", "F-10-left"), "right", asList("F", "4", "F-4-right")),
+                of("left", asList("F", "10", "F-10-left"), "right", asList("F", "5", "F-5-right")),
+                of("left", null, "right", asList("G", "6", "G-6-right")),
+                of("left", null, "right", asList("H", "7", "H-7-right")),
+                of("left", null, "right", asList("I", "8", "I-8-right")),
+                of("left", null, "right", asList("I", "9", "I-9-right")),
+                of("left", null, "right", asList(null, "10", "null-10-right"))
         );
         // @formatter:on
+    }
+
+    @Test
+    public void testEstimateSize() {
+
+        Spliterator<Map<String, List<String>>> spliterator = outerJoin(left.spliterator(), right.spliterator());
+
+        assertThat(spliterator.estimateSize()).isEqualTo(left.size() + right.size());
+
+    }
+
+    @Test
+    public void testTrySplitNotSupported() {
+        Spliterator<Map<String, List<String>>> spliterator = outerJoin(left.spliterator(), right.spliterator());
+        assertThat(spliterator.trySplit()).isNull();
     }
 
     @Test
@@ -112,16 +129,7 @@ public class OuterJoinSpliteratorTest {
         ArrayDeque<List<String>> leftQueue = new ArrayDeque<>(left);
         ArrayDeque<List<String>> rightQueue = new ArrayDeque<>(right);
 
-        OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>> spliterator = new OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>>(
-                list -> list.get(0),
-                list -> list.get(0),
-                Comparator.nullsFirst(Comparator.naturalOrder()),
-                (left, right) -> {
-                    LinkedHashMap<String, List<String>> map = new LinkedHashMap<>();
-                    map.put("left", left);
-                    map.put("right", right);
-                    return map;
-                },
+        OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>> spliterator = outerJoin(
                 Iterables.consumingIterable(leftQueue).spliterator(),
                 Iterables.consumingIterable(rightQueue).spliterator()
         );
@@ -136,22 +144,30 @@ public class OuterJoinSpliteratorTest {
 
     }
 
-    @Test
-    public void testForEachRemaining() {
-
-        ArrayDeque<List<String>> leftQueue = new ArrayDeque<>(left);
-        ArrayDeque<List<String>> rightQueue = new ArrayDeque<>(right);
-
-        OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>> spliterator = new OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>>(
+    private OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>> outerJoin(Spliterator<List<String>> leftSpliterator, Spliterator<List<String>> rightSpliterator) {
+        Comparator<String> comparator = Comparator.nullsFirst(Comparator.naturalOrder());
+        return new OuterJoinSpliterator<>(
                 list -> list.get(0),
                 list -> list.get(0),
-                Comparator.nullsFirst(Comparator.naturalOrder()),
+                comparator,
                 (left, right) -> {
                     LinkedHashMap<String, List<String>> map = new LinkedHashMap<>();
                     map.put("left", left);
                     map.put("right", right);
                     return map;
                 },
+                leftSpliterator,
+                rightSpliterator
+        );
+    }
+
+    @Test
+    public void testForEachRemaining() {
+
+        ArrayDeque<List<String>> leftQueue = new ArrayDeque<>(left);
+        ArrayDeque<List<String>> rightQueue = new ArrayDeque<>(right);
+
+        OuterJoinSpliterator<List<String>, List<String>, String, Map<String, List<String>>> spliterator = outerJoin(
                 Iterables.consumingIterable(leftQueue).spliterator(),
                 Iterables.consumingIterable(rightQueue).spliterator()
         );
@@ -173,33 +189,31 @@ public class OuterJoinSpliteratorTest {
         List<List<String>> l3 = asList(asList("A", "16"), asList("B", "32"));
 
         Function<List<String>, String> getId = list -> list.get(0);
-        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2 = new OuterJoinSpliterator<>(
-                getId,
-                getId,
-                Comparator.nullsFirst(Comparator.naturalOrder()),
-                (left, right) -> {
-                    List<String> result = new ArrayList<>(3);
-                    result.add(0, firstNonNull(left, right).get(0));
-                    if (left != null) {
-                        result.add(1, left.get(1));
-                    } else {
-                        result.add(1, null);
-                    }
-                    if (right != null) {
-                        result.add(2, right.get(1));
-                    } else {
-                        result.add(2, null);
-                    }
-                    return result;
-                },
-                l1.spliterator(), l2.spliterator()
-        );
+        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2 =
+                outerJoin(
+                        l1.spliterator(),
+                        l2.spliterator(),
+                        getId,
+                        (left, right) -> {
+                            List<String> result = new ArrayList<>(3);
+                            result.add(0, firstNonNull(left, right).get(0));
+                            if (left != null) {
+                                result.add(1, left.get(1));
+                            } else {
+                                result.add(1, null);
+                            }
+                            if (right != null) {
+                                result.add(2, right.get(1));
+                            } else {
+                                result.add(2, null);
+                            }
+                            return result;
+                        }
+                );
 
-        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2l3 = new OuterJoinSpliterator<>(
-                getId,
-                getId,
-                Comparator.nullsFirst(Comparator.naturalOrder()),
-                (left, right) -> {
+        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2l3 = outerJoin(
+                l1l2,
+                l3.spliterator(), getId, (left, right) -> {
                     List<String> result = new ArrayList<>(4);
                     result.add(0, firstNonNull(left, right).get(0));
                     if (left != null) {
@@ -215,8 +229,7 @@ public class OuterJoinSpliteratorTest {
                         result.add(3, null);
                     }
                     return result;
-                },
-                l1l2, l3.spliterator()
+                }
         );
 
         l1l2l3.forEachRemaining(System.out::println);
@@ -230,53 +243,67 @@ public class OuterJoinSpliteratorTest {
         List<List<String>> l3 = asList(asList("A", "16"), asList("B", "32"));
 
         Function<List<String>, String> getId = list -> list.get(0);
-        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2 = new OuterJoinSpliterator<>(
-                getId,
-                getId,
-                Comparator.nullsFirst(Comparator.naturalOrder()),
-                (left, right) -> {
-                    List<String> result = new ArrayList<>(3);
-                    result.add(0, firstNonNull(left, right).get(0));
-                    if (left != null) {
-                        result.add(1, left.get(1));
-                    } else {
-                        result.add(1, null);
-                    }
-                    if (right != null) {
-                        result.add(2, right.get(1));
-                    } else {
-                        result.add(2, null);
-                    }
-                    return result;
-                },
-                l1.spliterator(), l2.spliterator()
-        );
+        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2 =
+                outerJoin(
+                        l1.spliterator(),
+                        l2.spliterator(),
+                        getId,
+                        (left, right) -> {
+                            List<String> result = new ArrayList<>(3);
+                            result.add(0, firstNonNull(left, right).get(0));
+                            if (left != null) {
+                                result.add(1, left.get(1));
+                            } else {
+                                result.add(1, null);
+                            }
+                            if (right != null) {
+                                result.add(2, right.get(1));
+                            } else {
+                                result.add(2, null);
+                            }
+                            return result;
+                        }
+                );
 
-        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2l3 = new OuterJoinSpliterator<>(
+        OuterJoinSpliterator<List<String>, List<String>, String, List<String>> l1l2l3 = outerJoin(
+                l1l2,
+                l3.spliterator(),
                 getId,
-                getId,
-                Comparator.nullsFirst(Comparator.naturalOrder()),
-                (left, right) -> {
+                (l, r) -> {
                     List<String> result = new ArrayList<>(4);
-                    result.add(0, firstNonNull(left, right).get(0));
-                    if (left != null) {
-                        result.add(1, left.get(1));
-                        result.add(2, left.get(2));
+                    result.add(0, firstNonNull(l, r).get(0));
+                    if (l != null) {
+                        result.add(1, l.get(1));
+                        result.add(2, l.get(2));
                     } else {
                         result.add(1, null);
                         result.add(2, null);
                     }
-                    if (right != null) {
-                        result.add(3, right.get(1));
+                    if (r != null) {
+                        result.add(3, r.get(1));
                     } else {
                         result.add(3, null);
                     }
                     return result;
-                },
-                l1l2, l3.spliterator()
+                }
         );
 
-        while (l1l2l3.tryAdvance(System.out::println));
+        while (l1l2l3.tryAdvance(System.out::println)) ;
 
+    }
+
+    private OuterJoinSpliterator<List<String>, List<String>, String, List<String>> outerJoin(
+            Spliterator<List<String>> left,
+            Spliterator<List<String>> right,
+            Function<List<String>, String> keyExtractor,
+            BiFunction<List<String>, List<String>, List<String>> merger
+    ) {
+        return new OuterJoinSpliterator<>(
+                keyExtractor,
+                keyExtractor,
+                Comparator.nullsFirst(Comparator.naturalOrder()),
+                merger,
+                left, right
+        );
     }
 }

@@ -20,14 +20,11 @@ package no.ssb.vtl.script.operations.join;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
@@ -36,7 +33,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 

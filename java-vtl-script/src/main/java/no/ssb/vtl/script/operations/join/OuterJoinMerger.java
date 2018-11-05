@@ -79,9 +79,6 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
         private final ToIntFunction<String> hash;
         private DataPoint dp = DataPoint.create(0);
 
-        public DataPointView(ToIntFunction<String> hash) {
-            this.hash = hash;
-        }
 
         public DataPointView(DataStructure structure) {
             ImmutableList<String> list = ImmutableSet.copyOf(structure.keySet()).asList();

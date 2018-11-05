@@ -20,11 +20,9 @@ package no.ssb.vtl.script.operations.join;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.script.support.Closer;
@@ -35,7 +33,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -91,7 +88,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             closer.register(result);
 
 
-
             boolean first = true;
             while (iterator.hasNext()) {
                 left = right;
@@ -143,26 +139,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 ex.addSuppressed(ioe);
             }
             throw ex;
-        }
-    }
-
-    @Override
-    public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        if (getChildren().size() == 1) {
-            return getChildren().get(0).getDistinctValuesCount();
-        } else {
-            // TODO
-            return Optional.empty();
-        }
-    }
-
-    @Override
-    public Optional<Long> getSize() {
-        if (getChildren().size() == 1) {
-            return getChildren().get(0).getSize();
-        } else {
-            // TODO
-            return Optional.empty();
         }
     }
 }
