@@ -711,67 +711,86 @@ public class HierarchyOperationTest extends RandomizedTest {
 
         HierarchyOperation result = new HierarchyOperation(data, hierarchy, data.getDataStructure().get("node"));
 
-        assertThat(result.getData()).containsExactly(
+        assertThat(result.getData()).containsExactlyInAnyOrder(
                 DataPoint.create("AllNeg", "Left", -10L),
+                DataPoint.create("AllNeg", "Right", -5L),
                 DataPoint.create("AllNeg", "TopPos", -15L),
                 DataPoint.create("AllNeg", "TopNeg", 15L),
-                DataPoint.create("AllNeg", "Right", -5L),
+
                 DataPoint.create("AllPos", "Left", 10L),
+                DataPoint.create("AllPos", "Right", 5L),
                 DataPoint.create("AllPos", "TopPos", 15L),
                 DataPoint.create("AllPos", "TopNeg", -15L),
-                DataPoint.create("AllPos", "Right", 5L),
+
+                // No left.
+                DataPoint.create("LeftAbsentNeg", "Right", -5L),
                 DataPoint.create("LeftAbsentNeg", "TopPos", -5L),
                 DataPoint.create("LeftAbsentNeg", "TopNeg", -5L),
-                DataPoint.create("LeftAbsentNeg", "Right", -5L),
+
+                // No left.
+                DataPoint.create("LeftAbsentPos", "Right", 5L),
                 DataPoint.create("LeftAbsentPos", "TopPos", 5L),
                 DataPoint.create("LeftAbsentPos", "TopNeg", 5L),
-                DataPoint.create("LeftAbsentPos", "Right", 5L),
-                DataPoint.create("LeftMissingNeg", "Left", null),
-                DataPoint.create("LeftMissingNeg", "TopPos", -5L),
-                DataPoint.create("LeftMissingNeg", "TopNeg", 5L),
-                DataPoint.create("LeftMissingNeg", "Right", -5L),
-                DataPoint.create("LeftMissingPos", "Left", null),
-                DataPoint.create("LeftMissingPos", "TopPos", 5L),
-                DataPoint.create("LeftMissingPos", "TopNeg", -5L),
-                DataPoint.create("LeftMissingPos", "Right", 5L),
-                DataPoint.create("LeftNeg", "Left", -10L),
-                DataPoint.create("LeftNeg", "TopPos", -5L),
-                DataPoint.create("LeftNeg", "TopNeg", 5L),
-                DataPoint.create("LeftNeg", "Right", 5L),
-                DataPoint.create("LeftZeroNeg", "Left", 0L),
-                DataPoint.create("LeftZeroNeg", "TopPos", -5L),
-                DataPoint.create("LeftZeroNeg", "TopNeg", 5L),
-                DataPoint.create("LeftZeroNeg", "Right", -5L),
-                DataPoint.create("LeftZeroPos", "Left", 0L),
-                DataPoint.create("LeftZeroPos", "TopPos", 5L),
-                DataPoint.create("LeftZeroPos", "TopNeg", -5L),
-                DataPoint.create("LeftZeroPos", "Right", 5L),
+
                 DataPoint.create("RightAbsentNeg", "Left", -10L),
+                // No right
                 DataPoint.create("RightAbsentNeg", "TopPos", -10L),
                 DataPoint.create("RightAbsentNeg", "TopNeg", -10L),
+
                 DataPoint.create("RightAbsentPos", "Left", 10L),
+                // No right
                 DataPoint.create("RightAbsentPos", "TopPos", 10L),
                 DataPoint.create("RightAbsentPos", "TopNeg", 10L),
+
+                DataPoint.create("LeftMissingNeg", "Left", null),
+                DataPoint.create("LeftMissingNeg", "Right", -5L),
+                DataPoint.create("LeftMissingNeg", "TopPos", -5L),
+                DataPoint.create("LeftMissingNeg", "TopNeg", 5L),
+
+                DataPoint.create("LeftMissingPos", "Left", null),
+                DataPoint.create("LeftMissingPos", "Right", 5L),
+                DataPoint.create("LeftMissingPos", "TopPos", 5L),
+                DataPoint.create("LeftMissingPos", "TopNeg", -5L),
+
                 DataPoint.create("RightMissingNeg", "Left", -10L),
+                DataPoint.create("RightMissingNeg", "Right", null),
                 DataPoint.create("RightMissingNeg", "TopPos", -10L),
                 DataPoint.create("RightMissingNeg", "TopNeg", 10L),
-                DataPoint.create("RightMissingNeg", "Right", null),
+
                 DataPoint.create("RightMissingPos", "Left", 10L),
+                DataPoint.create("RightMissingPos", "Right", null),
                 DataPoint.create("RightMissingPos", "TopPos", 10L),
                 DataPoint.create("RightMissingPos", "TopNeg", -10L),
-                DataPoint.create("RightMissingPos", "Right", null),
+
+                DataPoint.create("LeftNeg", "Left", -10L),
+                DataPoint.create("LeftNeg", "Right", 5L),
+                DataPoint.create("LeftNeg", "TopPos", -5L),
+                DataPoint.create("LeftNeg", "TopNeg", 5L),
+
                 DataPoint.create("RightNeg", "Left", 10L),
+                DataPoint.create("RightNeg", "Right", -5L),
                 DataPoint.create("RightNeg", "TopPos", 5L),
                 DataPoint.create("RightNeg", "TopNeg", -5L),
-                DataPoint.create("RightNeg", "Right", -5L),
+
+                DataPoint.create("LeftZeroNeg", "Left", 0L),
+                DataPoint.create("LeftZeroNeg", "Right", -5L),
+                DataPoint.create("LeftZeroNeg", "TopPos", -5L),
+                DataPoint.create("LeftZeroNeg", "TopNeg", 5L),
+
+                DataPoint.create("LeftZeroPos", "Left", 0L),
+                DataPoint.create("LeftZeroPos", "Right", 5L),
+                DataPoint.create("LeftZeroPos", "TopPos", 5L),
+                DataPoint.create("LeftZeroPos", "TopNeg", -5L),
+
                 DataPoint.create("RightZeroNeg", "Left", -10L),
+                DataPoint.create("RightZeroNeg", "Right", 0L),
                 DataPoint.create("RightZeroNeg", "TopPos", -10L),
                 DataPoint.create("RightZeroNeg", "TopNeg", 10L),
-                DataPoint.create("RightZeroNeg", "Right", 0L),
+
                 DataPoint.create("RightZeroPos", "Left", 10L),
+                DataPoint.create("RightZeroPos", "Right", 0L),
                 DataPoint.create("RightZeroPos", "TopPos", 10L),
-                DataPoint.create("RightZeroPos", "TopNeg", -10L),
-                DataPoint.create("RightZeroPos", "Right", 0L)
+                DataPoint.create("RightZeroPos", "TopNeg", -10L)
         );
     }
 
