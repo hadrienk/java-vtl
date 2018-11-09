@@ -65,8 +65,10 @@ public class SumHierarchyAccumulator implements HierarchyAccumulator {
                 };
             case COMPLEMENT:
                 return (left, right) -> {
-                    VTLNumber leftNumber = (VTLNumber) left;
-                    VTLNumber rightNumber = (VTLNumber) right;
+                    VTLNumber leftNumber =
+                            left.get() == null ? VTLNumber.of(0) : (VTLNumber) left;
+                    VTLNumber rightNumber =
+                            right.get() == null ? VTLNumber.of(0) : (VTLNumber) right;
                     return leftNumber.subtract(rightNumber.get());
                 };
             default:
