@@ -2,6 +2,7 @@
 
 ## develop
 
+* Hierarchy operator handles null values in complement relations
 * Fix a bug in outer join expression with more than two datasets
 
 ### Added
