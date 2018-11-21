@@ -10,9 +10,10 @@
 
 ### Changed
 
+* Update outdated dependencies
+* Remove hamcrest dependencies
 * Hierarchy operator handles null values in complement relations
 * Fix a bug in outer join expression with more than two datasets
-* Remove hamcrest dependencies
 
 ## 0.1.11 - 2018-10-23
 
