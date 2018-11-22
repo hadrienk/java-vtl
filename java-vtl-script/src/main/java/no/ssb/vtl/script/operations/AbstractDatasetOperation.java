@@ -21,13 +21,17 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlOrdering;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -58,7 +62,13 @@ public abstract class AbstractDatasetOperation implements Dataset {
 
     @Override
     public final Stream<DataPoint> getData() {
-        return computeData(Ordering.ANY, Filtering.ALL, computeDataStructure().keySet());
+        VtlOrdering.Builder ordering = VtlOrdering.using(this);
+        for (Component component : getDataStructure().values()) {
+            if (component.isIdentifier()) {
+                ordering.asc(getDataStructure().getName(component));
+            }
+        }
+        return computeData(ordering.build(), Filtering.ALL, computeDataStructure().keySet());
     }
 
     @Override

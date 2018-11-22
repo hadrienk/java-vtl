@@ -22,18 +22,24 @@ package no.ssb.vtl.script.operations.join;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
+import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.Ordering.Direction;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
@@ -43,9 +49,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static no.ssb.vtl.model.Ordering.Direction.ANY;
+import static no.ssb.vtl.model.Ordering.Direction.ASC;
 
 /**
  * Abstract join operation.
@@ -57,9 +66,8 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private static final String ERROR_EMPTY_DATASET_LIST = "join operation impossible on empty dataset list";
     private static final String ERROR_INCOMPATIBLE_TYPES = "incompatible identifier types: %s";
     private static final String ERROR_NO_COMMON_IDENTIFIERS = "could not find common identifiers in the datasets %s";
-
-    private final Table<Component, Dataset, Component> componentMapping;
     protected final ImmutableMap<String, Dataset> datasets;
+    private final Table<Component, Dataset, Component> componentMapping;
     private final ImmutableSet<Component> commonIdentifiers;
 
     private final ComponentBindings joinScope;
@@ -168,6 +176,44 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return table.build();
     }
 
+    @VisibleForTesting
+    static Table<String, String, String> getColumnMapping(Map<String, Dataset> datasets) {
+
+        ImmutableTable.Builder<String, String, String> table;
+        table = ImmutableTable.builder();
+
+        // Counting column occurrences.
+        Multiset<String> sharedColumns = HashMultiset.create();
+        for (Dataset dataset : datasets.values()) {
+            DataStructure structure = dataset.getDataStructure();
+            sharedColumns.addAll(structure.keySet());
+        }
+
+        Multiset<String> identifierColumns = HashMultiset.create();
+        for (Dataset dataset : datasets.values()) {
+            DataStructure structure = dataset.getDataStructure();
+            Set<String> identifiers = structure.entrySet().stream()
+                    .filter(e -> e.getValue().isIdentifier())
+                    .map(e -> e.getKey())
+                    .collect(Collectors.toSet());
+            identifierColumns.addAll(identifiers);
+        }
+
+        for (String datasetName : datasets.keySet()) {
+            Dataset dataset = datasets.get(datasetName);
+            DataStructure structure = dataset.getDataStructure();
+            for (Map.Entry<String, Component> entry : structure.entrySet()) {
+                String column = entry.getKey();
+                if (identifierColumns.count(column) != datasets.size() && sharedColumns.count(column) > 1) {
+                    table.put(datasetName + "_" + column, datasetName, column);
+                } else {
+                    table.put(column, datasetName, column);
+                }
+            }
+        }
+
+        return table.build();
+    }
 
     protected ImmutableSet<Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
@@ -178,30 +224,30 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * <p>
      * Join operations need the common identifiers to be first.
      *
-     * @param structure
-     * @param firstComponents
-     * @param requestedOrder  the requested order
+     * @param structure       the structure the returned order will apply to.
+     * @param firstComponents the identifiers to use.
+     * @param requestedOrder  a compatible order.
      */
     @VisibleForTesting
     Optional<Ordering> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering requestedOrder) {
 
-        Set<Component> identifiers = Sets.newHashSet(firstComponents);
-
-        ImmutableMap.Builder<String, Ordering.Direction> compatibleOrder = ImmutableMap.builder();
-        for (String column : requestedOrder.columns()) {
-
-            Ordering.Direction direction = requestedOrder.getDirection(column);
-
-            if (!identifiers.isEmpty() && !identifiers.remove(structure.get(column)))
-                return Optional.empty();
-
-            compatibleOrder.put(column, direction);
+        List<String> columns = requestedOrder.columns();
+        List<String> requiredColumns = firstComponents.stream().map(structure::getName).collect(Collectors.toList());
+        if (columns.size() >= requiredColumns.size() &&
+                columns.subList(0, requiredColumns.size()).containsAll(requiredColumns)) {
+            return Optional.of(requestedOrder);
+        } else {
+            ImmutableMap.Builder<String, Direction> compatibleOrder = ImmutableMap.builder();
+            for (String requiredColumn : requiredColumns) {
+                Direction direction = requestedOrder.getDirection(requiredColumn);
+                compatibleOrder.put(requiredColumn, direction != ANY || direction == null ? direction : ASC);
+            }
+            return Optional.of(new VtlOrdering(compatibleOrder.build(), structure));
         }
-        return Optional.of(new VtlOrdering(compatibleOrder.build(), structure));
     }
 
     /**
-     * Checks if component name is unique among other datasets
+     * Checks if component name is unique among all datasets
      */
     @VisibleForTesting
     boolean componentNameIsUnique(String datasetName, String componentName) {
@@ -253,4 +299,72 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return componentMapping;
     }
 
+    /**
+     * Compute the predicate.
+     *
+     * @param requestedOrder the requested order.
+     * @return order of the common identifiers only.
+     */
+    protected Ordering computePredicate(Ordering requestedOrder) {
+        DataStructure structure = getDataStructure();
+
+        // We need to create a fake structure to allow the returned
+        // Order to work with the result of the key extractors.
+
+        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
+        DataStructure.Builder fakeStructure = DataStructure.builder();
+        for (Component component : commonIdentifiers) {
+            fakeStructure.put(structure.getName(component), component);
+        }
+        VtlOrdering.Builder builder = VtlOrdering.using(fakeStructure.build());
+        for (Component component : commonIdentifiers) {
+            String name = structure.getName(component);
+            builder.then(requestedOrder.getDirection(name), name);
+        }
+
+        return builder.build();
+    }
+
+    protected Stream<DataPoint> getOrSortData(Dataset dataset, Ordering order, Filtering filtering, Set<String> components) {
+        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
+        if (sortedData.isPresent()) {
+            return sortedData.get();
+        } else {
+            return dataset.getData().sorted(order).filter(filtering);
+        }
+    }
+
+    /**
+     * Convert the {@link Ordering} so it uses the given structure.
+     */
+    protected Ordering adjustOrderForStructure(Ordering orders, DataStructure dataStructure) {
+        VtlOrdering.Builder using = VtlOrdering.using(dataStructure);
+        Set<String> actualColumns = dataStructure.keySet();
+        for (String column : orders.columns()) {
+            if (actualColumns.contains(column)) {
+                using.then(orders.getDirection(column), column);
+            }
+        }
+        return using.build();
+    }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
 }

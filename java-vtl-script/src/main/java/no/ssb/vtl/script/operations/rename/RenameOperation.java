@@ -73,8 +73,8 @@ import java.util.stream.Stream;
  */
 public class RenameOperation extends AbstractUnaryDatasetOperation {
 
-    private final ImmutableMap<String, String> nameMapping;
-    private final ImmutableMap<String, Component.Role> roleMapping;
+    private final ImmutableBiMap<String, String> nameMapping;
+    private final ImmutableBiMap<String, Component.Role> roleMapping;
 
     public RenameOperation(Dataset child, Map<String, String> nameMapping) {
         this(child, nameMapping, Collections.emptyMap());
@@ -82,8 +82,8 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     public RenameOperation(Dataset child, Map<String, String> nameMapping, Map<String, Component.Role> roleMapping) {
         super(child);
-        this.nameMapping = ImmutableMap.copyOf(nameMapping);
-        this.roleMapping = ImmutableMap.copyOf(roleMapping);
+        this.nameMapping = ImmutableBiMap.copyOf(nameMapping);
+        this.roleMapping = ImmutableBiMap.copyOf(roleMapping);
     }
 
     @Override
@@ -172,7 +172,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     private Ordering renameOrdering(Ordering oldOrdering) {
         VtlOrdering.Builder ordering = VtlOrdering.using(getChild());
         for (String column : oldOrdering.columns()) {
-            String childColumn = nameMapping.getOrDefault(column, column);
+            String childColumn = nameMapping.inverse().getOrDefault(column, column);
             Ordering.Direction direction = oldOrdering.getDirection(column);
             ordering.then(direction, childColumn);
         }

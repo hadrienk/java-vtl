@@ -121,8 +121,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
         return VTLFloat.of(num);
     }
 
-
-    @Deprecated
     public static final VTLObject NULL = new VTLObject() {
         @Override
         public Object get() {

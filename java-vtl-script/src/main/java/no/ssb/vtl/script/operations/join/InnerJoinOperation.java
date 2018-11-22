@@ -41,7 +41,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -61,26 +60,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                     getDataStructure().getName(component),
                     component
             );
-        }
-    }
-
-    /**
-     * Convert the {@link Order} so it uses the given structure.
-     */
-    private Ordering adjustOrderForStructure(Ordering orders, DataStructure dataStructure) {
-        return new VtlOrdering(orders, dataStructure);
-    }
-
-    /**
-     * Unnecessary with the new {@link AbstractDatasetOperation#computeData(Ordering, Filtering, Set)}
-     */
-    @Deprecated
-    private Stream<DataPoint> getOrSortData(Dataset dataset, Ordering order, Filtering filtering, Set<String> components) {
-        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
-        if (sortedData.isPresent()) {
-            return sortedData.get();
-        } else {
-            return dataset.getData().sorted(order).filter(filtering);
         }
     }
 
@@ -169,27 +148,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
             throw ex;
         }
-    }
-
-    /**
-     * Compute the predicate.
-     *
-     * @param requestedOrder the requested order.
-     * @return order of the common identifiers only.
-     */
-    private Ordering computePredicate(Ordering requestedOrder) {
-        DataStructure structure = getDataStructure();
-
-        // We need to create a fake structure to allow the returned
-        // Order to work with the result of the key extractors.
-
-        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
-        DataStructure.Builder fakeStructure = DataStructure.builder();
-        for (Component component : commonIdentifiers) {
-            fakeStructure.put(structure.getName(component), component);
-        }
-
-        return new VtlOrdering(requestedOrder, fakeStructure.build());
     }
 
     @Override

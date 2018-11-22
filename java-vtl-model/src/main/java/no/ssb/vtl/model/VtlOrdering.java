@@ -29,6 +29,7 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +146,15 @@ public final class VtlOrdering implements Ordering, OrderingSpecification {
             Comparable o1 = (Comparable) dp1.get(indices[i]).get();
             Comparable o2 = (Comparable) dp2.get(indices[i]).get();
 
-            result = o1.compareTo(o2);
+            boolean nullFirst = true;
+            if (o1 == null) {
+                result = (o2 == null) ? 0 : (nullFirst ? -1 : 1);
+            } else if (o2 == null) {
+                result = nullFirst ? 1: -1;
+            } else {
+                result = o1.compareTo(o2);
+            }
+
             if (result != 0) {
                 return directions[i] == Direction.ASC ? result : -result;
             }

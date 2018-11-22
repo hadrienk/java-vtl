@@ -1,6 +1,7 @@
 package no.ssb.vtl.script.expressions;
 
 import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlFiltering;
@@ -18,6 +19,8 @@ import no.ssb.vtl.script.expressions.logic.XorExpression;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static java.lang.String.format;
 
 public class VtlFilteringConverter {
 
@@ -57,6 +60,10 @@ public class VtlFilteringConverter {
     }
 
     public static VtlFiltering convert(VTLExpression predicate) {
+        if (!predicate.getVTLType().equals(VTLBoolean.class)) {
+            throw new IllegalArgumentException(format("predicate %s was not a boolean", predicate));
+        }
+
         if (predicate instanceof OrExpression) {
             return convert((OrExpression) predicate);
         } else if (predicate instanceof AndExpression) {
@@ -65,6 +72,9 @@ public class VtlFilteringConverter {
             throw new UnsupportedOperationException();
         } else if (predicate instanceof AbstractEqualityExpression) {
             return convert((AbstractEqualityExpression) predicate);
+        } else if (predicate instanceof LiteralExpression) {
+            VTLBoolean value = (VTLBoolean) predicate.resolve(null);
+            return VtlFiltering.literal(!value.get(), FilteringSpecification.Operator.TRUE, null, value);
         }
         return null;
     }

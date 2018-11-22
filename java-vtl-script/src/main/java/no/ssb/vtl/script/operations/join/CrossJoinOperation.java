@@ -62,10 +62,4 @@ public abstract class CrossJoinOperation extends OuterJoinOperation {
     public CrossJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(namedDatasets, identifiers);
     }
-
-    private Stream<DataPoint> order(Order requestedOrder, Filtering filtering, Set<String> components, Dataset first) {
-        return first.getData(requestedOrder, filtering, components).orElseGet(
-                () -> first.getData().sorted(requestedOrder).filter(filtering)
-        );
-    }
 }
