@@ -25,12 +25,15 @@ import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import com.carrotsearch.randomizedtesting.annotations.Seed;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.VTLRuntimeException;
 import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.api.SoftAssertions;
@@ -136,6 +139,12 @@ public class UnionOperationTest extends RandomizedTest {
     }
 
     @Test
+    @Seed("5DF3DC345B555D09")
+    public void testFail2() {
+        testUnionSorted();
+    }
+
+    @Test
     @Repeat(iterations = 100)
     public void testUnionSorted() {
 
@@ -172,15 +181,22 @@ public class UnionOperationTest extends RandomizedTest {
 
         UnionOperation unionOperation = new UnionOperation(datasets);
 
-        Order order = Order.createDefault(unionOperation.getDataStructure());
-        Optional<Stream<DataPoint>> stream = unionOperation.getData(order);
+        // Create random ordering.
+        VtlOrdering.Builder order = VtlOrdering.using(unionOperation);
+        for (Component component : unionOperation.getDataStructure().values()) {
+            if (!rarely() && component.isIdentifier()) {
+                order.then(randomBoolean() ? Ordering.Direction.ASC : Ordering.Direction.DESC,
+                        unionOperation.getDataStructure().getName(component));
+            }
+        }
+        Optional<Stream<DataPoint>> stream = unionOperation.getData(order.build());
 
         assertThat(Optional.of(stream)).isNotEmpty();
 
         ImmutableList<DataPoint> collect = stream.get().collect(ImmutableList.toImmutableList());
 
         assertThat(collect).hasSameSizeAs(dataPoints);
-        assertThat(collect).isSortedAccordingTo(order);
+        assertThat(collect).isSortedAccordingTo(order.build());
     }
 
     @Test
