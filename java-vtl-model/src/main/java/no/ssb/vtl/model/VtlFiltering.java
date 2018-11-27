@@ -213,7 +213,7 @@ public abstract class VtlFiltering implements Filtering {
                 if (hashFunction.applyAsInt(original.getColumn()) >= 0) {
                     return new Literal(negated, original.getColumn(), original.getValue(), operator);
                 } else {
-                    return new Literal(negated, original.getColumn(), original.getValue(), Operator.TRUE);
+                    return new Literal(false, original.getColumn(), original.getValue(), Operator.TRUE);
                 }
             } else {
                 List<VtlFiltering> ops = new ArrayList<>();
@@ -238,7 +238,6 @@ public abstract class VtlFiltering implements Filtering {
                     } else {
                         return new Or(negated, ops);
                     }
-
                 }
             }
         }
