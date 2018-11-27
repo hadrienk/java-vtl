@@ -20,7 +20,6 @@ package no.ssb.vtl.script;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.connectors.Connector;
@@ -29,9 +28,9 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Order;
-import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.antlr.v4.runtime.Vocabulary;
@@ -50,11 +49,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -910,52 +907,19 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testAggregationSumGroupBy() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, Long.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure);
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, Long.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "one",
-                        "m1", 101L,
-                        "m2", 1.1,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "two",
-                        "m1", 102L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "one",
-                        "m1", 201L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two",
-                        "m1", 202L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two-null",
-                        "m1", VTLObject.NULL,
-                        "m2", VTLObject.NULL,
-                        "at1", "attr2"
-                )
-        ).map(structure::wrap));
+                .addPoints(1L, "one", 101L, 1.1, "attr1")
+                .addPoints(1L, "two", 102L, 1.1, "attr2" )
+                .addPoints(2L, "one", 201L, 1.1, "attr2" )
+                .addPoints(                        2L, "two", 202L, 1.1, "attr2")
+                .addPoints( 2L, "two-null", null, null, "attr2" )
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1.m1) group by id1");
@@ -1019,47 +983,19 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testAggregationSumAlong() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, Long.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure);
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "one",
-                        "m1", 101L,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "two",
-                        "m1", 102L,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "one",
-                        "m1", 201L,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two",
-                        "m1", 202L,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two-null",
-                        "m1", VTLObject.NULL,
-                        "at1", "attr2"
-                )
-        ).map(structure::wrap));
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, Long.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
+
+                .addPoints(1L, "one", 101L, "attr1")
+                .addPoints(1L, "two", 102L, "attr2")
+                .addPoints(2L, "one", 201L, "attr2")
+                .addPoints(2L, "two", 202L, "attr2")
+                .addPoints(2L, "two-null", null, "attr2")
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1) along id2");
