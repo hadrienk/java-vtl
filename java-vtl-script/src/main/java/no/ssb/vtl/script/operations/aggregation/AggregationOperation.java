@@ -178,7 +178,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         ImmutableMap.Builder<String, Ordering.Direction> groupByOrder = ImmutableMap.builder();
         for (String column : groupByColumns) {
             Ordering.Direction direction = orders.columns().size() > 0 ? orders.getDirection(column) : Ordering.Direction.ASC;
-            if (direction.equals(Ordering.Direction.ANY)) {
+            if (Ordering.Direction.ANY.equals(direction) || direction == null) {
                 direction = Ordering.Direction.ASC;
             }
             groupByOrder.put(column, direction);
