@@ -233,16 +233,32 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         List<String> columns = requestedOrder.columns();
         List<String> requiredColumns = firstComponents.stream().map(structure::getName).collect(Collectors.toList());
+
         if (columns.size() >= requiredColumns.size() &&
                 columns.subList(0, requiredColumns.size()).containsAll(requiredColumns)) {
             return Optional.of(requestedOrder);
         } else {
-            ImmutableMap.Builder<String, Direction> compatibleOrder = ImmutableMap.builder();
-            for (String requiredColumn : requiredColumns) {
-                Direction direction = requestedOrder.getDirection(requiredColumn);
-                compatibleOrder.put(requiredColumn, direction != ANY || direction == null ? direction : ASC);
+            // Requested first.
+            VtlOrdering.Builder compatibleOrder = VtlOrdering.using(this);
+            for (String column : columns) {
+                if (requiredColumns.contains(column)) {
+                    compatibleOrder.then(requestedOrder.getDirection(column), column);
+                }
             }
-            return Optional.of(new VtlOrdering(compatibleOrder.build(), structure));
+            // Missing.
+            for (String requiredColumn : requiredColumns) {
+                if (!columns.contains(requiredColumn)) {
+                    compatibleOrder.asc(requiredColumn);
+                }
+            }
+            // Rest.
+            for (String column : columns) {
+                if (!requiredColumns.contains(column)) {
+                    compatibleOrder.then(requestedOrder.getDirection(column), column);
+                }
+            }
+
+            return Optional.of(compatibleOrder.build());
         }
     }
 

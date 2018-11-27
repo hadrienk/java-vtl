@@ -35,6 +35,7 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.junit.Test;
@@ -132,14 +133,14 @@ public class InnerJoinOperationTest extends RandomizedTest {
         );
 
         // This order is not possible.
-        Optional<Stream<DataPoint>> emptyData = joinOperation.getData(
-                Order.create(joinOperation.getDataStructure())
-                        .put("idx", Ordering.Direction.DESC)
+        Optional<Stream<DataPoint>> data = joinOperation.getData(
+                VtlOrdering.using(joinOperation)
+                        .desc("idx")
                         .build()
         );
-        assertThat(emptyData.isPresent()).isFalse();
+        assertThat(data.isPresent()).isTrue();
 
-        assertThat(joinOperation.getData()).containsExactlyInAnyOrder(
+        assertThat(data.get()).containsExactlyInAnyOrder(
                 DataPoint.create("D", "ds1 match", "ds2 match"),
                 DataPoint.create("C", "ds1 match", "ds2 match")
         );
