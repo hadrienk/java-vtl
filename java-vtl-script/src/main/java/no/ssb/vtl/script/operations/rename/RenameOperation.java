@@ -74,7 +74,7 @@ import java.util.stream.Stream;
 public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     private final ImmutableBiMap<String, String> nameMapping;
-    private final ImmutableBiMap<String, Component.Role> roleMapping;
+    private final ImmutableMap<String, Component.Role> roleMapping;
 
     public RenameOperation(Dataset child, Map<String, String> nameMapping) {
         this(child, nameMapping, Collections.emptyMap());
@@ -83,7 +83,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     public RenameOperation(Dataset child, Map<String, String> nameMapping, Map<String, Component.Role> roleMapping) {
         super(child);
         this.nameMapping = ImmutableBiMap.copyOf(nameMapping);
-        this.roleMapping = ImmutableBiMap.copyOf(roleMapping);
+        this.roleMapping = ImmutableMap.copyOf(roleMapping);
     }
 
     @Override
