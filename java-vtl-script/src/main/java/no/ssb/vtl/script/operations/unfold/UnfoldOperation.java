@@ -33,6 +33,7 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.Map;
@@ -71,6 +72,23 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
         DataStructure childStructure = getChild().getDataStructure();
 
         Order defaultOrder = Order.createDefault(childStructure);
+
+        // Transform any filtering referring to the unfolded columns.
+        VtlFiltering vtlFiltering = VtlFiltering.using(this).transpose(filtering);
+
+        String dimensionName = childStructure.getName(dimension);
+        String measureName = childStructure.getName(measure);
+        VtlFiltering transformed = VtlFiltering.transform(vtlFiltering, (parent, filter) -> {
+            if (elements.contains(filter.getColumn())) {
+                return VtlFiltering.and(
+                        VtlFiltering.eq(dimensionName, filter.getColumn()),
+                        VtlFiltering.literal(filter.isNegated(), filter.getOperator(), measureName, filter.getValue())
+                );
+            } else {
+                return filter;
+            }
+        });
+
 
         // Order by identifier, but dimension and measure must be the last ones.
         Order.Builder orderBuilder = Order.create(childStructure)
@@ -124,12 +142,12 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Optional<Map<String, Integer>> getDistinctValuesCount() {
-        return null;
+        return Optional.empty();
     }
 
     @Override
     public Optional<Long> getSize() {
-        return null;
+        return Optional.empty();
     }
 
     @Override

@@ -9,7 +9,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -63,6 +67,14 @@ public abstract class VtlFiltering implements Filtering {
         return new Builder(dataset.getDataStructure());
     }
 
+    public static VtlFiltering not(VtlFiltering filtering) {
+        if (filtering.getOperator() == Operator.AND || filtering.getOperator() == Operator.OR) {
+            return nary(!filtering.isNegated(), filtering.getOperator(), filtering.getOperands());
+        } else {
+            return literal(!filtering.isNegated(), filtering.getOperator(), filtering.getColumn(), filtering.getValue());
+        }
+    }
+
     public static VtlFiltering eq(String column, Object value) {
         return new Literal(false, column, VTLObject.of(value), Operator.EQ);
     }
@@ -92,6 +104,10 @@ public abstract class VtlFiltering implements Filtering {
     }
 
     public static VtlFiltering or(VtlFiltering... operands) {
+        return new Or(false, operands);
+    }
+
+    public static VtlFiltering or(Collection<VtlFiltering> operands) {
         return new Or(false, operands);
     }
 
@@ -130,6 +146,19 @@ public abstract class VtlFiltering implements Filtering {
 
     public static VtlFiltering literal(boolean negated, Operator operator, String column, Object value) {
         return literal(negated, operator, column, VTLObject.of(value));
+    }
+
+    public static VtlFiltering transform(VtlFiltering orders, BinaryOperator<VtlFiltering> transform) {
+        if (orders.getOperator() == Operator.AND || orders.getOperator() == Operator.OR) {
+            List<VtlFiltering> ops = new ArrayList<>();
+            for (VtlFiltering operand : orders.getOperands()) {
+                VtlFiltering op = transform(operand, transform);
+                ops.add(op);
+            }
+            return nary(orders.isNegated(), orders.getOperator(), ops);
+        } else {
+            return transform.apply(null, orders);
+        }
     }
 
     private void setHashFunction(ToIntFunction<String> function) {
@@ -201,8 +230,7 @@ public abstract class VtlFiltering implements Filtering {
         /**
          * Neutralize the literals of the given filter that cannot be send to the child.
          * <p>
-         * If the filter is a literal, include it only if the columns exists in the current
-         * hash.
+         * If the filter is a literal, transform to TRUE if parent is AND or FALSE if parent is AND.
          */
         public VtlFiltering transposeInternal(FilteringSpecification original) {
 

@@ -30,7 +30,7 @@ public class VtlFilteringTest {
 
         ArrayList<String> dims = Lists.newArrayList("a", "b", "c", "d", "e");
         data = Lists.cartesianProduct(dims, dims).stream().map(strings -> {
-            return DataPoint.create(strings.toArray(new String[0]));
+            return DataPoint.create(strings.toArray(new Object[0]));
         }).collect(Collectors.toList());
     }
 

@@ -39,6 +39,7 @@ import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -232,7 +233,22 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
             }
         }
 
-        VtlFiltering foldFilter = VtlFiltering.using(getChild().getDataStructure()).transpose(filtering);
+        // Transform any filtering referring to the folded columns.
+        VtlFiltering transpose = VtlFiltering.using(this).transpose(filtering);
+        VtlFiltering test = VtlFiltering.transform(transpose, (parent, filter) -> {
+            if (measure.equals(filter.getColumn())) {
+                List<VtlFiltering> ops = new ArrayList<>();
+                for (String element : elements) {
+                    ops.add(VtlFiltering.literal(filter.isNegated(), filter.getOperator(), element, filter.getValue()));
+                }
+                return VtlFiltering.or(ops);
+            } else {
+                return filter;
+            }
+        });
+
+
+        VtlFiltering foldFilter = VtlFiltering.using(getChild().getDataStructure()).transpose(test);
 
         VtlOrdering foldOrdering = new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
         Stream<DataPoint> stream = getChild()
