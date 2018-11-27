@@ -1087,52 +1087,21 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testAggregationMultiple() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, Long.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure);
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "one",
-                        "m1", 101L,
-                        "m2", 1.1d,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "two",
-                        "m1", 102L,
-                        "m2", 1.2d,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "one",
-                        "m1", 201L,
-                        "m2", 2.1d,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two",
-                        "m1", 202L,
-                        "m2", 2.2d,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two-null",
-                        "m1", VTLObject.NULL,
-                        "m2", VTLObject.NULL,
-                        "at1", "attr2"
-                )
-        ).map(structure::wrap));
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, Long.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
+
+                .addPoints(1L, "one", 101L, 1.1d, "attr1")
+                .addPoints(1L, "two", 102L, 1.2d, "attr2")
+                .addPoints(2L, "one", 201L, 2.1d, "attr2")
+                .addPoints(2L, "two", 202L, 2.2d, "attr2")
+                .addPoints(2L, "two-null", null, null, "attr2")
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1) group by id1");
