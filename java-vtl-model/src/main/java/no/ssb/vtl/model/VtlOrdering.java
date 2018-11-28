@@ -29,7 +29,6 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,7 @@ public final class VtlOrdering implements Ordering, OrderingSpecification {
         this(toMap(specification), structure);
     }
 
-    public VtlOrdering(ImmutableMap<String, Direction> specification, DataStructure structure) {
+    public VtlOrdering(Map<String, Direction> specification, DataStructure structure) {
         this.delegate = ImmutableMap.copyOf(specification);
 
         ArrayList<Integer> indices = Lists.newArrayList();
@@ -87,6 +86,10 @@ public final class VtlOrdering implements Ordering, OrderingSpecification {
 
     public static Builder using(Dataset dataset) {
         return new Builder(dataset.getDataStructure());
+    }
+
+    public final ImmutableMap<String, Direction> toMap() {
+        return delegate;
     }
 
     @Override
@@ -150,7 +153,7 @@ public final class VtlOrdering implements Ordering, OrderingSpecification {
             if (o1 == null) {
                 result = (o2 == null) ? 0 : (nullFirst ? -1 : 1);
             } else if (o2 == null) {
-                result = nullFirst ? 1: -1;
+                result = nullFirst ? 1 : -1;
             } else {
                 result = o1.compareTo(o2);
             }

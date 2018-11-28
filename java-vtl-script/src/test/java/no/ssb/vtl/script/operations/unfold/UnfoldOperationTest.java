@@ -134,7 +134,7 @@ public class UnfoldOperationTest {
     @Repeat(iterations = 10)
     public void testUnfold() {
 
-        Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
+
         DatasetCloseWatcher dataset = DatasetCloseWatcher.wrap(StaticDataset.create()
                 .addComponent( "id1", IDENTIFIER, String.class)
                 .addComponent( "id2", IDENTIFIER, String.class)
@@ -154,6 +154,7 @@ public class UnfoldOperationTest {
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
             DataStructure structure = dataset.getDataStructure();
+            Set<String> elements = Sets.newLinkedHashSet(Arrays.asList("id2-1", "id2-2"));
             UnfoldOperation clause = new UnfoldOperation(dataset, structure.get("id2"), structure.get("measure1"), elements);
 
             softly.assertThat(clause.getDataStructure()).containsOnlyKeys(
