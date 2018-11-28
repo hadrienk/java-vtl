@@ -149,7 +149,13 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         }
         Boolean negated = oldFiltering.isNegated();
         FilteringSpecification.Operator operator = oldFiltering.getOperator();
-        if (oldFiltering.getColumn() != null) {
+        if (oldFiltering.getOperator() == FilteringSpecification.Operator.OR || oldFiltering.getOperator() == FilteringSpecification.Operator.AND) {
+            List<VtlFiltering> operands = new ArrayList<>();
+            for (FilteringSpecification operand : oldFiltering.getOperands()) {
+                operands.add(renameFiltering(operand));
+            }
+            return VtlFiltering.nary(negated, operator, operands);
+        } else {
             ImmutableBiMap<String, String> reverseMap = ImmutableBiMap.copyOf(nameMapping).inverse();
             return VtlFiltering.literal(
                     negated,
@@ -157,12 +163,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
                     reverseMap.getOrDefault(oldFiltering.getColumn(), oldFiltering.getColumn()),
                     oldFiltering.getValue()
             );
-        } else {
-            List<VtlFiltering> operands = new ArrayList<>();
-            for (FilteringSpecification operand : oldFiltering.getOperands()) {
-                operands.add(renameFiltering(operand));
-            }
-            return VtlFiltering.nary(negated, operator, operands);
         }
     }
 
