@@ -66,20 +66,20 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
 
         DataStructure dataStructure = getDataStructure();
         DataStructure childStructure = getChild().getDataStructure();
 
-        VtlFiltering unfoldFiltering = (VtlFiltering) unsupportedFiltering(filtering);
-        VtlOrdering unfoldOrdering = (VtlOrdering) unsupportedOrdering(orders);
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
         // Filter out the dimensionName and measureName to get the predicate.
         String dimensionName = childStructure.getName(dimension);
         String measureName = childStructure.getName(measure);
         Ordering predicate = new VtlOrdering(
                 Maps.filterKeys(
-                        unfoldOrdering.toMap(),
+                        childOrdering.toMap(),
                         column -> !measureName.equals(column) && !dimensionName.equals(column)
                 ),
                 childStructure
@@ -87,7 +87,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
 
         // Try to get data sorted as required. If impossible, sort it.
         Stream<? extends DataPoint> sortedStream = getChild()
-                .computeData(unfoldOrdering, unfoldFiltering, components);
+                .computeData(childOrdering, childFiltering, components);
 
 
         Stream<DataPoint> unfoldedStream = StreamUtils.aggregate(sortedStream, (left, right) -> {
@@ -122,9 +122,14 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
             return result;
         });
 
-        if (!orders.equals(unfoldOrdering)) {
-            // TODO: Partial sort.
-            unfoldedStream = unfoldedStream.sorted(orders);
+        // Post filter
+        if (!filtering.equals(childFiltering)) {
+            unfoldedStream = unfoldedStream.filter(filtering);
+        }
+
+        // Post ordering
+        if (!ordering.equals(childOrdering)) {
+            unfoldedStream = unfoldedStream.sorted(ordering);
         }
 
         return unfoldedStream;

@@ -31,6 +31,7 @@ import no.ssb.vtl.model.VTLBoolean;
 import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.expressions.LiteralExpression;
 import no.ssb.vtl.script.expressions.VariableExpression;
 import no.ssb.vtl.script.expressions.VtlFilteringConverter;
@@ -47,6 +48,7 @@ import no.ssb.vtl.script.expressions.logic.XorExpression;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,31 +76,13 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
 
-        VtlFiltering combined = null;
-        try {
+        VtlOrdering childrenOrdering = (VtlOrdering) unsupportedOrdering(ordering);
+        VtlFiltering childrenFiltering = (VtlFiltering) unsupportedFiltering(filtering);
 
-            VtlFiltering operationFilter = VtlFilteringConverter.convert(predicate);
-            System.out.println("op filter :" + operationFilter);
-
-            if (Filtering.ALL != filtering) {
-                VtlFiltering transposed = VtlFiltering.using(this).transpose(filtering);
-                System.out.println("transposed: " + transposed);
-                combined = VtlFiltering.using(this).and(transposed, operationFilter).build();
-            } else {
-                combined = VtlFiltering.using(this).with(operationFilter);
-            }
-            System.out.println("combined  : " + combined);
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-        Stream<DataPoint> data = getChild().computeData(orders, combined, components)
+        Stream<DataPoint> data = getChild().computeData(childrenOrdering, childrenFiltering, components)
                 .map(dataPointBindings::setDataPoint)
                 .filter(bindings -> {
                     VTLObject resolved = predicate.resolve(dataPointBindings);
@@ -118,14 +102,27 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
         return Optional.empty();
     }
 
-
+    /**
+     * In the case of the filter operation, any filter than was received is combined with the
+     * actual expression filter.
+     */
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+        try {
+            VtlFiltering operationFilter = VtlFilteringConverter.convert(predicate);
+            if (Filtering.ALL != filtering) {
+                VtlFiltering transposed = VtlFiltering.using(this).transpose(filtering);
+                return VtlFiltering.using(this).and(transposed, operationFilter).build();
+            } else {
+                return VtlFiltering.using(this).with(operationFilter);
+            }
+        } catch (Exception e) {
+            throw new ParseCancellationException("could not transform filter expression to specification", e);
+        }
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        return new VtlOrdering(ordering, getChild().getDataStructure());
     }
 }

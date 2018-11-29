@@ -27,6 +27,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.graph.Graph;
 import com.google.common.graph.Graphs;
@@ -44,6 +45,9 @@ import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.ArrayList;
@@ -51,6 +55,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -252,36 +257,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
         return this.graphValues;
     }
 
-    private Order computePredicate() {
-
-        // Same as the groupOrder, but we exclude the hierarchy component.
-
-        DataStructure structure = getDataStructure();
-        Order.Builder builder = Order.create(structure);
-        for (Component component : structure.values()) {
-            if (component.isIdentifier() && !component.equals(this.component)) {
-                builder.put(component, Ordering.Direction.ASC); // TODO: Could be ASC or DESC
-            }
-        }
-        return builder.build();
-    }
-
-    private Order computeOrder() {
-
-        // Sort by all the identifiers we are grouping on but the hierarchy element.
-        // The hierarchy element has to be the last one.
-
-        DataStructure structure = getDataStructure();
-        Order.Builder builder = Order.create(structure);
-        for (Component component : structure.values()) {
-            if (component.isIdentifier() && !component.equals(this.component)) {
-                builder.put(component, Ordering.Direction.ASC); // TODO: Could be ASC or DESC
-            }
-        }
-        builder.put(component, Ordering.Direction.ASC); // TODO: Could be ASC or DESC
-        return builder.build();
-    }
-
     @Override
     protected DataStructure computeDataStructure() {
         return getChild().getDataStructure();
@@ -289,32 +264,59 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+        // Simply drop the component.
+        return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        // Sort by all the identifiers we are grouping on but the hierarchy element.
+        // The hierarchy element has to be the last one.
+        DataStructure structure = getChild().getDataStructure();
+        String componentName = structure.getName(component);
+
+        LinkedHashMap<String, Ordering.Direction> directionMap = new LinkedHashMap<>();
+        // Add first the required order from the requested specification.
+        AbstractDatasetOperation childOperation = getChild();
+        for (String column : ordering.columns()) {
+            if (!componentName.equals(column)) {
+                directionMap.put(column, ordering.getDirection(column));
+            }
+        }
+        // Then add remaining columns from the groupByColumns.
+        for (Component component : structure.values()) {
+            if (component.isIdentifier() && !component.equals(this.component)) {
+                directionMap.put(structure.getName(component), Ordering.Direction.ASC);
+            }
+        }
+
+        directionMap.put(structure.getName(component), Ordering.Direction.ASC);
+
+        return new VtlOrdering(directionMap, childOperation.getDataStructure());
     }
 
     @Override
     public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
 
         final DataStructure structure = getDataStructure();
-        final Order groupOrder = computeOrder();
-        final Order groupPredicate = computePredicate();
+
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(orders);
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+
+        String componentName = getChild().getDataStructure().getName(component);
+        VtlOrdering childPredicate = new VtlOrdering(
+                Maps.filterKeys(childOrdering.toMap(), column -> !componentName.equals(column)),
+                getChild().getDataStructure()
+        );
 
         final List<VTLObject> sorted = getGraphValues();
 
         final Map<Component, HierarchyAccumulator> accumulators = createAccumulatorMap();
 
-        // Get the data sorted.
-        Stream<DataPoint> sortedData = getChild().getData(groupOrder)
-                .orElseGet(() -> getChild().getData().sorted(groupOrder));
-
+        Stream<DataPoint> sortedData = getChild().computeData(childOrdering, childFiltering, components);
         Stream<ComposedDataPoint> streamToAggregate = StreamUtils.aggregate(
                 sortedData,
-                (prev, current) -> groupPredicate.compare(prev, current) == 0
+                (prev, current) -> childPredicate.compare(prev, current) == 0
         ).onClose(sortedData::close).map(dataPoints -> {
 
             // Organize the data points in "buckets" for each component. Here we add "sign" information
@@ -362,7 +364,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
         Stream<DataPoint> data = StreamUtils.aggregate(
                 streamToAggregate,
-                (dataPoint, dataPoint2) -> groupOrder.compare(dataPoint, dataPoint2) == 0
+                (dataPoint, dataPoint2) -> childOrdering.compare(dataPoint, dataPoint2) == 0
         ).onClose(streamToAggregate::close).map(dataPoints -> {
 
             DataPoint aggregate;

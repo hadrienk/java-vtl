@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.drop;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,6 +33,8 @@ import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.util.HashSet;
@@ -78,12 +80,12 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        return null;
+        return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        return null;
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        return new VtlOrdering(ordering, getChild().getDataStructure());
     }
 
     @Override
@@ -95,29 +97,43 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
         ImmutableList<Component> componentsToRemove = getComponentsToRemove();
 
-        // Optimization.
-        Stream<DataPoint> stream = getChild().computeData(orders, filtering, components);
-        if (componentsToRemove.isEmpty())
-            return stream;
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
-        // Compute indexes to remove (in reverse order to avoid shifting).
-        final ImmutableSet<Integer> indexes = computeIndexes(componentsToRemove);
+        Stream<DataPoint> stream = getChild().computeData(childOrdering, childFiltering, components);
+        if (!componentsToRemove.isEmpty()) {
+            final ImmutableSet<Integer> indexes = computeIndexes(componentsToRemove);
 
-        return stream.peek(
-                dataPoints -> {
-                    for (Integer index : indexes)
-                        dataPoints.remove((int) index);
-                }
-        );
+            stream = stream.peek(
+                    dataPoints -> {
+                        for (Integer index : indexes)
+                            dataPoints.remove((int) index);
+                    }
+            );
+        }
+
+        // Post filter
+        if (!filtering.equals(childFiltering)) {
+            stream = stream.filter(filtering);
+        }
+
+        // Post ordering
+        if (!ordering.equals(childOrdering)) {
+            stream = stream.sorted(ordering);
+        }
+
+        return stream;
+
     }
 
     /**
      * Find the index of the component in the child data structure.
      */
     private ImmutableSet<Integer> computeIndexes(List<Component> componentsToRemove) {
+        // Compute indexes to remove (in reverse order to avoid shifting).
         TreeSet<Integer> indexes = Sets.newTreeSet();
         List<Component> components = Lists.newArrayList(getChild().getDataStructure().values());
         for (Component component : componentsToRemove) {

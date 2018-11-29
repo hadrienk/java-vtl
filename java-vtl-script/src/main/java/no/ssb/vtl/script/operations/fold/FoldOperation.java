@@ -220,22 +220,34 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
         // To initialize the indices.
         getDataStructure();
 
-        // Remove the identifier and the dimension since they are not present
-        // in the child operation.
-        ImmutableMap.Builder<String, Ordering.Direction> foldOrder = ImmutableMap.builder();
-        for (String column : orders.columns()) {
-            if (!column.equals(dimension) && !column.equals(measure)) {
-                foldOrder.put(column, orders.getDirection(column));
-            }
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+
+        Stream<DataPoint> stream = getChild()
+                .computeData(childOrdering, childFiltering, components).flatMap(this::fold);
+
+        // Post filter
+        if (!filtering.equals(childFiltering)) {
+            stream = stream.filter(filtering);
         }
 
+        // Post ordering
+        if (!ordering.equals(childOrdering)) {
+            stream = stream.sorted(ordering);
+        }
+
+        return stream;
+    }
+
+    @Override
+    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
         // Transform any filtering referring to the folded columns.
-        VtlFiltering transpose = VtlFiltering.using(this).transpose(filtering);
-        VtlFiltering test = VtlFiltering.transform(transpose, (parent, filter) -> {
+        VtlFiltering transposed = VtlFiltering.using(this).transpose(filtering);
+        VtlFiltering transformed = VtlFiltering.transform(transposed, (parent, filter) -> {
             if (measure.equals(filter.getColumn())) {
                 List<VtlFiltering> ops = new ArrayList<>();
                 for (String element : elements) {
@@ -247,32 +259,21 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
             }
         });
 
-
-        VtlFiltering foldFilter = VtlFiltering.using(getChild().getDataStructure()).transpose(test);
-
-        VtlOrdering foldOrdering = new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
-        Stream<DataPoint> stream = getChild()
-                .computeData(foldOrdering, foldFilter, components).flatMap(this::fold);
-
-        if (!filtering.equals(foldFilter)) {
-            stream = stream.filter(filtering);
-        }
-
-        if (!orders.equals(foldOrdering)) {
-            stream = stream.sorted(orders);
-        }
-
-        return stream;
+        return VtlFiltering.using(getChild().getDataStructure()).transpose(transformed);
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
-    }
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
 
-    @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+        // Remove the identifier and the dimension since they are not present
+        // in the child operation.
+        ImmutableMap.Builder<String, Ordering.Direction> foldOrder = ImmutableMap.builder();
+        for (String column : ordering.columns()) {
+            if (!column.equals(dimension) && !column.equals(measure)) {
+                foldOrder.put(column, ordering.getDirection(column));
+            }
+        }
+        return new VtlOrdering(foldOrder.build(), getChild().getDataStructure());
     }
 
     @Override

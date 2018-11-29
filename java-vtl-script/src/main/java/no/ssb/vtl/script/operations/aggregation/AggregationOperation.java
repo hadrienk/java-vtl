@@ -44,6 +44,7 @@ import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -120,17 +121,45 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         return newDataStructure.build();
     }
 
+    /**
+     * Convert the filtering so that it can be handled by the child operation.
+     *
+     * In the case of aggregation operation, only the filters on the resulting identifier
+     * columns can be kept.
+     */
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+        // Easier to use a fake structure.
+        DataStructure childStructure = getChild().getDataStructure();
+        DataStructure.Builder fakeDataStructure = DataStructure.builder();
+        for (String column : groupByColumns) {
+            Component component = childStructure.get(column);
+            fakeDataStructure.put(column, component.getRole(), component.getType());
+        }
+        VtlFiltering transposedFiltering = VtlFiltering.using(fakeDataStructure.build()).transpose(filtering);
+        return VtlFiltering.using(childStructure).with(transposedFiltering);
     }
 
+    /**
+     * Convert the ordering so that is compatible with this group by operation.
+     */
     @Override
     public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
-        // We need all the aggregation columns to be ordered first.
-        // The direction does not matter.
-        List<String> firstColumns = ordering.columns().subList(0, groupByColumns.size());
-        throw new UnsupportedOperationException("TODO");
+
+        LinkedHashMap<String, Ordering.Direction> directionMap = new LinkedHashMap<>();
+        // Add first the required order from the requested specification.
+        AbstractDatasetOperation childOperation = getChild();
+        for (String column : ordering.columns()) {
+            if (groupByColumns.contains(column)) {
+                directionMap.put(column, ordering.getDirection(column));
+            }
+        }
+        // Then add remaining columns from the groupByColumns.
+        for (String groupByColumn : groupByColumns) {
+            directionMap.putIfAbsent(groupByColumn, Ordering.Direction.ASC);
+        }
+
+        return new VtlOrdering(directionMap, childOperation.getDataStructure());
     }
 
     private DataPoint aggregate(List<DataPoint> datapoints) {
@@ -173,31 +202,20 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
         AbstractDatasetOperation childOperation = getChild();
 
-        // Adjust the order to support aggregation. In order to reduce load we should
-        // try to put the columns with the least values last.
-        ImmutableMap.Builder<String, Ordering.Direction> groupByOrder = ImmutableMap.builder();
-        for (String column : groupByColumns) {
-            Ordering.Direction direction = orders.columns().size() > 0 ? orders.getDirection(column) : Ordering.Direction.ASC;
-            if (Ordering.Direction.ANY.equals(direction) || direction == null) {
-                direction = Ordering.Direction.ASC;
-            }
-            groupByOrder.put(column, direction);
-        }
-        VtlOrdering groupByOrdering = new VtlOrdering(groupByOrder.build(), childOperation.getDataStructure());
-
-        // Pass the filter to the child op. Keep result as post filter.
-        VtlFiltering aggregationFilter = VtlFiltering.using(childOperation).transpose(filtering);
+        VtlOrdering groupByOrdering = (VtlOrdering) unsupportedOrdering(orders);
+        VtlFiltering aggregationFilter = (VtlFiltering) unsupportedFiltering(filtering);
 
         Stream<DataPoint> stream = childOperation.computeData(groupByOrdering, aggregationFilter, components);
 
         stream = StreamUtils.aggregate(stream, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
                 .onClose(stream::close).map(this::aggregate);
 
-        //if (postFilter != null) {
-        //    stream = stream.filter(new VtlFiltering(getDataStructure(), filtering));
-        //}
+        // Apply post filter.
+        if (!aggregationFilter.equals(filtering)) {
+            stream = stream.filter(filtering);
+        }
 
-        // Need to reorder.
+        // Post ordering.
         if (!groupByOrdering.equals(orders)) {
             stream = stream.sorted(orders);
         }

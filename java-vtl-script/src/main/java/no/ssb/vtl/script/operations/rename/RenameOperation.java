@@ -103,12 +103,37 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        return getChild().unsupportedFiltering(filtering);
+        if (filtering == Filtering.ALL) {
+            return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
+        }
+        Boolean negated = filtering.isNegated();
+        FilteringSpecification.Operator operator = filtering.getOperator();
+        if (filtering.getOperator() == FilteringSpecification.Operator.OR || filtering.getOperator() == FilteringSpecification.Operator.AND) {
+            List<VtlFiltering> operands = new ArrayList<>();
+            for (FilteringSpecification operand : filtering.getOperands()) {
+                operands.add(renameFiltering(operand));
+            }
+            return VtlFiltering.nary(negated, operator, operands);
+        } else {
+            ImmutableBiMap<String, String> reverseMap = ImmutableBiMap.copyOf(nameMapping).inverse();
+            return VtlFiltering.literal(
+                    negated,
+                    operator,
+                    reverseMap.getOrDefault(filtering.getColumn(), filtering.getColumn()),
+                    filtering.getValue()
+            );
+        }
     }
 
     @Override
     public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
-        return getChild().unsupportedOrdering(ordering);
+        VtlOrdering.Builder builder = VtlOrdering.using(getChild());
+        for (String column : ordering.columns()) {
+            String childColumn = nameMapping.inverse().getOrDefault(column, column);
+            Ordering.Direction direction = ordering.getDirection(column);
+            builder.then(direction, childColumn);
+        }
+        return builder.build();
     }
 
     @Override
@@ -127,11 +152,18 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
-        Ordering ordering = renameOrdering(oldOrdering);
-        Filtering filtering = VtlFiltering.using(getChild()).with(renameFiltering(oldFiltering));
-        System.out.println("renamed filter: " + filtering);
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(oldFiltering);
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(oldOrdering);
+
+        System.out.println("original filter: " + oldFiltering);
+        System.out.println("renamed filter: " + childFiltering);
+        System.out.println("original ordering: " + oldOrdering);
+        System.out.println("renamed ordering: " + childOrdering);
+
         Set<String> components = renameComponent(oldComponents);
-        return getChild().computeData(ordering, filtering, components);
+
+        // No post filter/order since rename does not change the structure.
+        return getChild().computeData(childOrdering, childFiltering, components);
     }
 
     private Set<String> renameComponent(Set<String> oldComponents) {

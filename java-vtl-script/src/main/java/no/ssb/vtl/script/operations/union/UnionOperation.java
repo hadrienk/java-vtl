@@ -81,8 +81,22 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        return null;
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        // Union requires data to be sorted on all identifiers. Start with requested. Add all missing.
+        VtlOrdering.Builder unionOrder = VtlOrdering.using(this);
+        for (String column : ordering.columns()) {
+            unionOrder.then(ordering.getDirection(column), column);
+        }
+        DataStructure structure = getDataStructure();
+        for (String column : structure.keySet()) {
+            if (ordering.columns().contains(column)) {
+                continue;
+            }
+            if (structure.get(column).isIdentifier()) {
+                unionOrder.asc(column);
+            }
+        }
+        return unionOrder.build();
     }
 
     private void checkDataStructures(DataStructure baseDataStructure, DataStructure nextDataStructure) {
@@ -123,14 +137,6 @@ public class UnionOperation extends AbstractDatasetOperation {
         return Maps.filterValues(dataStructure.getRoles(), role -> role != Component.Role.ATTRIBUTE).keySet();
     }
 
-    /**
-     * Manually sort the the stream if the given dataset failed to do so.
-     */
-    private Stream<DataPoint> sortIfNeeded(Filtering filtering, Set<String> components, Dataset dataset, Order adjustedOrders) {
-        Optional<Stream<DataPoint>> stream = dataset.getData(adjustedOrders, filtering, components);
-        return stream.orElseGet(() -> getData().sorted(adjustedOrders).filter(filtering));
-    }
-
     @Override
     public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
 
@@ -138,38 +144,21 @@ public class UnionOperation extends AbstractDatasetOperation {
         if (getChildren().size() == 1)
             return getChildren().get(0).computeData(orders, filtering, components);
 
-        // Union requires data to be sorted on all identifiers. Start with requested. Add all missing.
-        VtlOrdering.Builder unionOrder = VtlOrdering.using(this);
-        for (String column : orders.columns()) {
-            unionOrder.then(orders.getDirection(column), column);
-        }
-        DataStructure structure = getDataStructure();
-        for (String column : structure.keySet()) {
-            if (orders.columns().contains(column)) {
-                continue;
-            }
-            if (structure.get(column).isIdentifier()) {
-                unionOrder.asc(column);
-            }
-        }
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering unionOrder = (VtlOrdering) unsupportedOrdering(orders);
 
+        DataStructure structure = getDataStructure();
         ImmutableList.Builder<Stream<DataPoint>> streams = ImmutableList.builder();
         for (AbstractDatasetOperation child : getChildren()) {
 
-            //FilteringSpecification postFilter = child.unsupportedFiltering(filtering);
+            VtlOrdering unionOrdering = new VtlOrdering(unionOrder, child.getDataStructure());
+            VtlFiltering unionFilter = VtlFiltering.using(child).with(childFiltering);
 
-            VtlOrdering unionOrdering = new VtlOrdering(unionOrder.build(), child.getDataStructure());
-            //VtlFiltering unionFilter = VtlFiltering.using(child).with(filtering);
-            Stream<DataPoint> stream = child.computeData(unionOrdering, filtering, components);
-
-            //if (postFilter != null) {
-            //    stream = stream.filter(new VtlFiltering(child.getDataStructure(), postFilter));
-            //}
-
+            Stream<DataPoint> stream = child.computeData(unionOrdering, unionFilter, components);
             streams.add(stream.map(new DatapointNormalizer(child.getDataStructure(), structure)));
         }
 
-        VtlOrdering unionOrdering = new VtlOrdering(unionOrder.build(), structure);
+        VtlOrdering unionOrdering = new VtlOrdering(unionOrder, structure);
         Stream<DataPoint> result = StreamUtils.interleave(
                 createSelector(unionOrdering), streams.build()
         ).map(new DuplicateChecker(unionOrdering, structure));
