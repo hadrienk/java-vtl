@@ -163,8 +163,8 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
 
         // TODO: Should we allow this?
         // Compare numbers
-        //if (Number.class.isAssignableFrom(other.getClass()) && Number.class.isAssignableFrom(value.getClass()))
-        //    return Double.compare(((Number) value).doubleValue(), ((Number) other).doubleValue());
+        if (Number.class.isAssignableFrom(other.getClass()) && Number.class.isAssignableFrom(value.getClass()))
+            return Double.compare(((Number) value).doubleValue(), ((Number) other).doubleValue());
 
         // Compare comparable.
         if (other.getClass() == value.getClass() && value instanceof Comparable)

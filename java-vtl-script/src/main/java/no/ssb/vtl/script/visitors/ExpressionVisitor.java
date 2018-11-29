@@ -190,6 +190,8 @@ public class ExpressionVisitor extends VTLBaseVisitor<VTLExpression> {
     }
 
     private VTLExpression getEqualityExpression(VTLParser.BinaryExprContext ctx) {
+
+        // TODO: Check that both expression can be compared.
         VTLExpression leftExpression = visit(ctx.left);
         VTLExpression rightExpression = visit(ctx.right);
 
