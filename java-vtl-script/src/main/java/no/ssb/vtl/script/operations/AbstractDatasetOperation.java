@@ -58,8 +58,6 @@ public abstract class AbstractDatasetOperation implements Dataset {
         this.children = childrenCopy.build();
     }
 
-    public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
-
     @Override
     public final Stream<DataPoint> getData() {
         VtlOrdering.Builder ordering = VtlOrdering.using(this);
@@ -87,7 +85,6 @@ public abstract class AbstractDatasetOperation implements Dataset {
     }
 
     @Override
-    @Deprecated
     public final Optional<Stream<DataPoint>> getData(Set<String> components) {
         return Optional.of(computeData(Ordering.ANY, Filtering.ALL, components));
     }
@@ -98,19 +95,21 @@ public abstract class AbstractDatasetOperation implements Dataset {
     }
 
     /**
-     * Implementation uses this method to create the datastructure only once.
+     * Implementation should uses this method to create the data structure only once.
      */
     protected abstract DataStructure computeDataStructure();
 
+    public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
+
     /**
-     * Returns a copy of the filtering specification this operation cannot handle.
+     * Returns the pre filter
      */
     public abstract FilteringSpecification unsupportedFiltering(FilteringSpecification filtering);
 
     /**
      * Returns a copy of the ordering specification this operation cannot handle.
      */
-    public abstract OrderingSpecification unsupportedOrdering(OrderingSpecification filtering);
+    public abstract OrderingSpecification unsupportedOrdering(OrderingSpecification ordering);
 
     /**
      * Returns the children {@link AbstractDatasetOperation} of this operation.

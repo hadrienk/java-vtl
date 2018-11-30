@@ -37,6 +37,8 @@ import no.ssb.vtl.model.VTLInteger;
 import no.ssb.vtl.model.VTLNumber;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VTLString;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 
 import java.time.Instant;
@@ -134,15 +136,21 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
         DataStructure childDataStructure = getChild().getDataStructure();
 
         DataStructure dataStructure = getDataStructure();
         Component component = dataStructure.get(identifier);
+        DataPointBindings dataPointBindings = new DataPointBindings(
+                componentBindings,
+                childDataStructure
+        );
 
-        DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, childDataStructure);
+        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
-        Stream<DataPoint> data =  getChild().getData().peek(datapoint -> {
+        Stream<DataPoint> stream = getChild().computeData(childOrdering, childFiltering, components);
+        stream = stream.peek(datapoint -> {
 
             if (childDataStructure.size() < dataStructure.size())
                 datapoint.add(VTLObject.NULL);
@@ -152,7 +160,18 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
             dataStructure.asMap(datapoint).put(component, resolved);
         });
-        return data;
+
+        // Post filter
+        if (!filtering.equals(childFiltering)) {
+            stream = stream.filter(filtering);
+        }
+
+        // Post ordering
+        if (!ordering.equals(childOrdering)) {
+            stream = stream.sorted(ordering);
+        }
+
+        return stream;
     }
 
     @Override
@@ -165,14 +184,14 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         return getChild().getSize();
     }
 
-
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+        // TODO: On simple assignments like x := y we could try to transform the filter.
+        return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
     public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        throw new UnsupportedOperationException("TODO");
+        return new VtlOrdering(filtering, getChild().getDataStructure());
     }
 }
