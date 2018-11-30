@@ -22,7 +22,6 @@ package no.ssb.vtl.script.operations.aggregation;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
@@ -42,6 +41,7 @@ import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.TypeException;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.LinkedHashMap;
@@ -123,7 +123,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
     /**
      * Convert the filtering so that it can be handled by the child operation.
-     *
+     * <p>
      * In the case of aggregation operation, only the filters on the resulting identifier
      * columns can be kept.
      */
@@ -205,10 +205,11 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering groupByOrdering = (VtlOrdering) unsupportedOrdering(orders);
         VtlFiltering aggregationFilter = (VtlFiltering) unsupportedFiltering(filtering);
 
-        Stream<DataPoint> stream = childOperation.computeData(groupByOrdering, aggregationFilter, components);
+        Stream<DataPoint> original = childOperation.computeData(groupByOrdering, aggregationFilter, components);
 
-        stream = StreamUtils.aggregate(stream, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
-                .onClose(stream::close).map(this::aggregate);
+        // TODO: Move close logic to VtlStream.
+        Stream<DataPoint> stream = StreamUtils.aggregate(original, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
+                .onClose(original::close).map(this::aggregate);
 
         // Apply post filter.
         if (!aggregationFilter.equals(filtering)) {
@@ -220,7 +221,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
             stream = stream.sorted(orders);
         }
 
-        return stream;
+        return new VtlStream(this, stream, original, orders, filtering, groupByOrdering, aggregationFilter);
     }
 
     @Override

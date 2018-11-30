@@ -38,6 +38,7 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -227,9 +228,8 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
 
-        Stream<DataPoint> stream = getChild()
-                .computeData(childOrdering, childFiltering, components).flatMap(this::fold);
-
+        Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
+        Stream<DataPoint> stream = original.flatMap(this::fold);
         // Post filter
         if (!filtering.equals(childFiltering)) {
             stream = stream.filter(filtering);
@@ -240,7 +240,7 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
             stream = stream.sorted(ordering);
         }
 
-        return stream;
+        return new VtlStream(this, stream, original, ordering, filtering, childOrdering, childFiltering);
     }
 
     @Override

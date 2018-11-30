@@ -41,23 +41,21 @@ package no.ssb.vtl.script.operations.rename;
  */
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,15 +153,17 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(oldFiltering);
         VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(oldOrdering);
 
-        System.out.println("original filter: " + oldFiltering);
-        System.out.println("renamed filter: " + childFiltering);
-        System.out.println("original ordering: " + oldOrdering);
-        System.out.println("renamed ordering: " + childOrdering);
-
         Set<String> components = renameComponent(oldComponents);
 
         // No post filter/order since rename does not change the structure.
-        return getChild().computeData(childOrdering, childFiltering, components);
+        Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
+        return new VtlStream(this, original,
+                Collections.singletonList(original),
+                oldOrdering,
+                oldFiltering,
+                childOrdering,
+                childFiltering
+        );
     }
 
     private Set<String> renameComponent(Set<String> oldComponents) {

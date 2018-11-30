@@ -36,7 +36,9 @@ import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -86,7 +88,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
         );
 
         // Try to get data sorted as required. If impossible, sort it.
-        Stream<? extends DataPoint> sortedStream = getChild()
+        Stream<DataPoint> sortedStream = getChild()
                 .computeData(childOrdering, childFiltering, components);
 
 
@@ -132,7 +134,13 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
             unfoldedStream = unfoldedStream.sorted(ordering);
         }
 
-        return unfoldedStream;
+        return new VtlStream(this, unfoldedStream,
+                sortedStream,
+                ordering,
+                filtering,
+                childOrdering,
+                childFiltering
+        );
     }
 
     @Override

@@ -20,6 +20,7 @@ package no.ssb.vtl.script.operations.join;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
@@ -33,6 +34,7 @@ import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
@@ -78,21 +80,25 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         // Compute the predicate
         Ordering predicate = computePredicate(requiredOrder);
 
+        // TODO: Use abstract operation here.
         Iterator<Dataset> iterator = datasets.values().iterator();
         Dataset left = iterator.next();
         Dataset right = left;
 
-        // Close all children
+        ImmutableList.Builder<Stream<DataPoint>> originals = ImmutableList.builder();
+
         Closer closer = Closer.create();
         try {
 
             Table<Component, Dataset, Component> componentMapping = getComponentMapping();
-            Stream<DataPoint> result = getOrSortData(
+            Stream<DataPoint> original = getOrSortData(
                     left,
                     adjustOrderForStructure(requiredOrder, left.getDataStructure()),
                     filtering,
                     components
-            ).peek(new DataPointCapacityExpander(getDataStructure().size()));
+            );
+            originals.add(original);
+            Stream<DataPoint> result = original.peek(new DataPointCapacityExpander(getDataStructure().size()));
             closer.register(result);
 
 
@@ -107,6 +113,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                         filtering,
                         components
                 );
+                originals.add(original);
                 closer.register(rightStream);
 
                 // The first left stream uses its own structure. After that, the left data structure
@@ -132,13 +139,25 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
 
             // Close all the underlying streams.
-            return result.onClose(() -> {
+            Stream<DataPoint> delegate = result.onClose(() -> {
                 try {
                     closer.close();
                 } catch (IOException e) {
                     // ignore (cannot happen).
                 }
             });
+
+            // TODO: Post order and post filter.
+            // TODO: Closer could be moved to VtlStream.
+            return new VtlStream(
+                    this,
+                    delegate,
+                    originals.build(),
+                    requestedOrder,
+                    filtering,
+                    requiredOrder,
+                    filtering
+            );
 
         } catch (Exception ex) {
             try {

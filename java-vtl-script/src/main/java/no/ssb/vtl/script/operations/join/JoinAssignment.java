@@ -40,6 +40,7 @@ import no.ssb.vtl.model.VTLString;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
 import java.time.Instant;
 import java.util.Map;
@@ -149,8 +150,8 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
         VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
-        Stream<DataPoint> stream = getChild().computeData(childOrdering, childFiltering, components);
-        stream = stream.peek(datapoint -> {
+        Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
+        Stream<DataPoint> stream = original.peek(datapoint -> {
 
             if (childDataStructure.size() < dataStructure.size())
                 datapoint.add(VTLObject.NULL);
@@ -171,7 +172,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             stream = stream.sorted(ordering);
         }
 
-        return stream;
+        return new VtlStream(this, stream, original, ordering, filtering, childOrdering, childFiltering);
     }
 
     @Override
@@ -191,7 +192,15 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
-        return new VtlOrdering(filtering, getChild().getDataStructure());
+    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+        // Remove the assigned column.
+        // On simple identifier assignment, we could rename the ordering.
+        VtlOrdering.Builder builder = VtlOrdering.using(getChild());
+        for (String column : ordering.columns()) {
+            if (!identifier.equals(column)) {
+                builder.then(ordering.getDirection(column), column);
+            }
+        }
+        return builder.build();
     }
 }

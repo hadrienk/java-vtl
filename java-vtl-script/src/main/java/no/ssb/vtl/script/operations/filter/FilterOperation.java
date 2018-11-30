@@ -32,27 +32,14 @@ import no.ssb.vtl.model.VTLExpression;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
-import no.ssb.vtl.script.expressions.LiteralExpression;
-import no.ssb.vtl.script.expressions.VariableExpression;
 import no.ssb.vtl.script.expressions.VtlFilteringConverter;
-import no.ssb.vtl.script.expressions.equality.AbstractEqualityExpression;
-import no.ssb.vtl.script.expressions.equality.EqualExpression;
-import no.ssb.vtl.script.expressions.equality.GraterThanExpression;
-import no.ssb.vtl.script.expressions.equality.GreaterOrEqualExpression;
-import no.ssb.vtl.script.expressions.equality.LesserOrEqualExpression;
-import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
-import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
-import no.ssb.vtl.script.expressions.logic.AndExpression;
-import no.ssb.vtl.script.expressions.logic.OrExpression;
-import no.ssb.vtl.script.expressions.logic.XorExpression;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -82,14 +69,22 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering childrenOrdering = (VtlOrdering) unsupportedOrdering(ordering);
         VtlFiltering childrenFiltering = (VtlFiltering) unsupportedFiltering(filtering);
 
-        Stream<DataPoint> data = getChild().computeData(childrenOrdering, childrenFiltering, components)
-                .map(dataPointBindings::setDataPoint)
+        Stream<DataPoint> data = getChild().computeData(childrenOrdering, childrenFiltering, components);
+        Stream<DataPoint> original = data;
+
+        data = data.map(dataPointBindings::setDataPoint)
                 .filter(bindings -> {
                     VTLObject resolved = predicate.resolve(dataPointBindings);
                     return resolved.get() == null ? false : VTLBoolean.of((Boolean) resolved.get()).get();
                 })
                 .map(DataPointBindings::getDataPoint);
-        return data;
+        return new VtlStream(this, data,
+                Collections.singletonList(original),
+                ordering,
+                filtering,
+                null,
+                null
+        );
     }
 
     @Override

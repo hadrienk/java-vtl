@@ -36,7 +36,9 @@ import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -104,6 +106,7 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
         Stream<DataPoint> stream = getChild().computeData(childOrdering, childFiltering, components);
+        Stream<DataPoint> original = stream;
         if (!componentsToRemove.isEmpty()) {
             final ImmutableSet<Integer> indexes = computeIndexes(componentsToRemove);
 
@@ -125,7 +128,13 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
             stream = stream.sorted(ordering);
         }
 
-        return stream;
+        return new VtlStream(this, stream,
+                Collections.singletonList(original),
+                ordering,
+                filtering,
+                childOrdering,
+                childFiltering
+        );
 
     }
 

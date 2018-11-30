@@ -40,6 +40,7 @@ import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -138,23 +139,25 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
 
         // Optimization.
         if (getChildren().size() == 1)
-            return getChildren().get(0).computeData(orders, filtering, components);
+            return getChildren().get(0).computeData(ordering, filtering, components);
 
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
-        VtlOrdering unionOrder = (VtlOrdering) unsupportedOrdering(orders);
+        VtlOrdering unionOrder = (VtlOrdering) unsupportedOrdering(ordering);
 
         DataStructure structure = getDataStructure();
         ImmutableList.Builder<Stream<DataPoint>> streams = ImmutableList.builder();
+        ImmutableList.Builder<Stream<DataPoint>> originals = ImmutableList.builder();
         for (AbstractDatasetOperation child : getChildren()) {
 
             VtlOrdering unionOrdering = new VtlOrdering(unionOrder, child.getDataStructure());
             VtlFiltering unionFilter = VtlFiltering.using(child).with(childFiltering);
 
             Stream<DataPoint> stream = child.computeData(unionOrdering, unionFilter, components);
+            originals.add(stream);
             streams.add(stream.map(new DatapointNormalizer(child.getDataStructure(), structure)));
         }
 
@@ -163,7 +166,18 @@ public class UnionOperation extends AbstractDatasetOperation {
                 createSelector(unionOrdering), streams.build()
         ).map(new DuplicateChecker(unionOrdering, structure));
 
-        return result;
+        // Post filter
+        if (!filtering.equals(childFiltering)) {
+            result = result.filter(filtering);
+        }
+
+        // Post ordering
+        if (!ordering.equals(unionOrder)) {
+            result = result.sorted(ordering);
+        }
+
+        return new VtlStream(
+                this, result, originals.build(), ordering, filtering, unionOrdering, childFiltering);
     }
 
     private <T> Selector<T> createSelector(Comparator<T> comparator) {

@@ -41,7 +41,6 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VTLObject;
@@ -49,6 +48,7 @@ import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
+import no.ssb.vtl.script.operations.VtlStream;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -296,11 +296,11 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
 
         final DataStructure structure = getDataStructure();
 
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(orders);
+        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
 
         String componentName = getChild().getDataStructure().getName(component);
@@ -400,7 +400,17 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             return aggregate;
         });
 
-        return data;
+        // Post filter
+        if (!filtering.equals(childFiltering)) {
+            data = data.filter(filtering);
+        }
+
+        // Post ordering
+        if (!ordering.equals(childOrdering)) {
+            data = data.sorted(ordering);
+        }
+
+        return new VtlStream(this, sortedData, data, ordering, filtering, childOrdering, childFiltering);
     }
 
     private Map<Component, HierarchyAccumulator> createAccumulatorMap() {
