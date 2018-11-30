@@ -77,7 +77,7 @@ public class UnionOperation extends AbstractDatasetOperation {
 
     @Override
     public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
-        return null;
+        return VtlFiltering.using(this).transpose(filtering);
     }
 
     @Override
