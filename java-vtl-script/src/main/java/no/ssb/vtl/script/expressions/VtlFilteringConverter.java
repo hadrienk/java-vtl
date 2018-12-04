@@ -9,6 +9,8 @@ import no.ssb.vtl.script.expressions.equality.AbstractEqualityExpression;
 import no.ssb.vtl.script.expressions.equality.EqualExpression;
 import no.ssb.vtl.script.expressions.equality.GraterThanExpression;
 import no.ssb.vtl.script.expressions.equality.GreaterOrEqualExpression;
+import no.ssb.vtl.script.expressions.equality.IsNotNullExpression;
+import no.ssb.vtl.script.expressions.equality.IsNullExpression;
 import no.ssb.vtl.script.expressions.equality.LesserOrEqualExpression;
 import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
 import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
@@ -41,7 +43,15 @@ public class VtlFilteringConverter {
         if (literalExpression == null || variableExpression == null) {
             return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
         } else {
-            String column = variableExpression.getIdentifier();
+
+            // Use the internal identifier with dataset prefix if it is a membership expression.
+            // This should be refactored at some point.
+            String column = "";
+            if (variableExpression instanceof MembershipExpression) {
+                column = ((MembershipExpression) variableExpression).getDatasetIdentifier() + "_";
+            }
+            column = column + variableExpression.getIdentifier();
+
             VTLObject value = literalExpression.resolve(null);
             if (equalityExpression instanceof EqualExpression) {
                 return VtlFiltering.eq(column, value.get());
@@ -55,6 +65,12 @@ public class VtlFilteringConverter {
                 return VtlFiltering.le(column, value.get());
             } else if (equalityExpression instanceof LesserThanExpression) {
                 return VtlFiltering.lt(column, value.get());
+            } else if (equalityExpression instanceof IsNullExpression) {
+                if (equalityExpression instanceof IsNotNullExpression) {
+                    return VtlFiltering.neq(column, value.get());
+                } else {
+                    return VtlFiltering.eq(column, value.get());
+                }
             }
             return null;
         }

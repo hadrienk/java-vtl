@@ -7,6 +7,8 @@ public class VtlConfiguration {
     private boolean filterOptimization = true;
     private boolean filterPropagation = true;
 
+    private boolean profiling = true;
+
     public static VtlConfiguration getConfig() {
         return localConfiguration.get();
     }
@@ -32,6 +34,14 @@ public class VtlConfiguration {
      */
     public boolean isFilterPropagationEnabled() {
         return this.filterPropagation;
+    }
+
+    /**
+     * Profiling enables counting and timing data processing. Note that profiling will
+     * reduce performances.
+     */
+    public boolean isProfilingEnabled() {
+        return profiling;
     }
 
 }

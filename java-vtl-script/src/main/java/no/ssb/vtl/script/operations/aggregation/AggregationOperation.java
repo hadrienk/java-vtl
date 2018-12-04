@@ -24,6 +24,12 @@ import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.DefaultRegistry;
+import com.netflix.spectator.api.Measurement;
+import com.netflix.spectator.api.Meter;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.Timer;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
@@ -49,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class AggregationOperation extends AbstractUnaryDatasetOperation {
@@ -61,6 +68,8 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     private final ImmutableList<String> columns;
     private final ImmutableList<String> childColumns;
     private final ImmutableList<String> groupByColumns;
+
+    Registry registry = new DefaultRegistry();
 
     public AggregationOperation(Dataset child, List<Component> groupBy, List<Component> aggregationComponents, AbstractAggregationFunction<? extends VTLNumber> aggregationFunction) {
         super(child);
@@ -163,7 +172,6 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
     }
 
     private DataPoint aggregate(List<DataPoint> datapoints) {
-
         DataPoint result = DataPoint.create(columns.size());
 
         // Aggregate and copy into the result.
