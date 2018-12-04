@@ -150,7 +150,7 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
         VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
-        Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
+        final Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
         Stream<DataPoint> stream = original.peek(datapoint -> {
 
             if (childDataStructure.size() < dataStructure.size())

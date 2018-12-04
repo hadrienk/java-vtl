@@ -105,8 +105,8 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
         VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
         VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
 
-        Stream<DataPoint> stream = getChild().computeData(childOrdering, childFiltering, components);
-        Stream<DataPoint> original = stream;
+        final Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
+        Stream<DataPoint> stream = original;
         if (!componentsToRemove.isEmpty()) {
             final ImmutableSet<Integer> indexes = computeIndexes(componentsToRemove);
 
@@ -129,7 +129,7 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
         }
 
         return new VtlStream(this, stream,
-                Collections.singletonList(original),
+                original,
                 ordering,
                 filtering,
                 childOrdering,

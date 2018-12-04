@@ -158,7 +158,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         // No post filter/order since rename does not change the structure.
         Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
         return new VtlStream(this, original,
-                Collections.singletonList(original),
+                original,
                 oldOrdering,
                 oldFiltering,
                 childOrdering,
@@ -196,19 +196,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
                     oldFiltering.getValue()
             );
         }
-    }
-
-    /**
-     * Make sure that the ordering uses the correct names.
-     */
-    private Ordering renameOrdering(Ordering oldOrdering) {
-        VtlOrdering.Builder ordering = VtlOrdering.using(getChild());
-        for (String column : oldOrdering.columns()) {
-            String childColumn = nameMapping.inverse().getOrDefault(column, column);
-            Ordering.Direction direction = oldOrdering.getDirection(column);
-            ordering.then(direction, childColumn);
-        }
-        return ordering.build();
     }
 
     @Override

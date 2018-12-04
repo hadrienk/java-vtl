@@ -31,7 +31,6 @@ public class VtlFilteringConverter {
         VTLExpression rightOperand = equalityExpression.getRightOperand();
         VariableExpression variableExpression = null;
         LiteralExpression literalExpression = null;
-        // TODO: Handle membership.
         for (VTLExpression operand : Arrays.asList(leftOperand, rightOperand)) {
             if (operand instanceof VariableExpression) {
                 variableExpression = (VariableExpression) operand;

@@ -23,10 +23,8 @@ public class VtlStream extends ForwardingStream<DataPoint> {
     private final Ordering requestedOrdering;
     private final Filtering requestedFiltering;
     private VtlStream child;
-
     private Ordering postOrdering;
     private Filtering postFiltering;
-
     public VtlStream(
             AbstractDatasetOperation operation,
             Stream<DataPoint> delegate,
@@ -39,7 +37,6 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         this(operation, delegate, Collections.singletonList(parent), requestedOrdering, requestedFiltering,
                 postOrdering, postFiltering);
     }
-
     public VtlStream(
             AbstractDatasetOperation operation,
             Stream<DataPoint> delegate,

@@ -79,7 +79,7 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
                 })
                 .map(DataPointBindings::getDataPoint);
         return new VtlStream(this, data,
-                Collections.singletonList(original),
+                original,
                 ordering,
                 filtering,
                 null,

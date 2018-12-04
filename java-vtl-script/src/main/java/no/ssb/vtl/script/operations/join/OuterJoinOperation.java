@@ -136,7 +136,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                         filtering,
                         components
                 );
-                originals.add(original);
+                originals.add(rightStream);
                 closer.register(rightStream);
 
                 // The first left stream uses its own structure. After that, the left data structure
