@@ -18,8 +18,10 @@ import no.ssb.vtl.script.expressions.logic.AndExpression;
 import no.ssb.vtl.script.expressions.logic.OrExpression;
 import no.ssb.vtl.script.expressions.logic.XorExpression;
 
+import javax.script.SimpleBindings;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -29,19 +31,14 @@ public class VtlFilteringConverter {
     public static VtlFiltering convert(AbstractEqualityExpression equalityExpression) {
         VTLExpression leftOperand = equalityExpression.getLeftOperand();
         VTLExpression rightOperand = equalityExpression.getRightOperand();
-        VariableExpression variableExpression = null;
-        LiteralExpression literalExpression = null;
-        for (VTLExpression operand : Arrays.asList(leftOperand, rightOperand)) {
-            if (operand instanceof VariableExpression) {
-                variableExpression = (VariableExpression) operand;
-            }
-            if (operand instanceof LiteralExpression) {
-                literalExpression = (LiteralExpression) operand;
-            }
-        }
-        if (literalExpression == null || variableExpression == null) {
-            return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
-        } else {
+
+        // We only support filter in the form of variable OP literal.
+        if ((leftOperand instanceof VariableExpression && rightOperand instanceof LiteralExpression) ||
+                (leftOperand instanceof LiteralExpression && rightOperand instanceof VariableExpression)) {
+            VariableExpression variableExpression = (VariableExpression) (leftOperand instanceof VariableExpression ?
+                                leftOperand : rightOperand);
+            LiteralExpression literalExpression = (LiteralExpression) (leftOperand instanceof LiteralExpression ?
+                                leftOperand : rightOperand);
 
             // Use the internal identifier with dataset prefix if it is a membership expression.
             // This should be refactored at some point.
@@ -71,8 +68,9 @@ public class VtlFilteringConverter {
                     return VtlFiltering.eq(column, value.get());
                 }
             }
-            return null;
         }
+        // Unsupported expressions are converted to TRUE.
+        return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
     }
 
     public static VtlFiltering convert(VTLExpression predicate) {
@@ -89,10 +87,10 @@ public class VtlFilteringConverter {
         } else if (predicate instanceof AbstractEqualityExpression) {
             return convert((AbstractEqualityExpression) predicate);
         } else if (predicate instanceof LiteralExpression) {
-            VTLBoolean value = (VTLBoolean) predicate.resolve(null);
+            VTLBoolean value = (VTLBoolean) predicate.resolve(new SimpleBindings(Collections.emptyMap()));
             return VtlFiltering.literal(!value.get(), FilteringSpecification.Operator.TRUE, null, value);
         }
-        return null;
+        return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
     }
 
     public static VtlFiltering convert(OrExpression orExpression) {
