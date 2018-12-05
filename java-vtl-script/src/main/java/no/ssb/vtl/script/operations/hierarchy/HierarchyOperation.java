@@ -263,13 +263,13 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         // Simply drop the component.
         return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         // Sort by all the identifiers we are grouping on but the hierarchy element.
         // The hierarchy element has to be the last one.
         DataStructure structure = getChild().getDataStructure();
@@ -300,8 +300,8 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
 
         final DataStructure structure = getDataStructure();
 
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
 
         String componentName = getChild().getDataStructure().getName(component);
         VtlOrdering childPredicate = new VtlOrdering(

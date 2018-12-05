@@ -39,7 +39,6 @@ import no.ssb.vtl.script.operations.join.ComponentBindings;
 import no.ssb.vtl.script.operations.join.DataPointBindings;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -66,8 +65,8 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
         DataPointBindings dataPointBindings = new DataPointBindings(componentBindings, getDataStructure());
 
-        VtlOrdering childrenOrdering = (VtlOrdering) unsupportedOrdering(ordering);
-        VtlFiltering childrenFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering childrenOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
+        VtlFiltering childrenFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
 
         Stream<DataPoint> data = getChild().computeData(childrenOrdering, childrenFiltering, components);
         Stream<DataPoint> original = data;
@@ -102,7 +101,7 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
      * actual expression filter.
      */
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         try {
             VtlFiltering operationFilter = VtlFilteringConverter.convert(predicate);
             if (Filtering.ALL != filtering) {
@@ -117,7 +116,7 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         return new VtlOrdering(ordering, getChild().getDataStructure());
     }
 }

@@ -24,7 +24,6 @@ import com.codepoetics.protonpack.StreamUtils;
 import com.codepoetics.protonpack.selectors.Selector;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.model.Component;
@@ -34,7 +33,6 @@ import no.ssb.vtl.model.DatapointNormalizer;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlFiltering;
@@ -77,12 +75,12 @@ public class UnionOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         return VtlFiltering.using(this).transpose(filtering);
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         // Union requires data to be sorted on all identifiers. Start with requested. Add all missing.
         VtlOrdering.Builder unionOrder = VtlOrdering.using(this);
         for (String column : ordering.columns()) {
@@ -145,8 +143,8 @@ public class UnionOperation extends AbstractDatasetOperation {
         if (getChildren().size() == 1)
             return getChildren().get(0).computeData(ordering, filtering, components);
 
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
-        VtlOrdering unionOrder = (VtlOrdering) unsupportedOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
+        VtlOrdering unionOrder = (VtlOrdering) computeRequiredOrdering(ordering);
 
         DataStructure structure = getDataStructure();
         ImmutableList.Builder<Stream<DataPoint>> streams = ImmutableList.builder();

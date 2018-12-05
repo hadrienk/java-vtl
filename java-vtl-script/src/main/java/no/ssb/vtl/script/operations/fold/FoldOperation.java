@@ -225,8 +225,8 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
         // To initialize the indices.
         getDataStructure();
 
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
 
         final Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
         Stream<DataPoint> stream = original.flatMap(this::fold);
@@ -244,7 +244,7 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         // Transform any filtering referring to the folded columns.
         VtlFiltering transposed = VtlFiltering.using(this).transpose(filtering);
         VtlFiltering transformed = VtlFiltering.transform(transposed, (parent, filter) -> {
@@ -263,7 +263,7 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
 
         // Remove the identifier and the dimension since they are not present
         // in the child operation.

@@ -29,7 +29,7 @@ import java.util.List;
  */
 public interface Ordering extends Comparator<DataPoint>, OrderingSpecification {
 
-    public static final Ordering ANY = new Ordering() {
+    Ordering ANY = new Ordering() {
         @Override
         public int compare(DataPoint o1, DataPoint o2) {
             return 0;

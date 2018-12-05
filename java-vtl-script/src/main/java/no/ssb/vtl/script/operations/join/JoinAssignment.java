@@ -147,8 +147,8 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
                 childDataStructure
         );
 
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
 
         final Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
         Stream<DataPoint> stream = original.peek(datapoint -> {
@@ -186,13 +186,13 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         // TODO: On simple assignments like x := y we could try to transform the filter.
         return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         // Remove the assigned column.
         // On simple identifier assignment, we could rename the ordering.
         VtlOrdering.Builder builder = VtlOrdering.using(getChild());

@@ -27,7 +27,6 @@ package no.ssb.vtl.script.operations.aggregation;
 import com.google.common.collect.ImmutableList;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
@@ -110,34 +109,34 @@ public class AggregationOperationTest {
         VtlFiltering filterOnId1 = VtlFiltering.using(op).with(
                 VtlFiltering.eq("id1", "a")
         );
-        assertThat(op.unsupportedFiltering(filterOnId1).toString())
+        assertThat(op.computeRequiredFiltering(filterOnId1).toString())
                 .isEqualTo("id1=a");
 
         VtlFiltering filterOnId2 = VtlFiltering.using(op).with(
                 VtlFiltering.eq("id2", "1")
         );
-        assertThat(op.unsupportedFiltering(filterOnId2).toString())
+        assertThat(op.computeRequiredFiltering(filterOnId2).toString())
                 .isEqualTo("TRUE");
 
         VtlFiltering filterOnId1AndId2 = VtlFiltering.and(
                 filterOnId1, filterOnId2
         );
-        assertThat(op.unsupportedFiltering(filterOnId1AndId2).toString())
+        assertThat(op.computeRequiredFiltering(filterOnId1AndId2).toString())
                 .isEqualTo("(id1=a&TRUE)");
 
         VtlFiltering filterOnM1 = VtlFiltering.using(op).with(
                 VtlFiltering.le("m1", 1L)
         );
-        assertThat(op.unsupportedFiltering(filterOnM1).toString())
+        assertThat(op.computeRequiredFiltering(filterOnM1).toString())
                 .isEqualTo("TRUE");
 
         VtlFiltering filterOnId1AndId2AndM1 = VtlFiltering.and(
                 filterOnId1, filterOnId2, filterOnM1
         );
-        assertThat(op.unsupportedFiltering(filterOnId1AndId2AndM1).toString())
+        assertThat(op.computeRequiredFiltering(filterOnId1AndId2AndM1).toString())
                 .isEqualTo("(id1=a&TRUE&TRUE)");
 
-        VtlFiltering childFilter = (VtlFiltering) op.unsupportedFiltering(filterOnId1);
+        VtlFiltering childFilter = (VtlFiltering) op.computeRequiredFiltering(filterOnId1);
         assertThat(op.getData().filter(childFilter)).containsExactly(
                 DataPoint.create("a", 15)
         );
@@ -168,10 +167,10 @@ public class AggregationOperationTest {
                 new AggregationSumFunction()
         );
 
-        assertThat(op.unsupportedOrdering(VtlOrdering.using(op).desc("id1").build()).toString())
+        assertThat(op.computeRequiredOrdering(VtlOrdering.using(op).desc("id1").build()).toString())
                 .isEqualTo("VtlOrdering{id1=DESC, id3=ASC, id2=ASC}");
 
-        assertThat(op.unsupportedOrdering(VtlOrdering.using(op).desc("id3").desc("id1").build()).toString())
+        assertThat(op.computeRequiredOrdering(VtlOrdering.using(op).desc("id3").desc("id1").build()).toString())
                 .isEqualTo("VtlOrdering{id3=DESC, id1=DESC, id2=ASC}");
 
     }

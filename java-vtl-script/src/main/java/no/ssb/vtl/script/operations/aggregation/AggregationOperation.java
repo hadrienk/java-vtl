@@ -137,7 +137,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
      * columns can be kept.
      */
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         // Easier to use a fake structure.
         DataStructure childStructure = getChild().getDataStructure();
         DataStructure.Builder fakeDataStructure = DataStructure.builder();
@@ -153,7 +153,7 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
      * Convert the ordering so that is compatible with this group by operation.
      */
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
 
         LinkedHashMap<String, Ordering.Direction> directionMap = new LinkedHashMap<>();
         // Add first the required order from the requested specification.
@@ -210,8 +210,8 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
 
         AbstractDatasetOperation childOperation = getChild();
 
-        VtlOrdering groupByOrdering = (VtlOrdering) unsupportedOrdering(orders);
-        VtlFiltering aggregationFilter = (VtlFiltering) unsupportedFiltering(filtering);
+        VtlOrdering groupByOrdering = (VtlOrdering) computeRequiredOrdering(orders);
+        VtlFiltering aggregationFilter = (VtlFiltering) computeRequiredFiltering(filtering);
 
         Stream<DataPoint> original = childOperation.computeData(groupByOrdering, aggregationFilter, components);
 

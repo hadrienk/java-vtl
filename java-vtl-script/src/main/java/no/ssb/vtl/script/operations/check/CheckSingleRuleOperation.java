@@ -199,12 +199,12 @@ public class CheckSingleRuleOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 

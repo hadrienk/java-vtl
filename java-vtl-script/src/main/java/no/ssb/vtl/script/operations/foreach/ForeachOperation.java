@@ -299,12 +299,12 @@ public final class ForeachOperation extends AbstractDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
         throw new UnsupportedOperationException("TODO");
     }
 }

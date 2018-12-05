@@ -38,7 +38,6 @@ import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.script.operations.VtlStream;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -73,8 +72,8 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
         DataStructure dataStructure = getDataStructure();
         DataStructure childStructure = getChild().getDataStructure();
 
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
 
         // Filter out the dimensionName and measureName to get the predicate.
         String dimensionName = childStructure.getName(dimension);
@@ -208,7 +207,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
 
         DataStructure childStructure = getChild().getDataStructure();
 
@@ -233,7 +232,7 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification requestedOrder) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification requestedOrder) {
         DataStructure childStructure = getChild().getDataStructure();
         String dimensionName = childStructure.getName(dimension);
         String measureName = childStructure.getName(measure);

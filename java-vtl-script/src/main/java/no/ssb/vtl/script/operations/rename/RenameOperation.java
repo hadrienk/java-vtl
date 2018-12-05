@@ -100,7 +100,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         if (filtering == Filtering.ALL) {
             return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
         }
@@ -124,7 +124,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         VtlOrdering.Builder builder = VtlOrdering.using(getChild());
         for (String column : ordering.columns()) {
             String childColumn = nameMapping.inverse().getOrDefault(column, column);
@@ -150,8 +150,8 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
 
     @Override
     public Stream<DataPoint> computeData(Ordering oldOrdering, Filtering oldFiltering, Set<String> oldComponents) {
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(oldFiltering);
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(oldOrdering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(oldFiltering);
+        VtlOrdering childOrdering = (VtlOrdering) computeRequiredOrdering(oldOrdering);
 
         Set<String> components = renameComponent(oldComponents);
 

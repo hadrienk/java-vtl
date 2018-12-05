@@ -38,7 +38,6 @@ import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractUnaryDatasetOperation;
 import no.ssb.vtl.script.operations.VtlStream;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -81,12 +80,12 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     }
 
     @Override
-    public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
         return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
-    public OrderingSpecification unsupportedOrdering(OrderingSpecification ordering) {
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         return new VtlOrdering(ordering, getChild().getDataStructure());
     }
 
@@ -102,8 +101,8 @@ public class KeepOperation extends AbstractUnaryDatasetOperation {
     public Stream<DataPoint> computeData(Ordering ordering, Filtering filtering, Set<String> components) {
         ImmutableList<Component> componentsToRemove = getComponentsToRemove();
 
-        VtlFiltering childFiltering = (VtlFiltering) unsupportedFiltering(filtering);
-        VtlOrdering childOrdering = (VtlOrdering) unsupportedOrdering(ordering);
+        VtlFiltering childFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
+        VtlOrdering childOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
 
         final Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
         Stream<DataPoint> stream = original;

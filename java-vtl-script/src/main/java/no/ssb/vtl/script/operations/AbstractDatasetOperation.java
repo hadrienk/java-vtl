@@ -21,14 +21,12 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlOrdering;
@@ -102,14 +100,14 @@ public abstract class AbstractDatasetOperation implements Dataset {
     public abstract Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components);
 
     /**
-     * Returns the pre filter
+     * Returns the required filtering of this operation.
      */
-    public abstract FilteringSpecification unsupportedFiltering(FilteringSpecification filtering);
+    public abstract FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering);
 
     /**
      * Returns a copy of the ordering specification this operation cannot handle.
      */
-    public abstract OrderingSpecification unsupportedOrdering(OrderingSpecification ordering);
+    public abstract OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering);
 
     /**
      * Returns the children {@link AbstractDatasetOperation} of this operation.

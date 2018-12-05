@@ -653,12 +653,12 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        public FilteringSpecification unsupportedFiltering(FilteringSpecification filtering) {
+        public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
             return null;
         }
 
         @Override
-        public OrderingSpecification unsupportedOrdering(OrderingSpecification filtering) {
+        public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
             return null;
         }
     }
