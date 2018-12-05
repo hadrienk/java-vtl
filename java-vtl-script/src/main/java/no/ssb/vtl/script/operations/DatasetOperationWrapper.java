@@ -87,13 +87,12 @@ public class DatasetOperationWrapper extends AbstractDatasetOperation {
 
     @Override
     public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
-        Stream<DataPoint> stream = ensureStream(orders, filtering, components);
+        if (dataset instanceof AbstractDatasetOperation) {
+            return ((AbstractDatasetOperation) dataset).computeData(orders, filtering, components);
+        } else {
+            return ensureStream(orders, filtering, components);
+        }
 
-        //DatasetOperationSpliterator spliterator = new DatasetOperationSpliterator(stream.spliterator(),
-        //        dataset.getDataStructure());
-
-        //return StreamSupport.stream(spliterator, true);
-        return stream;
     }
 
     @Override

@@ -343,11 +343,17 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
     protected Stream<DataPoint> getOrSortData(Dataset dataset, Ordering order, Filtering filtering, Set<String> components) {
         VtlFiltering vtlFiltering = VtlFiltering.using(dataset).transpose(filtering);
-        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, vtlFiltering, components);
-        if (sortedData.isPresent()) {
-            return sortedData.get();
+        // TODO: Refactor to use AbstractOperation directly.
+        if (dataset instanceof AbstractDatasetOperation) {
+            return ((AbstractDatasetOperation) dataset).computeData(order, vtlFiltering, components);
         } else {
-            return dataset.getData().sorted(order).filter(filtering);
+            Optional<Stream<DataPoint>> sortedData = dataset.getData(order, vtlFiltering, components);
+            if (sortedData.isPresent()) {
+                return sortedData.get();
+            } else {
+                throw new UnsupportedOperationException("Parent should sort.");
+                //return dataset.getData().sorted(order).filter(filtering);
+            }
         }
     }
 
