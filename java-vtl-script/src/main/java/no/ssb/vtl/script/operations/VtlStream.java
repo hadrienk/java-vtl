@@ -1,6 +1,5 @@
 package no.ssb.vtl.script.operations;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Filtering;
@@ -9,6 +8,7 @@ import no.ssb.vtl.script.operations.union.ForwardingStream;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ListIterator;
 import java.util.stream.Stream;
 
 /**
@@ -16,6 +16,14 @@ import java.util.stream.Stream;
  * relations with other streams and operations.
  */
 public class VtlStream extends ForwardingStream<DataPoint> {
+
+    // Used by printPlan.
+    private static final String H_TEE = "─┬─";
+    private static final String V_BAR = " │ ";
+    private static final String V_TEE = " ├─";
+    private static final String V_END = " └─";
+    private static final String H_BAR = "───";
+    private static final String SPACE = "   ";
 
     private final AbstractDatasetOperation operation;
     private final ImmutableList<Stream<DataPoint>> parents;
@@ -25,6 +33,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
     private VtlStream child;
     private Ordering postOrdering;
     private Filtering postFiltering;
+
     public VtlStream(
             AbstractDatasetOperation operation,
             Stream<DataPoint> delegate,
@@ -37,6 +46,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         this(operation, delegate, Collections.singletonList(parent), requestedOrdering, requestedFiltering,
                 postOrdering, postFiltering);
     }
+
     public VtlStream(
             AbstractDatasetOperation operation,
             Stream<DataPoint> delegate,
@@ -64,6 +74,26 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         this.delegate = delegate;
     }
 
+    public VtlStream getChild() {
+        return child;
+    }
+
+    public Ordering getOrdering() {
+        return requestedOrdering;
+    }
+
+    public Filtering getFiltering() {
+        return requestedFiltering;
+    }
+
+    public AbstractDatasetOperation getOperation() {
+        return operation;
+    }
+
+    public ImmutableList<Stream<DataPoint>> getParents() {
+        return parents;
+    }
+
     @Override
     protected Stream<DataPoint> delegate() {
         return delegate;
@@ -73,34 +103,34 @@ public class VtlStream extends ForwardingStream<DataPoint> {
      * Prints the execution plan.
      */
     public String printPlan() {
-        return printPlan(0);
+        return printPlan("");
     }
 
-    String printPlan(Integer level) {
-        String indentation = Strings.repeat("\t", level);
+    String printPlan(String prefix) {
 
-        String plan = indentation + ">" + operation.getClass().getSimpleName();
-        plan = plan + " stream " + Integer.toHexString(delegate.hashCode()) + "\n";
+        // TODO: Use StringBuilder or StringBuffer.
+        String start = parents.isEmpty() ? H_BAR : H_TEE;
 
-        plan = plan + indentation + "filter :" + requestedFiltering.toString() + "\n";
-        plan = plan + indentation + "order  :" + requestedOrdering.toString() + "\n";
+        String opString = String.format(" %s (stream %h)\n", operation.getClass().getSimpleName(), delegate.hashCode());
+        String filter = String.format("  filter: %s\n", requestedFiltering.toString());
+        String order = String.format("  order : %s\n", requestedOrdering.toString());
 
-        if (postFiltering != null) {
-            plan = plan + indentation + "post filter  : " + postFiltering.toString() + "\n";
-        }
-        if (postOrdering != null) {
-            plan = plan + indentation + "post ordering: " + postOrdering.toString() + "\n";
-        }
+        String result = start + opString;
+        result = result + prefix + V_BAR + filter;
+        result = result + prefix + V_BAR + order;
 
-        for (Stream<DataPoint> parent : parents) {
+        ListIterator<Stream<DataPoint>> parentIterator = parents.listIterator();
+        while (parentIterator.hasNext()) {
+            Stream<DataPoint> parent = parentIterator.next();
+            String newPrefix = parentIterator.hasNext() ? V_TEE : V_END;
+            String newSpace = parentIterator.hasNext() ? V_BAR : SPACE;
             if (parent instanceof VtlStream) {
-                plan = plan + ((VtlStream) parent).printPlan(level + 1) + "\n";
+                result = result + prefix + newPrefix + ((VtlStream) parent).printPlan(prefix + newSpace);
             } else {
-                plan = plan + indentation + indentation + "root: " + parent.toString() + "\n";
+                // TODO: Wrap connector as well.
+                result = result + prefix + newPrefix + " Connector\n";
             }
         }
-
-        return plan;
-
+        return result;
     }
 }
