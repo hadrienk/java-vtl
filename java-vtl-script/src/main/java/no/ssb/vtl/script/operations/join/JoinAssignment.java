@@ -162,16 +162,6 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
             dataStructure.asMap(datapoint).put(component, resolved);
         });
 
-        // Post filter
-        if (!filtering.equals(childFiltering)) {
-            stream = stream.filter(filtering);
-        }
-
-        // Post ordering
-        if (!ordering.equals(childOrdering)) {
-            stream = stream.sorted(ordering);
-        }
-
         return new VtlStream(this, stream, original, ordering, filtering, childOrdering, childFiltering);
     }
 

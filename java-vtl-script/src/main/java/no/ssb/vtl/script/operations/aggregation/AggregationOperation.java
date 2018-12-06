@@ -219,16 +219,6 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         Stream<DataPoint> stream = StreamUtils.aggregate(original, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
                 .onClose(original::close).map(this::aggregate);
 
-        // Apply post filter.
-        if (!aggregationFilter.equals(filtering)) {
-            stream = stream.filter(filtering);
-        }
-
-        // Post ordering.
-        if (!groupByOrdering.equals(orders)) {
-            stream = stream.sorted(orders);
-        }
-
         return new VtlStream(this, stream, original, orders, filtering, groupByOrdering, aggregationFilter);
     }
 

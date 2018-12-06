@@ -77,12 +77,13 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
                     return resolved.get() == null ? false : VTLBoolean.of((Boolean) resolved.get()).get();
                 })
                 .map(DataPointBindings::getDataPoint);
+
         return new VtlStream(this, data,
                 original,
                 ordering,
                 filtering,
-                null,
-                null
+                ordering, // Use the same ordering and filtering to avoid post op.
+                filtering
         );
     }
 

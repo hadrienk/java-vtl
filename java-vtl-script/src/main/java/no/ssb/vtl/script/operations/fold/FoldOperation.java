@@ -230,15 +230,6 @@ public class FoldOperation extends AbstractUnaryDatasetOperation {
 
         final Stream<DataPoint> original = getChild().computeData(childOrdering, childFiltering, components);
         Stream<DataPoint> stream = original.flatMap(this::fold);
-        // Post filter
-        if (!filtering.equals(childFiltering)) {
-            stream = stream.filter(filtering);
-        }
-
-        // Post ordering
-        if (!ordering.equals(childOrdering)) {
-            stream = stream.sorted(ordering);
-        }
 
         return new VtlStream(this, stream, original, ordering, filtering, childOrdering, childFiltering);
     }

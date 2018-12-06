@@ -123,16 +123,6 @@ public class UnfoldOperation extends AbstractUnaryDatasetOperation {
             return result;
         });
 
-        // Post filter
-        if (!filtering.equals(childFiltering)) {
-            unfoldedStream = unfoldedStream.filter(filtering);
-        }
-
-        // Post ordering
-        if (!ordering.equals(childOrdering)) {
-            unfoldedStream = unfoldedStream.sorted(ordering);
-        }
-
         return new VtlStream(this, unfoldedStream,
                 sortedStream,
                 ordering,

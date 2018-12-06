@@ -44,12 +44,15 @@ public class DatasetOperationWrapper extends AbstractDatasetOperation {
      * Sorts and filters the stream if the underlying dataset does not support it.
      */
     private Stream<DataPoint> ensureSortedFilteredStream(Ordering orders, Filtering filtering, Set<String> components) {
-        return dataset.getData(orders, filtering, components).orElseGet(() ->
-                dataset.getData().sorted(orders).filter(filtering).map(o -> {
-                    // TODO
-                    return o;
-                })
-        );
+        Optional<Stream<DataPoint>> sorted = dataset.getData(orders, filtering, components);
+        if (sorted.isPresent()) {
+            return new VtlStream(
+                    this, sorted.get(), Collections.emptyList(), orders, filtering, orders, filtering);
+        } else {
+            return new VtlStream(
+                    this,
+                    dataset.getData(), Collections.emptyList(), orders, filtering, Ordering.ANY, Filtering.ALL);
+        }
     }
 
     @Override
@@ -68,12 +71,12 @@ public class DatasetOperationWrapper extends AbstractDatasetOperation {
 
     @Override
     public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
-        return Filtering.ALL;
+        return filtering;
     }
 
     @Override
-    public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
-        return Ordering.ANY;
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
+        return ordering;
     }
 
     @Override

@@ -24,15 +24,15 @@ public class VtlStream extends ForwardingStream<DataPoint> {
     private static final String V_END = " └─";
     private static final String H_BAR = "───";
     private static final String SPACE = "   ";
-
     private final AbstractDatasetOperation operation;
     private final ImmutableList<Stream<DataPoint>> parents;
     private final Stream<DataPoint> delegate;
     private final Ordering requestedOrdering;
     private final Filtering requestedFiltering;
     private VtlStream child;
-    private Ordering postOrdering;
-    private Filtering postFiltering;
+    private Ordering actualOrdering;
+    private Filtering actualFiltering;
+    private Statistics statistics;
 
     public VtlStream(
             AbstractDatasetOperation operation,
@@ -40,11 +40,11 @@ public class VtlStream extends ForwardingStream<DataPoint> {
             Stream<DataPoint> parent,
             Ordering requestedOrdering,
             Filtering requestedFiltering,
-            Ordering postOrdering,
-            Filtering postFiltering
+            Ordering actualOrdering,
+            Filtering actualFiltering
     ) {
         this(operation, delegate, Collections.singletonList(parent), requestedOrdering, requestedFiltering,
-                postOrdering, postFiltering);
+                actualOrdering, actualFiltering);
     }
 
     public VtlStream(
@@ -53,8 +53,8 @@ public class VtlStream extends ForwardingStream<DataPoint> {
             Collection<Stream<DataPoint>> parents,
             Ordering requestedOrdering,
             Filtering requestedFiltering,
-            Ordering postOrdering,
-            Filtering postFiltering
+            Ordering actualOrdering,
+            Filtering actualFiltering
     ) {
 
         this.parents = ImmutableList.copyOf(parents);
@@ -68,8 +68,8 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         this.operation = operation;
         this.requestedOrdering = requestedOrdering;
         this.requestedFiltering = requestedFiltering;
-        this.postOrdering = postOrdering;
-        this.postFiltering = postFiltering;
+        this.actualOrdering = actualOrdering;
+        this.actualFiltering = actualFiltering;
 
         this.delegate = delegate;
     }

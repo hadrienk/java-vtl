@@ -400,16 +400,6 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             return aggregate;
         });
 
-        // Post filter
-        if (!filtering.equals(childFiltering)) {
-            data = data.filter(filtering);
-        }
-
-        // Post ordering
-        if (!ordering.equals(childOrdering)) {
-            data = data.sorted(ordering);
-        }
-
         return new VtlStream(this, sortedData, data, ordering, filtering, childOrdering, childFiltering);
     }
 

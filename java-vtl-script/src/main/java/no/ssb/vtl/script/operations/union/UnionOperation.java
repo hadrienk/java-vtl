@@ -164,16 +164,6 @@ public class UnionOperation extends AbstractDatasetOperation {
                 createSelector(unionOrdering), streams.build()
         ).map(new DuplicateChecker(unionOrdering, structure));
 
-        // Post filter
-        if (!filtering.equals(childFiltering)) {
-            result = result.filter(filtering);
-        }
-
-        // Post ordering
-        if (!ordering.equals(unionOrder)) {
-            result = result.sorted(ordering);
-        }
-
         return new VtlStream(
                 this, result, originals.build(), ordering, filtering, unionOrdering, childFiltering);
     }
