@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Base class for dataset operations.
+ * Base class for {@link Dataset} transformation.
  */
 public abstract class AbstractDatasetOperation implements Dataset {
 

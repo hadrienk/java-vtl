@@ -70,18 +70,18 @@ import java.util.stream.Stream;
  * <p>
  * Data Strucure:
  * <p>
- * The data structure of a dataset is
+ * The data structure of a dataset contains the columns (variables) available in each {@link DataPoint}
  * <p>
  * Data stream:
  * <p>
  * The observations (data points) can be requested by calling the {@link #getData()} functions. The returned value is a
- * new, independent and immutable stream of information.
+ * new independent and immutable stream of information.
  * <p>
  * Sorting and filtering:
  * <p>
- * Independent sorting and filtering of the data points for a stream can be requested with the
- * {@link Dataset#getData(Ordering, Filtering, Set)} methods. This allows optimized implementations of operations like
- * join or union.
+ * The data points returned by a stream can be ordered and filtered useing the
+ * {@link Dataset#getData(Ordering, Filtering, Set)} methods.
+ * This is required to optimize the implementations of vtl operation.
  */
 public interface Dataset {
     
