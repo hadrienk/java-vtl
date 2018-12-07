@@ -47,7 +47,7 @@ public class DatasetOperationWrapper extends AbstractDatasetOperation {
         Optional<Stream<DataPoint>> sorted = dataset.getData(orders, filtering, components);
         if (sorted.isPresent()) {
             return new VtlStream(
-                    this, sorted.get(), Collections.emptyList(), orders, filtering, orders, filtering);
+                    this, sorted.get(), Collections.emptyList(), orders, filtering, orders, Filtering.ALL);
         } else {
             return new VtlStream(
                     this,
