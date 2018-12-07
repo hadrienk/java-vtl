@@ -20,7 +20,7 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
         }
 
         @Override
-        public Collection<? extends FilteringSpecification> getOperands() {
+        public Collection<Filtering> getOperands() {
             return Collections.emptyList();
         }
 
@@ -44,4 +44,7 @@ public interface Filtering extends Predicate<DataPoint>, FilteringSpecification 
             return false;
         }
     };
+
+    @Override
+    Collection<? extends Filtering> getOperands();
 }

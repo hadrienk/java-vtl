@@ -6,14 +6,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
+import java.util.Set;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +23,7 @@ public abstract class VtlFiltering implements Filtering {
     protected final String column;
     protected final VTLObject value;
     protected final Operator operator;
-    protected final Collection<VtlFiltering> operands;
+    protected final Set<VtlFiltering> operands;
     private final boolean negated;
     protected ToIntFunction<String> hashFunction;
 
@@ -40,7 +39,7 @@ public abstract class VtlFiltering implements Filtering {
         this.operator = operator;
         this.value = null;
         this.column = null;
-        this.operands = ImmutableList.copyOf(operands);
+        this.operands = new HashSet<>(operands);
     }
 
     protected VtlFiltering(
@@ -56,7 +55,7 @@ public abstract class VtlFiltering implements Filtering {
         this.operator = operator;
         this.column = column;
         this.value = value;
-        this.operands = Collections.emptyList();
+        this.operands = Collections.emptySet();
     }
 
     public static Builder using(DataStructure structure) {
@@ -292,10 +291,31 @@ public abstract class VtlFiltering implements Filtering {
             super(negated, column, operator, value);
         }
 
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Filtering)) return false;
 
-        @Override
-        public Collection<VtlFiltering> getOperands() {
-            return Collections.emptyList();
+            Filtering that = (Filtering) o;
+
+            if (!that.getOperands().isEmpty()) {
+                return that.equals(this);
+            }
+
+            if (!Objects.equals(this.getOperator(),that.getOperator())) return false;
+            if (!Objects.equals(this.isNegated(),that.isNegated())) return false;
+            if (!Objects.equals(this.getColumn(), that.getColumn())) return false;
+            if (!Objects.equals(this.getValue(),that.getValue())) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return Objects.hash(
+                    this.getOperator(),
+                    this.isNegated(),
+                    this.getColumn(),
+                    this.getValue()
+            );
         }
 
         @Override
@@ -359,6 +379,46 @@ public abstract class VtlFiltering implements Filtering {
             super(negated, Operator.AND, operands);
         }
 
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Filtering)) return false;
+
+            Filtering that = (Filtering) o;
+
+            // FALSE & X => FALSE.
+            Optional<VtlFiltering> containsFalse = this.getOperands().stream()
+                    .filter(op -> op.isNegated() && op.getOperator().equals(Operator.TRUE))
+                    .findFirst();
+            if (containsFalse.isPresent()) {
+                return that.equals(containsFalse.get());
+            }
+
+            // TRUE & X => X
+            HashSet<VtlFiltering> thisOpWithoutTrue = this.getOperands().stream()
+                    .filter(op -> !(!op.isNegated() && op.getOperator().equals(Operator.TRUE)))
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            HashSet<Filtering> thatOpWithoutTrue = that.getOperands().stream()
+                    .filter(op -> !(!op.isNegated() && op.getOperator().equals(Operator.TRUE)))
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            if (!Objects.equals(thisOpWithoutTrue, thatOpWithoutTrue)) return false;
+
+            if (!Objects.equals(this.getOperator(),that.getOperator())) return false;
+            if (!Objects.equals(this.isNegated(),that.isNegated())) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return Objects.hash(
+                    this.getOperator(),
+                    this.isNegated(),
+                    this.getColumn(),
+                    this.getValue()
+            );
+        }
+
         @Override
         public boolean test(DataPoint dataPoint) {
             if (isNegated()) {
@@ -416,6 +476,46 @@ public abstract class VtlFiltering implements Filtering {
 
         Or(boolean negated, Collection<VtlFiltering> operands) {
             super(negated, Operator.OR, operands);
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Filtering)) return false;
+
+            Filtering that = (Filtering) o;
+
+            if (!Objects.equals(this.getOperator(),that.getOperator())) return false;
+            if (!Objects.equals(this.isNegated(),that.isNegated())) return false;
+
+            // TRUE | X => TRUE
+            Optional<VtlFiltering> containsTrue = this.getOperands().stream()
+                    .filter(op -> op.isNegated() && op.getOperator().equals(Operator.TRUE))
+                    .findFirst();
+            if (containsTrue.isPresent()) {
+                return that.equals(containsTrue.get());
+            }
+
+            // FALSE | X => X.
+            HashSet<VtlFiltering> thisOpWithoutTrue = this.getOperands().stream()
+                    .filter(op -> op.isNegated() && op.getOperator().equals(Operator.TRUE))
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            HashSet<VtlFiltering> thatOpWithoutTrue = this.getOperands().stream()
+                    .filter(op -> op.isNegated() && op.getOperator().equals(Operator.TRUE))
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            if (!Objects.equals(thisOpWithoutTrue, thatOpWithoutTrue)) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return Objects.hash(
+                    this.getOperator(),
+                    this.isNegated(),
+                    this.getColumn(),
+                    this.getValue()
+            );
         }
 
         @Override
