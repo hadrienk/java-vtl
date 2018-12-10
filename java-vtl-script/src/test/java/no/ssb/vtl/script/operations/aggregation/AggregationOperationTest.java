@@ -122,7 +122,7 @@ public class AggregationOperationTest {
                 filterOnId1, filterOnId2
         );
         assertThat(op.computeRequiredFiltering(filterOnId1AndId2).toString())
-                .isEqualTo("(id1=a&TRUE)");
+                .isEqualTo("(TRUE&id1=a)");
 
         VtlFiltering filterOnM1 = VtlFiltering.using(op).with(
                 VtlFiltering.le("m1", 1L)

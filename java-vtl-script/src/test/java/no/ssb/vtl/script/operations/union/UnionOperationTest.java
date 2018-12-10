@@ -29,6 +29,7 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
+import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
@@ -189,11 +190,13 @@ public class UnionOperationTest extends RandomizedTest {
                         unionOperation.getDataStructure().getName(component));
             }
         }
-        Optional<Stream<DataPoint>> stream = unionOperation.getData(order.build());
+        Stream<DataPoint> stream = unionOperation.computeData(
+                order.build(),
+                Filtering.ALL,
+                unionOperation.getDataStructure().keySet()
+        );
 
-        assertThat(Optional.of(stream)).isNotEmpty();
-
-        ImmutableList<DataPoint> collect = stream.get().collect(ImmutableList.toImmutableList());
+        ImmutableList<DataPoint> collect = stream.collect(ImmutableList.toImmutableList());
 
         assertThat(collect).hasSameSizeAs(dataPoints);
         assertThat(collect).isSortedAccordingTo(order.build());

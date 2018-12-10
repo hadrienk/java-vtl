@@ -147,7 +147,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                 }
             });
 
-            // TODO: Post order and post filter.
             // TODO: Closer could be moved to VtlStream.
             return new VtlStream(
                     this,

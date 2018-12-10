@@ -58,13 +58,7 @@ public abstract class AbstractDatasetOperation implements Dataset {
 
     @Override
     public final Stream<DataPoint> getData() {
-        VtlOrdering.Builder ordering = VtlOrdering.using(this);
-        for (Component component : getDataStructure().values()) {
-            if (component.isIdentifier()) {
-                ordering.asc(getDataStructure().getName(component));
-            }
-        }
-        return computeData(ordering.build(), Filtering.ALL, computeDataStructure().keySet());
+        return computeData(Ordering.ANY, Filtering.ALL, computeDataStructure().keySet());
     }
 
     @Override
