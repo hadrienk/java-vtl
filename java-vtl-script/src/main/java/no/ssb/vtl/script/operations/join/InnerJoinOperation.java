@@ -21,19 +21,15 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlOrdering;
-import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.script.support.Closer;
 
@@ -118,7 +114,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
                 // The first left stream uses its own structure. After that, the left data structure
                 // will always be the resulting structure. We use a flag (first) to handle the first case
-                // since the hotfix needs to quickly released but this code should be refactored.
+                // since the hotfix needs to be quickly released but this code should be refactored.
 
                 result = StreamSupport.stream(
                         new InnerJoinSpliterator<>(
@@ -154,7 +150,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                     originals.build(),
                     requestedOrder,
                     filtering,
-                    requiredOrder,
+                    new VtlOrdering(predicate, this.getDataStructure()),
                     filtering
             );
 

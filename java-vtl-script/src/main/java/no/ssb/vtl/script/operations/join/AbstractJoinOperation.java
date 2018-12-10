@@ -43,7 +43,9 @@ import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -226,40 +228,27 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      *
      * @param structure       the structure the returned order will apply to.
      * @param firstComponents the identifiers to use.
-     * @param requestedOrder  a compatible order.
+     * @param ordering  a compatible order.
      */
     @VisibleForTesting
-    Optional<Ordering> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering requestedOrder) {
+    Optional<Ordering> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering ordering) {
 
-        List<String> columns = requestedOrder.columns();
-        List<String> requiredColumns = firstComponents.stream().map(structure::getName).collect(Collectors.toList());
+        List<String> joinColumns = firstComponents.stream()
+                .map(structure::getName).collect(Collectors.toList());
+        LinkedHashMap<String, Direction> directionMap = new LinkedHashMap<>();
 
-        if (columns.size() >= requiredColumns.size() &&
-                columns.subList(0, requiredColumns.size()).containsAll(requiredColumns)) {
-            return Optional.of(requestedOrder);
-        } else {
-            // Requested first.
-            VtlOrdering.Builder compatibleOrder = VtlOrdering.using(this);
-            for (String column : columns) {
-                if (requiredColumns.contains(column)) {
-                    compatibleOrder.then(requestedOrder.getDirection(column), column);
-                }
+        // Add first the required order from the requested specification.
+        for (String column : ordering.columns()) {
+            if (joinColumns.contains(column)) {
+                directionMap.put(column, ordering.getDirection(column));
             }
-            // Missing.
-            for (String requiredColumn : requiredColumns) {
-                if (!columns.contains(requiredColumn)) {
-                    compatibleOrder.asc(requiredColumn);
-                }
-            }
-            // Rest.
-            for (String column : columns) {
-                if (!requiredColumns.contains(column)) {
-                    compatibleOrder.then(requestedOrder.getDirection(column), column);
-                }
-            }
-
-            return Optional.of(compatibleOrder.build());
         }
+        // Then add remaining columns from the groupByColumns.
+        for (String groupByColumn : joinColumns) {
+            directionMap.putIfAbsent(groupByColumn, Ordering.Direction.ASC);
+        }
+
+        return Optional.of(new VtlOrdering(directionMap, structure));
     }
 
     /**
@@ -328,14 +317,16 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         // Order to work with the result of the key extractors.
 
         ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
-        DataStructure.Builder fakeStructure = DataStructure.builder();
+        DataStructure.Builder fakeStructureBuilder = DataStructure.builder();
         for (Component component : commonIdentifiers) {
-            fakeStructure.put(structure.getName(component), component);
+            fakeStructureBuilder.put(structure.getName(component), component);
         }
-        VtlOrdering.Builder builder = VtlOrdering.using(fakeStructure.build());
-        for (Component component : commonIdentifiers) {
-            String name = structure.getName(component);
-            builder.then(requestedOrder.getDirection(name), name);
+        DataStructure fakeStructure = fakeStructureBuilder.build();
+        VtlOrdering.Builder builder = VtlOrdering.using(fakeStructure);
+        for (String column : requestedOrder.columns()) {
+            if (fakeStructure.containsKey(column)) {
+                builder.then(requestedOrder.getDirection(column), column);
+            }
         }
 
         return builder.build();
@@ -345,8 +336,9 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         VtlFiltering vtlFiltering = VtlFiltering.using(dataset).transpose(filtering);
         // TODO: Refactor to use AbstractOperation directly.
         if (dataset instanceof AbstractDatasetOperation) {
-            return ((AbstractDatasetOperation) dataset).computeData(order, vtlFiltering, components);
+            return ((AbstractDatasetOperation) dataset).computeData(new VtlOrdering(order, dataset.getDataStructure()), vtlFiltering, components);
         } else {
+            //throw new UnsupportedOperationException("Parent should sort.");
             Optional<Stream<DataPoint>> sortedData = dataset.getData(order, vtlFiltering, components);
             if (sortedData.isPresent()) {
                 return sortedData.get();

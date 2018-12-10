@@ -8,8 +8,13 @@ public class VtlConfiguration {
     private boolean filterPropagation = true;
 
     private boolean profiling = true;
+    private boolean sortAssert = true;
 
     public static VtlConfiguration getConfig() {
+        VtlConfiguration configuration = localConfiguration.get();
+        if (configuration == null) {
+            localConfiguration.set(new VtlConfiguration());
+        }
         return localConfiguration.get();
     }
 
@@ -42,6 +47,13 @@ public class VtlConfiguration {
      */
     public boolean isProfilingEnabled() {
         return profiling;
+    }
+
+    /**
+     * If enabled all ordering invariant will be asserted.
+     */
+    public boolean isSortAssertionEnabled() {
+        return sortAssert;
     }
 
 }
