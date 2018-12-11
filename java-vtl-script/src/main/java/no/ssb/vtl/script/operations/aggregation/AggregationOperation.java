@@ -204,10 +204,15 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering groupByOrdering = (VtlOrdering) computeRequiredOrdering(orders);
         VtlFiltering aggregationFilter = (VtlFiltering) computeRequiredFiltering(filtering);
 
+        // Order of the predicate does not matter.
+        VtlOrdering groupByPredicate = VtlOrdering.using(getChild().getDataStructure())
+                .asc(groupByColumns.toArray(new String[]{}))
+                .build();
+
         Stream<DataPoint> original = childOperation.computeData(groupByOrdering, aggregationFilter, components);
 
         // TODO: Move close logic to VtlStream.
-        Stream<DataPoint> stream = StreamUtils.aggregate(original, (previous, current) -> groupByOrdering.compare(previous, current) == 0)
+        Stream<DataPoint> stream = StreamUtils.aggregate(original, (previous, current) -> groupByPredicate.compare(previous, current) == 0)
                 .onClose(original::close).map(this::aggregate);
 
         return new VtlStream(this, stream, original, orders, filtering, groupByOrdering, aggregationFilter);
