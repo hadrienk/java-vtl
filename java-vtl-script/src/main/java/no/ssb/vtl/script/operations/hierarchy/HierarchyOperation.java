@@ -400,7 +400,7 @@ public class HierarchyOperation extends AbstractUnaryDatasetOperation {
             return aggregate;
         });
 
-        return new VtlStream(this, sortedData, data, ordering, filtering, childOrdering, childFiltering);
+        return new VtlStream(this, data, sortedData, ordering, filtering, childOrdering, childFiltering);
     }
 
     private Map<Component, HierarchyAccumulator> createAccumulatorMap() {
