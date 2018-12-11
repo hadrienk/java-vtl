@@ -197,7 +197,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         }
 
         // Post ordering
-        if (!requestedOrdering.equals(actualOrdering)) {
+        if (configuration.isForceSortEnabled() || !requestedOrdering.equals(actualOrdering)) {
             stream = stream.sorted(requestedOrdering);
             if (configuration.isProfilingEnabled()) {
                 stream = measureStartStream(
@@ -209,7 +209,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         }
 
         // Order assertion
-        if (configuration.isProfilingEnabled()) {
+        if (configuration.isSortAssertionEnabled()) {
             AtomicReference<DataPoint> previous = new AtomicReference<>();
             stream = stream.peek(dataPoint -> {
                 if (previous.get() != null) {
@@ -235,7 +235,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
             });
         }
 
-        if (statistics != null) {
+        if (configuration.isProfilingEnabled()) {
             stream = stream.peek(dataPoint -> {
                 statistics.rows.increment();
                 statistics.cells.increment(dataPoint.size());

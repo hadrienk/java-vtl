@@ -6,9 +6,9 @@ public class VtlConfiguration {
 
     private boolean filterOptimization = true;
     private boolean filterPropagation = true;
-
     private boolean profiling = true;
-    private boolean sortAssert = true;
+    private boolean sortAssert = false;
+    private boolean forceSort = true;
 
     public static VtlConfiguration getConfig() {
         VtlConfiguration configuration = localConfiguration.get();
@@ -56,4 +56,7 @@ public class VtlConfiguration {
         return sortAssert;
     }
 
+    public boolean isForceSortEnabled() {
+        return forceSort;
+    }
 }
