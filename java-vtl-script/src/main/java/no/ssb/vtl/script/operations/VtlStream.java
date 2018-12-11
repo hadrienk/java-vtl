@@ -9,8 +9,6 @@ import com.netflix.spectator.api.Spectator;
 import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.api.Timer;
 import no.ssb.vtl.model.DataPoint;
-import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.DatapointNormalizer;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
@@ -179,7 +177,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
 
         final Clock clock = statistics.registry.clock();
         if (configuration.isProfilingEnabled()) {
-                stream = measureStream(stream, statistics.time, clock);
+            stream = measureStream(stream, statistics.time, clock);
         }
 
 
@@ -231,7 +229,8 @@ public class VtlStream extends ForwardingStream<DataPoint> {
                         ));
                     }
                 }
-                previous.set(dataPoint);
+                // Copy since the reference can be mutated.
+                previous.set((DataPoint) dataPoint.clone());
             });
         }
 
@@ -246,7 +245,7 @@ public class VtlStream extends ForwardingStream<DataPoint> {
 
     @Override
     protected Stream<DataPoint> delegate() {
-       return delegate;
+        return delegate;
     }
 
     @Override
@@ -269,13 +268,15 @@ public class VtlStream extends ForwardingStream<DataPoint> {
         // TODO: Use StringBuilder or StringBuffer.
         String start = parents.isEmpty() ? H_BAR : H_TEE;
 
-        String opString = String.format(" %s (stream %h)\n", operation.getClass().getSimpleName(), delegate.hashCode());
-        String filter = String.format(  "  filter  : %s\n", requestedFiltering.toString());
+        String opType = String.format(" %s (stream %h)\n", operation.getClass().getSimpleName(), delegate.hashCode());
+        String opString = String.format(" %s\n", operation.toString());
+        String filter = String.format("  filter  : %s\n", requestedFiltering.toString());
         String aFilter = String.format("  - actual: %s\n", actualFiltering.toString());
-        String order = String.format(   "  order   : %s\n", requestedOrdering.toString());
-        String aOrder = String.format(  "  - actual: %s\n", actualOrdering.toString());
+        String order = String.format("  order   : %s\n", requestedOrdering.toString());
+        String aOrder = String.format("  - actual: %s\n", actualOrdering.toString());
 
-        String result = start + opString;
+        String result = start + opType;
+        result = result + prefix + V_BAR + opString;
         result = result + prefix + V_BAR + filter;
         result = result + prefix + V_BAR + aFilter;
         result = result + prefix + V_BAR + order;

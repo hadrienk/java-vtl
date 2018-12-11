@@ -159,7 +159,8 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
             directionMap.putIfAbsent(groupByColumn, Ordering.Direction.ASC);
         }
 
-        return new VtlOrdering(directionMap, childOperation.getDataStructure());
+        DataStructure childStructure = childOperation.getDataStructure();
+        return new VtlOrdering(directionMap, childStructure);
     }
 
     private DataPoint aggregate(List<DataPoint> datapoints) {
@@ -204,10 +205,11 @@ public class AggregationOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering groupByOrdering = (VtlOrdering) computeRequiredOrdering(orders);
         VtlFiltering aggregationFilter = (VtlFiltering) computeRequiredFiltering(filtering);
 
-        // Order of the predicate does not matter.
-        VtlOrdering groupByPredicate = VtlOrdering.using(getChild().getDataStructure())
-                .asc(groupByColumns.toArray(new String[]{}))
-                .build();
+        // Compute the predicate based on the required ordering.
+        VtlOrdering groupByPredicate = new VtlOrdering(
+                Maps.filterKeys(groupByOrdering.toMap(), groupByColumns::contains),
+                childOperation.getDataStructure()
+        );
 
         Stream<DataPoint> original = childOperation.computeData(groupByOrdering, aggregationFilter, components);
 

@@ -1,14 +1,24 @@
 package no.ssb.vtl.script;
 
-public class VtlConfiguration {
+/**
+ * Configuration object for vtl.
+ * <p>
+ * The configuration is wrapped inside a ThreadLocal for now. Use {@link #getConfig()} to
+ * access the instances.
+ */
+public final class VtlConfiguration {
 
     private static final ThreadLocal<VtlConfiguration> localConfiguration = new ThreadLocal<>();
 
     private boolean filterOptimization = true;
     private boolean filterPropagation = true;
-    private boolean profiling = true;
-    private boolean sortAssert = false;
-    private boolean forceSort = true;
+    private boolean profiling = false;
+    private boolean sortAssertion = false;
+    private boolean forceSort = false;
+
+    private VtlConfiguration() {
+        // prevent instantiation.
+    }
 
     public static VtlConfiguration getConfig() {
         VtlConfiguration configuration = localConfiguration.get();
@@ -23,13 +33,27 @@ public class VtlConfiguration {
     }
 
     /**
-     * Some dataset operation can add filters to optimize the execution.
+     * Some operations add filters down the execution tree in order to optimize the execution.
      * {@link no.ssb.vtl.script.operations.unfold.UnfoldOperation} adds a filter on the values that are unfolded.
      * {@link no.ssb.vtl.script.operations.join.InnerJoinOperation} add a range filter based on the first and last
      * identifiers of the datasets it joins.
      */
-    public boolean isFilterOptimizationEnabled() {
-        return this.filterOptimization;
+    public void setFilterOptimization(boolean filterOptimization) {
+        this.filterOptimization = filterOptimization;
+    }
+
+    /**
+     * @see #setFilterOptimization(boolean)
+     */
+    public void enableFilterOptimization() {
+        setFilterOptimization(true);
+    }
+
+    /**
+     * @see #setFilterOptimization(boolean)
+     */
+    public void disableFilterOptimization() {
+        setFilterOptimization(false);
     }
 
     /**
@@ -37,25 +61,122 @@ public class VtlConfiguration {
      * push back part of the filters they received back to the operations
      * behind them.
      */
+    public void setFilterPropagation(boolean filterPropagation) {
+        this.filterPropagation = filterPropagation;
+    }
+
+    /**
+     * @see #setFilterPropagation(boolean)
+     */
+    public void enableFilterPropagation() {
+        setFilterPropagation(true);
+    }
+
+    /**
+     * @see #setFilterPropagation(boolean)
+     */
+    public void disableFilterPropagation() {
+        setFilterPropagation(false);
+    }
+
+    /**
+     * Profiling enables timing and counters. Note that profiling will
+     * reduce performances.
+     *
+     * @see no.ssb.vtl.script.operations.VtlStream.Statistics
+     */
+    public void setProfiling(boolean profiling) {
+        this.profiling = profiling;
+    }
+
+    /**
+     * @see #setProfiling(boolean)
+     */
+    public void enableProfiling() {
+        setProfiling(true);
+    }
+
+    /**
+     * @see #setProfiling(boolean)
+     */
+    public void disableProfiling() {
+        setProfiling(false);
+    }
+
+    /**
+     * Adds a verification step after each operation that checks that the order of the data it sees
+     * is consistent with the required order. Note that this will reduce performances.
+     */
+    public void setSortAssertion(boolean sortAssertion) {
+        this.sortAssertion = sortAssertion;
+    }
+
+    /**
+     * @see #setSortAssertion(boolean)
+     */
+    public void enableSortAssertion() {
+        setSortAssertion(true);
+    }
+
+    /**
+     * @see #setSortAssertion(boolean)
+     */
+    public void disableSortAssertion() {
+        setSortAssertion(false);
+    }
+
+    /**
+     * Force post sort after each operation. Note that this will reduce performances.
+     */
+    public void setForceSort(boolean forceSort) {
+        this.forceSort = forceSort;
+    }
+
+    /**
+     * @see #setForceSort(boolean)
+     */
+    public void enableForceSort() {
+        setForceSort(true);
+    }
+
+    /**
+     * @see #setForceSort(boolean)
+     */
+    public void disableForceSort() {
+        setForceSort(false);
+    }
+
+    /**
+     * @see #setFilterOptimization(boolean)
+     */
+    public boolean isFilterOptimizationEnabled() {
+        return this.filterOptimization;
+    }
+
+    /**
+     * @see #setFilterPropagation(boolean)
+     */
     public boolean isFilterPropagationEnabled() {
         return this.filterPropagation;
     }
 
     /**
-     * Profiling enables counting and timing data processing. Note that profiling will
-     * reduce performances.
+     * @see #setProfiling(boolean)
      */
     public boolean isProfilingEnabled() {
         return profiling;
     }
 
     /**
-     * If enabled all ordering invariant will be asserted.
+     * @see #setSortAssertion(boolean)
      */
     public boolean isSortAssertionEnabled() {
-        return sortAssert;
+        return sortAssertion;
     }
 
+    /**
+     * @see #setForceSort(boolean)
+     */
     public boolean isForceSortEnabled() {
         return forceSort;
     }

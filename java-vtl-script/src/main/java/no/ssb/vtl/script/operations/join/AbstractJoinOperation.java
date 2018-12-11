@@ -237,15 +237,19 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 .map(structure::getName).collect(Collectors.toList());
         LinkedHashMap<String, Direction> directionMap = new LinkedHashMap<>();
 
-        // Add first the required order from the requested specification.
-        for (String column : ordering.columns()) {
-            if (joinColumns.contains(column)) {
-                directionMap.put(column, ordering.getDirection(column));
+        // Add the required columns, respecting the requested order.
+        List<String> requestedColumns = ordering.columns();
+        for (String requiredColumn : joinColumns) {
+            if (requestedColumns.contains(requiredColumn)) {
+                directionMap.put(requiredColumn, ordering.getDirection(requiredColumn));
+            } else {
+                directionMap.put(requiredColumn, ASC);
             }
         }
-        // Then add remaining columns from the groupByColumns.
-        for (String groupByColumn : joinColumns) {
-            directionMap.putIfAbsent(groupByColumn, Ordering.Direction.ASC);
+
+        // Then add remaining columns from the requested order.
+        for (String requiredColumn : requestedColumns) {
+            directionMap.putIfAbsent(requiredColumn, ordering.getDirection(requiredColumn));
         }
 
         return Optional.of(new VtlOrdering(directionMap, structure));
@@ -305,12 +309,12 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     /**
-     * Compute the predicate.
+     * Compute an Ordering that is compatible with the result of the key extractor.
      *
-     * @param requestedOrder the requested order.
+     * @param ordering the requested order.
      * @return order of the common identifiers only.
      */
-    protected Ordering computePredicate(Ordering requestedOrder) {
+    protected Ordering computePredicate(Ordering ordering) {
         DataStructure structure = getDataStructure();
 
         // We need to create a fake structure to allow the returned
@@ -323,9 +327,9 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         }
         DataStructure fakeStructure = fakeStructureBuilder.build();
         VtlOrdering.Builder builder = VtlOrdering.using(fakeStructure);
-        for (String column : requestedOrder.columns()) {
+        for (String column : ordering.columns()) {
             if (fakeStructure.containsKey(column)) {
-                builder.then(requestedOrder.getDirection(column), column);
+                builder.then(ordering.getDirection(column), column);
             }
         }
 

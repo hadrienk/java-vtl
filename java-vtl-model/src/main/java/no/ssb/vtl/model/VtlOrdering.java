@@ -149,7 +149,8 @@ public final class VtlOrdering implements Ordering, OrderingSpecification {
             Comparable o1 = (Comparable) dp1.get(indices[i]).get();
             Comparable o2 = (Comparable) dp2.get(indices[i]).get();
 
-            boolean nullFirst = true;
+            // TODO: Nullfirst?
+            boolean nullFirst = false;
             if (o1 == null) {
                 result = (o2 == null) ? 0 : (nullFirst ? -1 : 1);
             } else if (o2 == null) {

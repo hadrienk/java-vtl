@@ -29,11 +29,14 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import com.google.common.math.IntMath;
 import com.sun.istack.internal.Nullable;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
+import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
@@ -254,7 +257,7 @@ public class AggregationOperationTest {
                 filterOnId1, filterOnId2
         );
         assertThat(op.computeRequiredFiltering(filterOnId1AndId2).toString())
-                .isEqualTo("(TRUE&id1=a)");
+                .isEqualTo("(id1=a&TRUE)");
 
         VtlFiltering filterOnM1 = VtlFiltering.using(op).with(
                 VtlFiltering.le("m1", 1L)
@@ -309,7 +312,6 @@ public class AggregationOperationTest {
 
     @Test
     public void testAggregation() {
-        // Test all the combinations of ordering.
         StaticDataset staticDataset = StaticDataset.create()
                 .addComponent("id1", Role.IDENTIFIER, String.class)
                 .addComponent("id2", Role.IDENTIFIER, String.class)
@@ -343,6 +345,16 @@ public class AggregationOperationTest {
                 new AggregationSumFunction()
         );
 
+        for (VtlOrdering ordering : allCombinations(groupById1)) {
+            List<DataPoint> data = groupById1.computeData(ordering, Filtering.ALL, groupById1.getDataStructure().keySet()).collect(toList());
+            assertThat(data).as("data grouped by id1 with ordering %s", ordering)
+                    .containsExactlyInAnyOrder(
+                            DataPoint.create("a", 15L, 15L),
+                            DataPoint.create("b", 15L, 15L),
+                            DataPoint.create("c", 15L, 15L)
+                    ).isSortedAccordingTo(ordering);
+        }
+
         AggregationOperation groupById2 = new AggregationOperation(
                 staticDataset,
                 Arrays.asList(structure.get("id2")),
@@ -350,29 +362,53 @@ public class AggregationOperationTest {
                 new AggregationSumFunction()
         );
 
-        // TODO: Extract this and use it in all operations.
-        // Iterator<VtlOrdering> VtlOrdering.combinations(DataStructure ds)
-        Set<String> columns = groupById1.getDataStructure().keySet();
-        List<ImmutableSet<Ordering.Direction>> directionCombinations = Collections.nCopies(columns.size(), ImmutableSet.of(ASC, DESC));
-        for (List<String> permutation : Collections2.permutations(columns)) {
-            for (List<Ordering.Direction> directions : Sets.cartesianProduct(directionCombinations)) {
-                VtlOrdering.Builder builder = VtlOrdering.using(groupById1);
-                Iterator<String> columnIterator = permutation.iterator();
-                Iterator<Ordering.Direction> directionIterator = directions.iterator();
-                while (columnIterator.hasNext() && directionIterator.hasNext()) {
-                    builder.then(directionIterator.next(), columnIterator.next());
-                }
-                VtlOrdering ordering = builder.build();
-                List<DataPoint> data = groupById1.computeData(ordering, Filtering.ALL, columns).collect(toList());
-                assertThat(data).as("data grouped by id2 with ordering %s", ordering)
-                        .containsExactlyInAnyOrder(
-                                DataPoint.create("a", 15L, 15L),
-                                DataPoint.create("b", 15L, 15L),
-                                DataPoint.create("c", 15L, 15L)
-                        ).isSortedAccordingTo(ordering);
-            }
+        for (VtlOrdering ordering : allCombinations(groupById2)) {
+            List<DataPoint> data = groupById2.computeData(ordering, Filtering.ALL, groupById2.getDataStructure().keySet()).collect(toList());
+            assertThat(data).as("data grouped by id2 with ordering %s", ordering)
+                    .containsExactlyInAnyOrder(
+                            DataPoint.create("1", 3L, 24L),
+                            DataPoint.create("2", 6L, 12L),
+                            DataPoint.create("3", 12L, 6L),
+                            DataPoint.create("4", 24L, 3L)
+                    ).isSortedAccordingTo(ordering);
         }
 
-        this.dataset = DatasetCloseWatcher.wrap(staticDataset);
+    }
+
+    /**
+     * Returns all the combination of ordering for a given dataset.
+     */
+    Iterable<VtlOrdering> allCombinations(Dataset dataset) {
+        Set<String> columns = dataset.getDataStructure().keySet();
+        List<ImmutableSet<Ordering.Direction>> directionCombinations = Collections.nCopies(
+                columns.size(), ImmutableSet.of(ASC, DESC)
+        );
+        return () -> new AbstractIterator<VtlOrdering>() {
+
+            PeekingIterator<List<String>> columnPermutations = Iterators.peekingIterator(
+                    Collections2.permutations(columns).iterator()
+            );
+
+            Iterator<List<Ordering.Direction>> directions = Sets.cartesianProduct(directionCombinations).iterator();
+
+            @Override
+            protected VtlOrdering computeNext() {
+                if (!directions.hasNext() && columnPermutations.hasNext()) {
+                    directions = Sets.cartesianProduct(directionCombinations).iterator();
+                    columnPermutations.next();
+                }
+                if (columnPermutations.hasNext()) {
+                    VtlOrdering.Builder builder = VtlOrdering.using(dataset);
+                    Iterator<String> columnIterator = columnPermutations.peek().iterator();
+                    Iterator<Ordering.Direction> directionIterator = directions.next().iterator();
+                    while (columnIterator.hasNext() && directionIterator.hasNext()) {
+                        builder.then(directionIterator.next(), columnIterator.next());
+                    }
+                    return builder.build();
+                } else {
+                    return endOfData();
+                }
+            }
+        };
     }
 }
