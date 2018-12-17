@@ -60,7 +60,7 @@ public class DatasetTest extends RandomizedTest {
 
         DataStructure dataStructure = randomDataStructure();
         TestableDataset dataset = randomDataset(dataStructure, randomIntBetween(10, 100));
-        Order.Builder order = randomOrder(dataStructure);
+        VtlOrdering.Builder order = randomOrder(dataStructure);
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
 
@@ -76,17 +76,17 @@ public class DatasetTest extends RandomizedTest {
         }
     }
 
-    private Order.Builder randomOrder(DataStructure structure) {
+    private VtlOrdering.Builder randomOrder(DataStructure structure) {
         int sortedColumns = RandomizedTest.randomIntBetween(1, structure.size());
         ArrayList<Map.Entry<String, Component>> structureEntries = Lists.newArrayList(structure.entrySet());
 
-        Order.Builder order = Order.create(structure);
+        VtlOrdering.Builder order = VtlOrdering.using(structure);
         for (int i = 0; i < sortedColumns; i++) {
             Map.Entry<String, Component> entry = RandomizedTest.randomFrom(structureEntries);
             structureEntries.remove(entry);
-            order.put(
-                    entry.getKey(),
-                    Ordering.Direction.ASC
+            order.then(
+                    Ordering.Direction.ASC,
+                    entry.getKey()
             );
         }
         return order;

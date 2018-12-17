@@ -26,7 +26,7 @@ import no.ssb.vtl.model.Ordering;
 import java.util.Comparator;
 import java.util.Map;
 
-import static no.ssb.vtl.model.Order.VTL_OBJECT_COMPARATOR;
+import static no.ssb.vtl.model.VtlOrdering.VTL_OBJECT_COMPARATOR;
 import static no.ssb.vtl.model.Ordering.Direction.ASC;
 
 public class DataPointMapComparator implements Comparator<DataPointMap.View> {

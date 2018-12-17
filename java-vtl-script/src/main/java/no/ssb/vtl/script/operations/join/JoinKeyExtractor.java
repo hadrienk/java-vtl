@@ -26,7 +26,6 @@ import com.google.common.primitives.Ints;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 
 import java.util.ArrayList;

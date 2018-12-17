@@ -29,6 +29,7 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Use this class to simplify implementation of the {@link Ordering} and {@link OrderingSpecification}
  */
 public final class VtlOrdering implements Ordering, OrderingSpecification {
+
+    @SuppressWarnings("unchecked")
+    public static final Comparator<Comparable> NULLS_FIRST = Comparator.<Comparable>nullsFirst(Comparator.naturalOrder());
+    @SuppressWarnings("unchecked")
+    public static final Comparator<VTLObject> VTL_OBJECT_COMPARATOR = Comparator.comparing(vtlObject -> (Comparable) vtlObject.get(), NULLS_FIRST);
+
+    public static final Comparator<Map.Entry<String, Component>> BY_ROLE = Comparator.comparing(
+            entry -> entry.getValue().getRole(),
+            com.google.common.collect.Ordering.explicit(
+                    Component.Role.IDENTIFIER,
+                    Component.Role.MEASURE,
+                    Component.Role.ATTRIBUTE
+            )
+    );
+
+    public static final Comparator<Map.Entry<String, Component>> BY_NAME = Comparator.comparing(Map.Entry::getKey);
 
     private final ImmutableMap<String, Direction> delegate;
     private final int[] indices;

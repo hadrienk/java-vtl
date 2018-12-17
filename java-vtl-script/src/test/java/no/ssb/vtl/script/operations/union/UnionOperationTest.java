@@ -30,13 +30,11 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.VTLRuntimeException;
-import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Before;
@@ -53,10 +51,7 @@ import java.util.stream.Stream;
 import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 public class UnionOperationTest extends RandomizedTest {

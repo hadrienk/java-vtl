@@ -33,7 +33,6 @@ import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.VtlOrdering;
@@ -106,7 +105,6 @@ public final class ForeachOperation extends AbstractDatasetOperation {
         Ordering actualOrder = rearrangeOrder(order, dataset.getDataStructure());
         return dataset.getData(actualOrder).orElseGet(() -> sort(dataset.getData(), actualOrder));
     }
-
 
 
     @Override
@@ -207,7 +205,7 @@ public final class ForeachOperation extends AbstractDatasetOperation {
      * Create a "slice" of data and execute the block on it.
      * <p>
      * In order to do so, the maximum value of each input is calculated
-     * and each input stream (iterator for simplicity here) first discard
+     * and each input stream (iterator for simplicity here) first discards
      * any values <b>less than max</b> then produces values <b>as long as
      * it is equal to max</b>.
      *
@@ -266,14 +264,6 @@ public final class ForeachOperation extends AbstractDatasetOperation {
             }
         }
         return new DataPointMapComparator(identifierOrder.build());
-    }
-
-    private Order getDefaultOrder() {
-        Order.Builder order = Order.create(getDataStructure());
-        for (String identifier : identifiers) {
-            order.put(identifier, ASC);
-        }
-        return order.build();
     }
 
     @Override

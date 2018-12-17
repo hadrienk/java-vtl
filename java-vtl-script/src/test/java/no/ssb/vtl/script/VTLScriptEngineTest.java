@@ -27,7 +27,6 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlOrdering;
@@ -90,15 +89,15 @@ public class VTLScriptEngineTest {
         // Will fail if a new keyword is added in the grammar or list of keywords without updating
         // the test.
         assertThat(symmetricDifference).containsExactlyInAnyOrder(
-                "time_aggregate", "exists_in_all", "match_characters", 
-                "timeshift", "join", "flow_to_stock", "identifier", 
-                "string_from_date", "subscript", "transcode", 
-                "setdiff", "current_date", "measure", 
-                "extract", "eval", "concatenation", 
-                "unique", "true", "exists_in", 
+                "time_aggregate", "exists_in_all", "match_characters",
+                "timeshift", "join", "flow_to_stock", "identifier",
+                "string_from_date", "subscript", "transcode",
+                "setdiff", "current_date", "measure",
+                "extract", "eval", "concatenation",
+                "unique", "true", "exists_in",
                 "func_dep", "symdiff", "attribute",
                 "fill_time_series", "intersect", "not_exists_in_all",
-                "false", "any", 
+                "false", "any",
                 "lenght", "stock_to_flow", "not_exists_in",
                 "aggregatefunctions", "alterdataset", "||",
                 "<=", "<>", "measures",
@@ -124,6 +123,7 @@ public class VTLScriptEngineTest {
             );
         }
     }
+
     @Test
     public void testVersion() {
         assertThat(new ComparableVersion("0.1.9")).isLessThan(new ComparableVersion("0.1.9-1"));
@@ -185,7 +185,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("res");
         Object res = bindings.get("res");
         assertThat(res).isInstanceOf(Dataset.class);
-        assertThat(((Dataset)res).getDataStructure()).containsKeys("assigned");
+        assertThat(((Dataset) res).getDataStructure()).containsKeys("assigned");
         assertThat(((Dataset) res).getData()).containsExactly(
                 DataPoint.create("id", 0L, +1L)
         );
@@ -209,7 +209,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("res");
         Object res = bindings.get("res");
         assertThat(res).isInstanceOf(Dataset.class);
-        assertThat(((Dataset)res).getDataStructure()).containsKeys("123escaped-assigned");
+        assertThat(((Dataset) res).getDataStructure()).containsKeys("123escaped-assigned");
         assertThat(((Dataset) res).getData()).containsExactly(
                 DataPoint.create("id", 0L, 1L)
         );
@@ -232,7 +232,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("res");
         Object res = bindings.get("res");
         assertThat(res).isInstanceOf(Dataset.class);
-        assertThat(((Dataset)res).getDataStructure()).containsKeys("assigned");
+        assertThat(((Dataset) res).getDataStructure()).containsKeys("assigned");
         assertThat(((Dataset) res).getData()).containsExactly(
                 DataPoint.create("id", 0L, 1L)
         );
@@ -778,10 +778,10 @@ public class VTLScriptEngineTest {
                 entry("m22", String.class)
         );
 
-        assertThat(ds2.getData(Order.createDefault(ds2.getDataStructure())).get())
+        assertThat(ds2.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         "1", 1L, "constant",
                         "2", 0L, "str2",
                         "3", 0L, "constant"
@@ -916,10 +916,10 @@ public class VTLScriptEngineTest {
                 .addComponent("at1", Role.ATTRIBUTE, String.class)
 
                 .addPoints(1L, "one", 101L, 1.1, "attr1")
-                .addPoints(1L, "two", 102L, 1.1, "attr2" )
-                .addPoints(2L, "one", 201L, 1.1, "attr2" )
-                .addPoints(                        2L, "two", 202L, 1.1, "attr2")
-                .addPoints( 2L, "two-null", null, null, "attr2" )
+                .addPoints(1L, "two", 102L, 1.1, "attr2")
+                .addPoints(2L, "one", 201L, 1.1, "attr2")
+                .addPoints(2L, "two", 202L, 1.1, "attr2")
+                .addPoints(2L, "two-null", null, null, "attr2")
                 .build();
 
         bindings.put("ds1", ds1);

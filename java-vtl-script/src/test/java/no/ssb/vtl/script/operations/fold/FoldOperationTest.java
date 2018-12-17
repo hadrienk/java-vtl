@@ -31,7 +31,6 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VtlFiltering;
@@ -58,10 +57,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static no.ssb.vtl.model.Component.Role.ATTRIBUTE;
 import static no.ssb.vtl.model.Component.Role.IDENTIFIER;
 import static no.ssb.vtl.model.Component.Role.MEASURE;
+import static no.ssb.vtl.model.VtlFiltering.and;
 import static no.ssb.vtl.model.VtlFiltering.eq;
 import static no.ssb.vtl.model.VtlFiltering.ge;
 import static no.ssb.vtl.model.VtlFiltering.lt;
-import static no.ssb.vtl.model.VtlFiltering.and;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FoldOperationTest extends RandomizedTest {
@@ -143,7 +142,7 @@ public class FoldOperationTest extends RandomizedTest {
         VtlFiltering filtering = VtlFiltering.using(fold)
                 .or(
                         and(eq("country", "sweden"), eq("year", "2000")),
-                        and(ge("value", 256L),lt("value", 1024L))
+                        and(ge("value", 256L), lt("value", 1024L))
                 )
                 .build();
 
@@ -184,7 +183,7 @@ public class FoldOperationTest extends RandomizedTest {
                 DataPoint.create("2000", "norway", "birth", 4),
                 DataPoint.create("2000", "norway", "death", 2),
                 DataPoint.create("2000", "norway", "pop", 1)
-                );
+        );
 
     }
 
@@ -293,11 +292,7 @@ public class FoldOperationTest extends RandomizedTest {
             );
 
             // Need to sort back before assert.
-            Order order = Order.create(clause.getDataStructure())
-                    .put("id1", Ordering.Direction.ASC)
-                    .put("id2", Ordering.Direction.ASC)
-                    .put("newId", Ordering.Direction.ASC)
-                    .build();
+            VtlOrdering order = VtlOrdering.using(clause).asc("id1", "id2", "newId").build();
 
             Stream<DataPoint> stream = clause.computeData(Ordering.ANY, Filtering.ALL, Collections.emptySet());
             softly.assertThat(stream.sorted(order))
