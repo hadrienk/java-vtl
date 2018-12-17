@@ -63,30 +63,13 @@ public class VTLObjectTest {
         VTLObject otherOne = VTLObject.of(new Long(1));
 
         try (AutoCloseableSoftAssertions softly = new AutoCloseableSoftAssertions()) {
-            softly.assertThatThrownBy(() -> one.compareTo(two))
-                    .hasMessageContaining(" 1.0 ")
-                    .hasMessageContaining("Double")
-                    .hasMessageContaining(" 2 ")
-                    .hasMessageContaining("Long");
+            softly.assertThat(one.compareTo(two)).isEqualTo(-1);
 
-            softly.assertThatThrownBy(() -> two.compareTo(one))
-                    .hasMessageContaining(" 2 ")
-                    .hasMessageContaining("Double")
-                    .hasMessageContaining(" 1.0 ")
-                    .hasMessageContaining("Long");
+            softly.assertThat(two.compareTo(one)).isEqualTo(1);
 
-            softly.assertThatThrownBy(() -> assertThat(one.compareTo(otherOne)))
-                    .hasMessageContaining(" 1 ")
-                    .hasMessageContaining("Long")
-                    .hasMessageContaining(" 1.0 ")
-                    .hasMessageContaining("Double");
+            softly.assertThat(one.compareTo(otherOne)).isEqualTo(0);
 
-
-            softly.assertThatThrownBy(() -> assertThat(otherOne.compareTo(one)))
-                    .hasMessageContaining(" 1 ")
-                    .hasMessageContaining("Long")
-                    .hasMessageContaining(" 1.0 ")
-                    .hasMessageContaining("Double");
+            softly.assertThat(otherOne.compareTo(one)).isEqualTo(0);
         }
 
 
