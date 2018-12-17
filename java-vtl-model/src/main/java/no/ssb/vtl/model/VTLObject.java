@@ -141,9 +141,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
 
     /**
      * Note: this class has a natural ordering that is inconsistent with equals.
-     * <br/>
-     * TODO: Fix ordering?
-     * TODO: Make comparable to only VTLObject
      */
     @Override
     public int compareTo(Object o) {
@@ -161,7 +158,6 @@ public abstract class VTLObject<V> implements Supplier<V>, Comparable<Object> {
             return 1;
         }
 
-        // TODO: Should we allow this?
         // Compare numbers
         if (Number.class.isAssignableFrom(other.getClass()) && Number.class.isAssignableFrom(value.getClass()))
             return Double.compare(((Number) value).doubleValue(), ((Number) other).doubleValue());
