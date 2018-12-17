@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,7 +40,7 @@ public abstract class VtlFiltering implements Filtering {
         this.operator = operator;
         this.value = null;
         this.column = null;
-        this.operands = new HashSet<>(operands);
+        this.operands = new LinkedHashSet<>(operands);
     }
 
     protected VtlFiltering(
@@ -301,10 +302,10 @@ public abstract class VtlFiltering implements Filtering {
                 return that.equals(this);
             }
 
-            if (!Objects.equals(this.getOperator(),that.getOperator())) return false;
-            if (!Objects.equals(this.isNegated(),that.isNegated())) return false;
+            if (!Objects.equals(this.getOperator(), that.getOperator())) return false;
+            if (!Objects.equals(this.isNegated(), that.isNegated())) return false;
             if (!Objects.equals(this.getColumn(), that.getColumn())) return false;
-            if (!Objects.equals(this.getValue(),that.getValue())) return false;
+            if (!Objects.equals(this.getValue(), that.getValue())) return false;
 
             return true;
         }
@@ -404,8 +405,8 @@ public abstract class VtlFiltering implements Filtering {
 
             if (!Objects.equals(thisOpWithoutTrue, thatOpWithoutTrue)) return false;
 
-            if (!Objects.equals(this.getOperator(),that.getOperator())) return false;
-            if (!Objects.equals(this.isNegated(),that.isNegated())) return false;
+            if (!Objects.equals(this.getOperator(), that.getOperator())) return false;
+            if (!Objects.equals(this.isNegated(), that.isNegated())) return false;
 
             return true;
         }
@@ -484,8 +485,8 @@ public abstract class VtlFiltering implements Filtering {
 
             Filtering that = (Filtering) o;
 
-            if (!Objects.equals(this.getOperator(),that.getOperator())) return false;
-            if (!Objects.equals(this.isNegated(),that.isNegated())) return false;
+            if (!Objects.equals(this.getOperator(), that.getOperator())) return false;
+            if (!Objects.equals(this.isNegated(), that.isNegated())) return false;
 
             // TRUE | X => TRUE
             Optional<VtlFiltering> containsTrue = this.getOperands().stream()

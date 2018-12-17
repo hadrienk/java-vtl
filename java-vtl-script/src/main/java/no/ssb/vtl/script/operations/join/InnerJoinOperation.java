@@ -90,7 +90,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             Stream<DataPoint> original = getOrSortData(
                     left,
                     adjustOrderForStructure(requiredOrder, left.getDataStructure()),
-                    filtering,
+                    filtering, // TODO: Rename columns in the filter.
                     components
             );
             originals.add(original);

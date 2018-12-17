@@ -36,6 +36,7 @@ import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.error.VTLRuntimeException;
+import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.test.RandomizedDataset;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Before;
@@ -70,28 +71,6 @@ public class UnionOperationTest extends RandomizedTest {
                 "GEO", Role.IDENTIFIER, String.class,
                 "POP", Role.MEASURE, Long.class
         );
-    }
-
-    @Test
-    public void testOneDatasetReturnedUnchanged() {
-
-        Dataset dataset = StaticDataset.create(dataStructure).build();
-        Stream<DataPoint> stream = dataset.getData();
-
-        Dataset spyDataset = spy(dataset);
-        doReturn(stream).when(spyDataset).getData();
-        doReturn(Optional.of(stream)).when(spyDataset).getData(any(), any(), any());
-
-        UnionOperation operator = new UnionOperation(spyDataset);
-
-        assertThat(operator.getData())
-                .as("result of union operation")
-                .isSameAs(stream);
-
-        assertThat(operator.getData(Order.createDefault(dataset.getDataStructure())).get())
-                .as("result of union operation")
-                .isSameAs(stream);
-
     }
 
 

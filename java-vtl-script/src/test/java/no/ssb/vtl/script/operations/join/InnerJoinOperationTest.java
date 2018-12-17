@@ -147,68 +147,6 @@ public class InnerJoinOperationTest extends RandomizedTest {
     }
 
     @Test
-    public void testSourceOrderEmpty() {
-        StaticDataset ds1 = StaticDataset.create()
-                .addComponent("id1", IDENTIFIER, String.class)
-                .addComponent("idx", IDENTIFIER, String.class)
-                .addPoints("D", "ds1 match")
-                .addPoints("B", "ds1 miss")
-                .addPoints("C", "ds1 match")
-                .addPoints("A", "ds1 miss")
-                .build();
-
-        StaticDataset ds2 = StaticDataset.create()
-                .addComponent("id1", IDENTIFIER, String.class)
-                .addComponent("idy", IDENTIFIER, String.class)
-                .addPoints("F", "ds2 miss")
-                .addPoints("C", "ds2 match")
-                .addPoints("E", "ds2 miss")
-                .addPoints("D", "ds2 match")
-                .build();
-
-        Dataset orderCheckDataset = new Dataset() {
-
-            @Override
-            public Stream<DataPoint> getData() {
-                return ds2.getData();
-            }
-
-            @Override
-            public Optional<Map<String, Integer>> getDistinctValuesCount() {
-                return ds2.getDistinctValuesCount();
-            }
-
-            @Override
-            public Optional<Long> getSize() {
-                return ds2.getSize();
-            }
-
-            @Override
-            public Optional<Stream<DataPoint>> getData(Ordering orders, Filtering filtering, Set<String> components) {
-                return Optional.empty();
-            }
-
-            @Override
-            public DataStructure getDataStructure() {
-                return ds2.getDataStructure();
-            }
-        };
-
-        InnerJoinOperation joinOperation = new InnerJoinOperation(
-                ImmutableMap.of(
-                        "ds1", ds1, "ds2", orderCheckDataset
-                ), Collections.emptySet()
-        );
-
-        Optional<Stream<DataPoint>> data = joinOperation.getData(Order.create(joinOperation.getDataStructure()).put("id1", Ordering.Direction.DESC).build());
-        assertThat(data.isPresent()).isTrue();
-        assertThat(data.get()).containsExactly(
-                DataPoint.create("D", "ds1 match", "ds2 match"),
-                DataPoint.create("C", "ds1 match", "ds2 match")
-        );
-    }
-
-    @Test
     @Repeat(iterations = 10)
     public void testRandomDatasets() throws Exception {
 

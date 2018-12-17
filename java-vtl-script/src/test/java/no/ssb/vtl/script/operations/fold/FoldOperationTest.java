@@ -150,29 +150,41 @@ public class FoldOperationTest extends RandomizedTest {
 
         assertThat(result.getData(
                 VtlOrdering.using(fold).desc("year", "country").build(),
-                filtering,
+                Filtering.ALL,
                 fold.getDataStructure().keySet()
         ).get()).containsExactly(
-                DataPoint.create("2000", "sweden", "pop", 8L),
-                DataPoint.create("2000", "sweden", "death", 16L),
-                DataPoint.create("2000", "sweden", "birth", 32L),
-                DataPoint.create("2000", "norway", "pop", 1L),
-                DataPoint.create("2000", "norway", "death", 2L),
-                DataPoint.create("2000", "norway", "birth", 4L)
+                DataPoint.create("2001", "sweden", "pop", 512),
+                DataPoint.create("2001", "sweden", "death", 1024),
+                DataPoint.create("2001", "sweden", "birth", 2048),
+                DataPoint.create("2001", "norway", "pop", 64),
+                DataPoint.create("2001", "norway", "death", 128),
+                DataPoint.create("2001", "norway", "birth", 256),
+                DataPoint.create("2000", "sweden", "pop", 8),
+                DataPoint.create("2000", "sweden", "death", 16),
+                DataPoint.create("2000", "sweden", "birth", 32),
+                DataPoint.create("2000", "norway", "pop", 1),
+                DataPoint.create("2000", "norway", "death", 2),
+                DataPoint.create("2000", "norway", "birth", 4)
         );
 
         assertThat(result.getData(
                 VtlOrdering.using(fold).desc("year", "country").asc("type").build(),
-                filtering,
+                Filtering.ALL,
                 fold.getDataStructure().keySet()
         ).get()).containsExactly(
-                DataPoint.create("2000", "sweden", "birth", 32L),
-                DataPoint.create("2000", "sweden", "death", 16L),
-                DataPoint.create("2000", "sweden", "pop", 8L),
-                DataPoint.create("2000", "norway", "birth", 4L),
-                DataPoint.create("2000", "norway", "death", 2L),
-                DataPoint.create("2000", "norway", "pop", 1L)
-        );
+                DataPoint.create("2001", "sweden", "birth", 2048),
+                DataPoint.create("2001", "sweden", "death", 1024),
+                DataPoint.create("2001", "sweden", "pop", 512),
+                DataPoint.create("2001", "norway", "birth", 256),
+                DataPoint.create("2001", "norway", "death", 128),
+                DataPoint.create("2001", "norway", "pop", 64),
+                DataPoint.create("2000", "sweden", "birth", 32),
+                DataPoint.create("2000", "sweden", "death", 16),
+                DataPoint.create("2000", "sweden", "pop", 8),
+                DataPoint.create("2000", "norway", "birth", 4),
+                DataPoint.create("2000", "norway", "death", 2),
+                DataPoint.create("2000", "norway", "pop", 1)
+                );
 
     }
 

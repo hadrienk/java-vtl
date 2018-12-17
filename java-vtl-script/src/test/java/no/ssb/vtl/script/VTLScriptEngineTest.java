@@ -288,7 +288,8 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", dataset);
         engine.eval("ds2 := get(\"todo\")");
 
-        assertThat(bindings).contains(entry("ds2", dataset));
+        assertThat(bindings).containsKeys("ds2");
+        assertThat(bindings.get("ds2")).isInstanceOf(Dataset.class);
 
     }
 
@@ -458,19 +459,19 @@ public class VTLScriptEngineTest {
         assertThat(ds2.getData()).flatExtracting(input -> input)
                 .extracting(VTLObject::get)
                 .containsExactly(
-                        "1", "123-m3", 103L,
                         "1", "m1", 101L,
                         "1", "m2", 102L,
+                        "1", "123-m3", 103L,
                         "1", "total", 101L + 102L + 103L,
 
-                        "2", "123-m3", 203L,
                         "2", "m1", 201L,
                         "2", "m2", 202L,
+                        "2", "123-m3", 203L,
                         "2", "total", 201L + 202L + 203L,
 
-                        "3", "123-m3", 303L,
                         "3", "m1", 301L,
                         "3", "m2", 302L,
+                        "3", "123-m3", 303L,
                         "3", "total", 301L + 302L + 303L
                 );
     }

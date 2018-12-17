@@ -58,7 +58,7 @@ public abstract class AbstractDatasetOperation implements Dataset {
 
     @Override
     public final Stream<DataPoint> getData() {
-        return computeData(Ordering.ANY, Filtering.ALL, computeDataStructure().keySet());
+        return computeData(Ordering.ANY, Filtering.ALL, getDataStructure().keySet());
     }
 
     @Override
@@ -68,12 +68,12 @@ public abstract class AbstractDatasetOperation implements Dataset {
 
     @Override
     public final Optional<Stream<DataPoint>> getData(Ordering order) {
-        return Optional.of(computeData(order, Filtering.ALL, computeDataStructure().keySet()));
+        return Optional.of(computeData(order, Filtering.ALL, getDataStructure().keySet()));
     }
 
     @Override
     public final Optional<Stream<DataPoint>> getData(Filtering filtering) {
-        return Optional.of(computeData(Ordering.ANY, filtering, computeDataStructure().keySet()));
+        return Optional.of(computeData(Ordering.ANY, filtering, getDataStructure().keySet()));
     }
 
     @Override
