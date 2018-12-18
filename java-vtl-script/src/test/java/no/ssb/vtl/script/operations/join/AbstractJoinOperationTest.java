@@ -379,6 +379,23 @@ public class AbstractJoinOperationTest {
                 .hasMessageContaining("dataset");
     }
 
+    @Test
+    public void testOnlyOneDataset() {
+
+        StaticDataset t1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, Long.class)
+                .addComponent("uni1", Role.IDENTIFIER, Double.class)
+                .addComponent("m1", Role.MEASURE, Instant.class)
+                .addComponent("a1", Role.MEASURE, Boolean.class)
+                .build();
+
+        TestAbstractJoinOperation operation = new TestAbstractJoinOperation(ImmutableMap.of("t1", t1));
+
+        assertThat(operation.getSize()).isEqualTo(t1.getSize());
+        assertThat(operation.getDistinctValuesCount()).isEqualTo(t1.getDistinctValuesCount());
+    }
+
 
     @Test
     public void testComponentNameIsUnique() {
@@ -426,16 +443,6 @@ public class AbstractJoinOperationTest {
 
         public TestAbstractJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
             super(namedDatasets, identifiers);
-        }
-
-        @Override
-        public Optional<Map<String, Integer>> getDistinctValuesCount() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Long> getSize() {
-            return Optional.empty();
         }
 
         @Override
