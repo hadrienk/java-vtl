@@ -33,7 +33,6 @@ import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.script.VtlConfiguration;
-import no.ssb.vtl.script.operations.union.ForwardingStream;
 
 import java.util.Arrays;
 import java.util.Collection;
