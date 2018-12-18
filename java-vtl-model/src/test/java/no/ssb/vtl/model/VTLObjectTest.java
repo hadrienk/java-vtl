@@ -21,12 +21,15 @@ package no.ssb.vtl.model;
  */
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.assertj.core.api.Java6Assertions.assertThatThrownBy;
@@ -54,6 +57,8 @@ public class VTLObjectTest {
         assertThat(VTLObject.of((Object) null)).isSameAs(VTLObject.NULL);
 
         assertThat(VTLObject.of(VTLObject.NULL)).isSameAs(VTLObject.NULL);
+        assertThat(VTLObject.NULL.get()).isNull();
+        assertThat(VTLObject.NULL.toString()).isEqualTo("[NULL]");
 
         assertThatThrownBy(() -> VTLObject.of(new HashSet<>()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -77,6 +82,56 @@ public class VTLObjectTest {
         VTLString aFloat = VTLObject.of("");
         assertThat(aFloat).isInstanceOf(VTLString.class);
         assertThat(aFloat.getVTLType()).isEqualTo(VTLString.class);
+    }
+
+    @Test
+    public void testEquals() {
+        VTLInteger vtlInteger = VTLObject.of(1L);
+        assertThat(vtlInteger.equals(vtlInteger)).isTrue();
+        assertThat(vtlInteger.equals(VTLObject.of(1L))).isTrue();
+        assertThat(vtlInteger.equals(VTLObject.of(2L))).isFalse();
+        assertThat(vtlInteger.equals(null)).isFalse();
+        assertThat(vtlInteger.equals(new Object())).isFalse();
+    }
+
+    @Test
+    public void testCompare() {
+        SoftAssertions softly = new SoftAssertions();
+        Instant now = Instant.now();
+        Set<Object> values = ImmutableSet.builder().add("string",1.0D, 1.0F, 1L, 1, now, false).build();
+        Map<Object, Object> greater = ImmutableMap.builder()
+                .put("string", "zstring")
+                .put(1.0D, 2.0D)
+                .put(1.0F, 2.0F)
+                .put(1L, 2L)
+                .put(1, 2)
+                .put(now, now.plusSeconds(60))
+                .put(false, true)
+                .build();
+        Map<Object, Object> less = ImmutableMap.builder()
+                .put("string", "astring")
+                .put(1.0D, 0.5D)
+                .put(1.0F, 0.5F)
+                .put(1L, 0L)
+                .put(1, 0)
+                .put(now, now.minusSeconds(60))
+                .build();
+
+        for (Object value : values) {
+            VTLObject vtlObject = VTLObject.of(value);
+            if (greater.containsKey(value)) {
+                VTLObject greaterVtlObject = VTLObject.of(greater.get(value));
+                softly.assertThat(vtlObject.compareTo(greaterVtlObject)).isLessThan(0);
+                softly.assertThat(greaterVtlObject.compareTo(vtlObject)).isGreaterThan(0);
+            }
+            if (less.containsKey(value)) {
+                VTLObject lesserVtlObject = VTLObject.of(less.get(value));
+                softly.assertThat(vtlObject.compareTo(lesserVtlObject)).isGreaterThan(0);
+                softly.assertThat(lesserVtlObject.compareTo(vtlObject)).isLessThan(0);
+            }
+        }
+
+        softly.assertAll();
     }
 
     @Test

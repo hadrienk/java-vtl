@@ -41,11 +41,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class VtlOrdering implements Ordering, OrderingSpecification {
 
-    @SuppressWarnings("unchecked")
-    public static final Comparator<Comparable> NULLS_FIRST = Comparator.<Comparable>nullsFirst(Comparator.naturalOrder());
-    @SuppressWarnings("unchecked")
-    public static final Comparator<VTLObject> VTL_OBJECT_COMPARATOR = Comparator.comparing(vtlObject -> (Comparable) vtlObject.get(), NULLS_FIRST);
-
     public static final Comparator<Map.Entry<String, Component>> BY_ROLE = Comparator.comparing(
             entry -> entry.getValue().getRole(),
             com.google.common.collect.Ordering.explicit(
