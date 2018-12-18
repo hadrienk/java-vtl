@@ -231,7 +231,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * @param ordering  a compatible order.
      */
     @VisibleForTesting
-    Optional<Ordering> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering ordering) {
+    Ordering createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering ordering) {
 
         List<String> joinColumns = firstComponents.stream()
                 .map(structure::getName).collect(Collectors.toList());
@@ -252,7 +252,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             directionMap.putIfAbsent(requiredColumn, ordering.getDirection(requiredColumn));
         }
 
-        return Optional.of(new VtlOrdering(directionMap, structure));
+        return new VtlOrdering(directionMap, structure);
     }
 
     /**

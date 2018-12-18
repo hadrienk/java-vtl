@@ -91,13 +91,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     @Override
     public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         // Try to create a compatible order.
-        // If not, the caller will have to sort the result manually.
-        Optional<Ordering> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), orders);
-        if (!compatibleOrder.isPresent()) {
-            throw new UnsupportedOperationException();
-        }
-
-        Ordering requiredOrder = compatibleOrder.get();
+        Ordering requiredOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), orders);
 
         // Compute the predicate
         Ordering predicate = computePredicate(requiredOrder);

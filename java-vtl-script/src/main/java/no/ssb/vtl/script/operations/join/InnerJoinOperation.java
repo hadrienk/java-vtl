@@ -65,13 +65,7 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Try to create a compatible order.
-        // If not, the caller will have to sort the result manually.
-        Optional<Ordering> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
-        if (!compatibleOrder.isPresent()) {
-            throw new UnsupportedOperationException();
-        }
-
-        Ordering requiredOrder = compatibleOrder.get();
+        Ordering requiredOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
 
         // Compute the predicate
         Ordering predicate = computePredicate(requiredOrder);
@@ -179,7 +173,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         if (getChildren().size() == 1) {
             return getChildren().get(0).getSize();
         } else {
-            // TODO
             return Optional.empty();
         }
     }
