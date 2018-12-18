@@ -45,9 +45,11 @@ import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.script.operations.DatasetOperationWrapper;
 import no.ssb.vtl.script.support.DatasetCloseWatcher;
 import org.assertj.core.api.Assertions;
@@ -59,6 +61,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RenameOperationTest {
 
@@ -86,9 +89,9 @@ public class RenameOperationTest {
         try (Stream<DataPoint> data = rename.computeData(
                 Ordering.ANY, Filtering.ALL, Collections.emptySet()
         )) {
-            Assertions.assertThat(data).isNotNull();
+            assertThat(data).isNotNull();
         } finally {
-            Assertions.assertThat(dataset.allStreamWereClosed()).isTrue();
+            assertThat(dataset.allStreamWereClosed()).isTrue();
         }
     }
 
@@ -116,10 +119,126 @@ public class RenameOperationTest {
                 newNames
         );
 
-        Assertions.assertThat(rename.getDataStructure().getRoles()).contains(
+        assertThat(rename.getDataStructure().getRoles()).contains(
                 Assertions.entry("Ib", Role.IDENTIFIER),
                 Assertions.entry("Mb", Role.MEASURE),
                 Assertions.entry("Ab", Role.ATTRIBUTE)
+        );
+
+    }
+
+    @Test
+    public void testComplexFilters() {
+        Dataset dataset = StaticDataset.create()
+                .addComponent("Identifier1", Role.IDENTIFIER, String.class)
+                .addComponent("Identifier2", Role.IDENTIFIER, String.class)
+                .addComponent("Measure1", Role.MEASURE, String.class)
+                .addComponent("Measure2", Role.MEASURE, String.class)
+                .addComponent("Attribute1", Role.ATTRIBUTE, String.class)
+                .addComponent("Attribute2", Role.ATTRIBUTE, String.class)
+
+                .addPoints("Identifier1", "Identifier2", "Measure1", "Measure2", "Attribute1", "Attribute2")
+                .build();
+
+        RenameOperation renameOperation = new RenameOperation(dataset, ImmutableMap.<String, String>builder()
+                .put("Identifier1", "RenamedIdentifier1")
+                .put("Identifier2", "RenamedIdentifier2")
+                .put("Measure1", "RenamedMeasure1")
+                .put("Measure2", "RenamedMeasure2")
+                .put("Attribute1", "RenamedAttribute1")
+                .put("Attribute2", "RenamedAttribute2")
+                .build()
+        );
+
+        VtlFiltering complexFilter = VtlFiltering.using(renameOperation).and(
+                VtlFiltering.eq("RenamedIdentifier1", "a"),
+                VtlFiltering.or(
+                        VtlFiltering.gt("RenamedIdentifier2", "b"),
+                        VtlFiltering.lt("RenamedMeasure1", "b")
+                ),
+                VtlFiltering.not(VtlFiltering.and(
+                        VtlFiltering.neq("RenamedMeasure2", "d"),
+                        VtlFiltering.ge("RenamedAttribute1", "e")
+                )),
+                VtlFiltering.le("RenamedAttribute2", "f")
+        ).build();
+
+        FilteringSpecification renamedFilter = renameOperation.computeRequiredFiltering(complexFilter);
+        assertThat(renamedFilter.toString()).isEqualTo(
+                "(Identifier1=a&(Identifier2>b|Measure1<b)&~(Measure2!=d&Attribute1>=e)&Attribute2<=f)"
+        );
+    }
+
+    @Test
+    public void testToString() {
+        Dataset dataset = StaticDataset.create()
+                .addComponent("Identifier1", Role.IDENTIFIER, String.class)
+                .addComponent("Identifier2", Role.IDENTIFIER, String.class)
+                .addComponent("Measure1", Role.MEASURE, String.class)
+                .addComponent("Measure2", Role.MEASURE, String.class)
+                .addComponent("Attribute1", Role.ATTRIBUTE, String.class)
+                .addComponent("Attribute2", Role.ATTRIBUTE, String.class)
+
+                .addPoints("Identifier1", "Identifier2", "Measure1", "Measure2", "Attribute1", "Attribute2")
+                .build();
+
+        RenameOperation renameOperation = new RenameOperation(dataset, ImmutableMap.<String, String>builder()
+                .put("Identifier1", "RenamedIdentifier1")
+                .put("Identifier2", "RenamedIdentifier2")
+                .put("Measure1", "RenamedMeasure1")
+                .put("Measure2", "RenamedMeasure2")
+                .put("Attribute1", "RenamedAttribute1")
+                .put("Attribute2", "RenamedAttribute2")
+                .build(),
+                ImmutableMap.of(
+                        "Measure1", Role.ATTRIBUTE
+                )
+        );
+
+        assertThat(renameOperation.toString()).isEqualTo(
+                "RenameOperation{" +
+                        "Identifier1=RenamedIdentifier1, " +
+                        "Identifier2=RenamedIdentifier2, " +
+                        "Measure1=RenamedMeasure1(ATTRIBUTE), " +
+                        "Measure2=RenamedMeasure2, " +
+                        "Attribute1=RenamedAttribute1, " +
+                        "Attribute2=RenamedAttribute2}"
+        );
+    }
+
+    @Test
+    public void testGetSizeAndDistinct() {
+        Dataset dataset = StaticDataset.create()
+                .addComponent("Identifier1", Role.IDENTIFIER, String.class)
+                .addComponent("Identifier2", Role.IDENTIFIER, String.class)
+                .addComponent("Measure1", Role.MEASURE, String.class)
+                .addComponent("Measure2", Role.MEASURE, String.class)
+                .addComponent("Attribute1", Role.ATTRIBUTE, String.class)
+                .addComponent("Attribute2", Role.ATTRIBUTE, String.class)
+
+                .addPoints("Identifier1", "Identifier2", "Measure1", "Measure2", "Attribute1", "Attribute2")
+                .build();
+
+        RenameOperation renameOperation = new RenameOperation(dataset, ImmutableMap.<String, String>builder()
+                .put("Identifier1", "RenamedIdentifier1")
+                .put("Identifier2", "RenamedIdentifier2")
+                .put("Measure1", "RenamedMeasure1")
+                .put("Measure2", "RenamedMeasure2")
+                .put("Attribute1", "RenamedAttribute1")
+                .put("Attribute2", "RenamedAttribute2")
+                .build()
+        );
+
+        assertThat(renameOperation.getSize()).contains(1L);
+        assertThat(renameOperation.getDistinctValuesCount()).contains(
+                ImmutableMap.<String, Integer>builder()
+                        .put("RenamedIdentifier1", 1)
+                        .put("RenamedIdentifier2", 1)
+                        .put("RenamedMeasure1", 1)
+                        .put("RenamedMeasure2", 1)
+                        .put("RenamedAttribute1", 1)
+                        .put("RenamedAttribute2", 1)
+                        .build()
         );
 
     }
@@ -163,7 +282,7 @@ public class RenameOperationTest {
                 newRoles
         );
 
-        Assertions.assertThat(rename.getDataStructure().getRoles()).contains(
+        assertThat(rename.getDataStructure().getRoles()).contains(
                 Assertions.entry("Identifier1Measure", Role.MEASURE),
                 Assertions.entry("Identifier2Attribute", Role.ATTRIBUTE),
                 Assertions.entry("Measure1Identifier", Role.IDENTIFIER),
@@ -172,7 +291,7 @@ public class RenameOperationTest {
                 Assertions.entry("Attribute2Measure", Role.MEASURE)
         );
 
-        Assertions.assertThat(rename.computeData(Ordering.ANY, Filtering.ALL, Collections.emptySet())).flatExtracting(input -> input).extracting(VTLObject::get)
+        assertThat(rename.computeData(Ordering.ANY, Filtering.ALL, Collections.emptySet())).flatExtracting(input -> input).extracting(VTLObject::get)
                 .containsOnlyElementsOf(
                         dataset.getDataStructure().keySet()
                 );

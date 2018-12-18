@@ -109,7 +109,7 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
         if (filtering.getOperator() == FilteringSpecification.Operator.OR || filtering.getOperator() == FilteringSpecification.Operator.AND) {
             List<VtlFiltering> operands = new ArrayList<>();
             for (FilteringSpecification operand : filtering.getOperands()) {
-                operands.add(renameFiltering(operand));
+                operands.add((VtlFiltering) computeRequiredFiltering(operand));
             }
             return VtlFiltering.nary(negated, operator, operands);
         } else {
@@ -173,29 +173,6 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
             components.add(childColumn);
         }
         return components.build();
-    }
-
-    private VtlFiltering renameFiltering(FilteringSpecification oldFiltering) {
-        if (oldFiltering == Filtering.ALL) {
-            return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
-        }
-        Boolean negated = oldFiltering.isNegated();
-        FilteringSpecification.Operator operator = oldFiltering.getOperator();
-        if (oldFiltering.getOperator() == FilteringSpecification.Operator.OR || oldFiltering.getOperator() == FilteringSpecification.Operator.AND) {
-            List<VtlFiltering> operands = new ArrayList<>();
-            for (FilteringSpecification operand : oldFiltering.getOperands()) {
-                operands.add(renameFiltering(operand));
-            }
-            return VtlFiltering.nary(negated, operator, operands);
-        } else {
-            ImmutableBiMap<String, String> reverseMap = ImmutableBiMap.copyOf(nameMapping).inverse();
-            return VtlFiltering.literal(
-                    negated,
-                    operator,
-                    reverseMap.getOrDefault(oldFiltering.getColumn(), oldFiltering.getColumn()),
-                    oldFiltering.getValue()
-            );
-        }
     }
 
     @Override
