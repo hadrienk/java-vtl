@@ -21,7 +21,6 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
@@ -36,7 +35,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -107,7 +105,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
         Closer closer = Closer.create();
         try {
 
-            Table<Component, Dataset, Component> componentMapping = getComponentMapping();
             Stream<DataPoint> original = getOrSortData(
                     left,
                     adjustOrderForStructure(requiredOrder, left.getDataStructure()),
@@ -139,13 +136,8 @@ public class OuterJoinOperation extends AbstractJoinOperation {
 
                 result = StreamSupport.stream(
                         new OuterJoinSpliterator<>(
-                                new JoinKeyExtractor(
-                                        first ? left.getDataStructure() : getDataStructure(),
-                                        predicate,
-                                        first ? componentMapping.column(left)::get : c -> c
-                                ),
-                                new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
-                                predicate,
+                                new JoinKeyExtractor(first ? left.getDataStructure() : getDataStructure(), predicate),
+                                new JoinKeyExtractor(right.getDataStructure(), predicate), predicate,
                                 new OuterJoinMerger(this, right),
                                 result.spliterator(),
                                 rightStream.spliterator()
@@ -164,8 +156,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                 }
             });
 
-            // TODO: Post order and post filter.
-            // TODO: Closer could be moved to VtlStream.
             return new VtlStream(
                     this,
                     delegate,

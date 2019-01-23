@@ -79,9 +79,9 @@ public class VTLObjectTest {
 
     @Test
     public void testString() {
-        VTLString aFloat = VTLObject.of("");
-        assertThat(aFloat).isInstanceOf(VTLString.class);
-        assertThat(aFloat.getVTLType()).isEqualTo(VTLString.class);
+        VTLString aString = VTLObject.of("");
+        assertThat(aString).isInstanceOf(VTLString.class);
+        assertThat(aString.getVTLType()).isEqualTo(VTLString.class);
     }
 
     @Test

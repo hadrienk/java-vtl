@@ -23,14 +23,11 @@ package no.ssb.vtl.script.operations.join;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Ordering;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -41,26 +38,9 @@ public class JoinKeyExtractor implements UnaryOperator<DataPoint> {
     private final DataPoint buffer;
     private final int[] indices;
 
-    /**
-     * Create a new JoinKeyExtractor.
-     *
-     * @param childStructure original structure.
-     * @param order          the order representing the component to extract.
-     * @param mapping        the mapping used to translate order component to child components.
-     */
     public JoinKeyExtractor(
             DataStructure childStructure,
-            Ordering ordering,
-            Map<Component, Component> mapping
-    ) {
-        this(childStructure, ordering, mapping::get);
-    }
-
-
-    public JoinKeyExtractor(
-            DataStructure childStructure,
-            Ordering order,
-            Function<Component, Component> mapper
+            Ordering order
     ) {
 
         ImmutableList<String> fromList = ImmutableList.copyOf(childStructure.keySet());

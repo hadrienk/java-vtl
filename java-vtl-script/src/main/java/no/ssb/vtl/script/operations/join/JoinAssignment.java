@@ -177,14 +177,14 @@ public class JoinAssignment extends AbstractUnaryDatasetOperation {
 
     @Override
     public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
-        // TODO: On simple assignments like x := y we could try to transform the filter.
+        // TODO: transform the filter on identity assignments.
         return VtlFiltering.using(getChild()).transpose(filtering);
     }
 
     @Override
     public OrderingSpecification computeRequiredOrdering(OrderingSpecification ordering) {
         // Remove the assigned column.
-        // On simple identifier assignment, we could rename the ordering.
+        // TODO: Rename the ordering with identity assignments.
         VtlOrdering.Builder builder = VtlOrdering.using(getChild());
         for (String column : ordering.columns()) {
             if (!identifier.equals(column)) {

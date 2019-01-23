@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Use this class to simplify implementation of the {@link Ordering} and {@link OrderingSpecification}
  */
-public final class VtlOrdering implements Ordering, OrderingSpecification {
+public final class VtlOrdering implements Ordering {
 
     public static final Comparator<Map.Entry<String, Component>> BY_ROLE = Comparator.comparing(
             entry -> entry.getValue().getRole(),

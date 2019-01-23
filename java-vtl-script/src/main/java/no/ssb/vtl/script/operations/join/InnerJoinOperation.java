@@ -112,12 +112,8 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
                 result = StreamSupport.stream(
                         new InnerJoinSpliterator<>(
-                                new JoinKeyExtractor(
-                                        first ? left.getDataStructure() : getDataStructure(),
-                                        predicate,
-                                        first ? componentMapping.column(left)::get : c -> c
-                                ),
-                                new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
+                                new JoinKeyExtractor(first ? left.getDataStructure() : getDataStructure(), predicate),
+                                new JoinKeyExtractor(right.getDataStructure(), predicate),
                                 predicate,
                                 new InnerJoinMerger(getDataStructure(), right.getDataStructure()),
                                 result.spliterator(),

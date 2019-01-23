@@ -21,7 +21,6 @@ package no.ssb.vtl.script.operations;
  */
 
 import com.google.common.collect.ImmutableList;
-import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
@@ -29,7 +28,6 @@ import no.ssb.vtl.model.Filtering;
 import no.ssb.vtl.model.FilteringSpecification;
 import no.ssb.vtl.model.Ordering;
 import no.ssb.vtl.model.OrderingSpecification;
-import no.ssb.vtl.model.VtlOrdering;
 
 import java.util.Collection;
 import java.util.Optional;

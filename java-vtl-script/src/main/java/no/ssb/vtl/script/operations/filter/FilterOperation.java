@@ -68,10 +68,9 @@ public class FilterOperation extends AbstractUnaryDatasetOperation {
         VtlOrdering childrenOrdering = (VtlOrdering) computeRequiredOrdering(ordering);
         VtlFiltering childrenFiltering = (VtlFiltering) computeRequiredFiltering(filtering);
 
-        Stream<DataPoint> data = getChild().computeData(childrenOrdering, childrenFiltering, components);
-        Stream<DataPoint> original = data;
+        Stream<DataPoint> original = getChild().computeData(childrenOrdering, childrenFiltering, components);
 
-        data = data.map(dataPointBindings::setDataPoint)
+        Stream<DataPoint> data = original.map(dataPointBindings::setDataPoint)
                 .filter(bindings -> {
                     VTLObject resolved = predicate.resolve(dataPointBindings);
                     return resolved.get() == null ? false : VTLBoolean.of((Boolean) resolved.get()).get();

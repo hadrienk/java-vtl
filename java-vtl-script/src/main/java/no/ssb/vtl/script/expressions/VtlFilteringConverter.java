@@ -9,9 +9,9 @@ package no.ssb.vtl.script.expressions;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,11 +36,9 @@ import no.ssb.vtl.script.expressions.equality.LesserThanExpression;
 import no.ssb.vtl.script.expressions.equality.NotEqualExpression;
 import no.ssb.vtl.script.expressions.logic.AndExpression;
 import no.ssb.vtl.script.expressions.logic.OrExpression;
-import no.ssb.vtl.script.expressions.logic.XorExpression;
 
 import javax.script.SimpleBindings;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -56,9 +54,9 @@ public class VtlFilteringConverter {
         if ((leftOperand instanceof VariableExpression && rightOperand instanceof LiteralExpression) ||
                 (leftOperand instanceof LiteralExpression && rightOperand instanceof VariableExpression)) {
             VariableExpression variableExpression = (VariableExpression) (leftOperand instanceof VariableExpression ?
-                                leftOperand : rightOperand);
+                    leftOperand : rightOperand);
             LiteralExpression literalExpression = (LiteralExpression) (leftOperand instanceof LiteralExpression ?
-                                leftOperand : rightOperand);
+                    leftOperand : rightOperand);
 
             // Use the internal identifier with dataset prefix if it is a membership expression.
             // This should be refactored at some point.
@@ -102,14 +100,13 @@ public class VtlFilteringConverter {
             return convert((OrExpression) predicate);
         } else if (predicate instanceof AndExpression) {
             return convert((AndExpression) predicate);
-        } else if (predicate instanceof XorExpression) {
-            throw new UnsupportedOperationException();
         } else if (predicate instanceof AbstractEqualityExpression) {
             return convert((AbstractEqualityExpression) predicate);
         } else if (predicate instanceof LiteralExpression) {
             VTLBoolean value = (VTLBoolean) predicate.resolve(new SimpleBindings(Collections.emptyMap()));
             return VtlFiltering.literal(!value.get(), FilteringSpecification.Operator.TRUE, null, value);
         }
+        // TODO: Handle XorExpression.
         return VtlFiltering.literal(false, FilteringSpecification.Operator.TRUE, null, null);
     }
 
