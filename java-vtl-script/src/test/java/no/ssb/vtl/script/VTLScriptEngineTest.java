@@ -1119,4 +1119,109 @@ public class VTLScriptEngineTest {
                         "4", 300L, 400D, "attr2-2"
                 );
     }
+
+    @Test
+    public void testOuterJoinWithMultipleIds() throws ScriptException {
+        createMultipleIdDatasets();
+        VTLPrintStream out = new VTLPrintStream(System.out);
+        engine.eval("result := [outer a,b] {\n" +
+                "  rename a.integerMeasure to a,\n" +
+                "  rename b.integerMeasure to b\n" +
+                "}");
+        out.println(bindings.get("result"));
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("id2", Role.IDENTIFIER),
+                entry("a", Role.MEASURE),
+                entry("b", Role.MEASURE)
+        );
+        assertThat(result.getData()).containsExactlyInAnyOrder(
+                DataPoint.create("id1-1", "id2-1", 1, 1),
+                DataPoint.create("id1-2", "id2-1", 2, 2),
+                DataPoint.create("id1-3", "id2-1", 7, null),
+                DataPoint.create("id1-1", "id2-2", 1, null),
+                DataPoint.create("id1-2", "id2-2", 2, null),
+                DataPoint.create("id1-1", "id2-3", null, 1),
+                DataPoint.create("id1-2", "id2-3", null, 2)
+        );
+    }
+
+    @Test
+    public void testInnerJoinWithMultipleIds() throws ScriptException {
+        createMultipleIdDatasets();
+        VTLPrintStream out = new VTLPrintStream(System.out);
+        engine.eval("result := [a,b] {\n" +
+                "  rename a.integerMeasure to a,\n" +
+                "  rename b.integerMeasure to b\n" +
+                "}");
+        out.println(bindings.get("result"));
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("id2", Role.IDENTIFIER),
+                entry("a", Role.MEASURE),
+                entry("b", Role.MEASURE)
+        );
+        assertThat(result.getData()).containsExactlyInAnyOrder(
+                DataPoint.create("id1-1", "id2-1", 1, 1),
+                DataPoint.create("id1-2", "id2-1", 2, 2)
+        );
+    }
+
+    @Test
+    public void testInnerJoinWithMultipleRenames() throws ScriptException {
+        createMultipleIdDatasets();
+        engine.eval("result := [a,b] {\n" +
+                "  rename a.integerMeasure to a, b.integerMeasure to b\n" +
+                "}");
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("id2", Role.IDENTIFIER),
+                entry("a", Role.MEASURE),
+                entry("b", Role.MEASURE)
+        );
+        // Test different renames
+        engine.eval("result := [a,b] {\n" +
+                "  rename a.integerMeasure to tmpA, b.integerMeasure to tmpB,\n" +
+                "  rename tmpA to a, tmpB to b\n" +
+                "}");
+        assertThat(result.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("id2", Role.IDENTIFIER),
+                entry("a", Role.MEASURE),
+                entry("b", Role.MEASURE)
+        );
+    }
+
+    private void createMultipleIdDatasets() {
+        StaticDataset a = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("integerMeasure", Role.MEASURE, Long.class)
+
+                .addPoints("id1-1", "id2-1", 1L)
+                .addPoints("id1-2", "id2-1", 2L)
+                .addPoints("id1-3", "id2-1", 7L)
+
+                .addPoints("id1-1", "id2-2", 1L)
+                .addPoints("id1-2", "id2-2", 2L)
+                .build();
+
+        StaticDataset b = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("integerMeasure", Role.MEASURE, Long.class)
+
+                .addPoints("id1-1", "id2-1", 1L)
+                .addPoints("id1-2", "id2-1", 2L)
+
+                .addPoints("id1-1", "id2-3", 1L)
+                .addPoints("id1-2", "id2-3", 2L)
+                .build();
+
+        bindings.put("a", a);
+        bindings.put("b", b);
+    }
 }

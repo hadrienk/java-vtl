@@ -87,17 +87,22 @@ public class RenameOperation extends AbstractUnaryDatasetOperation {
     @Override
     protected DataStructure computeDataStructure() {
         DataStructure.Builder structure = DataStructure.builder();
-        DataStructure childStructure = getChild().getDataStructure();
-        for (String oldColumn : childStructure.keySet()) {
-            Component oldComponent = childStructure.get(oldColumn);
-            structure.put(
-                    nameMapping.getOrDefault(oldColumn, oldColumn),
-                    roleMapping.getOrDefault(oldColumn, oldComponent.getRole()),
-                    oldComponent.getType()
-            );
+        for (Map.Entry<String, Component> componentEntry : getChild().getDataStructure().entrySet()) {
+            Component oldComponent = componentEntry.getValue();
+            if (nameMapping.containsKey(componentEntry.getKey())) {
+                String newName = nameMapping.get(componentEntry.getKey());
+                structure.put(
+                        newName,
+                        roleMapping.getOrDefault(componentEntry.getKey(), oldComponent.getRole()),
+                        oldComponent.getType()
+                );
+            } else {
+                structure.put(componentEntry);
+            }
         }
         return structure.build();
     }
+
 
     @Override
     public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
