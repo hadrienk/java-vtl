@@ -20,7 +20,6 @@ package no.ssb.vtl.script;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import no.ssb.vtl.connectors.Connector;
@@ -28,9 +27,9 @@ import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
 import no.ssb.vtl.model.StaticDataset;
 import no.ssb.vtl.model.VTLObject;
+import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.parser.VTLLexer;
 import no.ssb.vtl.script.support.VTLPrintStream;
 import org.antlr.v4.runtime.Vocabulary;
@@ -49,11 +48,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static no.ssb.vtl.model.Component.Role;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,15 +89,15 @@ public class VTLScriptEngineTest {
         // Will fail if a new keyword is added in the grammar or list of keywords without updating
         // the test.
         assertThat(symmetricDifference).containsExactlyInAnyOrder(
-                "time_aggregate", "exists_in_all", "match_characters", 
-                "timeshift", "join", "flow_to_stock", "identifier", 
-                "string_from_date", "subscript", "transcode", 
-                "setdiff", "current_date", "measure", 
-                "extract", "eval", "concatenation", 
-                "unique", "true", "exists_in", 
+                "time_aggregate", "exists_in_all", "match_characters",
+                "timeshift", "join", "flow_to_stock", "identifier",
+                "string_from_date", "subscript", "transcode",
+                "setdiff", "current_date", "measure",
+                "extract", "eval", "concatenation",
+                "unique", "true", "exists_in",
                 "func_dep", "symdiff", "attribute",
                 "fill_time_series", "intersect", "not_exists_in_all",
-                "false", "any", 
+                "false", "any",
                 "lenght", "stock_to_flow", "not_exists_in",
                 "aggregatefunctions", "alterdataset", "||",
                 "<=", "<>", "measures",
@@ -126,6 +123,7 @@ public class VTLScriptEngineTest {
             );
         }
     }
+
     @Test
     public void testVersion() {
         assertThat(new ComparableVersion("0.1.9")).isLessThan(new ComparableVersion("0.1.9-1"));
@@ -187,7 +185,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("res");
         Object res = bindings.get("res");
         assertThat(res).isInstanceOf(Dataset.class);
-        assertThat(((Dataset)res).getDataStructure()).containsKeys("assigned");
+        assertThat(((Dataset) res).getDataStructure()).containsKeys("assigned");
         assertThat(((Dataset) res).getData()).containsExactly(
                 DataPoint.create("id", 0L, +1L)
         );
@@ -211,7 +209,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("res");
         Object res = bindings.get("res");
         assertThat(res).isInstanceOf(Dataset.class);
-        assertThat(((Dataset)res).getDataStructure()).containsKeys("123escaped-assigned");
+        assertThat(((Dataset) res).getDataStructure()).containsKeys("123escaped-assigned");
         assertThat(((Dataset) res).getData()).containsExactly(
                 DataPoint.create("id", 0L, 1L)
         );
@@ -234,7 +232,7 @@ public class VTLScriptEngineTest {
         assertThat(bindings).containsKey("res");
         Object res = bindings.get("res");
         assertThat(res).isInstanceOf(Dataset.class);
-        assertThat(((Dataset)res).getDataStructure()).containsKeys("assigned");
+        assertThat(((Dataset) res).getDataStructure()).containsKeys("assigned");
         assertThat(((Dataset) res).getData()).containsExactly(
                 DataPoint.create("id", 0L, 1L)
         );
@@ -290,7 +288,8 @@ public class VTLScriptEngineTest {
         bindings.put("ds1", dataset);
         engine.eval("ds2 := get(\"todo\")");
 
-        assertThat(bindings).contains(entry("ds2", dataset));
+        assertThat(bindings).containsKeys("ds2");
+        assertThat(bindings.get("ds2")).isInstanceOf(Dataset.class);
 
     }
 
@@ -779,10 +778,10 @@ public class VTLScriptEngineTest {
                 entry("m22", String.class)
         );
 
-        assertThat(ds2.getData(Order.createDefault(ds2.getDataStructure())).get())
+        assertThat(ds2.getData())
                 .flatExtracting(input -> input)
                 .extracting(VTLObject::get)
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         "1", 1L, "constant",
                         "2", 0L, "str2",
                         "3", 0L, "constant"
@@ -898,7 +897,7 @@ public class VTLScriptEngineTest {
                 DataPoint.create("neg", true, -2.3333333333333335, -2.3333333333333335)
         );
 
-        assertThat(result.getData(Order.create(result.getDataStructure()).put("withnulls", Order.Direction.ASC).build()).get()).containsExactlyInAnyOrder(
+        assertThat(result.getData(VtlOrdering.using(result).asc("withnulls").build()).get()).containsExactlyInAnyOrder(
                 DataPoint.create("pos", false, 1.75D, 1.75D),
                 DataPoint.create("neg", false, -1.75D, -1.75D),
                 DataPoint.create("pos", true, 2.3333333333333335, 2.3333333333333335),
@@ -909,52 +908,19 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testAggregationSumGroupBy() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, Long.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure);
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, Long.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "one",
-                        "m1", 101L,
-                        "m2", 1.1,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "two",
-                        "m1", 102L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "one",
-                        "m1", 201L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two",
-                        "m1", 202L,
-                        "m2", 1.1,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two-null",
-                        "m1", VTLObject.NULL,
-                        "m2", VTLObject.NULL,
-                        "at1", "attr2"
-                )
-        ).map(structure::wrap));
+                .addPoints(1L, "one", 101L, 1.1, "attr1")
+                .addPoints(1L, "two", 102L, 1.1, "attr2")
+                .addPoints(2L, "one", 201L, 1.1, "attr2")
+                .addPoints(2L, "two", 202L, 1.1, "attr2")
+                .addPoints(2L, "two-null", null, null, "attr2")
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1.m1) group by id1");
@@ -1018,47 +984,19 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testAggregationSumAlong() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, Long.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure);
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "one",
-                        "m1", 101L,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "two",
-                        "m1", 102L,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "one",
-                        "m1", 201L,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two",
-                        "m1", 202L,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two-null",
-                        "m1", VTLObject.NULL,
-                        "at1", "attr2"
-                )
-        ).map(structure::wrap));
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, Long.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
+
+                .addPoints(1L, "one", 101L, "attr1")
+                .addPoints(1L, "two", 102L, "attr2")
+                .addPoints(2L, "one", 201L, "attr2")
+                .addPoints(2L, "two", 202L, "attr2")
+                .addPoints(2L, "two-null", null, "attr2")
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1) along id2");
@@ -1086,52 +1024,21 @@ public class VTLScriptEngineTest {
 
     @Test
     public void testAggregationMultiple() throws Exception {
-        Dataset ds1 = mock(Dataset.class);
-        DataStructure structure = DataStructure.of(
-                "id1", Role.IDENTIFIER, Long.class,
-                "id2", Role.IDENTIFIER, String.class,
-                "m1", Role.MEASURE, Long.class,
-                "m2", Role.MEASURE, Double.class,
-                "at1", Role.ATTRIBUTE, String.class
-        );
-        when(ds1.getDataStructure()).thenReturn(structure);
 
-        when(ds1.getData(any(Order.class))).thenReturn(Optional.empty());
-        when(ds1.getData()).then(invocation -> Stream.of(
-                (Map) ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "one",
-                        "m1", 101L,
-                        "m2", 1.1d,
-                        "at1", "attr1"
-                ),
-                ImmutableMap.of(
-                        "id1", 1L,
-                        "id2", "two",
-                        "m1", 102L,
-                        "m2", 1.2d,
-                        "at1", "attr2"
-                ),
-                ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "one",
-                        "m1", 201L,
-                        "m2", 2.1d,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two",
-                        "m1", 202L,
-                        "m2", 2.2d,
-                        "at1", "attr2"
-                ), ImmutableMap.of(
-                        "id1", 2L,
-                        "id2", "two-null",
-                        "m1", VTLObject.NULL,
-                        "m2", VTLObject.NULL,
-                        "at1", "attr2"
-                )
-        ).map(structure::wrap));
+
+        Dataset ds1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, Long.class)
+                .addComponent("id2", Role.IDENTIFIER, String.class)
+                .addComponent("m1", Role.MEASURE, Long.class)
+                .addComponent("m2", Role.MEASURE, Double.class)
+                .addComponent("at1", Role.ATTRIBUTE, String.class)
+
+                .addPoints(1L, "one", 101L, 1.1d, "attr1")
+                .addPoints(1L, "two", 102L, 1.2d, "attr2")
+                .addPoints(2L, "one", 201L, 2.1d, "attr2")
+                .addPoints(2L, "two", 202L, 2.2d, "attr2")
+                .addPoints(2L, "two-null", null, null, "attr2")
+                .build();
 
         bindings.put("ds1", ds1);
         engine.eval("ds2 := sum(ds1) group by id1");

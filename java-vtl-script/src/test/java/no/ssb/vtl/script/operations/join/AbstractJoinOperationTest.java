@@ -9,9 +9,9 @@ package no.ssb.vtl.script.operations.join;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,42 +24,33 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.Component.Role;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
 import no.ssb.vtl.model.StaticDataset;
-import no.ssb.vtl.model.VTLObject;
 import org.junit.Test;
 
 import javax.script.Bindings;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.guava.api.Assertions.assertThat;
-import static org.assertj.guava.api.Assertions.entry;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AbstractJoinOperationTest {
@@ -76,15 +67,15 @@ public class AbstractJoinOperationTest {
         Table<String, String, String> columnMapping = AbstractJoinOperation.getColumnMapping(ImmutableMap.of("ds", ds));
 
         assertThat(columnMapping).hasColumnCount(1).hasRowCount(9)
-            .containsCell("id1","ds","id1")
-            .containsCell("id2","ds","id2")
-            .containsCell("id3","ds","id3")
-            .containsCell("me1","ds","me1")
-            .containsCell("me2","ds","me2")
-            .containsCell("me3","ds","me3")
-            .containsCell("at1","ds","at1")
-            .containsCell("at2","ds","at2")
-            .containsCell("at3","ds","at3");
+                .containsCell("id1", "ds", "id1")
+                .containsCell("id2", "ds", "id2")
+                .containsCell("id3", "ds", "id3")
+                .containsCell("me1", "ds", "me1")
+                .containsCell("me2", "ds", "me2")
+                .containsCell("me3", "ds", "me3")
+                .containsCell("at1", "ds", "at1")
+                .containsCell("at2", "ds", "at2")
+                .containsCell("at3", "ds", "at3");
 
         Table<String, String, String> columnMappingTwo = AbstractJoinOperation.getColumnMapping(
                 ImmutableMap.of("ds1", ds, "ds2", ds)
@@ -388,6 +379,23 @@ public class AbstractJoinOperationTest {
                 .hasMessageContaining("dataset");
     }
 
+    @Test
+    public void testOnlyOneDataset() {
+
+        StaticDataset t1 = StaticDataset.create()
+                .addComponent("id1", Role.IDENTIFIER, String.class)
+                .addComponent("id2", Role.IDENTIFIER, Long.class)
+                .addComponent("uni1", Role.IDENTIFIER, Double.class)
+                .addComponent("m1", Role.MEASURE, Instant.class)
+                .addComponent("a1", Role.MEASURE, Boolean.class)
+                .build();
+
+        TestAbstractJoinOperation operation = new TestAbstractJoinOperation(ImmutableMap.of("t1", t1));
+
+        assertThat(operation.getSize()).isEqualTo(t1.getSize());
+        assertThat(operation.getDistinctValuesCount()).isEqualTo(t1.getDistinctValuesCount());
+    }
+
 
     @Test
     public void testComponentNameIsUnique() {
@@ -438,18 +446,18 @@ public class AbstractJoinOperationTest {
         }
 
         @Override
-        public Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components) {
-            return Optional.empty();
+        public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
+            return null;
         }
 
         @Override
-        public Optional<Map<String, Integer>> getDistinctValuesCount() {
-            return Optional.empty();
+        public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
+            return null;
         }
 
         @Override
-        public Optional<Long> getSize() {
-            return Optional.empty();
+        public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
+            return null;
         }
     }
 }

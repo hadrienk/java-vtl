@@ -24,6 +24,13 @@
             <artifactId>java-vtl-parser</artifactId>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.netflix.spectator/spectator-api -->
+        <dependency>
+            <groupId>com.netflix.spectator</groupId>
+            <artifactId>spectator-api</artifactId>
+            <version>0.80.1</version>
+        </dependency>
+
         <!-- Needed to deserialize some test data -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

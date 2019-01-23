@@ -32,25 +32,31 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
-import no.ssb.vtl.model.AbstractDatasetOperation;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.DataStructure;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.Ordering.Direction;
+import no.ssb.vtl.model.VtlFiltering;
+import no.ssb.vtl.model.VtlOrdering;
+import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static no.ssb.vtl.model.Order.Direction.ASC;
+import static no.ssb.vtl.model.Ordering.Direction.ANY;
+import static no.ssb.vtl.model.Ordering.Direction.ASC;
 
 /**
  * Abstract join operation.
@@ -215,20 +221,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return this.commonIdentifiers;
     }
 
-    @Override
-    public final Stream<DataPoint> getData() {
-        // Use the order that is best; using the identifiers we are joining on only.
-        Order.Builder orderBuilder = Order.create(getDataStructure());
-        for (Component identifier : getCommonIdentifiers()) {
-            orderBuilder.put(identifier, ASC);
-        }
-        return getData(orderBuilder.build(), Filtering.ALL, getDataStructure().keySet())
-                .orElseThrow(() -> new RuntimeException("could not sort data"));
-    }
-
-    @Override
-    public abstract Optional<Stream<DataPoint>> getData(Order orders, Filtering filtering, Set<String> components);
-
     /**
      * Try to create an order that is compatible with the join using the requested order
      * <p>
@@ -236,24 +228,31 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      *
      * @param structure       the structure the returned order will apply to.
      * @param firstComponents the identifiers to use.
-     * @param requestedOrder  a compatible order.
+     * @param ordering  a compatible order.
      */
     @VisibleForTesting
-    Optional<Order> createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Order requestedOrder) {
+    Ordering createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering ordering) {
 
-        Set<Component> identifiers = Sets.newHashSet(firstComponents);
+        List<String> joinColumns = firstComponents.stream()
+                .map(structure::getName).collect(Collectors.toList());
+        LinkedHashMap<String, Direction> directionMap = new LinkedHashMap<>();
 
-        Order.Builder compatibleOrder = Order.create(structure);
-        for (Map.Entry<Component, Order.Direction> order : requestedOrder.entrySet()) {
-            Component key = order.getKey();
-            Order.Direction direction = order.getValue();
-
-            if (!identifiers.isEmpty() && !identifiers.remove(key))
-                return Optional.empty();
-
-            compatibleOrder.put(key, direction);
+        // Add the required columns, respecting the requested order.
+        List<String> requestedColumns = ordering.columns();
+        for (String requiredColumn : joinColumns) {
+            if (requestedColumns.contains(requiredColumn)) {
+                directionMap.put(requiredColumn, ordering.getDirection(requiredColumn));
+            } else {
+                directionMap.put(requiredColumn, ASC);
+            }
         }
-        return Optional.of(compatibleOrder.build());
+
+        // Then add remaining columns from the requested order.
+        for (String requiredColumn : requestedColumns) {
+            directionMap.putIfAbsent(requiredColumn, ordering.getDirection(requiredColumn));
+        }
+
+        return new VtlOrdering(directionMap, structure);
     }
 
     /**
@@ -310,54 +309,62 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     }
 
     /**
-     * Compute the predicate.
+     * Compute an Ordering that is compatible with the result of the key extractor.
      *
-     * @param requestedOrder the requested order.
+     * @param ordering the requested order.
      * @return order of the common identifiers only.
      */
-    protected Order computePredicate(Order requestedOrder) {
+    protected Ordering computePredicate(Ordering ordering) {
         DataStructure structure = getDataStructure();
 
         // We need to create a fake structure to allow the returned
         // Order to work with the result of the key extractors.
 
         ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
-        DataStructure.Builder fakeStructure = DataStructure.builder();
+        DataStructure.Builder fakeStructureBuilder = DataStructure.builder();
         for (Component component : commonIdentifiers) {
-            fakeStructure.put(structure.getName(component), component);
+            fakeStructureBuilder.put(structure.getName(component), component);
+        }
+        DataStructure fakeStructure = fakeStructureBuilder.build();
+        VtlOrdering.Builder builder = VtlOrdering.using(fakeStructure);
+        for (String column : ordering.columns()) {
+            if (fakeStructure.containsKey(column)) {
+                builder.then(ordering.getDirection(column), column);
+            }
         }
 
-        Order.Builder predicateBuilder = Order.create(fakeStructure.build());
-        for (Component component : commonIdentifiers) {
-            predicateBuilder.put(component, requestedOrder.getOrDefault(component, ASC));
-        }
-        return predicateBuilder.build();
+        return builder.build();
     }
 
-    protected Stream<DataPoint> getOrSortData(Dataset dataset, Order order, Filtering filtering, Set<String> components) {
-        Optional<Stream<DataPoint>> sortedData = dataset.getData(order, filtering, components);
-        if (sortedData.isPresent()) {
-            return sortedData.get();
+    protected Stream<DataPoint> getOrSortData(Dataset dataset, Ordering order, Filtering filtering, Set<String> components) {
+        VtlFiltering vtlFiltering = VtlFiltering.using(dataset).transpose(filtering);
+        // TODO: Refactor to use AbstractOperation directly.
+        if (dataset instanceof AbstractDatasetOperation) {
+            return ((AbstractDatasetOperation) dataset).computeData(new VtlOrdering(order, dataset.getDataStructure()), vtlFiltering, components);
         } else {
-            return dataset.getData().sorted(order).filter(filtering);
+            //throw new UnsupportedOperationException("Parent should sort.");
+            Optional<Stream<DataPoint>> sortedData = dataset.getData(order, vtlFiltering, components);
+            if (sortedData.isPresent()) {
+                return sortedData.get();
+            } else {
+                throw new UnsupportedOperationException("Parent should sort.");
+                //return dataset.getData().sorted(order).filter(filtering);
+            }
         }
     }
 
     /**
-     * Convert the {@link Order} so it uses the given structure.
+     * Convert the {@link Ordering} so it uses the given structure.
      */
-    protected Order adjustOrderForStructure(Order orders, DataStructure dataStructure) {
-
-        DataStructure structure = getDataStructure();
-        Order.Builder adjustedOrders = Order.create(dataStructure);
-
-        // Uses names since child structure can be different.
-        for (Component component : orders.keySet()) {
-            String name = structure.getName(component);
-            if (dataStructure.containsKey(name))
-                adjustedOrders.put(name, orders.get(component));
+    protected Ordering adjustOrderForStructure(Ordering orders, DataStructure dataStructure) {
+        VtlOrdering.Builder using = VtlOrdering.using(dataStructure);
+        Set<String> actualColumns = dataStructure.keySet();
+        for (String column : orders.columns()) {
+            if (actualColumns.contains(column)) {
+                using.then(orders.getDirection(column), column);
+            }
         }
-        return adjustedOrders.build();
+        return using.build();
     }
 
     @Override

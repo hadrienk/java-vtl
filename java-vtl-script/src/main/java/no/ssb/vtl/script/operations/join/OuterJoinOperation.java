@@ -20,18 +20,21 @@ package no.ssb.vtl.script.operations.join;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.Table;
+import com.google.common.collect.ImmutableList;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -84,35 +87,32 @@ public class OuterJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Dataset.Filtering filtering, Set<String> components) {
-
+    public Stream<DataPoint> computeData(Ordering orders, Filtering filtering, Set<String> components) {
         // Try to create a compatible order.
-        // If not, the caller will have to sort the result manually.
-        Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
-        if (!compatibleOrder.isPresent()) {
-            return Optional.empty();
-        }
-
-        Order requiredOrder = compatibleOrder.get();
+        Ordering requiredOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), orders);
 
         // Compute the predicate
-        Order predicate = computePredicate(requiredOrder);
+        Ordering predicate = computePredicate(requiredOrder);
 
+        // TODO: Use abstract operation here.
         Iterator<Dataset> iterator = datasets.values().iterator();
         Dataset left = iterator.next();
         Dataset right = left;
+
+        ImmutableList.Builder<Stream<DataPoint>> originals = ImmutableList.builder();
 
         // Close all children
         Closer closer = Closer.create();
         try {
 
-            Table<Component, Dataset, Component> componentMapping = getComponentMapping();
-            Stream<DataPoint> result = getOrSortData(
+            Stream<DataPoint> original = getOrSortData(
                     left,
                     adjustOrderForStructure(requiredOrder, left.getDataStructure()),
                     filtering,
                     components
-            ).peek(new DataPointCapacityExpander(getDataStructure().size()));
+            );
+            originals.add(original);
+            Stream<DataPoint> result = original.peek(new DataPointCapacityExpander(getDataStructure().size()));
             closer.register(result);
 
 
@@ -127,6 +127,7 @@ public class OuterJoinOperation extends AbstractJoinOperation {
                         filtering,
                         components
                 );
+                originals.add(rightStream);
                 closer.register(rightStream);
 
                 // The first left stream uses its own structure. After that, the left data structure
@@ -135,13 +136,8 @@ public class OuterJoinOperation extends AbstractJoinOperation {
 
                 result = StreamSupport.stream(
                         new OuterJoinSpliterator<>(
-                                new JoinKeyExtractor(
-                                        first ? left.getDataStructure() : getDataStructure(),
-                                        predicate,
-                                        first ? componentMapping.column(left)::get : c -> c
-                                ),
-                                new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
-                                predicate,
+                                new JoinKeyExtractor(first ? left.getDataStructure() : getDataStructure(), predicate),
+                                new JoinKeyExtractor(right.getDataStructure(), predicate), predicate,
                                 new OuterJoinMerger(this, right),
                                 result.spliterator(),
                                 rightStream.spliterator()
@@ -152,13 +148,23 @@ public class OuterJoinOperation extends AbstractJoinOperation {
             }
 
             // Close all the underlying streams.
-            return Optional.of(result.onClose(() -> {
+            Stream<DataPoint> delegate = result.onClose(() -> {
                 try {
                     closer.close();
                 } catch (IOException e) {
                     // ignore (cannot happen).
                 }
-            }));
+            });
+
+            return new VtlStream(
+                    this,
+                    delegate,
+                    originals.build(),
+                    orders,
+                    filtering,
+                    requiredOrder,
+                    filtering
+            );
 
         } catch (Exception ex) {
             try {
@@ -168,5 +174,15 @@ public class OuterJoinOperation extends AbstractJoinOperation {
             }
             throw ex;
         }
+    }
+
+    @Override
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 }

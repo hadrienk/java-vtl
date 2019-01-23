@@ -20,11 +20,17 @@ package no.ssb.vtl.script.operations.join;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
-import no.ssb.vtl.model.Order;
+import no.ssb.vtl.model.Filtering;
+import no.ssb.vtl.model.FilteringSpecification;
+import no.ssb.vtl.model.Ordering;
+import no.ssb.vtl.model.OrderingSpecification;
+import no.ssb.vtl.model.VtlOrdering;
+import no.ssb.vtl.script.operations.VtlStream;
 import no.ssb.vtl.script.support.Closer;
 
 import java.io.IOException;
@@ -56,35 +62,33 @@ public class InnerJoinOperation extends AbstractJoinOperation {
     }
 
     @Override
-    public Optional<Stream<DataPoint>> getData(Order requestedOrder, Dataset.Filtering filtering, Set<String> components) {
+    public Stream<DataPoint> computeData(Ordering requestedOrder, Filtering filtering, Set<String> components) {
 
         // Try to create a compatible order.
-        // If not, the caller will have to sort the result manually.
-        Optional<Order> compatibleOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
-        if (!compatibleOrder.isPresent()) {
-            return Optional.empty();
-        }
-
-        Order requiredOrder = compatibleOrder.get();
+        Ordering requiredOrder = createCompatibleOrder(getDataStructure(), getCommonIdentifiers(), requestedOrder);
 
         // Compute the predicate
-        Order predicate = computePredicate(requiredOrder);
+        Ordering predicate = computePredicate(requiredOrder);
 
+        // TODO: Use abstract operation here.
         Iterator<Dataset> iterator = datasets.values().iterator();
         Dataset left = iterator.next();
         Dataset right = left;
 
-        // Close all children
+        ImmutableList.Builder<Stream<DataPoint>> originals = ImmutableList.builder();
+
         Closer closer = Closer.create();
         try {
 
             Table<Component, Dataset, Component> componentMapping = getComponentMapping();
-            Stream<DataPoint> result = getOrSortData(
+            Stream<DataPoint> original = getOrSortData(
                     left,
                     adjustOrderForStructure(requiredOrder, left.getDataStructure()),
-                    filtering,
+                    filtering, // TODO: Rename columns in the filter.
                     components
-            ).peek(new DataPointCapacityExpander(getDataStructure().size()));
+            );
+            originals.add(original);
+            Stream<DataPoint> result = original.peek(new DataPointCapacityExpander(getDataStructure().size()));
             closer.register(result);
 
 
@@ -99,20 +103,17 @@ public class InnerJoinOperation extends AbstractJoinOperation {
                         filtering,
                         components
                 );
+                originals.add(rightStream);
                 closer.register(rightStream);
 
                 // The first left stream uses its own structure. After that, the left data structure
                 // will always be the resulting structure. We use a flag (first) to handle the first case
-                // since the hotfix needs to quickly released but this code should be refactored.
+                // since the hotfix needs to be quickly released but this code should be refactored.
 
                 result = StreamSupport.stream(
                         new InnerJoinSpliterator<>(
-                                new JoinKeyExtractor(
-                                        first ? left.getDataStructure() : getDataStructure(),
-                                        predicate,
-                                        first ? componentMapping.column(left)::get : c -> c
-                                ),
-                                new JoinKeyExtractor(right.getDataStructure(), predicate, componentMapping.column(right)),
+                                new JoinKeyExtractor(first ? left.getDataStructure() : getDataStructure(), predicate),
+                                new JoinKeyExtractor(right.getDataStructure(), predicate),
                                 predicate,
                                 new InnerJoinMerger(getDataStructure(), right.getDataStructure()),
                                 result.spliterator(),
@@ -124,13 +125,24 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
 
             // Close all the underlying streams.
-            return Optional.of(result.onClose(() -> {
+            Stream<DataPoint> delegate = result.onClose(() -> {
                 try {
                     closer.close();
                 } catch (IOException e) {
                     // ignore (cannot happen).
                 }
-            }));
+            });
+
+            // TODO: Closer could be moved to VtlStream.
+            return new VtlStream(
+                    this,
+                    delegate,
+                    originals.build(),
+                    requestedOrder,
+                    filtering,
+                    new VtlOrdering(predicate, this.getDataStructure()),
+                    filtering
+            );
 
         } catch (Exception ex) {
             try {
@@ -140,5 +152,34 @@ public class InnerJoinOperation extends AbstractJoinOperation {
             }
             throw ex;
         }
+    }
+
+    @Override
+    public Optional<Map<String, Integer>> getDistinctValuesCount() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getDistinctValuesCount();
+        } else {
+            // TODO
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Long> getSize() {
+        if (getChildren().size() == 1) {
+            return getChildren().get(0).getSize();
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public FilteringSpecification computeRequiredFiltering(FilteringSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public OrderingSpecification computeRequiredOrdering(OrderingSpecification filtering) {
+        throw new UnsupportedOperationException("TODO");
     }
 }
