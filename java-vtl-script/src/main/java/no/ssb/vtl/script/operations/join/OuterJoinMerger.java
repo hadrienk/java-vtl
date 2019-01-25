@@ -46,7 +46,7 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
     public OuterJoinMerger(AbstractJoinOperation joinOperation, Dataset right) {
 
         Table<String, String, String> mapping = AbstractJoinOperation.getColumnMapping(joinOperation.datasets,
-                joinOperation.getCommonIdentifierNames());
+                joinOperation.getCommonIdentifiers().keySet());
         ImmutableBiMap<Dataset, String> datasetNames = ImmutableBiMap.copyOf(joinOperation.datasets).inverse();
 
         size = mapping.rowKeySet().size();

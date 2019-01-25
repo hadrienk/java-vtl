@@ -68,7 +68,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private static final String ERROR_NO_COMMON_IDENTIFIERS = "could not find common identifiers in the datasets %s";
     protected final ImmutableMap<String, Dataset> datasets;
     private final ImmutableMap<String, Component> commonIdentifiers;
-    private final Set<String> commonIdentifierNames;
     // Contains name mappings for all datasets
     private final Table<String, String, String> columnMapping;
 
@@ -111,8 +110,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
                 ERROR_INCOMPATIBLE_TYPES,
                 String.join(", ", typeMismatches)
         );
-        this.commonIdentifierNames = commonIdentifiers.keySet();
-        this.columnMapping = getColumnMapping(namedDatasets, commonIdentifierNames);
+        this.columnMapping = getColumnMapping(namedDatasets, commonIdentifiers.keySet());
 
         this.joinScope = createJoinScope(namedDatasets, commonIdentifiers);
     }
@@ -244,10 +242,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
     protected ImmutableMap<String, Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
-    }
-
-    protected Set<String> getCommonIdentifierNames() {
-        return this.commonIdentifierNames;
     }
 
     /**

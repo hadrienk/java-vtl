@@ -1132,11 +1132,7 @@ public class VTLScriptEngineTest {
         Dataset result = (Dataset) bindings.get("result");
         assertThat(result.getDataStructure().getRoles()).containsOnly(
                 entry("id1", Role.IDENTIFIER),
-                //entry("a_id1", Role.IDENTIFIER),
-                //entry("b_id1", Role.IDENTIFIER),
                 entry("id2", Role.IDENTIFIER),
-                //entry("b_id2", Role.IDENTIFIER),
-                //entry("b_id2", Role.IDENTIFIER),
                 entry("a", Role.MEASURE),
                 entry("b", Role.MEASURE)
         );
@@ -1242,9 +1238,7 @@ public class VTLScriptEngineTest {
         Dataset result = (Dataset) bindings.get("result");
         assertThat(result.getDataStructure().getRoles()).containsOnly(
                 entry("id1", Role.IDENTIFIER),
-                //entry("a_id1", Role.IDENTIFIER),
                 entry("a_id2", Role.IDENTIFIER),
-                //entry("b_id1", Role.IDENTIFIER),
                 entry("b_id2", Role.IDENTIFIER),
                 entry("a", Role.MEASURE),
                 entry("b", Role.MEASURE)
