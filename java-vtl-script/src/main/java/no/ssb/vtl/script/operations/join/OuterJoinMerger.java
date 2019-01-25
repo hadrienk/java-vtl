@@ -45,7 +45,8 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
 
     public OuterJoinMerger(AbstractJoinOperation joinOperation, Dataset right) {
 
-        Table<String, String, String> mapping = AbstractJoinOperation.getColumnMapping(joinOperation.datasets);
+        Table<String, String, String> mapping = AbstractJoinOperation.getColumnMapping(joinOperation.datasets,
+                joinOperation.getCommonIdentifierNames());
         ImmutableBiMap<Dataset, String> datasetNames = ImmutableBiMap.copyOf(joinOperation.datasets).inverse();
 
         size = mapping.rowKeySet().size();
@@ -58,20 +59,20 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
     @Override
     public DataPoint apply(DataPoint left, DataPoint right) {
 
-        resultView.setDataDoint(DataPoint.create(size));
-        rightView.setDataDoint(right);
+        resultView.setDataPoint(DataPoint.create(size));
+        rightView.setDataPoint(right);
 
         if (left != null) {
-            resultView.setDataDoint(DataPoint.create(left));
+            resultView.setDataPoint(DataPoint.create(left));
         } else {
-            resultView.setDataDoint(DataPoint.create(size));
+            resultView.setDataPoint(DataPoint.create(size));
         }
         if (right != null) {
             for (Map.Entry<String, String> mapping : rightMapping.entrySet()) {
                 resultView.put(mapping.getKey(), rightView.get(mapping.getValue()));
             }
         }
-        return resultView.getDataDoint();
+        return resultView.getDataPoint();
     }
 
     private final class DataPointView implements Map<String, VTLObject> {
@@ -93,11 +94,11 @@ public class OuterJoinMerger implements BiFunction<DataPoint, DataPoint, DataPoi
             return dp.set(hash.applyAsInt(key), VTLObject.NULL);
         }
 
-        public DataPoint getDataDoint() {
+        public DataPoint getDataPoint() {
             return dp;
         }
 
-        public void setDataDoint(DataPoint dp) {
+        public void setDataPoint(DataPoint dp) {
             this.dp = dp;
         }
 

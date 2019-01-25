@@ -23,8 +23,8 @@ package no.ssb.vtl.script.operations.join;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -43,8 +43,7 @@ import no.ssb.vtl.model.VtlFiltering;
 import no.ssb.vtl.model.VtlOrdering;
 import no.ssb.vtl.script.operations.AbstractDatasetOperation;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +54,6 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static no.ssb.vtl.model.Ordering.Direction.ANY;
 import static no.ssb.vtl.model.Ordering.Direction.ASC;
 
 /**
@@ -69,8 +67,10 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
     private static final String ERROR_INCOMPATIBLE_TYPES = "incompatible identifier types: %s";
     private static final String ERROR_NO_COMMON_IDENTIFIERS = "could not find common identifiers in the datasets %s";
     protected final ImmutableMap<String, Dataset> datasets;
-    private final Table<Component, Dataset, Component> componentMapping;
-    private final ImmutableSet<Component> commonIdentifiers;
+    private final ImmutableMap<String, Component> commonIdentifiers;
+    private final Set<String> commonIdentifierNames;
+    // Contains name mappings for all datasets
+    private final Table<String, String, String> columnMapping;
 
     private final ComponentBindings joinScope;
 
@@ -85,42 +85,36 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         checkNotNull(identifiers);
 
-        this.joinScope = createJoinScope(namedDatasets);
-
-        this.componentMapping = createComponentMapping(this.datasets.values());
-
-        Map<Component, Map<Dataset, Component>> idMap = this.componentMapping.rowMap().entrySet().stream()
-                .filter(e -> e.getKey().isIdentifier())
-                .filter(e -> e.getValue().size() == datasets.size())
-                // identifiers can be from any dataset
-                .filter(e -> identifiers.isEmpty() || !Collections.disjoint(e.getValue().values(), identifiers))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        this.commonIdentifiers = ImmutableMap.copyOf(new CommonIdentifierBindings(this.datasets)
+                .getComponentReferences().entrySet().stream()
+                .filter(entry -> identifiers.isEmpty() || identifiers.contains(entry.getValue()))
+                .collect(Collectors.toSet()));
 
         // No common identifier
-        checkArgument(namedDatasets.size() == 1 || !idMap.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
+        checkArgument(namedDatasets.size() == 1 || !commonIdentifiers.isEmpty(), ERROR_NO_COMMON_IDENTIFIERS, namedDatasets);
 
-        this.commonIdentifiers = ImmutableSet.copyOf(idMap.keySet());
 
         // Type mismatch check
         List<String> typeMismatches = Lists.newArrayList();
-        for (Map.Entry<Component, Map<Dataset, Component>> entry : idMap.entrySet()) {
-            Component identifier = entry.getKey();
-
+        for (Map.Entry<String, Component> entry : commonIdentifiers.entrySet()) {
             Multimap<Class<?>, Dataset> typeMap = ArrayListMultimap.create();
-            entry.getValue().entrySet().forEach(datasetComponent -> {
-                typeMap.put(
-                        datasetComponent.getValue().getType(),
-                        datasetComponent.getKey()
-                );
-            });
-            if (typeMap.keySet().size() != 1)
-                typeMismatches.add(String.format("%s -> (%s)", identifier, typeMap));
+            for (Dataset dataset : datasets.values()) {
+
+                typeMap.put(dataset.getDataStructure().get(entry.getKey()).getType(), dataset);
+
+                if (typeMap.keySet().size() != 1)
+                    typeMismatches.add(String.format("%s -> (%s)", entry.getKey(), typeMap));
+            }
         }
         checkArgument(
                 typeMismatches.isEmpty(),
                 ERROR_INCOMPATIBLE_TYPES,
                 String.join(", ", typeMismatches)
         );
+        this.commonIdentifierNames = commonIdentifiers.keySet();
+        this.columnMapping = getColumnMapping(namedDatasets, commonIdentifierNames);
+
+        this.joinScope = createJoinScope(namedDatasets, commonIdentifiers);
     }
 
     /**
@@ -128,8 +122,16 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * datasets.
      */
     @VisibleForTesting
-    static ComponentBindings createJoinScope(Map<String, Dataset> namedDatasets) {
-        return new ComponentBindings(namedDatasets);
+    ComponentBindings createJoinScope(Map<String, Dataset> namedDatasets, ImmutableMap<String, Component> commonIdentifiers) {
+        ComponentBindings joinScope = new ComponentBindings(namedDatasets);
+        // The common (joined) identifiers should be accessible inside the join scope, e.g:
+        // test := [a, b] {
+        //   idCopy := id,
+        // }
+        for (Map.Entry<String, Component> entry : commonIdentifiers.entrySet()) {
+            joinScope.put(entry.getKey(), entry.getValue());
+        }
+        return joinScope;
     }
 
     /**
@@ -180,6 +182,28 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
     @VisibleForTesting
     static Table<String, String, String> getColumnMapping(Map<String, Dataset> datasets) {
+        return getColumnMapping(datasets, new HashSet<>());
+    }
+
+    /**
+     * Create a mapping between the names of join scoped variable, dataset and dataset variable.
+     *
+     * From VTL 1.1 specification (1810-1818): If the <strong>on</strong> clause is specified then the join is possibly
+     * defined on a subset of the common Identifier Components of the Datasets. If the Datasets have common Identifier
+     * Components (i.e. with identical names, data type and values domain) that are not specified in the on clause then
+     * it is mandatory to refer to those Identifier Components by specifying both the Dataset name and the measure name.
+     *
+     * For example, if ds1 and ds2 have some common Identifier Components d1, d2 and d3, the following expression:
+     *    [ ds1,ds2 on d1, d2 ]
+     * returns a Dataset with the following Identifier Components:
+     *    d1, d2, 'ds1.d3', 'ds2.d3'
+     *
+     * @param datasets dataset map
+     * @param onIdentifiers identifiers that are listed after the on clause
+     * @return column mappings for all datasets (identifiers, measures and attributes)
+     */
+    @VisibleForTesting
+    static Table<String, String, String> getColumnMapping(Map<String, Dataset> datasets, Set<String> onIdentifiers) {
 
         ImmutableTable.Builder<String, String, String> table;
         table = ImmutableTable.builder();
@@ -196,6 +220,7 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
             DataStructure structure = dataset.getDataStructure();
             Set<String> identifiers = structure.entrySet().stream()
                     .filter(e -> e.getValue().isIdentifier())
+                    .filter((e -> onIdentifiers.isEmpty() || onIdentifiers.contains(e.getKey())))
                     .map(e -> e.getKey())
                     .collect(Collectors.toSet());
             identifierColumns.addAll(identifiers);
@@ -217,8 +242,12 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return table.build();
     }
 
-    protected ImmutableSet<Component> getCommonIdentifiers() {
+    protected ImmutableMap<String, Component> getCommonIdentifiers() {
         return this.commonIdentifiers;
+    }
+
+    protected Set<String> getCommonIdentifierNames() {
+        return this.commonIdentifierNames;
     }
 
     /**
@@ -231,15 +260,13 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * @param ordering  a compatible order.
      */
     @VisibleForTesting
-    Ordering createCompatibleOrder(DataStructure structure, ImmutableSet<Component> firstComponents, Ordering ordering) {
+    Ordering createCompatibleOrder(DataStructure structure, ImmutableMap<String, Component> firstComponents, Ordering ordering) {
 
-        List<String> joinColumns = firstComponents.stream()
-                .map(structure::getName).collect(Collectors.toList());
         LinkedHashMap<String, Direction> directionMap = new LinkedHashMap<>();
 
         // Add the required columns, respecting the requested order.
         List<String> requestedColumns = ordering.columns();
-        for (String requiredColumn : joinColumns) {
+        for (String requiredColumn : firstComponents.keySet()) {
             if (requestedColumns.contains(requiredColumn)) {
                 directionMap.put(requiredColumn, ordering.getDirection(requiredColumn));
             } else {
@@ -260,9 +287,9 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      */
     @VisibleForTesting
     boolean componentNameIsUnique(String datasetName, String componentName) {
-        for (String otherDatasetName : datasets.keySet()) {
-            if (!datasetName.equals(otherDatasetName)) {
-                DataStructure structure = datasets.get(otherDatasetName).getDataStructure();
+        for (Map.Entry<String, Dataset> entry : datasets.entrySet()) {
+            if (!datasetName.equals(entry.getKey())) {
+                DataStructure structure = entry.getValue().getDataStructure();
                 if (!Sets.intersection(structure.keySet(), Sets.newHashSet(componentName)).isEmpty()) {
                     return false;
                 }
@@ -281,19 +308,16 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
 
         Set<String> ids = Sets.newHashSet();
         DataStructure.Builder newDataStructure = DataStructure.builder();
-        for (String datasetName : datasets.keySet()) {
-            DataStructure structure = datasets.get(datasetName).getDataStructure();
+        for (Map.Entry<String, Dataset> entry : datasets.entrySet()) {
+            String datasetName = entry.getKey();
+            DataStructure structure = entry.getValue().getDataStructure();
             for (Map.Entry<String, Component> componentEntry : structure.entrySet()) {
-                if (!componentEntry.getValue().isIdentifier()) {
-                    if (componentNameIsUnique(datasetName, componentEntry.getKey())) {
-                        newDataStructure.put(componentEntry.getKey(), componentEntry.getValue());
-                    } else {
-                        newDataStructure.put(datasetName.concat("_".concat(componentEntry.getKey())), componentEntry.getValue());
-                    }
-                } else {
-                    if (ids.add(componentEntry.getKey())) {
-                        newDataStructure.put(componentEntry);
-                    }
+                // Map from dataset column to join scope column
+                ImmutableBiMap<String, String> columnMap = ImmutableBiMap.copyOf(columnMapping.column(datasetName))
+                        .inverse();
+                String possibleName = columnMap.getOrDefault(componentEntry.getKey(), componentEntry.getKey());
+                if (ids.add(possibleName)) {
+                    newDataStructure.put(possibleName, componentEntry.getValue());
                 }
             }
         }
@@ -304,10 +328,6 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
         return joinScope;
     }
 
-    public Table<Component, Dataset, Component> getComponentMapping() {
-        return componentMapping;
-    }
-
     /**
      * Compute an Ordering that is compatible with the result of the key extractor.
      *
@@ -315,15 +335,12 @@ public abstract class AbstractJoinOperation extends AbstractDatasetOperation imp
      * @return order of the common identifiers only.
      */
     protected Ordering computePredicate(Ordering ordering) {
-        DataStructure structure = getDataStructure();
-
         // We need to create a fake structure to allow the returned
         // Order to work with the result of the key extractors.
 
-        ImmutableSet<Component> commonIdentifiers = getCommonIdentifiers();
         DataStructure.Builder fakeStructureBuilder = DataStructure.builder();
-        for (Component component : commonIdentifiers) {
-            fakeStructureBuilder.put(structure.getName(component), component);
+        for (Map.Entry<String, Component> entry : getCommonIdentifiers().entrySet()) {
+            fakeStructureBuilder.put(entry.getKey(), entry.getValue());
         }
         DataStructure fakeStructure = fakeStructureBuilder.build();
         VtlOrdering.Builder builder = VtlOrdering.using(fakeStructure);
