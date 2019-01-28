@@ -1195,6 +1195,56 @@ public class VTLScriptEngineTest {
         );
     }
 
+    @Test
+    public void testInnerJoinOnSingleIdentifier() throws ScriptException {
+        createMultipleIdDatasets();
+        VTLPrintStream out = new VTLPrintStream(System.out);
+        engine.eval("result := [a,b on id1] {\n" +
+                "  rename id1 to commonId,\n" +
+                "  rename a.integerMeasure to a,\n" +
+                "  rename b.integerMeasure to b\n" +
+                "}");
+        out.println(bindings.get("result"));
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getDataStructure().getRoles()).containsOnly(
+                entry("commonId", Role.IDENTIFIER),
+                entry("a_id2", Role.IDENTIFIER),
+                entry("b_id2", Role.IDENTIFIER),
+                entry("a", Role.MEASURE),
+                entry("b", Role.MEASURE)
+        );
+
+        assertThat(result.getData()).containsExactlyInAnyOrder(
+                DataPoint.create("id1-1", "id2-1", 1, "id2-1", 1),
+                DataPoint.create("id1-1", "id2-1", 1, "id2-3", 1),
+                DataPoint.create("id1-1", "id2-2", 1, "id2-1", 1),
+                DataPoint.create("id1-1", "id2-2", 1, "id2-3", 1),
+                DataPoint.create("id1-2", "id2-1", 2, "id2-1", 2),
+                DataPoint.create("id1-2", "id2-1", 2, "id2-3", 2),
+                DataPoint.create("id1-2", "id2-2", 2, "id2-1", 2),
+                DataPoint.create("id1-2", "id2-2", 2, "id2-3", 2)
+        );
+    }
+
+    @Test
+    public void testOuterJoinOnSingleIdentifier() throws ScriptException {
+        createMultipleIdDatasets();
+        VTLPrintStream out = new VTLPrintStream(System.out);
+        engine.eval("result := [outer a,b on id1] {\n" +
+                "  rename a.integerMeasure to a,\n" +
+                "  rename b.integerMeasure to b\n" +
+                "}");
+        out.println(bindings.get("result"));
+        Dataset result = (Dataset) bindings.get("result");
+        assertThat(result.getDataStructure().getRoles()).containsOnly(
+                entry("id1", Role.IDENTIFIER),
+                entry("a_id2", Role.IDENTIFIER),
+                entry("b_id2", Role.IDENTIFIER),
+                entry("a", Role.MEASURE),
+                entry("b", Role.MEASURE)
+        );
+    }
+
     private void createMultipleIdDatasets() {
         StaticDataset a = StaticDataset.create()
                 .addComponent("id1", Role.IDENTIFIER, String.class)

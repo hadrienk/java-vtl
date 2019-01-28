@@ -21,7 +21,6 @@ package no.ssb.vtl.script.operations.join;
  */
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Table;
 import no.ssb.vtl.model.Component;
 import no.ssb.vtl.model.DataPoint;
 import no.ssb.vtl.model.Dataset;
@@ -51,14 +50,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
 
     public InnerJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(namedDatasets, identifiers);
-        // We need the identifiers in the case of inner join.
-        ComponentBindings joinScope = this.getJoinScope();
-        for (Component component : getCommonIdentifiers()) {
-            joinScope.put(
-                    getDataStructure().getName(component),
-                    component
-            );
-        }
     }
 
     @Override
@@ -80,7 +71,6 @@ public class InnerJoinOperation extends AbstractJoinOperation {
         Closer closer = Closer.create();
         try {
 
-            Table<Component, Dataset, Component> componentMapping = getComponentMapping();
             Stream<DataPoint> original = getOrSortData(
                     left,
                     adjustOrderForStructure(requiredOrder, left.getDataStructure()),

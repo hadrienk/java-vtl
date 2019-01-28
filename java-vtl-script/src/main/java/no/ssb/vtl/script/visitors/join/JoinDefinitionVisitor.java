@@ -27,7 +27,7 @@ import no.ssb.vtl.model.Dataset;
 import no.ssb.vtl.parser.VTLParser;
 import no.ssb.vtl.script.error.ContextualRuntimeException;
 import no.ssb.vtl.script.operations.join.AbstractJoinOperation;
-import no.ssb.vtl.script.operations.join.ComponentBindings;
+import no.ssb.vtl.script.operations.join.CommonIdentifierBindings;
 import no.ssb.vtl.script.operations.join.InnerJoinOperation;
 import no.ssb.vtl.script.operations.join.OuterJoinOperation;
 import no.ssb.vtl.script.visitors.ComponentVisitor;
@@ -68,7 +68,7 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
     private ImmutableSet<Component> extractIdentifierComponents(List<VTLParser.VariableExpressionContext> identifiers,
                                                                 ImmutableMap<String, Dataset> datasets) {
         ImmutableSet.Builder<Component> builder = ImmutableSet.builder();
-        ComponentVisitor componentVisitor = new ComponentVisitor(new ComponentBindings(datasets));
+        ComponentVisitor componentVisitor = new ComponentVisitor(new CommonIdentifierBindings(datasets));
         for (VTLParser.VariableExpressionContext identifier : identifiers) {
             Component identifierComponent = componentVisitor.visit(identifier);
             builder.add(identifierComponent);

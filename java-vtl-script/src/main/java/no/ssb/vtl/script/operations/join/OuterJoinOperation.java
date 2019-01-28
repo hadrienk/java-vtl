@@ -76,14 +76,6 @@ public class OuterJoinOperation extends AbstractJoinOperation {
 
     public OuterJoinOperation(Map<String, Dataset> namedDatasets, Set<Component> identifiers) {
         super(namedDatasets, identifiers);
-        // We need the identifiers in the case of inner join.
-        ComponentBindings joinScope = this.getJoinScope();
-        for (Component component : getCommonIdentifiers()) {
-            joinScope.put(
-                    getDataStructure().getName(component),
-                    component
-            );
-        }
     }
 
     @Override
