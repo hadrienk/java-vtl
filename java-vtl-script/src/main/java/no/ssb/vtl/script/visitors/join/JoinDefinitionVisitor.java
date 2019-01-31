@@ -65,13 +65,13 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
         return builder.build();
     }
 
-    private ImmutableSet<Component> extractIdentifierComponents(List<VTLParser.VariableExpressionContext> identifiers,
+    private ImmutableMap<String, Component> extractIdentifierComponents(List<VTLParser.VariableExpressionContext> identifiers,
                                                                 ImmutableMap<String, Dataset> datasets) {
-        ImmutableSet.Builder<Component> builder = ImmutableSet.builder();
+        ImmutableMap.Builder<String, Component> builder = ImmutableMap.builder();
         ComponentVisitor componentVisitor = new ComponentVisitor(new CommonIdentifierBindings(datasets));
         for (VTLParser.VariableExpressionContext identifier : identifiers) {
             Component identifierComponent = componentVisitor.visit(identifier);
-            builder.add(identifierComponent);
+            builder.put(identifier.getText(), identifierComponent);
         }
         return builder.build();
     }
@@ -82,7 +82,7 @@ public class JoinDefinitionVisitor extends VTLDatasetExpressionVisitor<AbstractJ
         // Create a component bindings to be able to resolve components.
         ImmutableMap<String, Dataset> datasets = extractDatasets(ctx.variable());
 
-        ImmutableSet<Component> identifiers = extractIdentifierComponents(ctx.variableExpression(), datasets);
+        ImmutableMap<String, Component> identifiers = extractIdentifierComponents(ctx.variableExpression(), datasets);
 
         Integer joinType = Optional.ofNullable(ctx.type).map(Token::getType).orElse(VTLParser.INNER);
         switch (joinType) {
